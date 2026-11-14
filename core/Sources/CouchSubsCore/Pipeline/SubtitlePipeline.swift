@@ -93,6 +93,8 @@ public final class SubtitlePipeline {
     public var hudTop: Double?
     /// Nino: hedef dil (ör. "tr"). Satır zaten bu dildeyse (PS5'in Türkçe menüsü) çevirmene hiç gitmez.
     public var targetLanguage: String?
+    /// Nino: okunan satır zaten hedef dildeydi (PS5'in kendi Türkçe ekranı). Köşe okuyucusu bunu görünce bir süre durur.
+    public var onAlreadyTarget: (() -> Void)?
     /// Nino: satırın (yazısıyla) ekranda ilk görüldüğü an. Görev ve öğretici yazıları uzun süre aynı kalır,
     /// altyazılar birkaç saniyede değişir.
     private var lineSince: [String: Int] = [:]
@@ -380,6 +382,7 @@ public final class SubtitlePipeline {
         if let target = targetLanguage, TargetLanguage.isAlready(source, in: target) {
             remember(request.number, source, nil)
             log(request, "zaten hedef dilde, çevirmene gönderilmedi")
+            onAlreadyTarget?()
             return
         }
         let started = now()

@@ -1194,6 +1194,9 @@ final class AppModel: ObservableObject {
     /// Nino: bir önceki okumada görülen ama henüz çevrilmeyen yazı. Kutu belirirken ya da kaybolurken yarım okunan yazı
     /// çevrilmez; yazı iki okumada aynı (ya da çok benzer) görünürse çevrilir.
     private var cornerPending = ["", ""]
+    /// Nino: PS5'in kendi (Türkçe) ekranı görüldü; bu zamana kadar köşe yazıları çevrilmez. Ana ekranda oyun kutucuklarının
+    /// adları ("RED DEAD REDEMPTION", "share factory") ipucu sanılıp çevriliyordu.
+    private var systemScreenUntil = Date.distantPast
     private var promptText = ""
     private var promptItems: [ScreenTranslation.Item] = []
     private var promptTask: Task<Void, Never>?
@@ -1290,9 +1293,13 @@ final class AppModel: ObservableObject {
                 changed = true
                 // Kullanıcı isteği: yalnız oyunun yazıları çevrilir. Satırlarından biri zaten Türkçeyse bu PS5'in kendi
                 // ekranıdır (ana ekran, menü); çevrilmez.
-                if !text.isEmpty, TargetLanguage.hasLine(text, in: settings.targetLanguage) {
+                let turkish = !text.isEmpty && TargetLanguage.hasLine(text, in: settings.targetLanguage)
+                if turkish { systemScreenUntil = Date().addingTimeInterval(15) }
+                if !text.isEmpty, turkish || Date() < systemScreenUntil {
                     if !cornerItems[i].isEmpty { SubtitleLog.write("köşe \(Self.cornerNames[i]): PS5 ekranı, çevrilmedi") }
                     cornerItems[i] = []
+                    // Türkçe değilse bekleme bitince yeniden bakılsın (oyuna dönülünce çıkan ipucu kaçmasın).
+                    if !turkish { cornerTexts[i] = "" }
                     continue
                 }
                 let key = TextMatch.normalize(text)
@@ -1368,6 +1375,7 @@ final class AppModel: ObservableObject {
         // En alttaki öğretici/menü yazısı altyazı sanılmasın; yoksa üstündeki gerçek altyazı hiç okunmuyordu.
         pipeline.hudTop = currentHudTop
         pipeline.targetLanguage = settings.targetLanguage
+        pipeline.onAlreadyTarget = { [weak self] in self?.systemScreenUntil = Date().addingTimeInterval(15) }
         // Dil paketi bu arada indirilmiş olabilir; her çeviri sonucu durumu günceller.
         pipeline.onTranslationResult = { [weak self] error in
             self?.translatorStatus = Self.translatorStatus(after: error)
