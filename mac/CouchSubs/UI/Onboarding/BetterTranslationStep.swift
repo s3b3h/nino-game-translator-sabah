@@ -17,7 +17,21 @@ struct BetterTranslationStep: View {
         StepLayout(title: "Better translation (free)", message: FreeGemini.pitch) {
             VStack(alignment: .leading, spacing: Theme.space("l")) {
                 if model.usesFreeGemini {
-                    DoneLabel(text: String(localized: "Gemini is ready. Subtitles will be translated with Gemini."))
+                    // Nino: sade başarı kartı; örnek çeviri küçük TV önizlemesinde.
+                    HStack(alignment: .center, spacing: Theme.space("gap")) {
+                        VStack(alignment: .leading, spacing: Theme.space("s")) {
+                            HStack(spacing: Theme.space("m")) {
+                                GradientIcon(symbol: "checkmark", size: 40)
+                                Text("Gemini is ready").font(.system(size: 20, weight: .bold, design: .rounded))
+                            }
+                            Text("Subtitles will now be translated with Gemini.").font(.csBody).foregroundStyle(Color.csSecondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        // Deneme yapıldıysa Gemini'nin örnek çevirisi, yoksa akan örnek cümleler.
+                        SubtitleStylePreview(style: model.settings.style, size: CGSize(width: 300, height: 169),
+                                             live: { if case .success(let sample)? = result { return (sample, "") }; return nil }())
+                    }
+                    .tile(padding: Theme.space("l"))
                 } else {
                     Card {
                         NumberedRow(number: 1, text: "Press Get a free key and sign in with your Google account.")
@@ -33,19 +47,17 @@ struct BetterTranslationStep: View {
                             .disabled(checking || key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                 }
-                if let result {
-                    switch result {
-                    case .success(let sample):
-                        Text(String(format: String(localized: "It works. Sample translation: %@"), sample))
-                            .font(.csCallout)
-                            .foregroundStyle(Color.csSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    case .failure(let failure):
-                        ErrorText(error: TranslationCard.describe(OnlineKeyState(failure), engine: .gemini))
-                    }
+                if case .failure(let failure)? = result {
+                    ErrorText(error: TranslationCard.describe(OnlineKeyState(failure), engine: .gemini))
                 }
-                HintText(text: FreeGemini.privacy)
-                HintText(text: FreeGemini.limit)
+                // Kısa notlar: tek satır, simgeli.
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Only the game's subtitles are sent to Google.", systemImage: "lock.fill")
+                    Label("If the free limit is reached, Nino's free translation takes over.", systemImage: "gauge.with.dots.needle.33percent")
+                    Label("You can choose DeepL, OpenAI, Claude or a local model later in Settings › Translation.", systemImage: "slider.horizontal.3")
+                }
+                .font(.csCaption)
+                .foregroundStyle(Color.csSecondary)
             }
         }
     }

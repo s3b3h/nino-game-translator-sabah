@@ -10,7 +10,9 @@ fun interface TextTranslator {
 }
 
 /** Gösterilen bir çeviri: nereden geldiği ("paket" ya da "motor") ve paketse hangi oyunun paketi. */
-data class ShownPair(val source: String, val translation: String, val origin: String, val packId: String? = null)
+data class ShownPair(val source: String, val translation: String, val origin: String, val packId: String? = null,
+                     /** Nino: oyundaki altyazının ekrandaki yeri (öğrenmek için). */
+                     val box: TextBox? = null)
 
 /**
  * Okunan satırlar → kararlılık → paket / çeviri → TV (Windows: SubtitlePipeline.cs, aynı kurallar). Yazı tanıma
@@ -27,6 +29,8 @@ class SubtitlePipeline(
     companion object {
         /** Satır ekrandan bundan uzun süre önce kalktıysa geç gelen çevirisi gösterilmez. */
         const val LATE_RESULT_MS = 1000
+        /** Bu kadar süredir aynı duran satır, yanında yeni bir yazı varken altyazı sayılmaz. */
+        const val STALE_MS = 9000L
         private const val REMEMBERED_PAIRS = 8
 
         /** Satır ekrandan kalktıktan sonra gelen çevirinin TV'de kalacağı süre (TV uygulamasıyla aynı kural). */
@@ -62,10 +66,39 @@ class SubtitlePipeline(
     var packHits = 0
         private set
 
+    /**
+     * Nino: ekranda bu çizginin (0–1, üstten) altında başlayan satırlar altyazı sayılmaz. Oyunlar öğretici ve menü
+     * yazılarını en alta koyar; en alttaki blok seçildiği için üstündeki gerçek altyazı okunmuyordu.
+     */
+    @Volatile var hudTop: Double? = SubtitleLayout.FALLBACK_HUD_TOP
+
+    /** Satırın (yazısıyla) ilk görüldüğü an; görev ve öğretici yazıları uzun süre aynı kalır. */
+    private var lineSince = mutableMapOf<String, Long>()
+
+    /** Aynı yazı 9 sn'den uzun duruyorsa ve yanında yeni bir yazı varsa o eski yazı altyazı değildir. */
+    internal fun withoutStaleLines(reading: Reading, time: Long): Reading {
+        val seen = mutableMapOf<String, Long>()
+        for (line in reading.lines) {
+            val key = TextMatch.normalize(line.text)
+            seen[key] = lineSince[key] ?: time
+        }
+        lineSince = seen
+        val fresh = reading.lines.filter { time - (seen[TextMatch.normalize(it.text)] ?: time) <= STALE_MS }
+        if (fresh.isEmpty() || fresh.size == reading.lines.size) return reading
+        return Reading(fresh)
+    }
+
     /** Bir karenin okuması ve okunan alanın karedeki yeri. */
     fun process(raw: Reading, area: TextBox) {
+        // Nino: harfsiz satırlar (mermi sayısı "91 / 200") ve en alttaki görev şeridi altyazı değildir.
+        val limit = hudTop
+        var visible = Reading(raw.lines.filter { line ->
+            line.text.count { it.isLetter() } >= 2 &&
+                (limit == null || line.box == null || area.top + line.box.top * (area.bottom - area.top) < limit)
+        })
+        visible = synchronized(lock) { withoutStaleLines(visible, now()) }
         // Kumanda ipuçları ve yazı tanıma çöpleri çevrilmez; yalnız altyazı bloğu çevrilir.
-        val reading = raw.withoutButtonPrompts().withoutOcrNoise().subtitleBlock(area)
+        val reading = visible.withoutButtonPrompts().withoutOcrNoise().subtitleBlock(area)
         val after: (() -> Unit)? = synchronized(lock) {
             val action = stabilizer.feed(reading.text)
             val box = reading.box?.placedIn(area)?.centeredOnScreen()
@@ -122,7 +155,8 @@ class SubtitlePipeline(
         lastShown = request.number
         sender.sendSubtitle(translated, 15000, request.box)
         val shown = onPairShown
-        return { shown?.invoke(ShownPair(source, translated, "paket", packed.packId)) }
+        val box = request.box
+        return { shown?.invoke(ShownPair(source, translated, "paket", packed.packId, box)) }
     }
 
     private fun restore(source: String, box: TextBox?): (() -> Unit)? {
@@ -189,7 +223,7 @@ class SubtitlePipeline(
             lastShown = request.number
             sender.sendSubtitle(translated, if (onScreen) 15000 else readingTime(translated), request.box)
         }
-        onPairShown?.invoke(ShownPair(source, translated, "motor"))
+        onPairShown?.invoke(ShownPair(source, translated, "motor", box = request.box))
     }
 
     private fun remember(number: Int, source: String, translation: String?) {

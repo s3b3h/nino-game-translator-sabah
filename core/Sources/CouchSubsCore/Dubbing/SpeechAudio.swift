@@ -91,6 +91,58 @@ public struct SpeechAudio: Equatable, Sendable {
 
     /// Akıcılık: model virgül ve ünlemden sonra 200–400 ms, cümle başında ve sonunda daha uzun susuyor. Cümle içindeki
     /// her sessizlik en çok `maxPause`'a, baştaki `lead`'e, sondaki `tail`'e iner; kesilen yerler `fade` ile yumuşatılır.
+    /// Nino: okuyuşa göre hız ve güç. Hız örnekleme ile değişir (hızlanınca perde de biraz yükselir); güç dB olarak,
+    /// taşma olmasın diye tepe 0,98'i geçmez.
+    public func styled(rate: Double, gain: Double) -> SpeechAudio {
+        guard abs(rate - 1) > 0.001 || abs(gain) > 0.01, !samples.isEmpty else { return self }
+        let count = max(1, Int(Double(samples.count) / rate))
+        var out = [Float](repeating: 0, count: count)
+        for i in 0..<count {
+            let position = Double(i) * rate
+            let j = Int(position), f = Float(position - Double(j))
+            let a = samples[min(j, samples.count - 1)], b = samples[min(j + 1, samples.count - 1)]
+            out[i] = a + (b - a) * f
+        }
+        var factor = Float(pow(10, gain / 20))
+        let peak = out.reduce(0) { max($0, abs($1)) }
+        if peak * factor > 0.98, peak > 0 { factor = 0.98 / peak }
+        return SpeechAudio(samples: out.map { $0 * factor }, sampleRate: sampleRate)
+    }
+
+    /// Nino: cümlenin son kısmının perdesini, süresini değiştirmeden kademeli yükseltir (ya da alçaltır). Türkçe ses
+    /// modeli soru ve heyecanlı cümleleri hep aşağı doğru bitiriyordu; insan bu cümleleri yukarı doğru bitirir.
+    /// `from`: değişimin başladığı yer (0–1); sona doğru `semitones` yarım tona ulaşır. İki uçlu gecikme hattıyla
+    /// (çapraz geçişli iki okuma noktası) perde kaydırılır; kayma başlarken ses kuru sesten yavaşça geçer.
+    public func withRisingEnd(semitones: Double, from: Double = 0.55) -> SpeechAudio {
+        guard abs(semitones) > 0.05, samples.count > sampleRate / 5 else { return self }
+        let n = samples.count
+        let window = Double(sampleRate) * 0.035
+        let start = Int(Double(n) * from)
+        let blend = max(1, sampleRate / 25)        // 40 ms kuru → işlenmiş geçiş
+        var out = samples
+        var phase = 0.0
+        func read(_ position: Double) -> Float {
+            guard position >= 0 else { return samples[0] }
+            let i = Int(position), f = Float(position - Double(i))
+            guard i + 1 < n else { return samples[min(i, n - 1)] }
+            return samples[i] + (samples[i + 1] - samples[i]) * f
+        }
+        for i in start..<n {
+            let progress = Double(i - start) / Double(max(1, n - 1 - start))
+            // Yumuşak eğri: başta yavaş, sona doğru hızlanan yükseliş.
+            let shift = semitones * progress * progress
+            let ratio = pow(2, shift / 12)
+            phase += (1 - ratio) / window
+            phase -= floor(phase)
+            let d1 = phase * window, d2 = (phase + 0.5 - floor(phase + 0.5)) * window
+            let g1 = Float(pow(sin(Double.pi * phase), 2)), g2 = 1 - g1
+            let wet = g1 * read(Double(i) - d1) + g2 * read(Double(i) - d2)
+            let mix = Float(min(1, Double(i - start) / Double(blend)))
+            out[i] = samples[i] * (1 - mix) + wet * mix
+        }
+        return SpeechAudio(samples: out, sampleRate: sampleRate)
+    }
+
     public func tightened(maxPause: Double = 0.2, lead: Double = 0.03, tail: Double = 0.08, fade: Double = 0.01) -> SpeechAudio {
         let hop = max(1, sampleRate / 100) // 10 ms
         let frames = samples.count / hop

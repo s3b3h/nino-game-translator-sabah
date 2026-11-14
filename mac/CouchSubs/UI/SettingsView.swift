@@ -5,26 +5,28 @@ import SwiftUI
 
 /// Ayarların bölümleri; solda kenar çubuğunda listelenir, sağda seçili olan gösterilir.
 enum SettingsSection: CaseIterable, Identifiable {
-    case appearance, dubbing, translation, packs, language, area, obs, about
+    case appearance, display, dubbing, translation, packs, language, area, obs, about
 
     var id: Self { self }
 
     var title: LocalizedStringKey {
         switch self {
         case .appearance: "Subtitle appearance"
+        case .display: "TV and screen"
         case .dubbing: "Turkish dubbing"
         case .translation: "Translation"
         case .packs: "Game packs"
         case .language: "Language"
         case .area: "Subtitle area"
         case .obs: "OBS overlay"
-        case .about: "About CouchSubs"
+        case .about: "About Nino"
         }
     }
 
     var symbol: String {
         switch self {
         case .appearance: "captions.bubble"
+        case .display: "tv"
         case .dubbing: "waveform"
         case .translation: "globe"
         case .packs: "shippingbox"
@@ -36,34 +38,132 @@ enum SettingsSection: CaseIterable, Identifiable {
     }
 }
 
+extension SettingsSection {
+    /// Sistem Ayarları'ndaki gibi her bölümün kendi renkli simge kutusu.
+    var tint: Color {
+        switch self {
+        case .appearance: Color(red: 0.0, green: 0.44, blue: 0.82)
+        case .display: Color(red: 0.10, green: 0.55, blue: 0.95)
+        case .dubbing: Color(red: 0.55, green: 0.33, blue: 0.95)
+        case .translation: Color(red: 0.0, green: 0.62, blue: 0.75)
+        case .packs: Color(red: 0.98, green: 0.55, blue: 0.10)
+        case .language: Color(red: 0.20, green: 0.70, blue: 0.40)
+        case .area: Color(red: 0.35, green: 0.40, blue: 0.95)
+        case .obs: Color(red: 0.92, green: 0.26, blue: 0.30)
+        case .about: Color(red: 0.45, green: 0.50, blue: 0.60)
+        }
+    }
+}
+
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var section: SettingsSection
+    /// nil: iPhone ayarları gibi gruplu liste; bir bölüm: o bölümün sayfası (solda geri düğmesiyle).
+    @State private var section: SettingsSection?
 
-    init(section: SettingsSection = .appearance) {
+    init(section: SettingsSection? = nil) {
         _section = State(initialValue: section)
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: Theme.space("gap")) {
-            SettingsSidebar(section: $section)
-            VStack(alignment: .leading, spacing: Theme.space("gap")) {
-                ScrollView {
-                    SettingsPage(section: section)
-                        .padding(Theme.space("m"))
-                        .id(section)
+        VStack(spacing: Theme.space("m")) {
+            HStack {
+                if section != nil {
+                    Button {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) { section = nil }
+                    } label: {
+                        Label("Settings", systemImage: "chevron.left").font(.csBody.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.csAccentText)
+                    .keyboardShortcut("[", modifiers: .command)
+                } else {
+                    Text("Settings").font(.system(size: 28, weight: .bold, design: .rounded))
                 }
-                .padding(-Theme.space("m"))
-                HStack {
-                    Spacer()
-                    Button("Done") { dismiss() }
-                        .buttonStyle(CSButtonStyle(kind: .primary, height: "buttonLarge"))
-                        .keyboardShortcut(.defaultAction)
+                Spacer()
+                Button("Done") { dismiss() }
+                    .buttonStyle(CSButtonStyle(kind: .primary))
+                    .keyboardShortcut(.defaultAction)
+            }
+            ScrollView {
+                Group {
+                    if let section {
+                        SettingsPage(section: section)
+                            .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                                    removal: .move(edge: .trailing).combined(with: .opacity)))
+                    } else {
+                        SettingsList(section: $section)
+                            .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
+                                                    removal: .move(edge: .leading).combined(with: .opacity)))
+                    }
                 }
+                .frame(maxWidth: section == .appearance ? 900 : 640)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Theme.space("s"))
+            }
+            .scrollIndicators(.never)
+        }
+        .padding(Theme.space("xl"))
+        .frame(width: Theme.size("windowWidth") - 2 * Theme.space("screen"), height: Theme.size("windowHeight") - 2 * Theme.space("screen"))
+    }
+}
+
+/// iPhone ayarları gibi: cam gruplar içinde renkli simgeli satırlar, aralarında ince çizgi, sağda ok.
+private struct SettingsList: View {
+    @Binding var section: SettingsSection?
+
+    private let groups: [[SettingsSection]] = [
+        [.appearance, .display, .translation, .language],
+        [.packs, .dubbing, .area, .obs],
+        [.about],
+    ]
+
+    var body: some View {
+        VStack(spacing: Theme.space("xl")) {
+            ForEach(groups.indices, id: \.self) { g in
+                VStack(spacing: 0) {
+                    ForEach(Array(groups[g].enumerated()), id: \.element) { i, item in
+                        SettingsListRow(item: item) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) { section = item }
+                        }
+                        if i < groups[g].count - 1 {
+                            Divider().padding(.leading, 58)
+                        }
+                    }
+                }
+                .ninoGlass(in: RoundedRectangle(cornerRadius: Theme.radius("card"), style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Theme.radius("card"), style: .continuous).strokeBorder(Color.ninoGlassEdge))
             }
         }
-        .padding(Theme.space("screen"))
-        .frame(width: Theme.size("windowWidth") - 2 * Theme.space("screen"), height: Theme.size("windowHeight") - 2 * Theme.space("screen"))
+    }
+}
+
+private struct SettingsListRow: View {
+    let item: SettingsSection
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Theme.space("m")) {
+                Image(systemName: item.symbol)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(LinearGradient(colors: [item.tint.opacity(0.85), item.tint], startPoint: .top, endPoint: .bottom)))
+                Text(item.title).font(.csBody).foregroundStyle(Color.csText)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.csSecondary.opacity(0.7))
+            }
+            .padding(.horizontal, Theme.space("l"))
+            .frame(minHeight: 52)
+            .background(hovering ? Color.csAccentSoft.opacity(0.6) : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { h in withAnimation(.easeOut(duration: 0.15)) { hovering = h } }
     }
 }
 
@@ -78,7 +178,9 @@ private struct SettingsSidebar: View {
                 .padding(.horizontal, Theme.space("m"))
                 .padding(.bottom, Theme.space("s"))
             ForEach(SettingsSection.allCases) { item in
-                SidebarRow(title: item.title, symbol: item.symbol, selected: item == section) { section = item }
+                SidebarRow(title: item.title, symbol: item.symbol, selected: item == section, tint: item.tint) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { section = item }
+                }
             }
             Spacer(minLength: 0)
         }
@@ -93,14 +195,24 @@ struct SidebarRow: View {
     let title: LocalizedStringKey
     let symbol: String
     let selected: Bool
+    var tint: Color? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: Theme.space("m")) {
-                Image(systemName: symbol)
-                    .frame(width: 20)
-                    .foregroundStyle(selected ? Color.csText : Color.csSecondary)
+                if let tint {
+                    Image(systemName: symbol)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 26, height: 26)
+                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(LinearGradient(colors: [tint.opacity(0.85), tint], startPoint: .top, endPoint: .bottom)))
+                } else {
+                    Image(systemName: symbol)
+                        .frame(width: 20)
+                        .foregroundStyle(selected ? Color.csText : Color.csSecondary)
+                }
                 Text(title)
                     .font(selected ? .csBody.weight(.semibold) : .csBody)
                     .foregroundStyle(Color.csText)
@@ -108,7 +220,7 @@ struct SidebarRow: View {
             }
             .padding(.horizontal, Theme.space("m"))
             .frame(minHeight: 40)
-            .background(selected ? Color.csSurface2 : Color.clear, in: RoundedRectangle(cornerRadius: Theme.radius("control"), style: .continuous))
+            .background(selected ? Color.csAccentSoft : Color.clear, in: RoundedRectangle(cornerRadius: Theme.radius("control"), style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -119,16 +231,39 @@ struct SidebarRow: View {
 /// Seçili bölümün başlığı ve karoları.
 private struct SettingsPage: View {
     let section: SettingsSection
+    @EnvironmentObject private var model: AppModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space("gap")) {
             if section != .packs {
-                Text(section.title).font(.csDisplay)
+                HStack(spacing: Theme.space("m")) {
+                    Image(systemName: section.symbol)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(section.tint))
+                        .shadow(color: section.tint.opacity(0.45), radius: 10, y: 4)
+                    Text(section.title).font(.system(size: 28, weight: .bold, design: .rounded))
+                }
             }
             switch section {
             case .appearance:
+                // Tek sayfa, kaydırmasız: üstte önizleme + ince ayarlar, altta tek sırada altı tema.
+                HStack(alignment: .top, spacing: Theme.space("gap")) {
+                    SubtitleStylePreview(style: model.settings.style, size: CGSize(width: 470, height: 264))
+                        .overlay(alignment: .topLeading) {
+                            Text(model.settings.style.theme.title)
+                                .font(.csCallout.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 10).frame(height: 26)
+                                .background(Capsule().fill(Color.black.opacity(0.45)))
+                                .padding(10)
+                        }
+                    AppearanceCard()
+                }
+                SubtitleThemePicker(columns: 6)
+            case .display:
                 SubtitleOutputCard(detailed: true)
-                AppearanceCard()
                 TVAppCard()
             case .dubbing: DubbingCard()
             case .translation: TranslationCard()
@@ -151,6 +286,9 @@ private struct AppearanceCard: View {
 
     var body: some View {
         Card(title: model.settings.output == .tv ? "On the TV" : "Subtitle appearance") {
+            // Nino: varsayılan olarak yazı boyu oyunun altyazısına uydurulur.
+            Toggle("Match the game's subtitle size", isOn: $model.settings.style.autoSize)
+                .toggleStyle(.switch)
             // 1920 piksellik TV ekranında yazı yüksekliği; sürüklerken TV'de örnek altyazı görünür.
             Slider(value: Binding(get: { Double(model.settings.style.fontSize) },
                                   set: { model.settings.style.fontSize = Int($0.rounded()) }), in: 20...80) {
@@ -162,6 +300,7 @@ private struct AppearanceCard: View {
             } onEditingChanged: { editing in
                 if editing { model.sendTestSubtitle() }
             }
+            .disabled(model.settings.style.autoSize)
             // Yer ayarları TV içindir; bilgisayar ekranındaki altyazı penceresi sürüklenerek taşınır (Genzo, 2026-11-13:
             // "ekrandaki konum ayarı işlemiyor").
             if model.settings.output.showsOnTV {
@@ -210,7 +349,6 @@ private struct AppearanceCard: View {
             if model.settings.output.showsOnTV, model.tv?.brand == .androidTV {
                 AndroidDisplayModePicker(mode: $model.settings.style.displayMode)
             }
-            Button("Send test subtitle") { model.sendTestSubtitle() }.buttonStyle(.secondary)
         }
     }
 }
@@ -267,7 +405,7 @@ private struct OBSCard: View {
     @EnvironmentObject private var model: AppModel
     @State private var obsCopied = false
 
-    /// OBS'de "Tarayıcı kaynağı" adresi; OBS çoğunlukla CouchSubs ile aynı bilgisayarda çalışır.
+    /// OBS'de "Tarayıcı kaynağı" adresi; OBS çoğunlukla Nino ile aynı bilgisayarda çalışır.
     private var obsAddress: String { "http://localhost:\(model.serverPort)/obs" }
 
     var body: some View {
@@ -313,9 +451,9 @@ private struct AboutCard: View {
     @State private var confirmReset = false
 
     var body: some View {
-        Card {
-            HStack(spacing: Theme.space("m")) {
-                Button("About CouchSubs") { model.showAbout = true }.buttonStyle(.secondary)
+        VStack(spacing: Theme.space("gap")) {
+            NinoCredits()
+            HStack {
                 Spacer()
                 Button("Set up again…") { confirmReset = true }.buttonStyle(.danger)
             }
@@ -428,7 +566,7 @@ private struct AndroidDisplayModePicker: View {
             Text("Inside the app").tag(TVDisplayMode.inApp)
             Text("Overlay (for a black screen)").tag(TVDisplayMode.overlay)
         }
-        HintText(text: "If the PS5 picture stays black inside the CouchSubs TV app, choose Overlay: the TV shows the PS5 on its own HDMI input and the subtitles appear on top. If the picture never arrives, the TV app switches to Overlay by itself.")
+        HintText(text: "If the PS5 picture stays black inside the Nino TV app, choose Overlay: the TV shows the PS5 on its own HDMI input and the subtitles appear on top. If the picture never arrives, the TV app switches to Overlay by itself.")
     }
 }
 
@@ -525,11 +663,13 @@ struct TranslationCard: View {
 /// Çeviri motoru seçimi: altı karo (iki sıra), seçili olan sarı çerçeveli ve parlak.
 private struct EngineTiles: View {
     @Binding var engine: TranslationEngine
+    static let order: [TranslationEngine] = [.gemini] + TranslationEngine.allCases.filter { $0 != .gemini }
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Theme.space("m"), alignment: .top), count: 3)
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: Theme.space("m")) {
-            ForEach(TranslationEngine.allCases, id: \.self) { option in
+            // Nino: önerilen Gemini başta (en iyi çeviri, ücretsiz anahtar, kurması kolay).
+            ForEach(Self.order, id: \.self) { option in
                 EngineTile(option: option, selected: option == engine) { engine = option }
             }
         }
@@ -544,7 +684,18 @@ private struct EngineTile: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: Theme.space("hair")) {
-                Text(verbatim: name).font(.csHeadline).foregroundStyle(Color.csText)
+                HStack(spacing: Theme.space("s")) {
+                    Text(verbatim: name).font(.csHeadline).foregroundStyle(Color.csText)
+                    Spacer(minLength: 0)
+                    if option == .gemini {
+                        Text("Recommended")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Capsule().fill(LinearGradient(colors: [Color.csAccentHi, Color(red: 0.0, green: 0.19, blue: 0.52)],
+                                                                      startPoint: .top, endPoint: .bottom)))
+                    }
+                }
                 Text(caption).font(.csCaption).foregroundStyle(Color.csSecondary).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
@@ -563,7 +714,8 @@ private struct EngineTile: View {
     private var caption: LocalizedStringKey {
         switch option {
         case .free: "On this computer, offline"
-        case .deepL, .gemini: "With a free key"
+        case .gemini: "Free key · best translation"
+        case .deepL: "With a free key"
         case .openAI, .claude: "With your own key"
         case .local: "Ollama or LM Studio, no quota"
         }
@@ -838,5 +990,244 @@ private struct CustomAreaSliders: View {
             }
         }
         Button("Reset area") { settings.selectAreaPreset(.bottom) }.buttonStyle(.secondary)
+    }
+}
+
+/// Temanın görünen adı ve kısa tarifi.
+extension SubtitleTheme {
+    var title: LocalizedStringKey {
+        switch self {
+        case .classic: "Classic"
+        case .cinema: "Cinema"
+        case .minimal: "Minimal"
+        case .glass: "Nino Glass"
+        case .contrast: "High Contrast"
+        case .outline: "Outline"
+        }
+    }
+
+    var subtitle: LocalizedStringKey {
+        switch self {
+        case .classic: "Translucent box"
+        case .cinema: "Yellow, like a film"
+        case .minimal: "Barely there"
+        case .glass: "Frosted glass, blue edge"
+        case .contrast: "Easiest to read"
+        case .outline: "Like in-game text"
+        }
+    }
+}
+
+/// Bir altyazı satırını seçili temayla çizer (önizlemelerde ve tema kartlarında).
+struct ThemedSubtitle: View {
+    let text: String
+    let style: SubtitleStyle
+    let fontSize: CGFloat
+    var maxLines: Int? = 2
+
+    private var color: Color { style.textColor == .yellow ? Color(red: 1.0, green: 0.88, blue: 0.21) : .white }
+
+    var body: some View {
+        let label = Text(verbatim: text)
+            .font(.system(size: fontSize, weight: weight))
+            .foregroundStyle(color)
+            .lineLimit(maxLines)
+            .multilineTextAlignment(.center)
+        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
+        switch style.theme {
+        case .classic:
+            label.shadow(color: .black.opacity(0.8), radius: 1, y: 1)
+                .padding(.horizontal, fontSize * 0.5).padding(.vertical, fontSize * 0.2)
+                .background(shape.fill(Color.black.opacity(Double(style.background) / 100 * 0.85)))
+        case .cinema:
+            label.shadow(color: .black, radius: fontSize * 0.08, y: fontSize * 0.04)
+                .shadow(color: .black.opacity(0.9), radius: fontSize * 0.3)
+        case .minimal:
+            label.shadow(color: .black.opacity(0.9), radius: fontSize * 0.06, y: 1)
+                .shadow(color: .black.opacity(0.5), radius: fontSize * 0.25)
+        case .glass:
+            // Demo ekranındaki görünüm: koyu lacivert kutu, ince mavi kenar, hafif mavi ışık.
+            label.shadow(color: .black.opacity(0.6), radius: 1, y: 1)
+                .padding(.horizontal, fontSize * 0.6).padding(.vertical, fontSize * 0.25)
+                .background(shape.fill(Color(red: 0.024, green: 0.047, blue: 0.118).opacity(0.86)))
+                .overlay(shape.strokeBorder(Color(red: 0.18, green: 0.55, blue: 1.0).opacity(0.45), lineWidth: max(1, fontSize * 0.045)))
+                .shadow(color: Color(red: 0.18, green: 0.55, blue: 1.0).opacity(0.25), radius: fontSize * 0.4)
+        case .contrast:
+            label.padding(.horizontal, fontSize * 0.45).padding(.vertical, fontSize * 0.18)
+                .background(RoundedRectangle(cornerRadius: fontSize * 0.12, style: .continuous).fill(Color.black))
+        case .outline:
+            ZStack {
+                ForEach(0..<8, id: \.self) { i in
+                    let a = Double(i) * .pi / 4
+                    label.foregroundStyle(.black)
+                        .offset(x: cos(a) * max(1, fontSize * 0.07), y: sin(a) * max(1, fontSize * 0.07))
+                }
+                label
+            }
+            .shadow(color: .black.opacity(0.6), radius: fontSize * 0.15)
+        }
+    }
+
+    private var weight: Font.Weight {
+        switch style.theme {
+        case .minimal: .medium
+        case .contrast, .outline, .cinema: .bold
+        default: style.bold ? .bold : .semibold
+        }
+    }
+
+    private var corner: CGFloat { style.theme == .glass ? fontSize * 0.45 : fontSize * 0.3 }
+}
+
+/// Oyun sahnesi gibi koyu bir zemin (önizlemelerde).
+struct PreviewScene: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            ZStack {
+                LinearGradient(colors: [Color(red: 0.10, green: 0.14, blue: 0.28), Color(red: 0.24, green: 0.14, blue: 0.22),
+                                        Color(red: 0.06, green: 0.08, blue: 0.14)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Circle().fill(Color.orange.opacity(0.45)).frame(width: w * 0.4).blur(radius: w * 0.08).offset(x: w * 0.25, y: -w * 0.1)
+                Circle().fill(Color(red: 0.0, green: 0.44, blue: 0.82).opacity(0.4)).frame(width: w * 0.45).blur(radius: w * 0.1).offset(x: -w * 0.3, y: -w * 0.02)
+            }
+        }
+    }
+}
+
+/// Tema seçici: 3×2 kart; her kartta temanın küçük önizlemesi, adı ve tek satırlık tarifi.
+struct SubtitleThemePicker: View {
+    @EnvironmentObject private var model: AppModel
+    var columns = 3
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space("m")), count: columns), spacing: Theme.space("m")) {
+            ForEach(SubtitleTheme.allCases, id: \.self) { theme in
+                ThemeCard(theme: theme, selected: model.settings.style.theme == theme) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        model.settings.style = theme.applied(to: model.settings.style)
+                    }
+                    model.sendTestSubtitle()
+                }
+            }
+        }
+    }
+}
+
+private struct ThemeCard: View {
+    let theme: SubtitleTheme
+    let selected: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: Theme.space("s")) {
+                ZStack {
+                    PreviewScene()
+                    ThemedSubtitle(text: "Kim var orada?", style: theme.applied(to: SubtitleStyle()), fontSize: 11)
+                        .padding(.top, 26)
+                }
+                .aspectRatio(16 / 9, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(alignment: .topTrailing) {
+                    if selected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(.white, Color.csAccent)
+                            .padding(6)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(theme.title).font(.csCallout.weight(.semibold)).foregroundStyle(Color.csText).lineLimit(1)
+                    Text(theme.subtitle).font(.system(size: 11)).foregroundStyle(Color.csSecondary).lineLimit(1)
+                }
+                .padding(.horizontal, 2)
+            }
+            .padding(Theme.space("s"))
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(selected ? Color.csAccentSoft : Color.clear))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(selected ? Color.csAccent : Color.ninoGlassEdge, lineWidth: selected ? 2 : 1))
+            .scaleEffect(hovering ? 1.03 : 1)
+            .shadow(color: selected ? Color.csAccent.opacity(0.25) : .clear, radius: 10, y: 4)
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { h in withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { hovering = h } }
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// Canlı önizleme: oyun sahnesi gibi koyu bir ekranda, seçilen boyut, arka plan, kalınlık ve renkle örnek altyazı.
+struct SubtitleStylePreview: View {
+    let style: SubtitleStyle
+    var size = CGSize(width: 452, height: 254)
+    /// Çeviri sürerken gerçek satır (Türkçe, İngilizce); nil iken demo cümleleri akar.
+    var live: (tr: String, en: String)? = nil
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var index = 0
+    @State private var showEnglish = false
+    @State private var showTurkish = false
+
+    /// TV demosundaki gibi: önce oyunun İngilizce satırı, ardından üstüne Nino'nun Türkçesi.
+    private static let lines: [(en: String, tr: String)] = [
+        ("This city needs someone to watch over it.", "Bu şehrin onu kollayacak birine ihtiyacı var."),
+        ("They're coming. Stay out of sight.", "Geliyorlar. Gözden uzak dur."),
+        ("Who's there?", "Kim var orada?"),
+        ("The rain hides everything.", "Yağmur her şeyi saklıyor."),
+        ("Get to the rooftop. Now!", "Çatıya çık. Hemen!"),
+        ("This isn't over.", "Bu iş daha bitmedi."),
+    ]
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let fontSize = max(CGFloat(style.autoSize ? 38 : style.fontSize) / 1920 * w * 1.6, 10)
+            let line = live ?? Self.lines[index % Self.lines.count]
+            let showTR = live.map { !$0.tr.isEmpty } ?? showTurkish
+            let showEN = live == nil && showEnglish && !showTurkish
+            let bottom = style.placement == .fixed
+                ? max(geo.size.height * CGFloat(style.bottomPercent) / 100, 10) : geo.size.height * 0.08
+            ZStack(alignment: .bottom) {
+                PreviewScene()
+                // Oyunun kendi İngilizce altyazısı
+                Text(verbatim: line.en)
+                    .font(.system(size: fontSize * 0.92, weight: .medium))
+                    .foregroundStyle(Color(white: 0.95))
+                    .shadow(color: .black, radius: 2, y: 1)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, bottom)
+                    .opacity(showEN ? 1 : 0)
+                // Nino'nun Türkçesi, seçili temayla
+                if showTR {
+                    ThemedSubtitle(text: line.tr, style: style, fontSize: fontSize)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, bottom)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottom)))
+                }
+            }
+            .animation(.easeOut(duration: 0.3), value: showEnglish)
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: showTurkish)
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: style)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.ninoGlassEdge))
+        }
+        .frame(width: size.width, height: size.height)
+        .accessibilityHidden(true)
+        .task {
+            if reduceMotion { showTurkish = true; return }
+            while !Task.isCancelled {
+                showEnglish = true
+                try? await Task.sleep(for: .milliseconds(900))
+                showTurkish = true
+                try? await Task.sleep(for: .milliseconds(2600))
+                showTurkish = false
+                showEnglish = false
+                try? await Task.sleep(for: .milliseconds(500))
+                index += 1
+            }
+        }
     }
 }

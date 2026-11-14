@@ -14,3 +14,6 @@ couchsubs-ios/Config/GoogleService-Info.plist
 
 # Claude Code kişisel ayarları
 .claude/settings.local.json
+
+# Kişisel geliştirme notları (yayımlanmaz)
+CLAUDE.md

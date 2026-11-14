@@ -21,6 +21,28 @@ public enum SubtitleTextColor: String, Codable, CaseIterable, Sendable {
     case yellow
 }
 
+/// Altyazı teması (Nino): hazır görünümler. Seçilince renk, kalınlık ve zemin ayarlarını da ayarlar; TV ve bilgisayar
+/// ekranı temaya özgü çizimi (cam kutu, kontur, gölge) `theme` alanından okur.
+public enum SubtitleTheme: String, Codable, CaseIterable, Sendable {
+    case classic, cinema, minimal, glass, contrast, outline
+
+    /// Temanın renk, kalınlık ve zemin değerleri; boyut ve yer kullanıcıda kalır.
+    public func applied(to style: SubtitleStyle) -> SubtitleStyle {
+        var s = style
+        s.theme = self
+        switch self {
+        // Nino: Klasik tam opak (kullanıcı isteği: arkadaki İngilizce hiç görünmesin).
+        case .classic: s.textColor = .white; s.bold = false; s.background = 100
+        case .cinema: s.textColor = .yellow; s.bold = true; s.background = 0
+        case .minimal: s.textColor = .white; s.bold = false; s.background = 0
+        case .glass: s.textColor = .white; s.bold = false; s.background = 62
+        case .contrast: s.textColor = .white; s.bold = true; s.background = 100
+        case .outline: s.textColor = .white; s.bold = true; s.background = 0
+        }
+        return s
+    }
+}
+
 /// Android TV'de PS5 görüntüsünün nasıl gösterildiği.
 public enum TVDisplayMode: String, Codable, CaseIterable, Sendable {
     /// HDMI CouchSubs'ın içinde; görüntü hiç gelmezse TV uygulaması kendiliğinden katmana geçer.
@@ -42,9 +64,15 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
     public var textColor: SubtitleTextColor
     /// Yalnız Android TV uygulaması kullanır; diğer TV'ler ve OBS katmanı alanı tanımaz.
     public var displayMode: TVDisplayMode
+    /// Nino: altyazı teması.
+    public var theme: SubtitleTheme
+    /// Nino: yazı boyu oyunun İngilizce altyazısının yüksekliğine göre her satırda kendiliğinden ayarlanır.
+    public var autoSize: Bool
 
-    public init(fontSize: Int = 46, bottomPercent: Int = 7, placement: SubtitlePlacement = .cover, background: Int = 72, bold: Bool = false,
-                textColor: SubtitleTextColor = .white, displayMode: TVDisplayMode = .inApp) {
+    public init(fontSize: Int = 46, bottomPercent: Int = 7, placement: SubtitlePlacement = .cover, background: Int = 100, bold: Bool = false,
+                textColor: SubtitleTextColor = .white, displayMode: TVDisplayMode = .inApp, theme: SubtitleTheme = .classic, autoSize: Bool = true) {
+        self.theme = theme
+        self.autoSize = autoSize
         self.fontSize = fontSize
         self.bottomPercent = bottomPercent
         self.placement = placement
@@ -54,7 +82,7 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
         self.displayMode = displayMode
     }
 
-    private enum CodingKeys: String, CodingKey { case fontSize, bottomPercent, placement, background, bold, textColor, displayMode }
+    private enum CodingKeys: String, CodingKey { case fontSize, bottomPercent, placement, background, bold, textColor, displayMode, theme, autoSize }
 
     /// Eski sürümün kaydettiği ayarlarda yeni alanlar yoktur; eksikler varsayılanla dolar.
     public init(from decoder: Decoder) throws {
@@ -67,13 +95,15 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
         bold = try values.decodeIfPresent(Bool.self, forKey: .bold) ?? defaults.bold
         textColor = (try? values.decodeIfPresent(SubtitleTextColor.self, forKey: .textColor)) ?? defaults.textColor
         displayMode = (try? values.decodeIfPresent(TVDisplayMode.self, forKey: .displayMode)) ?? defaults.displayMode
+        theme = (try? values.decodeIfPresent(SubtitleTheme.self, forKey: .theme)) ?? defaults.theme
+        autoSize = (try? values.decodeIfPresent(Bool.self, forKey: .autoSize)) ?? defaults.autoSize
     }
 
     /// TV'ye giden `style` olayının gövdesi.
     var json: [String: Any] {
         ["fontSize": fontSize, "bottomPercent": bottomPercent, "placement": placement.rawValue,
          "background": max(0, min(100, background)), "bold": bold, "textColor": textColor.rawValue,
-         "displayMode": displayMode.rawValue]
+         "displayMode": displayMode.rawValue, "theme": theme.rawValue, "autoSize": autoSize]
     }
 }
 

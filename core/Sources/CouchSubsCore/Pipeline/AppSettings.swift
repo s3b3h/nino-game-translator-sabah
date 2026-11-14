@@ -111,9 +111,12 @@ public struct UserSettings: Codable, Equatable {
     /// Oyun paketlerindeki hazır Türkçe çeviriler kullanılır (yalnız İngilizce→Türkçe).
     public var gamePacks = true
     /// Pakette bulunmayan İngilizce satırlar ortak havuza gönderilir (anonim; bkz. `LinePool`).
-    public var sharePool = LinePool.enabledByDefault
+    /// Nino: ortak havuz CouchSubs'ın sunucusuna gider; Nino'da varsayılan kapalı.
+    public var sharePool = false
+    /// Nino: sol üstteki ipucu kutusu da çevrilir (alt kısımdaki menü ve tuş yazıları çevrilmez; altyazıya odak).
+    public var translateCorners = true
     /// Koyu, açık ya da sistemle aynı. Eski kayıtlarda yoktur; onlar da koyu açılır.
-    public var appearance = AppAppearance.dark
+    public var appearance = AppAppearance.light
 
     public init() {}
 
@@ -139,6 +142,7 @@ public struct UserSettings: Codable, Equatable {
         overlayClickThrough = try values.decodeIfPresent(Bool.self, forKey: .overlayClickThrough) ?? defaults.overlayClickThrough
         gamePacks = try values.decodeIfPresent(Bool.self, forKey: .gamePacks) ?? defaults.gamePacks
         sharePool = try values.decodeIfPresent(Bool.self, forKey: .sharePool) ?? defaults.sharePool
+        translateCorners = (try? values.decodeIfPresent(Bool.self, forKey: .translateCorners)) ?? defaults.translateCorners
         appearance = (try? values.decodeIfPresent(AppAppearance.self, forKey: .appearance)) ?? defaults.appearance
     }
 

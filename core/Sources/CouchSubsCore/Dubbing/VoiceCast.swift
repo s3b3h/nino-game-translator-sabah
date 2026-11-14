@@ -20,8 +20,9 @@ public struct VoiceCast: Codable, Equatable, Sendable {
     /// Adın büyük harfli biçimi → ses. Ayarlardan değiştirilebilir.
     public private(set) var assignments: [String: DubbingVoice] = [:]
     public var narrator: DubbingVoice = .male1
-    /// Tireli konuşmada sıradaki kişinin sesi.
-    public var partner: DubbingVoice = .female1
+    /// Tireli konuşmada sıradaki kişinin sesi. Nino: varsayılan ikinci bir erkek sesi; konuşanın adı bilinmezken
+    /// kadın sesine geçmek erkeklerin konuştuğu sahnelerde (RDR2) çok yanlış duruyordu.
+    public var partner: DubbingVoice = .male2
     private var lastWasPartner = false
 
     private enum CodingKeys: String, CodingKey { case assignments, narrator, partner }
@@ -45,6 +46,20 @@ public struct VoiceCast: Codable, Equatable, Sendable {
     }
 
     public mutating func assign(_ voice: DubbingVoice, to name: String) { assignments[Self.key(name)] = voice }
+
+    /// Nino: sesinden tanınan konuşmacının sesi (bu oturum). Her kişiye kendi cinsiyetinden, en az kullanılan ses verilir;
+    /// aynı kişi oturum boyunca aynı sesle konuşur.
+    public mutating func voice(forSpeaker id: Int, gender: DubbingVoice.Gender) -> DubbingVoice {
+        if let voice = heard[id] { return voice }
+        var uses: [DubbingVoice: Int] = [:]
+        for voice in heard.values { uses[voice, default: 0] += 1 }
+        let voice = DubbingVoice.voices(gender).min { (uses[$0] ?? 0, $0.order) < (uses[$1] ?? 0, $1.order) }!
+        heard[id] = voice
+        return voice
+    }
+
+    /// Sesinden tanınan kişiler → ses (kaydedilmez; konuşmacı numaraları oturuma özgüdür).
+    private var heard: [Int: DubbingVoice] = [:]
 
     /// Yeni karakter için en az kullanılan ses; cinsiyet bilinmiyorsa iki cinsiyetten de seçilir.
     private func pick(for gender: DubbingVoice.Gender?) -> DubbingVoice {

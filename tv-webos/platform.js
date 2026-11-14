@@ -44,6 +44,7 @@
 
     // onStatus: 'loading' | 'ready' | 'playing' | 'inputError' | 'sourceError'
     showHdmi: function (port, host, onStatus) {
+      port = port || 1; // Nino: 0 = bilinmiyor; bu TV'lerde "son giriş" yok, HDMI 1 açılır.
       host.innerHTML = '';
 
       var video = document.createElement('video');

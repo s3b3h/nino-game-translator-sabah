@@ -2,40 +2,72 @@
 
 import SwiftUI
 
-/// Kurulum sihirbazı: solda adım listesi, sağda adımın karosu, altında Geri / Devam.
+/// Kurulum (Nino): iPhone'un ilk açılışı gibi ortada tek bir cam kart, altta ilerleme noktaları ve tek büyük düğme.
 struct OnboardingView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        HStack(alignment: .top, spacing: Theme.space("gap")) {
-            StepSidebar()
-            VStack(spacing: Theme.space("gap")) {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        Group {
-                            switch model.step {
-                            case .welcome: WelcomeStep()
-                            case .secondAccount: SecondAccountStep()
-                            case .psnLogin: PSNLoginStep()
-                            case .console: ConsoleStep()
-                            case .tv: TVStep()
-                            case .test: TestStep()
-                            case .betterTranslation, .done: BetterTranslationStep()
-                            }
-                        }
-                        .padding(Theme.space("xl"))
-                    }
-                    // Adımlar kendi iletilerini görünür kılabilsin (ör. PS5 eşleşti iletisi kaydırılmış alanda kalmasın).
-                    .environment(\.scrollOnboardingTo, { id in
-                        withAnimation { proxy.scrollTo(id, anchor: .bottom) }
-                    })
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .tile(padding: 0)
-                StepButtons()
+        VStack(spacing: 0) {
+            HStack(spacing: Theme.space("s")) {
+                LogoView(size: 26)
+                Text(verbatim: "Nino").font(.system(size: 16, weight: .semibold, design: .rounded))
+                Spacer()
             }
+            .padding(.horizontal, Theme.space("xl"))
+            .padding(.top, Theme.space("m"))
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    Group {
+                        switch model.step {
+                        case .welcome: WelcomeStep()
+                        case .secondAccount: SecondAccountStep()
+                        case .psnLogin: PSNLoginStep()
+                        case .console: ConsoleStep()
+                        case .tv: TVStep()
+                        case .test: TestStep()
+                        case .betterTranslation, .done: BetterTranslationStep()
+                        }
+                    }
+                    .id(model.step)
+                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                            removal: .move(edge: .leading).combined(with: .opacity)))
+                    .environment(\.onboardingSymbol, Self.symbol(model.step))
+                    .padding(.horizontal, Theme.space("xxl"))
+                    .padding(.vertical, Theme.space("xl"))
+                }
+                .scrollIndicators(.never)
+                .environment(\.scrollOnboardingTo, { id in
+                    withAnimation { proxy.scrollTo(id, anchor: .bottom) }
+                })
+            }
+            .frame(maxWidth: 700, maxHeight: .infinity)
+            .clipped()
+            .tile(padding: 0)
+            .animation(.spring(response: 0.45, dampingFraction: 0.86), value: model.step)
+            .padding(.horizontal, Theme.space("xxl"))
+            .padding(.top, Theme.space("m"))
+
+            StepButtons()
+                .frame(maxWidth: 700)
+                .padding(.horizontal, Theme.space("xxl"))
+                .padding(.vertical, Theme.space("xl"))
         }
-        .padding(Theme.space("screen"))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+extension OnboardingView {
+    static func symbol(_ step: AppModel.Step) -> String {
+        switch step {
+        case .welcome: "nino.logo"
+        case .secondAccount: "person.crop.circle.badge.plus"
+        case .psnLogin: "key.fill"
+        case .console: "gamecontroller.fill"
+        case .tv: "tv.fill"
+        case .test: "captions.bubble.fill"
+        case .betterTranslation, .done: "wand.and.stars"
+        }
     }
 }
 
@@ -44,27 +76,53 @@ extension EnvironmentValues {
     @Entry var scrollOnboardingTo: (String) -> Void = { _ in }
 }
 
-/// Geri ve Devam (ya da isteğe bağlı adımda "Şimdilik geç").
+/// Geri (solda), ilerleme noktaları (ortada), Devam ya da "Şimdilik geç" (sağda).
 private struct StepButtons: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        HStack(spacing: Theme.space("m")) {
-            if model.step != .welcome {
-                Button("Back") { model.back() }.buttonStyle(CSButtonStyle(kind: .secondary, height: "buttonLarge"))
-            }
-            Spacer()
-            if model.step == .betterTranslation && !model.usesFreeGemini {
-                // İsteğe bağlı adım: anahtar yoksa geçilir (birincil düğme adımdaki "Ücretsiz anahtar al").
-                Button("Skip for now") { model.advance() }
-                    .buttonStyle(CSButtonStyle(kind: .secondary, height: "buttonLarge"))
-            } else if model.step != .test {
-                Button("Continue") { model.advance() }
+        ZStack {
+            PageDots(count: AppModel.Step.allCases.count - 1, current: model.step.rawValue)
+            HStack(spacing: Theme.space("m")) {
+                if model.step != .welcome {
+                    Button { withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { model.back() } } label: {
+                        Label("Back", systemImage: "chevron.left")
+                    }
+                    .buttonStyle(CSButtonStyle(kind: .ghost, height: "buttonLarge"))
+                }
+                Spacer()
+                if model.step == .betterTranslation && !model.usesFreeGemini {
+                    Button("Skip for now") { withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { model.advance() } }
+                        .buttonStyle(CSButtonStyle(kind: .secondary, height: "buttonLarge"))
+                } else if model.step != .test {
+                    Button { withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { model.advance() } } label: {
+                        Text("Continue").frame(minWidth: 120)
+                    }
                     .buttonStyle(CSButtonStyle(kind: .primary, height: "buttonLarge"))
                     .keyboardShortcut(.defaultAction)
                     .disabled(!model.canAdvance)
+                }
             }
         }
+    }
+}
+
+/// iPhone'daki sayfa noktaları: geçerli adım uzun mavi kapsül, bitenler mavi, kalanlar soluk.
+private struct PageDots: View {
+    let count: Int
+    let current: Int
+
+    var body: some View {
+        HStack(spacing: 7) {
+            ForEach(0..<count, id: \.self) { i in
+                Capsule()
+                    .fill(i <= current ? Color.csAccent : Color.csSecondary.opacity(0.3))
+                    .frame(width: i == current ? 24 : 7, height: 7)
+            }
+        }
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: current)
+        .accessibilityElement()
+        .accessibilityLabel(Text(String(format: String(localized: "Step %lld of %lld"), current + 1, count)))
     }
 }
 
@@ -120,7 +178,7 @@ private struct StepRow: View {
         }
         .padding(.horizontal, Theme.space("s"))
         .padding(.vertical, Theme.space("s"))
-        .background(isCurrent ? Color.csSurface2 : Color.clear, in: RoundedRectangle(cornerRadius: Theme.radius("control"), style: .continuous))
+        .background(isCurrent ? Color.csAccentSoft : Color.clear, in: RoundedRectangle(cornerRadius: Theme.radius("control"), style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isCurrent ? .isSelected : [])
     }
@@ -139,14 +197,15 @@ private struct StepRow: View {
                 .font(.csCaption.monospacedDigit().weight(.semibold))
                 .foregroundStyle(isCurrent ? Color.csOnAccent : Color.csSecondary)
                 .frame(width: size, height: size)
-                .background(Circle().fill(isCurrent ? Color.csAccent : Color.csSurface2))
+                .background(Circle().fill(isCurrent ? AnyShapeStyle(LinearGradient(colors: [Color.csAccentHi, Color(red: 0.0, green: 0.19, blue: 0.52)], startPoint: .topLeading, endPoint: .bottomTrailing)) : AnyShapeStyle(Color.csSurface2)))
+                .shadow(color: isCurrent ? Color.csAccent.opacity(0.5) : .clear, radius: 6)
         }
     }
 
     /// Adımın kendi başlığı (adım ekranındaki StepLayout başlığıyla aynı).
     static func title(_ step: AppModel.Step) -> LocalizedStringKey {
         switch step {
-        case .welcome: "Welcome to CouchSubs"
+        case .welcome: "Welcome to Nino"
         case .secondAccount: "A second PSN account"
         case .psnLogin: "Sign in with the second account"
         case .console: "Connect your PS5"

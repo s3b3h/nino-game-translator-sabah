@@ -1,6 +1,6 @@
 name: CouchSubs
 options:
-  bundleIdPrefix: com.couchsubs
+  bundleIdPrefix: com.ninotranslator
   # En eski desteklenen macOS; scripts/build-chiaki-macos.sh (MIN) ve package-mac.sh denetimiyle aynı.
   deploymentTarget:
     macOS: "13.0"
@@ -62,17 +62,16 @@ targets:
     info:
       path: CouchSubs/Info.plist
       properties:
-        CFBundleDisplayName: CouchSubs
+        CFBundleDisplayName: Nino
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.utilities
-        NSLocalNetworkUsageDescription: CouchSubs finds your PS5 and TV on the local network to send translated subtitles.
-        NSHumanReadableCopyright: AGPL-3.0. Uses chiaki-ng (AGPL-3.0).
+        NSLocalNetworkUsageDescription: Nino finds your PS5 and TV on the local network to send translated subtitles.
+        NSHumanReadableCopyright: AGPL-3.0. Based on CouchSubs by Sinan Yorulmaz. Uses chiaki-ng (AGPL-3.0).
         # Sparkle: güncellemeler en son GitHub sürümündeki appcast.xml'den okunur, bu anahtarla imzalanmış olmalı
         # (özel anahtar depoda değil; scripts/package-mac.sh imzalar).
-        SUFeedURL: https://github.com/yorulmazsinan/couchsubs/releases/latest/download/appcast.xml
         SUPublicEDKey: GRsdOlnDQSm2yPnUTF/VoD/0202u2J0GPmJ8CCzVdfc=
-        SUEnableAutomaticChecks: true
+        SUEnableAutomaticChecks: false
         # Uygulama uzun süre açık kalınca da yeni sürüm görünsün: saatte bir.
         SUScheduledCheckInterval: 3600
     entitlements:
@@ -81,7 +80,8 @@ targets:
         com.apple.security.app-sandbox: false
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.couchsubs.mac
+        PRODUCT_BUNDLE_IDENTIFIER: com.ninotranslator.mac
+        PRODUCT_NAME: Nino
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
   # Mac App Store sürümü: aynı kaynaklar, iPhone/iPad uygulamasıyla aynı kimlik (com.couchsubs.ios, tek App Store
   # kaydı, ortak satın alma), App Sandbox açık, Sparkle yok (güncellemeyi App Store yapar). Kodda APP_STORE bayrağıyla

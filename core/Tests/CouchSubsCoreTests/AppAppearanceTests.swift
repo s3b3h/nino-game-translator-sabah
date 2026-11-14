@@ -7,20 +7,20 @@ import XCTest
 /// Ayarlardaki görünüm: varsayılan koyu, kaydedilip geri okunur (Windows ile aynı testler).
 final class AppAppearanceTests: XCTestCase {
     func testNewSettingsAreDark() {
-        XCTAssertEqual(UserSettings().appearance, .dark)
+        XCTAssertEqual(UserSettings().appearance, .light)
     }
 
     func testExistingSettingsOpenDark() throws {
         let old = try JSONDecoder().decode(UserSettings.self,
                                            from: Data(#"{"sourceLanguage":"en","style":{"fontSize":58},"gamePacks":false}"#.utf8))
-        XCTAssertEqual(old.appearance, .dark)
+        XCTAssertEqual(old.appearance, .light)
         XCTAssertEqual(old.style.fontSize, 58)
         XCTAssertFalse(old.gamePacks)
     }
 
     func testUnknownAppearanceOpensDarkAndKeepsOtherSettings() throws {
         let saved = try JSONDecoder().decode(UserSettings.self, from: Data(#"{"appearance":"sepia","targetLanguage":"de"}"#.utf8))
-        XCTAssertEqual(saved.appearance, .dark)
+        XCTAssertEqual(saved.appearance, .light)
         XCTAssertEqual(saved.targetLanguage, "de")
     }
 

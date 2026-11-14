@@ -71,7 +71,7 @@ class PhoneSubtitleActivity : ComponentActivity() {
                         if (previous != null && status.current.isNotEmpty() && previous != status.current) Text(previous,
                             style = style.copy(fontSize = style.fontSize * scale * 0.8f, lineHeight = style.lineHeight * scale * 0.8f),
                             color = color.copy(alpha = 0.4f), textAlign = TextAlign.Center)
-                        Text(status.current.ifEmpty { if (status.running) "" else "CouchSubs" },
+                        Text(status.current.ifEmpty { if (status.running) "" else "Nino" },
                             style = style.copy(fontSize = style.fontSize * scale, lineHeight = style.lineHeight * scale),
                             color = color, textAlign = TextAlign.Center)
                     }

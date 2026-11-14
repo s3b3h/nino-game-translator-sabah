@@ -171,7 +171,7 @@ final class ChiakiSessionBox {
     }
 
     /// `chiaki_session_init`; başarısızsa kutu kullanılmamış sayılır (kapatılacak iş parçacığı yok).
-    func initialize(console: RegisteredConsole, accountId: Data) -> ChiakiErrorCode {
+    func initialize(console: RegisteredConsole, accountId: Data, audio: Bool = false) -> ChiakiErrorCode {
         var info = ChiakiConnectInfo()
         info.ps5 = true
         copy(console.registKey, into: &info.regist_key)
@@ -181,7 +181,8 @@ final class ChiakiSessionBox {
         info.video_profile_auto_downgrade = true
         info.enable_keyboard = false
         info.enable_dualsense = false
-        info.audio_video_disabled = CHIAKI_AUDIO_DISABLED
+        // Nino: ses yalnız konuşanı tanımak için istenir (dublaj); yoksa libchiaki ses paketlerini atar.
+        info.audio_video_disabled = audio ? CHIAKI_NONE_DISABLED : CHIAKI_AUDIO_DISABLED
         info.auto_regist = false
         info.holepunch_session = nil
         info.rudp_sock = nil
@@ -223,9 +224,14 @@ final class ChiakiSessionBox {
 }
 
 /// PS5'e (ikinci hesapla) Remote Play bağlantısı kurar ve görüntüyü kare kare verir.
-/// Ses kapalıdır, kol girdisi gönderilmez. Bağlantı koparsa kendiliğinden yeniden bağlanır.
+/// Ses yalnız `wantsAudio` açıkken alınır (konuşanı tanımak için), kol girdisi gönderilmez. Bağlantı koparsa kendiliğinden yeniden bağlanır.
 public final class StreamSession: @unchecked Sendable {
     public var onFrame: ((CGImage) -> Void)?
+    /// Nino: PS5'in sesi, 16 kHz tek kanal örnekler (yalnız `wantsAudio` açıkken; bağlanmadan önce ayarlanır).
+    public var onAudio: (([Float]) -> Void)?
+    public var wantsAudio = false
+    private let audioQueue = DispatchQueue(label: "nino.stream-audio")
+    private var audioDecoder: OpusAudioDecoder?
     public var onState: ((SessionState) -> Void)?
     /// PS5 ağda yeni bir adreste bulununca (oturum kuyruğunda) çağrılır; yeni adres kaydedilmelidir.
     public var onConsoleMoved: ((RegisteredConsole) -> Void)?
@@ -369,7 +375,7 @@ public final class StreamSession: @unchecked Sendable {
         decodeQueue.async { [weak self] in self?.decoder = H264FrameDecoder() }
 
         let box = ChiakiSessionBox(generation: current, owner: self)
-        let error = box.initialize(console: console, accountId: accountId)
+        let error = box.initialize(console: console, accountId: accountId, audio: wantsAudio)
         guard error.isSuccess else {
             return scheduleReconnect(current, reason: .other(ChiakiError(code: error).description), initialized: false, box: box)
         }
@@ -385,6 +391,22 @@ public final class StreamSession: @unchecked Sendable {
             Unmanaged<ChiakiSessionBox>.fromOpaque(user).takeUnretainedValue().owner?.ingest(Data(bytes: buffer, count: size))
             return true
         }, user)
+
+        if wantsAudio {
+            var sink = ChiakiAudioSink()
+            sink.user = user
+            sink.header_cb = { header, user in
+                guard let header, let user else { return }
+                let h = header.pointee
+                Unmanaged<ChiakiSessionBox>.fromOpaque(user).takeUnretainedValue().owner?
+                    .audioHeader(channels: Int(h.channels), rate: Int(h.rate), frameSize: Int(h.frame_size))
+            }
+            sink.frame_cb = { buffer, size, user in
+                guard let buffer, let user, size > 0 else { return }
+                Unmanaged<ChiakiSessionBox>.fromOpaque(user).takeUnretainedValue().owner?.audioPacket(Data(bytes: buffer, count: size))
+            }
+            chiaki_session_set_audio_sink(box.pointer, &sink)
+        }
 
         let started = chiaki_session_start(box.pointer)
         guard started.isSuccess else {
@@ -448,6 +470,36 @@ public final class StreamSession: @unchecked Sendable {
 
     /// Her kare çözülür (sonraki kareler öncekilere dayanır); görüntü saniyede en çok 20 kez üretilir.
     /// Okuma meşgulken gelen kareler zaten atlanır; sık kare, altyazının erken ve eksiksiz yakalanmasını sağlar.
+    fileprivate func audioHeader(channels: Int, rate: Int, frameSize: Int) {
+        audioQueue.async { [weak self] in
+            self?.audioDecoder = OpusAudioDecoder(channels: channels, rate: rate, frameSize: frameSize)
+            RemotePlayLog.write("ses: \(channels) kanal, \(rate) Hz, \(frameSize) örnek/paket\(self?.audioDecoder == nil ? " (çözücü açılamadı)" : "")")
+        }
+    }
+
+    fileprivate func audioPacket(_ packet: Data) {
+        audioQueue.async { [weak self] in
+            guard let self, let decoder = self.audioDecoder else { return }
+            let samples = decoder.decode(packet)
+            // Nino: 10 sn'de bir ses özeti (gelen paket, çözülen örnek, ortalama güç) günlüğe yazılır.
+            self.audioPackets += 1
+            self.audioSamples += samples.count
+            for x in samples { self.audioEnergy += Double(x * x) }
+            let now = Date()
+            if now.timeIntervalSince(self.audioReported) > 10 {
+                let rms = self.audioSamples > 0 ? sqrt(self.audioEnergy / Double(self.audioSamples)) : 0
+                RemotePlayLog.write(String(format: "ses: %d paket, %d örnek, güç %.1f dB", self.audioPackets, self.audioSamples,
+                                           20 * log10(max(rms, 1e-9))))
+                self.audioPackets = 0; self.audioSamples = 0; self.audioEnergy = 0
+                self.audioReported = now
+            }
+            if !samples.isEmpty { self.onAudio?(samples) }
+        }
+    }
+    private var audioPackets = 0, audioSamples = 0
+    private var audioEnergy = 0.0
+    private var audioReported = Date()
+
     fileprivate func ingest(_ sample: Data) {
         decodeQueue.async { [weak self] in
             guard let self else { return }

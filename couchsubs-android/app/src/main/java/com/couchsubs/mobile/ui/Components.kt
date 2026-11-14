@@ -82,8 +82,12 @@ fun Heading(title: String, body: String? = null, step: String? = null) {
 
 /** Kutusuz karo simgesi (18 dp, ikincil renk; oyun paketi simgesi mor). */
 @Composable
-fun TileIcon(icon: ImageVector, tint: Color = Tokens.Color.secondary) =
-    Icon(icon, null, tint = tint, modifier = Modifier.size(Tokens.Control.tileIcon))
+fun TileIcon(icon: ImageVector, tint: Color = Tokens.Color.accentText) =
+    // Nino: Mac'teki gibi açık mavi daire içinde mavi simge.
+    androidx.compose.foundation.layout.Box(
+        Modifier.size(28.dp).background(Tokens.Color.accentSoft, androidx.compose.foundation.shape.CircleShape),
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+    ) { Icon(icon, null, tint = if (tint == Tokens.Color.secondary) Tokens.Color.accentText else tint, modifier = Modifier.size(16.dp)) }
 
 /**
  * Durum karosu: üstte etiket satırı (kutusuz simge, caption ad, sağda isteğe bağlı durum), altında title değer ve

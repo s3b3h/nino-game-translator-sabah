@@ -43,7 +43,11 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.blur
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -63,29 +67,27 @@ import androidx.compose.ui.unit.sp
 object Tokens {
     /** design/tokens.json v3, koyu görünüm. Parıltı rengi yoktur. */
     object Color {
-        val bg = androidx.compose.ui.graphics.Color(0xFF141518)
-        val surface = androidx.compose.ui.graphics.Color(0xFF1C1E23)
-        val surface2 = androidx.compose.ui.graphics.Color(0xFF25282F)
-        /** Seçili segment gibi yükseltilmiş parça (surface2'nin bir basamak üstü). */
-        val raised = androidx.compose.ui.graphics.Color(0xFF30333A)
-        /** Karo çerçevesi (tokens.json tileBorder). */
-        val border = androidx.compose.ui.graphics.Color(0xFF2C2E32)
-        /** Alan çerçevesi ve ayraçlar (tokens.json border). */
-        val borderStrong = androidx.compose.ui.graphics.Color(0xFF30333A)
-        val text = androidx.compose.ui.graphics.Color(0xFFF3EEE4)
-        val secondary = androidx.compose.ui.graphics.Color(0xFFA9A59C)
-        /** Yalnız dolgu (birincil düğme, seçili şey, ilerleme); sarı yazı ve simge için [accentText]. */
-        val accent = androidx.compose.ui.graphics.Color(0xFFF5B83D)
-        val accentHi = androidx.compose.ui.graphics.Color(0xFFFFCF6B)
-        val accentText = androidx.compose.ui.graphics.Color(0xFFF5B83D)
-        val onAccent = androidx.compose.ui.graphics.Color(0xFF17181B)
-        /** Yalnız oyun paketleri: düz mor simge ve yazı; [proSoft] paket etiketinin zemini. */
-        val pro = androidx.compose.ui.graphics.Color(0xFFA78BFA)
-        val proSoft = androidx.compose.ui.graphics.Color(0xFF322F45)
-        val success = androidx.compose.ui.graphics.Color(0xFF62C990)
-        val warning = androidx.compose.ui.graphics.Color(0xFFF2A55A)
-        val danger = androidx.compose.ui.graphics.Color(0xFFF28B82)
-        val dangerSoft = androidx.compose.ui.graphics.Color(0xFF2F2325)
+        // Nino: açık, beyaz cam görünüm; PS mavisi vurgu, lacivert derinlik (design/tokens.json "Nino").
+        val bg = androidx.compose.ui.graphics.Color(0xFFEEF3FB)
+        val surface = androidx.compose.ui.graphics.Color(0xD9FFFFFF)
+        val surface2 = androidx.compose.ui.graphics.Color(0xFFE6EDF8)
+        val raised = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
+        val border = androidx.compose.ui.graphics.Color(0xBFFFFFFF)
+        val borderStrong = androidx.compose.ui.graphics.Color(0xFFD3DEEF)
+        val text = androidx.compose.ui.graphics.Color(0xFF0A1430)
+        val secondary = androidx.compose.ui.graphics.Color(0xFF55607A)
+        val accent = androidx.compose.ui.graphics.Color(0xFF0070D1)
+        val accentHi = androidx.compose.ui.graphics.Color(0xFF1A86E8)
+        val accentText = androidx.compose.ui.graphics.Color(0xFF0058A8)
+        val onAccent = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
+        val navy = androidx.compose.ui.graphics.Color(0xFF003085)
+        val accentSoft = androidx.compose.ui.graphics.Color(0xFFDDEBFA)
+        val pro = androidx.compose.ui.graphics.Color(0xFF00205B)
+        val proSoft = androidx.compose.ui.graphics.Color(0xFFE2E8F5)
+        val success = androidx.compose.ui.graphics.Color(0xFF1E6B45)
+        val warning = androidx.compose.ui.graphics.Color(0xFF9A4A08)
+        val danger = androidx.compose.ui.graphics.Color(0xFFB3261E)
+        val dangerSoft = androidx.compose.ui.graphics.Color(0xFFFBE4E2)
     }
 
     /** Telefon ölçüleri (TASARIM-MOBIL.md): kenar 20, karolar arası 12, karo içi 16. */
@@ -99,8 +101,8 @@ object Tokens {
 
     /** Tek köşe ölçeği: karo 16, denetim 12, karo içi kutu 8, etiket 6. */
     object Radius {
-        val tile = 16.dp
-        val control = 12.dp
+        val tile = 22.dp
+        val control = 16.dp
         val inner = 8.dp
         val tag = 6.dp
     }
@@ -133,7 +135,7 @@ object Tokens {
 fun CouchSubsTheme(content: @Composable () -> Unit) {
     val c = Tokens.Color
     MaterialTheme(
-        colorScheme = darkColorScheme(
+        colorScheme = lightColorScheme(
             primary = c.accent, onPrimary = c.onAccent, secondary = c.pro, onSecondary = c.onAccent,
             background = c.bg, onBackground = c.text, surface = c.surface, onSurface = c.text,
             surfaceVariant = c.surface2, onSurfaceVariant = c.secondary, outline = c.borderStrong,
@@ -153,11 +155,29 @@ fun CouchSubsTheme(content: @Composable () -> Unit) {
     )
 }
 
-/** Her ekranın zemini: düz `bg` (ışık, degrade ve parıltı yok). */
+/** Her ekranın zemini (Nino): beyazdan buz mavisine degrade ve camın arkasında iki yumuşak mavi ışık. */
 @Composable
 fun ScreenBackground(content: @Composable BoxScope.() -> Unit) {
-    Box(Modifier.fillMaxSize().background(Tokens.Color.bg), content = content)
+    Box(
+        Modifier.fillMaxSize().background(
+            Brush.linearGradient(listOf(androidx.compose.ui.graphics.Color(0xFFF7FAFF), androidx.compose.ui.graphics.Color(0xFFE3ECFA))),
+        ),
+    ) {
+        // Yumuşak ışıklar: radyal degrade (blur, kutunun kenarında kesik görünüyordu).
+        Canvas(Modifier.fillMaxSize()) {
+            drawCircle(Brush.radialGradient(listOf(Tokens.Color.accent.copy(alpha = 0.22f), androidx.compose.ui.graphics.Color.Transparent),
+                center = androidx.compose.ui.geometry.Offset(size.width * 0.1f, size.height * 0.08f), radius = size.width * 0.9f),
+                radius = size.width * 0.9f, center = androidx.compose.ui.geometry.Offset(size.width * 0.1f, size.height * 0.08f))
+            drawCircle(Brush.radialGradient(listOf(Tokens.Color.pro.copy(alpha = 0.16f), androidx.compose.ui.graphics.Color.Transparent),
+                center = androidx.compose.ui.geometry.Offset(size.width * 0.95f, size.height * 0.95f), radius = size.width * 1.0f),
+                radius = size.width * 1.0f, center = androidx.compose.ui.geometry.Offset(size.width * 0.95f, size.height * 0.95f))
+        }
+        content()
+    }
 }
+
+/** Mavi-lacivert degrade (birincil düğme, simge kutuları). */
+val NinoGradient: Brush get() = Brush.verticalGradient(listOf(Tokens.Color.accentHi, Tokens.Color.navy))
 
 enum class TileStyle { NORMAL, ACTIVE }
 
@@ -170,8 +190,9 @@ fun Tile(modifier: Modifier = Modifier, style: TileStyle = TileStyle.NORMAL, onC
     val pressed by interaction.collectIsPressedAsState()
     Column(
         modifier.scale(if (pressed) 0.97f else 1f)
+            .shadow(14.dp, shape, ambientColor = Tokens.Color.pro.copy(alpha = 0.10f), spotColor = Tokens.Color.pro.copy(alpha = 0.10f))
             .background(Tokens.Color.surface, shape)
-            .border(1.dp, border, shape)
+            .border(if (style == TileStyle.ACTIVE) 1.5.dp else 1.dp, border, shape)
             .let { if (onClick != null) it.clickable(interactionSource = interaction, indication = null, onClick = onClick) else it }
             .padding(Tokens.Space.tile),
         verticalArrangement = Arrangement.spacedBy(Tokens.Space.inline),
@@ -183,24 +204,26 @@ fun Tile(modifier: Modifier = Modifier, style: TileStyle = TileStyle.NORMAL, onC
 @Composable
 fun TileLabel(text: String, color: Color = Tokens.Color.secondary) = Text(text, style = Tokens.Type.caption, color = color)
 
-/** Birincil düğme: düz sarı, gölgesiz; basılıyken accentHi ve %97 ölçek, devre dışıyken %40 saydam. Ekranda bir tane. */
+/** Birincil düğme (Nino): PS mavisinden laciverte degrade, beyaz yazı, mavi gölge; basılıyken %97 ölçek. */
 @Composable
 fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    Button(
-        onClick, enabled = enabled, interactionSource = interaction, shape = RoundedCornerShape(Tokens.Radius.control), elevation = null,
-        colors = ButtonDefaults.buttonColors(containerColor = if (pressed) Tokens.Color.accentHi else Tokens.Color.accent,
-            contentColor = Tokens.Color.onAccent, disabledContainerColor = Tokens.Color.accent.copy(alpha = 0.4f),
-            disabledContentColor = Tokens.Color.onAccent.copy(alpha = 0.4f)),
-        modifier = modifier.fillMaxWidth().height(Tokens.Control.button).scale(if (pressed) 0.97f else 1f),
-    ) { Text(text, style = Tokens.Type.headline) }
+    val shape = RoundedCornerShape(Tokens.Radius.control)
+    Box(
+        modifier.fillMaxWidth().height(Tokens.Control.button).scale(if (pressed) 0.97f else 1f)
+            .let { if (enabled) it.shadow(16.dp, shape, ambientColor = Tokens.Color.accent, spotColor = Tokens.Color.accent) else it }
+            .background(if (enabled) NinoGradient else Brush.verticalGradient(listOf(Tokens.Color.surface2, Tokens.Color.surface2)), shape)
+            .border(1.dp, if (enabled) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.35f) else Tokens.Color.borderStrong, shape)
+            .clickable(enabled = enabled, interactionSource = interaction, indication = null, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Text(text, style = Tokens.Type.headline, color = if (enabled) Tokens.Color.onAccent else Tokens.Color.secondary) }
 }
 
 @Composable
 fun SecondaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     Button(onClick, enabled = enabled, shape = RoundedCornerShape(Tokens.Radius.control), border = BorderStroke(1.dp, Tokens.Color.borderStrong),
-        colors = ButtonDefaults.buttonColors(containerColor = Tokens.Color.surface2, contentColor = Tokens.Color.text), elevation = null,
+        colors = ButtonDefaults.buttonColors(containerColor = Tokens.Color.raised, contentColor = Tokens.Color.text), elevation = null,
         modifier = modifier.fillMaxWidth().height(Tokens.Control.button)) { Text(text, style = Tokens.Type.headline) }
 }
 
@@ -220,8 +243,8 @@ fun DestructiveButton(text: String, modifier: Modifier = Modifier, onClick: () -
 @Composable
 fun IconSquare(label: String, modifier: Modifier = Modifier, onClick: () -> Unit, content: @Composable () -> Unit) {
     Box(
-        modifier.size(Tokens.Control.icon).background(Tokens.Color.surface2, RoundedCornerShape(Tokens.Radius.control))
-            .border(1.dp, Tokens.Color.border, RoundedCornerShape(Tokens.Radius.control))
+        modifier.size(Tokens.Control.icon).background(Tokens.Color.raised, CircleShape)
+            .border(1.dp, Tokens.Color.borderStrong, CircleShape)
             .clickable(onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { content() }
@@ -283,7 +306,7 @@ fun Field(
         textStyle = Tokens.Type.headline, shape = RoundedCornerShape(Tokens.Radius.control), keyboardOptions = keyboard,
         visualTransformation = if (secret) androidx.compose.ui.text.input.PasswordVisualTransformation() else VisualTransformation.None,
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = Tokens.Color.surface2, unfocusedContainerColor = Tokens.Color.surface2,
+            focusedContainerColor = Tokens.Color.raised, unfocusedContainerColor = Tokens.Color.raised,
             focusedBorderColor = Tokens.Color.accent, unfocusedBorderColor = Tokens.Color.borderStrong, cursorColor = Tokens.Color.accent,
             focusedLabelColor = Tokens.Color.secondary, unfocusedLabelColor = Tokens.Color.secondary,
         ),

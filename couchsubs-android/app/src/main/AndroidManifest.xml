@@ -21,7 +21,7 @@
         android:name=".CouchSubsApp"
         android:allowBackup="false"
         android:icon="@mipmap/icon"
-        android:label="CouchSubs"
+        android:label="Nino"
         android:theme="@style/Theme.CouchSubs"
         android:usesCleartextTraffic="true">
         <!-- Ölçüm açılışta Profil › Kullanım verisi'ne göre açılır (Services.applyMeasurement); reklam kimliği ve reklam

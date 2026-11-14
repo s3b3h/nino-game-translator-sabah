@@ -7,7 +7,7 @@
        verilmez: Android'de 1 ölçeği sayfanın yalnız sol üst çeyreğini gösterip altyazıyı ekran dışında bırakıyordu;
        sığdırma ölçeğini MainActivity hesaplar. -->
   <meta name="viewport" content="width=1920">
-  <title>CouchSubs</title>
+  <title>Nino</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,12 +17,50 @@
   <div id="subtitle-cover" class="hidden"></div>
   <div id="subtitle" class="hidden"><div id="subtitle-prev2" class="hidden"><span id="subtitle-prev2-text"></span></div><div id="subtitle-prev" class="hidden"><span id="subtitle-prev-text"></span></div><span id="subtitle-text"></span></div>
 
-  <div id="waiting" class="hidden">
-    <img class="logo" src="largeIcon.png" alt="">
-    <div class="waiting-title" data-i18n="waiting"></div>
-    <div class="waiting-hint" data-i18n="waitingHint"></div>
-    <div id="demo-button" class="button focused" data-i18n="demoButton"></div>
+  <!-- Nino: bekleme ekranı kendi kendine oynayan bir demo. Arkada sinematik bir oyun sahnesi, altta önce oyunun İngilizce
+       altyazısı, hemen ardından Nino'nun Türkçesi onun üstüne biner. -->
+  <div id="attract" class="hidden">
+    <!-- Yağmurlu gece şehri: ay, bulutlar, projektör ışığı, çatıda pelerinli bir kahraman silüeti (özgün çizim). -->
+    <div class="scene noir">
+      <div class="sky"></div>
+      <div class="moon"></div>
+      <div class="cloud c1"></div>
+      <div class="cloud c2"></div>
+      <div class="haze"></div>
+      <div class="beam"></div>
+      <div class="beam b2"></div>
+      <svg class="city far" viewBox="0 0 1920 700" preserveAspectRatio="none"><path d="M0 700 V420 H90 V360 H150 V430 H240 V300 H300 V250 H330 V300 H380 V410 H470 V340 H560 V200 H600 V160 H620 V200 H660 V380 H760 V320 H860 V430 H940 V280 H1020 V350 H1110 V230 H1150 V180 H1170 V230 H1210 V400 H1300 V330 H1390 V260 H1480 V420 H1570 V310 H1660 V380 H1760 V290 H1840 V410 H1920 V700 Z"/><g><rect x="10" y="466" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="10" y="496" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="10" y="526" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="10" y="556" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="10" y="616" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="10" y="646" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="32" y="436" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="32" y="466" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="32" y="556" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="32" y="646" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="54" y="436" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="54" y="556" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="54" y="676" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="100" y="676" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="122" y="526" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="160" y="446" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="182" y="536" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="250" y="496" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="272" y="316" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="272" y="346" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="272" y="496" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="272" y="616" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="362" y="316" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="362" y="346" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="362" y="496" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="362" y="556" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="362" y="676" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="390" y="516" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="412" y="666" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="502" y="536" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="524" y="476" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="524" y="506" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="570" y="426" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="570" y="666" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="630" y="216" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="630" y="306" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="630" y="666" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="670" y="666" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="692" y="486" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="714" y="426" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="714" y="456" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="770" y="486" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="792" y="336" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="792" y="486" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="814" y="546" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="836" y="396" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="836" y="456" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="892" y="506" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="892" y="566" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="892" y="596" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="914" y="506" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="950" y="536" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="972" y="296" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="994" y="296" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="994" y="326" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="994" y="446" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="994" y="656" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="994" y="686" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1030" y="576" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1030" y="606" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1052" y="396" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1052" y="456" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1052" y="486" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1052" y="576" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1052" y="636" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1074" y="546" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1120" y="246" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1120" y="366" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1120" y="546" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1180" y="246" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1180" y="366" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1180" y="516" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1220" y="536" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1220" y="596" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1220" y="656" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1242" y="506" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1242" y="536" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1242" y="596" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1264" y="476" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1264" y="596" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1264" y="626" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1310" y="496" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1310" y="676" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1332" y="436" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1332" y="646" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1332" y="676" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1354" y="376" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1400" y="276" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1400" y="306" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1422" y="366" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1422" y="456" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1444" y="456" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1490" y="466" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1512" y="436" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1534" y="556" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1580" y="386" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1580" y="536" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1602" y="386" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1602" y="416" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1602" y="536" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1602" y="566" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1624" y="326" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1624" y="446" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1624" y="626" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1670" y="546" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1670" y="636" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1692" y="426" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1692" y="546" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1692" y="666" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1736" y="606" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1736" y="636" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1770" y="306" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1770" y="486" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1770" y="666" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1792" y="426" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1792" y="546" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1814" y="306" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1814" y="516" width="10" height="14" fill="#ffd78a" opacity="0.75"/><rect x="1850" y="456" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1872" y="516" width="10" height="14" fill="#ffd78a" opacity="0.9"/><rect x="1872" y="636" width="10" height="14" fill="#ffd78a" opacity="0.55"/><rect x="1872" y="666" width="10" height="14" fill="#ffd78a" opacity="0.9"/></g></svg>
+      <svg class="city near" viewBox="0 0 1920 700" preserveAspectRatio="none"><path d="M0 700 V500 H120 V430 H210 V520 H330 V380 H420 V470 H520 V560 H640 V450 H700 V400 H760 V470 H880 V540 H980 V420 H1080 V600 H1920 V700 Z"/><g><rect x="32" y="576" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="54" y="666" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="76" y="546" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="152" y="566" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="174" y="506" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="220" y="536" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="242" y="656" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="264" y="566" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="286" y="596" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="308" y="536" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="308" y="626" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="340" y="636" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="362" y="636" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="384" y="546" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="430" y="666" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="474" y="516" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="552" y="666" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="650" y="556" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="672" y="556" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="672" y="616" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="710" y="416" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="710" y="446" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="710" y="536" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="710" y="656" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="770" y="486" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="836" y="546" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="890" y="646" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="912" y="586" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="934" y="646" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="956" y="676" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="990" y="496" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1012" y="556" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1012" y="646" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1034" y="526" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="1056" y="526" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1056" y="646" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1056" y="676" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="1156" y="616" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="1156" y="646" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="1178" y="646" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="1222" y="646" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1266" y="676" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="1354" y="616" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="1464" y="676" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1530" y="616" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1530" y="676" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1574" y="646" width="10" height="14" fill="#ffcf7a" opacity="0.55"/><rect x="1618" y="616" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="1706" y="616" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="1706" y="646" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="1794" y="616" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="1838" y="676" width="10" height="14" fill="#ffcf7a" opacity="0.9"/><rect x="1904" y="616" width="10" height="14" fill="#ffcf7a" opacity="0.75"/><rect x="1904" y="676" width="10" height="14" fill="#ffcf7a" opacity="0.55"/></g></svg>
+      <svg class="roof" viewBox="380 280 1540 800" preserveAspectRatio="xMaxYMax slice">
+        <path d="M1180 1080 V900 H1240 V870 H1920 V1080 Z"/>
+        <!-- çatı kenarındaki taş çıkıntı -->
+        <path d="M1290 870 L1300 840 L1400 840 L1410 870 Z"/>
+        <!-- çömelmiş, pelerinli kahraman (kulak yok, logo yok) -->
+        <path class="hero" d="M1350 842 C1330 840 1318 822 1322 800 C1326 778 1336 762 1340 748 C1336 738 1338 724 1348 718 C1358 712 1370 716 1372 728 C1374 738 1370 748 1366 752 C1380 768 1392 790 1394 812 C1396 826 1392 838 1384 842 Z"/>
+        <path class="cape" d="M1342 756 C1310 790 1270 830 1238 846 C1262 846 1300 842 1326 838 C1312 852 1296 862 1280 868 C1316 866 1344 858 1360 842 Z"/>
+      </svg>
+      <div class="vignette"></div>
+    </div>
+    <div id="game-sub"></div>
+    <div id="attract-card">
+      <div class="head"><img class="logo" src="logo.png" alt=""><div class="brand">Nino</div></div>
+      <ol class="steps">
+        <li><b>1</b><span data-i18n="step1"></span></li>
+        <li><b>2</b><span data-i18n="step2"></span></li>
+        <li><b>3</b><span data-i18n="step3"></span></li>
+      </ol>
+      <div class="status"><span class="dots"><i></i><i></i><i></i></span><span data-i18n="waitingStatus"></span></div>
+    </div>
+    <!-- Altyazıyı gösteren ok -->
+    <div id="attract-arrow">
+      <div class="label" data-i18n="demoArrow"></div>
+      <svg viewBox="0 0 220 170"><path d="M20 20 C 120 20, 190 60, 196 150" /><path class="tip" d="M178 128 L196 154 L212 126" /></svg>
+    </div>
+    <div id="attract-badge" data-i18n="demoBadge"></div>
   </div>
+
+  <!-- Eski bekleme kutusu (gizli kalır; app.js görünürlüğünü izlemek için kullanır). -->
+  <div id="waiting" class="hidden"><div id="demo-button" class="button" data-i18n="demoButton"></div></div>
 
   <div id="demo-badge" class="hidden"><b data-i18n="demoBadge"></b><span data-i18n="demoHint"></span></div>
 
@@ -30,13 +68,46 @@
   <div id="source-tip" class="hidden"><b data-i18n="sourceSwitchTitle"></b><span data-i18n="sourceSwitchHint"></span><span class="close" data-i18n="sourceSwitchClose"></span></div>
 
   <div id="panel">
-    <div class="title"><img class="logo" src="icon.png" alt=""><span data-i18n="panelTitle"></span> <span id="app-version" class="muted" style="margin-left: 12px; font-weight: 400;"></span></div>
-    <div class="row"><span class="label" data-i18n="hdmi"></span><span><span id="st-hdmi">-</span> <span id="st-video" class="muted"></span></span></div>
-    <div class="row"><span class="label" data-i18n="server"></span><span id="st-server">-</span></div>
-    <div class="row"><span class="label" data-i18n="connection"></span><span id="st-conn">-</span></div>
-    <div class="row"><span class="label" data-i18n="lastSubtitle"></span><span id="st-last" class="muted">-</span></div>
-    <div class="row"><span class="label" data-i18n="diagnostics"></span><span id="st-diag" class="muted">-</span></div>
-    <div class="keys" id="keys" data-i18n="keys"></div>
+    <div class="p-top">
+      <img class="logo" src="logo.png" alt="">
+      <div class="brand" data-i18n="panelTitle"></div>
+      <span id="app-version" class="ver"></span>
+    </div>
+
+    <!-- Büyük durum: bağlantının durumuna göre (data-state) renk ve yazı değişir. -->
+    <div class="tile hero">
+      <div class="ring"><i></i></div>
+      <div class="hero-text">
+        <div class="h-title"><span class="s-ok" data-i18n="heroOk"></span><span class="s-wait" data-i18n="heroWait"></span><span class="s-bad" data-i18n="heroBad"></span></div>
+        <div class="h-sub"><span id="st-conn">-</span> · <span id="st-server">-</span></div>
+        <div class="h-sub"><span data-i18n="hdmi"></span> <span id="st-hdmi">-</span> <span id="st-video"></span></div>
+      </div>
+    </div>
+
+    <!-- Son altyazı, TV'de göründüğü gibi. -->
+    <div class="p-preview">
+      <div class="p-label" data-i18n="previewLabel"></div>
+      <div class="screen"><span id="st-last" class="sub empty" data-i18n="previewEmpty"></span></div>
+    </div>
+
+    <!-- Kumanda: yön tuşları ve renkli tuşlar çizilir, ne yaptıkları yanında. -->
+    <div class="p-remote">
+      <div class="dpad"><b class="u">▲</b><b class="d">▼</b><b class="l">◀</b><b class="r">▶</b><b class="ok">OK</b></div>
+      <div class="r-list">
+        <div><b>OK</b><span data-i18n="rOk"></span></div>
+        <div><b>◀ ▶</b><span data-i18n="rLR"></span></div>
+        <div><b>▲ ▼</b><span data-i18n="rUD"></span></div>
+        <div><b>0–4</b><span data-i18n="rNum"></span></div>
+      </div>
+    </div>
+    <div class="p-colors">
+      <div><i class="red"></i><span data-i18n="rRed"></span></div>
+      <div><i class="green"></i><span data-i18n="rGreen"></span></div>
+      <div><i class="blue"></i><span data-i18n="rBlue"></span></div>
+    </div>
+
+    <div class="p-diag"><span data-i18n="diagnostics"></span> <span id="st-diag">-</span></div>
+    <div id="keys" style="display: none" data-i18n="keys"></div>
   </div>
 
   <script src="config.js"></script>

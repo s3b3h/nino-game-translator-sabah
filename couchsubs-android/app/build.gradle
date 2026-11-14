@@ -45,7 +45,7 @@ android {
     ndkVersion '27.0.12077973'
 
     defaultConfig {
-        applicationId 'com.couchsubs.mobile'
+        applicationId 'com.ninotranslator.mobile'
         minSdk 26
         targetSdk 36
         // Masaüstü sürüm çizgisiyle aynı ad; kod beta numarasıdır ve her yayında artar. CI etiketten verebilir:
@@ -157,6 +157,7 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
     implementation 'androidx.navigation:navigation-compose:2.8.5'
     implementation 'androidx.compose.material:material-icons-core'
+    implementation 'androidx.compose.material:material-icons-extended'
 
     // Firebase: google-services.json yoksa da derlenir; çalışırken Backend.kt Firebase'in açılıp açılmadığına bakar.
     implementation platform('com.google.firebase:firebase-bom:33.7.0')

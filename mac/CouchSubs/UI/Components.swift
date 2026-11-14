@@ -5,20 +5,17 @@ import SwiftUI
 // Ortak bileşenler. Ölçü ve renkler Theme'den (design/tokens.json) gelir; ekranlar sabit değer kullanmaz.
 // Bileşenlerin tarifi docs/TASARIM.md'de; Windows sürümü aynı bileşenleri aynı adlarla kurar.
 
-/// Uygulamanın logosu (kanepe + altyazı).
+/// Uygulamanın logosu (Nino). PNG'nin kenarında parıltı için saydam pay var; opak kare görüntünün ~%83'ü.
 struct LogoView: View {
     var size: CGFloat = 40
 
     var body: some View {
-        // Simge dosyası macOS ızgarasına göre kenar boşluğu içerir (1024'te 824'lük kare); uygulama içinde kırpılır.
         Image("Logo")
             .resizable()
             .interpolation(.high)
-            .frame(width: size * 1024 / 824, height: size * 1024 / 824)
+            .aspectRatio(contentMode: .fit)
+            .frame(width: size * 1.21, height: size * 1.21)
             .frame(width: size, height: size)
-            .clipped()
-            // Koyu temada logonun kenarı zeminden ayrılsın.
-            .overlay(RoundedRectangle(cornerRadius: size * 186 / 824, style: .continuous).strokeBorder(Color.csBorder))
             .accessibilityHidden(true)
     }
 }
@@ -38,20 +35,21 @@ struct CSButtonStyle: ButtonStyle {
         let pressed = configuration.isPressed
         return configuration.label
             .font(.csButton)
-            .foregroundStyle(foreground)
+            .foregroundStyle(isEnabled || kind != .primary ? foreground : Color.csSecondary)
             .padding(.horizontal, kind == .ghost ? Theme.space("m") : Theme.space("tile"))
             .frame(maxWidth: fullWidth ? .infinity : nil, minHeight: Theme.size(height))
-            .background(background(pressed: pressed), in: shape)
+            .background { if kind == .primary && !isEnabled { Color.clear.ninoGlass(in: shape) } else { background(pressed: pressed, shape: shape) } }
             .overlay { border(shape) }
+            .shadow(color: kind == .primary && isEnabled ? Color.csAccent.opacity(pressed ? 0.15 : 0.35) : .clear, radius: 14, y: 6)
             .scaleEffect(pressed ? 0.97 : 1)
-            .opacity(isEnabled ? 1 : 0.4)
+            .opacity(isEnabled ? 1 : (kind == .primary ? 0.75 : 0.45))
             .contentShape(shape)
             .animation(.easeOut(duration: 0.12), value: pressed)
     }
 
     @ViewBuilder private func border(_ shape: RoundedRectangle) -> some View {
         switch kind {
-        case .secondary: shape.strokeBorder(Color.csBorder)
+        case .secondary: shape.strokeBorder(Color.ninoGlassEdge, lineWidth: 1)
         case .primary, .danger, .ghost: EmptyView()
         }
     }
@@ -65,12 +63,18 @@ struct CSButtonStyle: ButtonStyle {
         }
     }
 
-    private func background(pressed: Bool) -> Color {
+    @ViewBuilder private func background(pressed: Bool, shape: RoundedRectangle) -> some View {
         switch kind {
-        case .primary: pressed ? .csAccentHi : .csAccent
-        case .secondary: .csSurface2
-        case .danger: .csDangerSoft
-        case .ghost: .clear
+        case .primary:
+            // PlayStation mavisinden laciverte; üstte ince bir ışık çizgisi (cam hissi).
+            shape.fill(LinearGradient(colors: [pressed ? .csAccentHi : .csAccent, Color(red: 0.0, green: 0.19, blue: 0.52)],
+                                      startPoint: .top, endPoint: .bottom))
+                .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.45), .white.opacity(0.05)],
+                                                           startPoint: .top, endPoint: .bottom), lineWidth: 1))
+        case .secondary:
+            Color.clear.ninoGlass(in: shape, interactive: true)
+        case .danger: shape.fill(Color.csDangerSoft)
+        case .ghost: Color.clear
         }
     }
 }
@@ -94,8 +98,8 @@ struct CSTextFieldStyle: TextFieldStyle {
             .font(font)
             .padding(.horizontal, Theme.space("l"))
             .frame(minHeight: height)
-            .background(Color.csSurface2, in: shape)
-            .overlay(shape.strokeBorder(Color.csBorder))
+            .ninoGlass(in: shape)
+            .overlay(shape.strokeBorder(Color.ninoGlassEdge))
     }
 }
 
@@ -113,8 +117,10 @@ struct TileBackground: ViewModifier {
         let shape = RoundedRectangle(cornerRadius: Theme.radius("card"), style: .continuous)
         return content
             .padding(padding)
-            .background(Color.csSurface, in: shape)
-            .overlay(shape.strokeBorder(style == .active ? Color.csAccent : Color.csTileBorder))
+            .ninoGlass(in: shape)
+            .overlay(shape.strokeBorder(style == .active ? AnyShapeStyle(Color.csAccent) : AnyShapeStyle(Color.ninoGlassEdge),
+                                        lineWidth: style == .active ? 1.5 : 1))
+            .shadow(color: Color.csPro.opacity(0.08), radius: 18, y: 8)
     }
 }
 
@@ -145,13 +151,14 @@ struct Card<Content: View>: View {
 /// Karodaki simge: kutusuz, 18 pt, ikincil renkte (paket simgesi mor).
 struct TileIcon: View {
     let symbol: String
-    var tint: Color = .csSecondary
+    var tint: Color = .csAccentText
 
     var body: some View {
         Image(systemName: symbol)
-            .font(.system(size: 15, weight: .semibold))
+            .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(tint)
-            .frame(width: 18, height: 18)
+            .frame(width: 24, height: 24)
+            .background(Circle().fill(Color.csAccentSoft))
             .accessibilityHidden(true)
     }
 }
@@ -231,21 +238,61 @@ struct StepLayout<Content: View>: View {
     let title: LocalizedStringKey
     let message: LocalizedStringKey
     @ViewBuilder var content: Content
+    /// Adımın simgesi (OnboardingView ortama koyar).
+    @Environment(\.onboardingSymbol) private var symbol
+    @State private var appeared = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.space("l")) {
+        VStack(spacing: Theme.space("l")) {
+            VStack(spacing: Theme.space("m")) {
+                if symbol == "nino.logo" {
+                    LogoView(size: 110)
+                        .shadow(color: Color.csAccent.opacity(0.45), radius: 24)
+                } else if let symbol {
+                    GradientIcon(symbol: symbol, size: 72)
+                }
+            }
+            .scaleEffect(appeared ? 1 : 0.7)
+            .opacity(appeared ? 1 : 0)
+            .padding(.bottom, Theme.space("xs"))
             Text(title)
-                .font(.csDisplay)
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
             Text(message)
-                .font(.csBody)
+                .font(.system(size: 15))
                 .foregroundStyle(Color.csSecondary)
+                .multilineTextAlignment(.center)
                 .lineSpacing(3)
+                .frame(maxWidth: 520)
                 .fixedSize(horizontal: false, vertical: true)
             content
-                .padding(.top, Theme.space("s"))
-            Spacer(minLength: 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, Theme.space("m"))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
+        .onAppear { withAnimation(.spring(response: 0.55, dampingFraction: 0.7)) { appeared = true } }
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var onboardingSymbol: String? = nil
+}
+
+/// Mavi-lacivert degrade zeminli, hafif parlayan simge kutusu.
+struct GradientIcon: View {
+    let symbol: String
+    var size: CGFloat = 48
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
+            .fill(LinearGradient(colors: [Color.csAccentHi, Color(red: 0.0, green: 0.19, blue: 0.52)],
+                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+            .overlay(RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
+                .strokeBorder(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0.05)], startPoint: .top, endPoint: .bottom)))
+            .overlay(Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold)).foregroundStyle(.white))
+            .frame(width: size, height: size)
+            .shadow(color: Color.csAccent.opacity(0.45), radius: size * 0.25, y: size * 0.1)
+            .accessibilityHidden(true)
     }
 }
 
@@ -255,17 +302,21 @@ struct NumberedRow: View {
     let text: LocalizedStringKey
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Theme.space("m")) {
+        HStack(alignment: .center, spacing: Theme.space("l")) {
             Text("\(number)")
-                .font(.csCallout.monospacedDigit().weight(.semibold))
-                .foregroundStyle(Color.csText)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(Color.csSurface2))
+                .font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(LinearGradient(colors: [Color.csAccentHi, Color(red: 0.0, green: 0.19, blue: 0.52)],
+                                                         startPoint: .topLeading, endPoint: .bottomTrailing)))
+                .shadow(color: Color.csAccent.opacity(0.35), radius: 6, y: 2)
             Text(text)
                 .font(.csBody)
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
+        .tile(padding: Theme.space("l"))
     }
 }
 
@@ -381,7 +432,7 @@ struct AppSurface: ViewModifier {
             .font(.csBody)
             .foregroundStyle(Color.csText)
             .tint(Color.csAccentText)
-            .background(Color.csBackground.ignoresSafeArea())
+            .background(NinoBackdrop().ignoresSafeArea())
     }
 }
 

@@ -43,7 +43,8 @@ public class OverlayService extends Service implements TvPage.Host {
     private WindowManager windows;
     private TvPage page;
     /** TV'nin en son geçirildiği giriş (0: henüz geçilmedi). */
-    private int tunedPort;
+    /** -1: henüz hiçbir girişe geçilmedi. 0: TV'nin son girişi (bkz. showHdmi). */
+    private int tunedPort = -1;
     private int pendingPort;
     private final Runnable switchInput = () -> switchInput(pendingPort);
 
@@ -71,7 +72,7 @@ public class OverlayService extends Service implements TvPage.Host {
             running = true;
         } else if (params != null && !params.isEmpty()) {
             // CouchSubs yeni adresle yeniden başlatıldı; TV başka bir uygulamaya geçmiş olabilir, giriş yeniden açılır.
-            tunedPort = 0;
+            tunedPort = -1;
             page.relaunch(params);
         }
         return START_NOT_STICKY;
@@ -87,8 +88,10 @@ public class OverlayService extends Service implements TvPage.Host {
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
                 type,
+                // Nino: FLAG_NOT_TOUCHABLE yok. Android 12+ dokunmayı alttaki uygulamaya geçiren katmanları en çok
+                // %80 opak çiziyor; o zaman siyah örtünün altından oyunun İngilizce yazısı görünüyordu. TV'de dokunmatik
+                // ekran yok, kumanda tuşları zaten NOT_FOCUSABLE sayesinde alttaki HDMI ekranına gider.
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                         | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                         | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
@@ -118,6 +121,19 @@ public class OverlayService extends Service implements TvPage.Host {
 
     private void switchInput(int port) {
         if (page == null) return;
+        // Nino: hangi girişin PS5 olduğu bilinmiyorsa (port 0) HDMI 1'e zorlanmaz; TV'nin kendi canlı yayın uygulaması
+        // açılır ve TV en son hangi girişteyse ona döner. Eskiden kumandadan açınca hep HDMI 1 (ör. soundbar) geliyordu.
+        if (port == 0) {
+            Intent live = new Intent("com.android.tv.action.FORCE_LAUNCH_ON_BOOT").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                startActivity(live);
+                tunedPort = 0;
+                page.status("ready");
+                return;
+            } catch (ActivityNotFoundException | SecurityException e) {
+                port = 1;
+            }
+        }
         String id = HdmiInputs.idForPort(this, port);
         if (id == null) {
             page.status("sourceError");

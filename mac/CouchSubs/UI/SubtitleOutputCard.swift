@@ -15,15 +15,11 @@ struct SubtitleOutputCard: View {
             Text("Show subtitles on").font(.csCaption).foregroundStyle(Color.csSecondary)
             // Segmentli seçici bölmeleri en uzun etiket kadar eşit çizer (~3 × 127 pt) ve daralmaz; ana ekranın 380 pt'lik
             // sütununa sığmayınca kart sütundan taşıyordu. Sığmazsa aynı seçenekler yan yana radyo düğmeleriyle gösterilir.
-            ViewThatFits(in: .horizontal) {
-                outputPicker
-                    .pickerStyle(.segmented)
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity)
-                outputPicker
-                    .pickerStyle(.radioGroup)
-                    .horizontalRadioGroupLayout()
-            }
+            NinoSegmented(selection: $model.settings.output, options: [
+                (.tv, "TV", "tv"),
+                (.computer, String(localized: "Computer"), "desktopcomputer"),
+                (.both, String(localized: "Both"), "rectangle.on.rectangle"),
+            ])
             if model.settings.output.showsOnComputer {
                 if detailed {
                     HintText(text: "Subtitles appear in a window on this computer, over the game or PS Remote Play.")
@@ -36,7 +32,7 @@ struct SubtitleOutputCard: View {
         }
     }
 
-    private var outputPicker: some View {
+    private var _unusedOutputPicker: some View {
         Picker("Show subtitles on", selection: $model.settings.output) {
             Text(verbatim: "TV").tag(SubtitleOutput.tv)
             Text("Computer screen").tag(SubtitleOutput.computer)

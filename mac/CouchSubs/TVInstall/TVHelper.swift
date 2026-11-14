@@ -13,7 +13,7 @@ enum TVInstallEvent: Equatable, Sendable {
     case progress(String)
 }
 
-/// TV kurulum günlüğü: ~/Library/Logs/CouchSubs/tvinstall.log (Windows'ta %LOCALAPPDATA%\CouchSubs\tvinstall.log).
+/// TV kurulum günlüğü: ~/Library/Logs/CouchSubs/tvinstall.log (Windows'ta %LOCALAPPDATA%\Nino\tvinstall.log).
 /// Samsung kurulumunun her adımını yardımcı yazar; yardımcı açılamaz ya da sonuç vermeden kapanırsa uygulama da buraya
 /// yazar. Kurulum olmazsa kullanıcı bu dosyayı gönderir.
 enum TVInstallLog {
@@ -80,7 +80,7 @@ enum TVHelper {
     static func run(_ arguments: [String], onEvent: @escaping @Sendable (TVInstallEvent) -> Void = { _ in }) async throws -> Result {
         guard let executable else {
             TVInstallLog.write("couchsubs-tv-helper uygulamanın içinde yok.")
-            throw DevModeFailure(.installFailed, detail: "couchsubs-tv-helper uygulamanın içinde bulunamadı; CouchSubs'ı yeniden indirip kurun.")
+            throw DevModeFailure(.installFailed, detail: "couchsubs-tv-helper uygulamanın içinde bulunamadı; Nino'ı yeniden indirip kurun.")
         }
         let process = Process()
         process.executableURL = executable

@@ -65,9 +65,8 @@ public class MainActivity extends Activity implements TvPage.Host {
                 // Bilgisayar uygulamayı yeni adresle açtı: katman sürer, adres ona iletilir.
                 OverlayService.start(this, launchParams);
             } else {
-                // Kumandadan yeniden açıldı: katman kapanır.
-                OverlayService.stop(this);
-                Toast.makeText(this, R.string.overlay_stopped, Toast.LENGTH_LONG).show();
+                // Nino: kumandadan yeniden açılınca katman kapanmaz (yanlışlıkla altyazı kaybolmasın); açık olduğu söylenir.
+                Toast.makeText(this, R.string.overlay_active, Toast.LENGTH_LONG).show();
             }
             finish();
             return;
@@ -75,6 +74,8 @@ public class MainActivity extends Activity implements TvPage.Host {
 
         DisplayMode.Start start = DisplayMode.atLaunch(TvPage.storedDisplayMode(this), overlayAllowed());
         if (start == DisplayMode.Start.OVERLAY) {
+            // Kumandadan açıldı: Nino görünmez bir katmana dönüşür ve TV PS5 görüntüsüne geçer; ne olduğu söylenir.
+            if (launchParams.isEmpty()) Toast.makeText(this, R.string.overlay_active, Toast.LENGTH_LONG).show();
             startOverlay();
             return;
         }
@@ -218,7 +219,8 @@ public class MainActivity extends Activity implements TvPage.Host {
 
     @Override
     public void showHdmi(int port) {
-        String id = HdmiInputs.idForPort(this, port);
+        // Port bilinmiyorsa (0) uygulama içinde bir giriş seçmek gerekir: eskisi gibi HDMI 1.
+        String id = HdmiInputs.idForPort(this, port == 0 ? 1 : port);
         if (tvView == null || id == null) {
             status("sourceError");
             return;

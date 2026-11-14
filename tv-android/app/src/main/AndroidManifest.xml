@@ -3,7 +3,7 @@
 <!-- İki dağıtımın ortak bildirimi. Katman modunun izinleri ve servisi yalnız masaüstünün kurduğu APK'dadır:
      src/sideload/AndroidManifest.xml. Google Play paketi (play çeşidi) yalnız İnternet izni ister. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Ev ağındaki CouchSubs bilgisayarını bulmak ve altyazıyı almak için (port 8787). -->
+    <!-- Ev ağındaki Nino bilgisayarını bulmak ve altyazıyı almak için (port 8787). -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Yalnız TV: Google Play uygulamayı telefon ve tabletlerde göstermez. -->
     <uses-feature android:name="android.software.leanback" android:required="true" />
@@ -14,7 +14,7 @@
         android:allowBackup="false"
         android:banner="@drawable/banner"
         android:icon="@mipmap/icon"
-        android:label="CouchSubs"
+        android:label="Nino"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
         android:usesCleartextTraffic="true">
         <activity

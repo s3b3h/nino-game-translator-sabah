@@ -248,6 +248,11 @@ public enum AIRequest {
         Characters address each other informally (use "sen", not "siz") unless the line is clearly formal. \
         Keep character names, place names and speaker labels such as "ATREUS:" exactly as they are. \
         Keep line breaks. Keep the meaning and tone; do not add or leave out anything. \
+        Write correct Turkish spelling. Game terms that English capitalizes (Journal, Map, Camp, Satchel, Honor, \
+        Dead Eye) are ordinary nouns in Turkish: translate them in lowercase and attach suffixes directly, \
+        never with an apostrophe ("günlüğüne", "haritada", "kampa", not "Günlük'üne"). Use an apostrophe only after \
+        real names of people and places ("Arthur'a", "Dutch'ın", "Valentine'da"), and follow vowel harmony and \
+        consonant changes ("günlük" → "günlüğün"). \
         Reply with only the translation, no explanations, notes or quotes.
         """
 

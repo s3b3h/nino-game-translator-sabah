@@ -86,6 +86,31 @@ public final class SubtitlePipeline {
     public private(set) var lastBox: TextBox?
     public private(set) var lastError: TranslatorError?
     public var onPair: ((String, String) -> Void)?
+    /// Nino: okuma alanındaki kumanda ipuçları (karedeki yerleriyle); altyazı yerine ayrıca, simgesi korunarak çevrilir.
+    public var onPrompts: ((Reading) -> Void)?
+    /// Nino: ekranda bu çizginin (0–1, üstten) altında başlayan satırlar altyazı sayılmaz. Oyunlar öğretici ve menü
+    /// yazılarını en alta koyar; en alttaki blok seçildiği için üstündeki gerçek altyazı okunmuyordu.
+    public var hudTop: Double?
+    /// Nino: satırın (yazısıyla) ekranda ilk görüldüğü an. Görev ve öğretici yazıları uzun süre aynı kalır,
+    /// altyazılar birkaç saniyede değişir.
+    private var lineSince: [String: Int] = [:]
+    /// Bu kadar süredir aynı duran satır, yanında yeni bir yazı varken altyazı sayılmaz.
+    public static let staleMs = 9000
+
+    /// Aynı yazı 9 sn'den uzun duruyorsa ve yanında yeni bir yazı varsa o eski yazı altyazı değildir (en alttaki
+    /// öğretici yazısı üstündeki konuşmanın yerine seçiliyordu). Tek başına duruyorsa çevrilmeye devam eder.
+    func withoutStaleLines(_ reading: Reading, at time: Int) -> Reading {
+        var seen: [String: Int] = [:]
+        for line in reading.lines {
+            let key = TextMatch.normalize(line.text)
+            seen[key] = lineSince[key] ?? time
+        }
+        lineSince = seen
+        let stale = { (line: TextLine) in time - (seen[TextMatch.normalize(line.text)] ?? time) > Self.staleMs }
+        let fresh = reading.lines.filter { !stale($0) }
+        guard !fresh.isEmpty, fresh.count < reading.lines.count else { return reading }
+        return Reading(lines: fresh)
+    }
     /// TV'ye giden her yeni satırın ölçümleri (`onPair`'den hemen önce çağrılır).
     public var onMetrics: ((LineMetrics) -> Void)?
     /// Son gösterilen satırın ölçümleri.
@@ -176,7 +201,17 @@ public final class SubtitlePipeline {
         // Yazı tanımanın uydurduğu sözcük çöpleri ("ou$3e") de çevirmene gitmez.
         // Alandaki menü ve köşe göstergeleri de altyazı değildir; yalnız altyazı bloğu çevrilir ve kutusu ona göre olur.
         let place = TextBox(left: region.left, top: region.top, right: region.right, bottom: region.bottom)
-        let reading = lastReading.withoutButtonPrompts().withoutOcrNoise().subtitleBlock(in: place)
+        // Nino: harfsiz satırlar (mermi sayısı "91 / 200", saat) altyazı değildir.
+        var visible = Reading(lines: lastReading.lines.filter { $0.text.filter(\.isLetter).count >= 2 })
+        if let hudTop {
+            visible = Reading(lines: visible.lines.filter { line in
+                guard let box = line.box else { return true }
+                return place.top + box.top * (place.bottom - place.top) < hudTop
+            })
+        }
+        visible = withoutStaleLines(visible, at: captured)
+        let reading = visible.withoutButtonPrompts().withoutOcrNoise().subtitleBlock(in: place)
+        onPrompts?(Reading(lines: visible.withoutOcrNoise().lines.filter { ButtonPrompts.isPrompt($0.text) }).placed(in: place))
         currentRead = ReadInfo(capturedAt: captured, ocrMs: lastReadMs, confidence: reading.confidence)
         let box = reading.box?.placed(in: place).centeredOnScreen()
         if !sawText, !reading.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

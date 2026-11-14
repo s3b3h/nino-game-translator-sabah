@@ -7,7 +7,7 @@ import Security
 public enum SecureStore {
     /// Anahtarlık hizmet adı: Mac ve iPhone/iPad uygulamaları kendi kayıtlarını tutar.
     #if os(macOS)
-    private static let service = "com.couchsubs.mac"
+    private static let service = "com.ninotranslator.mac"
     #else
     private static let service = "com.couchsubs.ios"
     #endif

@@ -16,7 +16,8 @@
   var eventSource = null;
   // Kumandayla seçilen port kayıtlıysa o kullanılır, yoksa PS5 otomatik aranır.
   var savedPort = Number(load('hdmi'));
-  var hdmiPort = savedPort || 1;
+  // Nino: 0 = bilinmiyor; Android TV katmanında TV'nin son girişi açılır (HDMI 1'e zorlanmaz).
+  var hdmiPort = savedPort || 0;
 
   var bottomPercent = 7;
   // Çevirinin yeri: oyundaki İngilizce altyazının üstünü örterek (cover), üstünde (above), altında (below)
@@ -93,7 +94,13 @@
   function setStatus(id, text, cls) {
     var el = $(id);
     el.textContent = text;
-    el.className = cls || '';
+    // Nino: panel kutucuklarında yazının kendi sınıfı korunur; durum rengi kutucuğun noktasına geçer.
+    var base = el.getAttribute('data-base');
+    if (base === null) { base = el.className || ''; el.setAttribute('data-base', base); }
+    el.className = (base + ' ' + (cls || '')).trim();
+    var node = el.parentNode;
+    while (node && node.className !== undefined && String(node.className).indexOf('tile') !== 0) node = node.parentNode;
+    if (node && node.setAttribute && String(node.className).indexOf('tile') === 0) node.setAttribute('data-state', cls || '');
   }
 
   // --- Başlatma parametreleri ---
@@ -120,7 +127,7 @@
   // --- HDMI görüntüsü ---
 
   function showHdmi(port) {
-    setStatus('st-hdmi', String(port));
+    setStatus('st-hdmi', port ? String(port) : t('auto'));
     var statuses = {
       loading: ['loading', 'muted'],
       ready: ['videoReady', 'ok'],
@@ -176,12 +183,13 @@
     shownParagraphs = !!paragraphs;
     holdUntil = shownAt + Math.min(HOLD_MAX_MS, 2000 + text.length * 60);
     currentBox = validBox(box);
-    $('subtitle-text').textContent = text;
+    setRich($('subtitle-text'), text);
     $('subtitle-text').style.whiteSpace = paragraphs ? 'pre-line' : '';
     $('subtitle-text').style.textAlign = paragraphs ? 'left' : '';
     $('subtitle').className = '';
     layout();
-    setStatus('st-last', text.length > 40 ? text.slice(0, 40) + '…' : text);
+    setStatus('st-last', text.length > 60 ? text.slice(0, 60) + '…' : text);
+    $('st-last').className = 'sub';
     notePlace();
     clearTimeout(hideTimer);
     // Geçersiz ya da çok kısa süre yazıyı gösterir göstermez kaldırmasın.
@@ -279,8 +287,42 @@
   // Bilgisayar ekranın tamamını okuyup her yazı grubunun çevirisini yeriyle gönderir. Her çeviri kendi İngilizce
   // yazısını örter; yazı boyu o yazının satır yüksekliğinden seçilir, Türkçe uzun gelirse sığana kadar küçülür.
 
+
+  // Nino: çevirideki düğme simgeleri (✕ ○ △ □ ●, L1–R3) oyundaki gibi yuvarlak rozet olarak çizilir.
+  var ICON_RE = /(✕|○|△|□|●|↑|↓|←|→|✜|▦|◆|[\u24B6-\u24CF]|\b[LR][123]\b|\bOPTIONS\b|\bTOUCHPAD\b)/;
+  function setRich(el, text) {
+    el.textContent = '';
+    var parts = String(text).split(ICON_RE);
+    for (var i = 0; i < parts.length; i++) {
+      if (!parts[i]) continue;
+      if (i % 2 === 1) {
+        var icon = document.createElement('span');
+        // L3/R3 (çubuğa basma) oyundaki gibi daire; L1/L2/R1/R2 ve OPTIONS yuvarlatılmış kutu.
+        var tok = parts[i];
+        if (/^[\u24B6-\u24CF]$/.test(tok)) {
+          // Harita işareti: sarı daire içinde harf.
+          icon.className = 'btn-icon marker';
+          tok = String.fromCharCode(tok.charCodeAt(0) - 0x24B6 + 65);
+        } else if (/^[↑↓←→✜]$/.test(tok)) {
+          icon.className = 'btn-icon dpad';
+        } else if (tok === '▦' || tok === 'TOUCHPAD') {
+          icon.className = 'btn-icon pill pad';
+          tok = '';
+        } else {
+          icon.className = /^[LR][12]$/.test(tok) || tok.length > 2 ? 'btn-icon pill' : (/^[LR]3$/.test(tok) ? 'btn-icon stick' : 'btn-icon');
+        }
+        parts[i] = tok;
+        icon.textContent = parts[i];
+        el.appendChild(icon);
+      } else {
+        el.appendChild(document.createTextNode(parts[i]));
+      }
+    }
+  }
   var screenTimer = null;
   var SCREEN_PAD = 0.004;
+  var SCREEN_PAD_X = 0.018;
+  var SCREEN_PAD_Y = 0.008;
   var SCREEN_MIN_FONT = 14;
 
   function showScreen(items, duration) {
@@ -297,13 +339,16 @@
       if (!box || !item.text) continue;
       var el = document.createElement('div');
       el.className = item.paragraphs === true ? 'item paragraphs' : 'item';
-      el.textContent = item.text;
-      var left = Math.max(0, box.left - SCREEN_PAD);
-      var top = Math.max(0, box.top - SCREEN_PAD);
-      var boxHeight = (box.bottom - box.top + 2 * SCREEN_PAD) * height;
+      setRich(el, item.text);
+      // Nino: oyunun süslü İngilizce harfleri OCR kutusundan taşar; örtü solda ve dikeyde daha geniş,
+      // sağda (düğme simgesine doğru) dar tutulur ki simge örtülmesin.
+      var left = Math.max(0, box.left - SCREEN_PAD_X);
+      var top = Math.max(0, box.top - SCREEN_PAD_Y);
+      var boxHeight = (box.bottom - box.top + 2 * SCREEN_PAD_Y) * height;
       el.style.left = (left * 100) + '%';
       el.style.top = (top * 100) + '%';
       el.style.width = Math.max(80, (Math.min(1, box.right + SCREEN_PAD) - left) * width) + 'px';
+      if (box.left > 0.5) el.style.textAlign = 'right';
       el.style.minHeight = Math.round(boxHeight) + 'px';
       var line = typeof item.line === 'number' && item.line > 0 ? item.line * height : box.bottom * height - box.top * height;
       var size = Math.max(SCREEN_MIN_FONT, Math.min(96, Math.round(line * 0.95)));
@@ -343,6 +388,7 @@
     el.style.top = 'auto';
     el.style.bottom = bottomPercent + '%';
     cover.className = 'hidden';
+    document.body.classList.remove('covering');
     $('subtitle-text').style.background = textBackground;
     // Altyazı yokken (ör. ayar değişince yeniden yerleşirken) örtü tek başına boş siyah kutu olarak kalmasın.
     if (!box || el.className === 'hidden') return;
@@ -360,6 +406,17 @@
     el.style.left = (Math.max(0.02, center - half) * 100) + '%';
     el.style.right = (Math.max(0.02, 1 - center - half) * 100) + '%';
 
+    if (autoSize) {
+      // Nino: İngilizce satırın yüksekliğinden yazı boyu (birden çok satırlı kutuda satır başına).
+      // Oyun altyazılarında satır aralığı ekran yüksekliğinin ~%3,5'i; 0.045 iki satırı tek satır sanıp yazıyı iki kat
+      // büyütüyordu. Yazı boyu satır yüksekliğinin ~%78'i (harf boyu + satır arası payı).
+      var lineCount = Math.max(1, Math.round((box.bottom - box.top) / 0.035));
+      var size = Math.round((box.bottom - box.top) * height / lineCount * 0.78);
+      size = Math.max(18, Math.min(Math.round(height * 0.045), size));
+      $('subtitle-text').style.fontSize = size + 'px';
+      $('subtitle-prev-text').style.fontSize = Math.round(size * 0.8) + 'px';
+      $('subtitle-prev2-text').style.fontSize = Math.round(size * 0.8) + 'px';
+    }
     if (mode === 'cover') {
       // İngilizce yazı koyu bir zeminle örtülür, çeviri onun ortasına gelir.
       var middle = (1 - (box.top + box.bottom) / 2) * height;
@@ -367,6 +424,8 @@
       placeCover(cover, box, $('subtitle-text').getBoundingClientRect());
       // Zemini örtü verir; çevirinin kendi yarı saydam zemini örtünün üstünde ikinci bir kutu gibi görünmesin.
       $('subtitle-text').style.background = 'transparent';
+      // Nino: örtülürken oyunun kendi altyazısı gibi görünsün: tek siyah kutu, içinde düz beyaz yazı (tema çerçevesi yok).
+      document.body.classList.add('covering');
     } else if (mode === 'above') {
       el.style.bottom = Math.round((1 - box.top) * height + gap) + 'px';
     } else {
@@ -379,7 +438,9 @@
   // Örtü İngilizce satırın kutusunu (biraz paylı) kaplar. Türkçe daha uzun ya da daha çok satırsa örtü çevirinin
   // kutusunu da içine alacak kadar büyür: eskiden çevirinin yarı saydam zemini siyah örtüden taşıyor, ekranda boyları
   // farklı iki kutu görünüyordu. Örtü çevirinin zeminini tamamen kapladığından ikisi tek bir siyah kutu gibi görünür.
-  var COVER_PAD = 0.012;
+  var COVER_PAD = 0.02;
+  // Nino: yazı boyu İngilizce satırın yüksekliğine uydurulur (varsayılan açık).
+  var autoSize = true;
 
   function placeCover(cover, box, text) {
     var width = document.documentElement.clientWidth || window.innerWidth || 1920;
@@ -416,6 +477,7 @@
     el.style.top = 'auto';
     el.style.bottom = bottomPercent + '%';
     cover.className = 'hidden';
+    document.body.classList.remove('covering');
     $('subtitle-text').style.background = textBackground;
   }
 
@@ -449,6 +511,9 @@
       $('subtitle-prev-text').style.fontWeight = style.bold ? '700' : '600';
       $('subtitle-prev2-text').style.fontWeight = style.bold ? '700' : '600';
     }
+    if (typeof style.autoSize === 'boolean') autoSize = style.autoSize;
+    // Nino: altyazı teması (style.css'te body[data-theme=...] kuralları).
+    if (typeof style.theme === 'string') document.body.setAttribute('data-theme', style.theme);
     if (TEXT_COLORS[style.textColor]) {
       $('subtitle-text').style.color = TEXT_COLORS[style.textColor];
       $('subtitle-prev-text').style.color = TEXT_COLORS[style.textColor];
@@ -913,13 +978,13 @@
   var DEMO_GAP_MS = 700;
   var DEMO_FAST_MS = 1000;
   var DEMO_LINES = [
-    { text: 'Buraya ayıracak vaktimiz yok.', next: DEMO_LINE_MS + DEMO_GAP_MS },
-    { text: 'MİRA: Kapı daha fazla dayanmayacak!', next: DEMO_LINE_MS + DEMO_GAP_MS },
-    { text: 'Yakın dur.', next: DEMO_FAST_MS },
-    { text: 'İlerideki yol tehlikeli.', next: DEMO_LINE_MS + DEMO_GAP_MS },
-    { text: 'Bekle! Sen de kimsin?', next: DEMO_FAST_MS },
-    { text: 'Silahını indir!', next: DEMO_LINE_MS + DEMO_GAP_MS },
-    { text: 'Bu iş henüz bitmedi.', next: DEMO_LINE_MS + DEMO_GAP_MS }
+    { en: 'This city needs someone to watch over it.', text: 'Bu şehrin onu kollayacak birine ihtiyacı var.', next: DEMO_LINE_MS + DEMO_GAP_MS },
+    { en: 'They\'re coming. Stay out of sight.', text: 'Geliyorlar. Gözden uzak dur.', next: DEMO_LINE_MS + DEMO_GAP_MS },
+    { en: 'Who\'s there?', text: 'Kim var orada?', next: DEMO_FAST_MS },
+    { en: 'Not tonight.', text: 'Bu gece olmaz.', next: DEMO_LINE_MS + DEMO_GAP_MS },
+    { en: 'The rain hides everything.', text: 'Yağmur her şeyi saklıyor.', next: DEMO_LINE_MS + DEMO_GAP_MS },
+    { en: 'Get to the rooftop. Now!', text: 'Çatıya çık. Hemen!', next: DEMO_FAST_MS },
+    { en: 'This isn\'t over.', text: 'Bu iş daha bitmedi.', next: DEMO_LINE_MS + DEMO_GAP_MS }
   ];
   var demoTimer = null;
   var demoIndex = 0;
@@ -950,6 +1015,58 @@
     // Uygulamaya bağlı değilse bekleme ekranına dönülür.
     if (!server) $('waiting').className = '';
   }
+
+  // --- Nino: bekleme ekranında kendi kendine oynayan demo ---
+  // Uygulamaya bağlı değilken sinematik bir sahne oynar: önce oyunun İngilizce altyazısı çıkar, ~0,9 sn sonra Nino'nun
+  // Türkçesi tam üstüne biner. Bilgisayar bağlanınca (bekleme kutusu gizlenince) kendiliğinden durur.
+  var attractTimer = null;
+  var attractIndex = 0;
+  var ATTRACT_EN_MS = 900;
+  var ATTRACT_TR_MS = 3000;
+  var ATTRACT_GAP_MS = 900;
+
+  function attractRunning() { return attractTimer !== null; }
+
+  function attractStep() {
+    var line = DEMO_LINES[attractIndex];
+    attractIndex = (attractIndex + 1) % DEMO_LINES.length;
+    var en = $('game-sub');
+    en.textContent = line.en;
+    en.className = 'on';
+    attractTimer = setTimeout(function () {
+      showSubtitle(line.text, ATTRACT_TR_MS);
+      attractTimer = setTimeout(function () {
+        en.className = '';
+        attractTimer = setTimeout(attractStep, ATTRACT_GAP_MS);
+      }, ATTRACT_TR_MS);
+    }, ATTRACT_EN_MS);
+  }
+
+  function startAttract() {
+    if (attractRunning()) return;
+    $('attract').className = '';
+    document.body.classList.add('attract');
+    attractIndex = 0;
+    attractTimer = setTimeout(attractStep, 1200);
+  }
+
+  function stopAttract() {
+    clearTimeout(attractTimer);
+    attractTimer = null;
+    $('attract').className = 'hidden';
+    $('game-sub').className = '';
+    document.body.classList.remove('attract');
+    hideSubtitle('attract');
+  }
+
+  // Bekleme kutusunun görünürlüğü birçok yerde değişiyor; demo onu izler.
+  setInterval(function () {
+    // Katman modunda (Android TV'de PS5 görüntüsünün üstüne çizilen pencere) demo hiç oynamaz: oyunun üstünü örterdi.
+    var overlay = document.body.classList.contains('overlay');
+    var waiting = $('waiting').className !== 'hidden' && !overlay;
+    if (waiting && !attractRunning() && !demoRunning()) startAttract();
+    else if (!waiting && attractRunning()) stopAttract();
+  }, 250);
 
   // Geri tuşu: önce ipucu, demo ya da panel kapanır; giriş ekranında TV'nin ana ekranına dönülür.
   function goBack() {
@@ -1021,10 +1138,22 @@
       var colon = parts[i].indexOf(':');
       var row = document.createElement('div');
       row.className = 'key';
-      var key = document.createElement('b');
-      key.textContent = colon > 0 ? parts[i].slice(0, colon) : '';
-      row.appendChild(key);
-      row.appendChild(document.createTextNode(colon > 0 ? parts[i].slice(colon + 1).trim() : parts[i]));
+      var name = colon > 0 ? parts[i].slice(0, colon).trim() : '';
+      // Nino: tuş adı kumanda tuşu gibi çizilir; renkli tuşlar renkli nokta olur.
+      var keyEl = document.createElement('b');
+      var color = { 'Kırmızı': 'red', 'Red': 'red', 'Mavi': 'blue', 'Blue': 'blue', 'Yeşil': 'green', 'Green': 'green', 'Sarı': 'yellow', 'Yellow': 'yellow' }[name];
+      if (color) {
+        keyEl.className = 'kbd color ' + color;
+        keyEl.innerHTML = '<i></i>';
+        keyEl.appendChild(document.createTextNode(name));
+      } else {
+        keyEl.className = 'kbd';
+        keyEl.textContent = name;
+      }
+      row.appendChild(keyEl);
+      var what = document.createElement('span');
+      what.textContent = colon > 0 ? parts[i].slice(colon + 1).trim() : parts[i];
+      row.appendChild(what);
       el.appendChild(row);
     }
   }
@@ -1059,7 +1188,7 @@
   document.addEventListener('click', function () {
     if (Date.now() - lastOkKey < 400) return;
     if (sourceTipShown()) hideSourceTip();
-    else if ($('waiting').className !== 'hidden') startDemo();
+    else if ($('waiting').className !== 'hidden') togglePanel();
     else if (!demoRunning()) togglePanel();
   });
 
@@ -1086,7 +1215,7 @@
     } else if (code === KEY.BLUE) {
       if (demoRunning()) stopDemo(); else startDemo();
     } else if (code === KEY.OK && $('waiting').className !== 'hidden') {
-      startDemo();
+      togglePanel();
     } else if (code === KEY.OK && !demoRunning()) {
       togglePanel();
     } else if ((code === KEY.LEFT || code === KEY.RIGHT) && $('panel').className !== 'hidden') {

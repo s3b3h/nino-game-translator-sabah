@@ -148,11 +148,64 @@ public enum ButtonPrompts {
     private static let buttons: Set<String> = [
         "R1", "R2", "R3", "L1", "L2", "L3", "OPTIONS", "TOUCHPAD",
         "✕", "×", "⨯", "✖", "○", "◯", "●", "□", "▢", "◻", "■", "△", "▲", "⨂",
+        // Nino: yazı tanıma PS simgelerini bu karakterlere çeviriyor ("Hold & to …", "hold ® to …").
+        "&", "®", "©", "@", "⊗", "Ⓧ", "ⓧ",
+        // L1/L2/R1/R2 simgeleri yazı tanımada böyle okunuyor ("Hold LZ to aim", "RZ Shoot").
+        "L", "R", "LZ", "RZ", "LI", "RI", "L7", "R7",
+        // Nino: RDR2'nin ✕ simgesi bazen "*" okunuyor ("SELECT * BACK O").
+        "*",
+        // Nino: görüntüden tanınan simgeler (ButtonIcons): yön tuşları, dokunmatik yüzey, harita işareti.
+        "↑", "↓", "←", "→", "✜", "▦", "◆",
     ]
     /// Simge yazı tanımada harfe dönüşebilir; yalnız ipucu kalıbında düğme sayılır.
     private static let lookalikes: Set<String> = ["X", "O"]
-    private static let verbs: Set<String> = ["press", "hold", "tap", "push", "use", "mash", "release"]
+    private static let verbs: Set<String> = ["press", "hold", "tap", "push", "use", "mash", "release", "double", "pull", "click"]
     private static let brackets = CharacterSet(charactersIn: "()[]{}<>「」")
+
+    /// Nino: tek başına bir düğme simgesi mi ("✕", "R2", yazı tanımanın "&" ya da tek "O"/"X" okuduğu simge).
+    public static func isIcon(_ token: String) -> Bool {
+        let t = token.trimmingCharacters(in: brackets)
+        if isCircledLetter(t) { return true }
+        return buttons.contains(t.uppercased()) || t == "O" || t == "X"
+    }
+
+    /// Haritadaki görev işareti ("Ⓑ"): görüntüden tanınan renkli dairedeki harf.
+    static func isCircledLetter(_ t: String) -> Bool {
+        guard t.unicodeScalars.count == 1, let v = t.unicodeScalars.first?.value else { return false }
+        return v >= 0x24B6 && v <= 0x24CF
+    }
+
+    /// Simgenin TV'de gösterilecek hali.
+    public static func display(_ token: String) -> String {
+        let t = token.trimmingCharacters(in: brackets)
+        if isCircledLetter(t) || ["↑", "↓", "←", "→", "✜", "▦", "◆"].contains(t) { return t }
+        switch t.uppercased() {
+        case "O", "○", "◯": return "○"
+        case "X", "✕", "×", "⨯", "✖", "⊗", "Ⓧ", "*": return "✕"
+        case "□", "▢", "◻", "■": return "□"
+        case "△", "▲": return "△"
+        case "R1", "R2", "R3", "L1", "L2", "L3", "OPTIONS", "TOUCHPAD": return t.uppercased()
+        case "LZ": return "L2"
+        case "RZ": return "R2"
+        case "LI", "L7", "L": return "L1"
+        case "RI", "R7", "R": return "R1"
+        default: return "●"
+        }
+    }
+
+    /// Nino: yuvarlak L3/R3 simgesi yazı tanımada "13)", "(13", "L3]" gibi okunuyor; satır o zaman altyazı sanılıp
+    /// çevrilmeye gidiyordu ("13) Stand up"). Bu biçimler düğme adına çevrilir. Yalnız parantezli ya da harfli
+    /// biçimler sayılır, düz "13" (sayı) olduğu gibi kalır.
+    public static func normalizedIcons(_ line: String) -> String {
+        var s = line
+        s = s.replacingOccurrences(of: #"(?<![\w])[\(\[]?[1lI|]([123])[\)\]](?=\s|$)"#, with: "L$1", options: .regularExpression)
+        s = s.replacingOccurrences(of: #"(?<![\w])[\(\[][1lI|]([123])(?=\s|$)"#, with: "L$1", options: .regularExpression)
+        s = s.replacingOccurrences(of: #"(?<![\w])[\(\[]?([LR])([123])[\)\]](?=\s|$)"#, with: "$1$2", options: .regularExpression)
+        s = s.replacingOccurrences(of: #"(?<![\w])[\(\[]([LR])([123])(?=\s|$)"#, with: "$1$2", options: .regularExpression)
+        // "(C1" = L1 simgesi.
+        s = s.replacingOccurrences(of: #"(?<![\w])[\(\[]C([12])[\)\]]?(?=\s|$)"#, with: "L$1", options: .regularExpression)
+        return s
+    }
 
     public static func isPrompt(_ line: String) -> Bool {
         let tokens = line
@@ -160,6 +213,8 @@ public enum ButtonPrompts {
             .map { $0.trimmingCharacters(in: brackets) }
             .filter { !$0.isEmpty }
         guard let first = tokens.first else { return false }
+        // Nino: oyunun menü açıklaması ("PHOTO MODE  SELECT") altyazı değildir.
+        if line == line.uppercased(), line.uppercased().contains("PHOTO MODE") { return true }
 
         let isButton = { (token: String) in buttons.contains(token.uppercased()) }
         let words = tokens.filter { !isButton($0) && $0.contains(where: \.isLetter) }
@@ -176,7 +231,13 @@ public enum ButtonPrompts {
         // "Press ✕ to jump", "Hold R2 to aim"
         if verbs.contains(first.lowercased()), tokens.count >= 2, tokens.count <= 10 {
             let second = tokens[1]
-            return isButton(second) || lookalikes.contains(second)
+            if isButton(second) || lookalikes.contains(second) { return true }
+        }
+        // Nino: "Double tap and hold ✕ to ride alongside Dutch": fiil ile başlayıp ortasında bir düğme simgesi olan,
+        // cümle gibi bitmeyen kısa satır.
+        if verbs.contains(first.lowercased()), tokens.count <= 14, tokens.contains(where: isButton),
+           !SubtitleStabilizer.endsSentence(line) {
+            return true
         }
         return false
     }

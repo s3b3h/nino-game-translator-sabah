@@ -47,7 +47,7 @@ public enum ScreenTranslation {
             var translated: [String] = []
             var changed = false
             for paragraph in group.paragraphs {
-                var text = try await translate(paragraph).trimmingCharacters(in: .whitespacesAndNewlines)
+                var text = try await translatePreservingIcons(paragraph, using: translate).trimmingCharacters(in: .whitespacesAndNewlines)
                 if text.isEmpty { text = paragraph }
                 changed = changed || !TextMatch.isSimilar(TextMatch.normalize(paragraph), TextMatch.normalize(text), threshold: 0.90)
                 translated.append(text)
@@ -60,11 +60,80 @@ public enum ScreenTranslation {
         return items
     }
 
+    /// Nino: düğme simgeleri ("SELECT ✕ BACK ○", "Hold ● to continue") çevirmene "[1]" gibi yer tutucularla gider,
+    /// çeviride aynı yere geri konur. Çevirmen yer tutucuyu düşürürse simge satırın başına eklenir.
+    private static let turkish = Locale(identifier: "tr_TR")
+    /// Büyük harfli menüde gerçek sözcük olabilen kısa parçalar.
+    private static let shortWords: Set<String> = ["GO", "UP", "ON", "TO", "OF", "IN", "MY", "OK", "NO", "BY", "AT", "IT"]
+    private static let instructionVerbs: Set<String> = ["press", "hold", "tap", "push", "use", "mash", "release", "double", "pull", "click"]
+
+    static func translatePreservingIcons(_ text: String, using translate: (String) async throws -> String) async throws -> String {
+        let tokens = text.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+        guard tokens.contains(where: ButtonPrompts.isIcon) else { return try await translate(text) }
+        var icons: [String] = []
+        let masked = tokens.map { token -> String in
+            guard ButtonPrompts.isIcon(token) else { return token }
+            icons.append(ButtonPrompts.display(token))
+            return "[\(icons.count)]"
+        }.joined(separator: " ")
+        // Yalnız simgeden oluşan satır çevrilmez.
+        if tokens.allSatisfy(ButtonPrompts.isIcon) { return icons.joined(separator: " ") }
+        // Nino: menü açıklaması ("SELECT ✕  BACK ○", "✕ Select ○ Back"): her yazı parçası ayrı çevrilir, simgeler yerinde
+        // kalır. Tek parça çevrilince çevirmen sözcükleri karıştırıyordu ("✕ Geri ○ seç").
+        // Büyük harfli satırdaki iki harflik anlamsız parçalar ("MO", "BO") da simgedir; menü sayılmasında onlar da sayılır.
+        let shoutingLine = text == text.uppercased()
+        let junk = shoutingLine ? tokens.filter { !ButtonPrompts.isIcon($0) && $0.count <= 2 && !Self.shortWords.contains($0) }.count : 0
+        // Büyük harfli tek simgeli menü öğesi ("MAINTAIN R3", "△ MOUNT HORSE") da parça parça çevrilir; bütün satır
+        // çevrilince simge nesne sanılıyordu ("R3'i koru").
+        let iconAtEdge = ButtonPrompts.isIcon(tokens.last!) || ButtonPrompts.isIcon(tokens[0])
+        if icons.count + junk >= 2 || (shoutingLine && iconAtEdge && tokens.count <= 5),
+           !Self.instructionVerbs.contains(tokens[0].lowercased()) {
+            var parts: [String] = []
+            var words: [String] = []
+            func flush() async throws {
+                guard !words.isEmpty else { return }
+                let label = words.joined(separator: " ")
+                words = []
+                var text = try await translate(label).trimmingCharacters(in: .whitespacesAndNewlines)
+                if text.isEmpty { text = label }
+                // Menü yazısı oyundaki gibi her sözcük büyük harfle başlar ("Fotoğraf Modu", "Seç", "Geri").
+                parts.append(text.lowercased(with: Self.turkish).capitalized(with: Self.turkish))
+            }
+            let shouting = text == text.uppercased()
+            for token in tokens {
+                // Simgenin artığı ("#", "|", büyük harfli menüde tek "I") çevrilmez.
+                // Büyük harfli menüde iki harflik parça da çoğunlukla simgedir (dokunmatik yüzey "▦" → "ME", "MI").
+                if !ButtonPrompts.isIcon(token),
+                   !token.contains(where: \.isLetter) || (shouting && token.count <= 2 && !Self.shortWords.contains(token)) {
+                    // Simge artığı iki menü öğesini ayırır ("PHOTO MODE ▦ SELECT").
+                    try await flush()
+                    continue
+                }
+                if ButtonPrompts.isIcon(token) {
+                    try await flush()
+                    parts.append(ButtonPrompts.display(token))
+                } else {
+                    words.append(token)
+                }
+            }
+            try await flush()
+            return parts.joined(separator: " ")
+        }
+        var result = try await translate(masked)
+        var missing: [String] = []
+        for (i, icon) in icons.enumerated() {
+            let mark = "[\(i + 1)]"
+            if result.contains(mark) { result = result.replacingOccurrences(of: mark, with: icon) } else { missing.append(icon) }
+        }
+        return missing.isEmpty ? result : missing.joined(separator: " ") + " " + result
+    }
+
     /// Satırları gruplara toplar. Kumanda ipuçları ve yazı tanıma çöpleri atılır; harfi olmayan ya da tek harfli satırlar
     /// ("23m", "9", "+") göstergedir, çevrilmez. Bir satır, üstündeki satırın hemen altındaysa, yatayda onunla üst üste
     /// biniyorsa ve yazı boyu benziyorsa o gruba katılır. Gruplar yukarıdan aşağı, en çok `maxGroups`.
     public static func groups(_ reading: Reading) -> [Group] {
-        let lines = reading.withoutButtonPrompts().withoutOcrNoise().lines
+        // Nino: kumanda ipuçları da çevrilir; düğme simgeleri yerinde korunur (`translatePreservingIcons`).
+        let lines = reading.withoutOcrNoise().lines
             .filter { $0.box != nil && isWords($0.text) }
             .sorted { $0.box!.top < $1.box!.top }
         var groups: [[TextLine]] = []

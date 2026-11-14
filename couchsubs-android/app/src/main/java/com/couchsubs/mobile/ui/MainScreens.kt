@@ -21,12 +21,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Text
@@ -92,6 +93,7 @@ fun durationText(context: Context, millis: Long): String {
     return if (minutes >= 60) context.getString(R.string.duration_hours, minutes / 60, minutes % 60) else context.getString(R.string.duration_minutes, minutes)
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun MainScreen(
     status: LiveStatus,
@@ -118,43 +120,40 @@ fun MainScreen(
     }
 
     Box(Modifier.fillMaxSize()) {
-        if (status.running) RunningScreen(status, topBar, onStop, onPhoneView)
-        else ScreenScaffold(top = topBar, bottom = {
-            // PS5 eşlenmemişse (kurulum atlandı) başlatmak yerine eşleme açılır.
-            if (paired) PrimaryButton(stringResource(R.string.start), modifier = mark(TourStep.START), onClick = onStart)
-            else PrimaryButton(stringResource(R.string.main_pair_button), modifier = mark(TourStep.START), onClick = onPairing)
-        }) {
-            if (paired) Heading(stringResource(R.string.main_ready), stringResource(R.string.main_ready_body))
-            else {
-                Heading(stringResource(R.string.main_unpaired), stringResource(R.string.main_unpaired_body))
-                NoteTile(stringResource(R.string.main_unpaired_note), Tokens.Color.secondary)
+        // Nino (tasarım A): ortada TV'nin küçük kopyası, altında kaydırmalı anahtar ve tek satır kısayol.
+        ScreenScaffold(top = topBar) {
+            val onTv = settings.target == SubtitleTarget.TV
+            DemoScene(
+                height = 230.dp,
+                live = if (status.running) status.current else null,
+                badge = if (status.running) "CANLI" else "ÖRNEK",
+                chips = {
+                    ScreenChip("PS5 · " + (settings.console?.name ?: stringResource(R.string.profile_not_paired)), ok = if (paired) true else false, onClick = onPairing)
+                    if (onTv) ScreenChip("TV · " + (if (status.connectedTvs > 0) "Bağlı" else (settings.tvName ?: "Bekleniyor")),
+                        ok = if (status.connectedTvs > 0) true else null, onClick = onTarget)
+                },
+            )
+            Text(if (status.running) "Altyazılar canlı çevriliyor" else if (onTv) "TV'nizde böyle görünecek" else "Telefonunuzda böyle görünecek",
+                style = Tokens.Type.caption, color = Tokens.Color.secondary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            SlideToTranslate(
+                running = status.running,
+                label = when {
+                    status.running -> "Türkçe altyazı açık"
+                    !paired -> "Önce PS5'inizi eşleyin"
+                    else -> "Kaydırın, Türkçe altyazı açılsın"
+                },
+                locked = !paired && !status.running,
+                modifier = mark(TourStep.START),
+                onStart = onStart, onStop = onStop, onLocked = onPairing,
+            )
+            androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickLink(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, "Çıkış", if (onTv) "TV" else "Telefon", mark(TourStep.TARGET), onClick = onTarget)
+                QuickLink(Icons.Filled.Inventory2, "Paketler", if (settings.packsEnabled) stringResource(R.string.packs_free) else null, mark(TourStep.PACKS), onClick = onPacks)
+                QuickLink(Icons.Filled.Translate, "Çeviri", status.engineLabel.ifEmpty { engineName(context) }, onClick = onSettings)
             }
+            if (status.running && !onTv) SecondaryButton(stringResource(R.string.main_phone_view), onClick = onPhoneView)
             status.error?.let { NoteTile(it) }
-            TwoColumns(
-                { StatusTile(Icons.Filled.PlayArrow, "PS5", settings.console?.name ?: stringResource(R.string.profile_not_paired), it,
-                    corner = { if (settings.console != null) StatusLabel(stringResource(R.string.main_paired)) }, onClick = onPairing) },
-                { StatusTile(if (settings.target == SubtitleTarget.TV) Icons.Filled.Home else Icons.Filled.Phone, stringResource(R.string.main_target),
-                    if (settings.target == SubtitleTarget.TV) settings.tvName ?: stringResource(R.string.main_target_tv) else stringResource(R.string.main_target_phone),
-                    it.then(mark(TourStep.TARGET)), onClick = onTarget) },
-            )
-            Box(mark(TourStep.PACKS)) {
-                Tile(Modifier.fillMaxWidth(), onClick = onPacks) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
-                        TileIcon(Icons.AutoMirrored.Filled.List, Tokens.Color.pro)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Tokens.Space.hair)) {
-                            Text(stringResource(R.string.main_packs_title), style = Tokens.Type.headline, color = Tokens.Color.text)
-                            Text(stringResource(R.string.main_packs_games), style = Tokens.Type.caption, color = Tokens.Color.secondary)
-                        }
-                        Pill(stringResource(if (settings.packsEnabled) R.string.packs_free else R.string.main_packs_off))
-                        TileIcon(Icons.AutoMirrored.Filled.KeyboardArrowRight)
-                    }
-                }
-            }
-            TwoColumns(
-                { StatusTile(Icons.Filled.Create, stringResource(R.string.main_engine), status.engineLabel.ifEmpty { engineName(context) }, it, onClick = onSettings) },
-                { StatusTile(Icons.Filled.DateRange, stringResource(R.string.main_last_session),
-                    if (settings.lastSessionMs > 0) durationText(context, settings.lastSessionMs) else "—", it) },
-            )
         }
         tour?.let { step ->
             TourOverlay(step, bounds[step], onSkip = {

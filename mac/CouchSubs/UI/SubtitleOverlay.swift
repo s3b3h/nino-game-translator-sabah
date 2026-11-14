@@ -261,7 +261,23 @@ struct SubtitleOverlayView: View {
             }
     }
 
-    private func line(_ line: SubtitleStack.Line) -> some View {
+    @ViewBuilder private func line(_ line: SubtitleStack.Line) -> some View {
+        let style = model.settings.style
+        if style.theme != .classic && !line.paragraphs {
+            // Nino: seçilen altyazı teması bilgisayar ekranında da aynı çizilir.
+            let current = line.role == .current
+            ThemedSubtitle(text: line.text, style: style, fontSize: CGFloat(style.fontSize) * scale * (current ? 1 : 0.8), maxLines: nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .opacity(line.fading ? 0 : (line.role == .current ? 1 : (line.role == .previous ? 0.6 : 0.45)))
+                .animation(.linear(duration: SubtitleStack.previousFade), value: line.fading)
+                .contentShape(Rectangle())
+                .gesture(moveGesture)
+        } else {
+            classicLine(line)
+        }
+    }
+
+    private func classicLine(_ line: SubtitleStack.Line) -> some View {
         let style = model.settings.style
         let current = line.role == .current
         let size = CGFloat(style.fontSize) * scale * (current ? 1 : 0.8)

@@ -23,6 +23,7 @@ import com.couchsubs.mobile.core.GamePackLibrary
 import com.couchsubs.mobile.core.LinePool
 import com.couchsubs.mobile.core.PackLookup
 import com.couchsubs.mobile.core.SubtitleEvent
+import com.couchsubs.mobile.core.SubtitleLayout
 import com.couchsubs.mobile.core.SubtitlePipeline
 import com.couchsubs.mobile.core.SubtitleServer
 import com.couchsubs.mobile.core.TextTranslator
@@ -199,10 +200,19 @@ class TranslationService : Service() {
         pool = linePool
         val packTitles = library.infos.associate { it.id to it.title }
         reader = SubtitleReader()
+        // Nino: oyunların altyazı yeri öğrenilir (oyun, gösterilen satırın paketinden anlaşılır).
+        val layout = SubtitleLayout(File(filesDir, "subtitle-layout.json"))
+        var game = "genel"
         pipeline = SubtitlePipeline(translator, subtitleServer).apply {
+            hudTop = layout.hudTop(game)
             packLookup = { text -> if (settings.packsEnabled) PackLookup.match(library, text) else null }
             onPackMissed = { text -> linePool.offer(text) }
             onPairShown = { pair ->
+                pair.packId?.let { game = it }
+                pair.box?.let { box ->
+                    layout.record(box, game)
+                    hudTop = layout.hudTop(game)
+                }
                 LiveState.shown(pair, pair.packId?.let { packTitles[it] ?: it })
                 // Paket başına oturumda bir kez (her satırda olay göndermeyelim); toplam sayı oturum sonunda gider.
                 pair.packId?.let { id -> if (packsUsed.add(id)) Telemetry.event(Telemetry.PACK_HIT, "pack" to id) }

@@ -20,9 +20,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Switch
@@ -69,7 +69,7 @@ fun WelcomeScreen(onDone: () -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.inline)) {
             repeat(3) { index ->
                 val on = pager.currentPage == index
-                Box(Modifier.size(if (on) 10.dp else 8.dp).background(if (on) Tokens.Color.accent else Tokens.Color.borderStrong, CircleShape))
+                Box(Modifier.size(width = if (on) 24.dp else 8.dp, height = 8.dp).background(if (on) Tokens.Color.accent else Tokens.Color.borderStrong, CircleShape))
             }
         }
         PrimaryButton(stringResource(if (last) R.string.welcome_start else R.string.next)) {
@@ -80,10 +80,11 @@ fun WelcomeScreen(onDone: () -> Unit) {
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Tokens.Space.gap, Alignment.Bottom)) {
                 when (page) {
                     0 -> {
-                        Tile(Modifier.fillMaxWidth()) {
-                            Text(stringResource(R.string.welcome1_sample_tr), style = Tokens.Type.subtitleCurrent, color = Tokens.Color.accentText)
-                            Text(stringResource(R.string.welcome1_sample_en), style = Tokens.Type.caption, color = Tokens.Color.secondary)
+                        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                            androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.nino_logo), contentDescription = null,
+                                modifier = Modifier.size(150.dp))
                         }
+                        DemoScene()
                         Heading(stringResource(R.string.welcome1_title), stringResource(R.string.welcome1_body))
                     }
                     1 -> {
@@ -105,8 +106,8 @@ fun WelcomeScreen(onDone: () -> Unit) {
                     }
                     else -> {
                         TwoColumns(
-                            { StatusTile(Icons.Filled.Home, stringResource(R.string.welcome3_tv_label), stringResource(R.string.welcome3_tv), it) },
-                            { StatusTile(Icons.Filled.Phone, stringResource(R.string.welcome3_phone_label), stringResource(R.string.welcome3_phone), it) },
+                            { StatusTile(Icons.Filled.Tv, stringResource(R.string.welcome3_tv_label), stringResource(R.string.welcome3_tv), it) },
+                            { StatusTile(Icons.Filled.Smartphone, stringResource(R.string.welcome3_phone_label), stringResource(R.string.welcome3_phone), it) },
                         )
                         Tile(Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.welcome3_wifi), style = Tokens.Type.headline, color = Tokens.Color.text)
@@ -241,7 +242,7 @@ fun TargetScreen(onBack: (() -> Unit)? = null, onDone: () -> Unit) {
         Heading(stringResource(R.string.target_title), stringResource(R.string.target_body), if (onBack == null) stringResource(R.string.setup_step, 3) else null)
         Tile(Modifier.fillMaxWidth(), style = if (target == SubtitleTarget.TV) TileStyle.ACTIVE else TileStyle.NORMAL, onClick = { target = SubtitleTarget.TV }) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.inline)) {
-                TileIcon(Icons.Filled.Home)
+                TileIcon(Icons.Filled.Tv)
                 Text(stringResource(R.string.target_tv), style = Tokens.Type.headline, color = Tokens.Color.text, modifier = Modifier.weight(1f))
                 if (target == SubtitleTarget.TV) SelectedCheck()
             }
@@ -261,7 +262,7 @@ fun TargetScreen(onBack: (() -> Unit)? = null, onDone: () -> Unit) {
             Text(stringResource(R.string.target_tv_body), style = Tokens.Type.caption, color = Tokens.Color.secondary)
         }
         TwoColumns(
-            { StatusTile(Icons.Filled.Phone, stringResource(R.string.target_phone_note), stringResource(R.string.target_phone), it,
+            { StatusTile(Icons.Filled.Smartphone, stringResource(R.string.target_phone_note), stringResource(R.string.target_phone), it,
                 style = if (target == SubtitleTarget.PHONE) TileStyle.ACTIVE else TileStyle.NORMAL,
                 corner = { if (target == SubtitleTarget.PHONE) SelectedCheck() }, onClick = { target = SubtitleTarget.PHONE }) },
             { StatusTile(Icons.Filled.Info, stringResource(R.string.target_unlisted_note), stringResource(R.string.target_unlisted), it,

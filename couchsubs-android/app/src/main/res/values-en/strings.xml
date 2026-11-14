@@ -69,7 +69,7 @@
     <string name="pair_failed">Pairing failed: %1$s</string>
     <string name="target_title">Where should subtitles appear?</string>
     <string name="target_tv">On the TV, over the game</string>
-    <string name="target_tv_body">The CouchSubs TV app finds this phone by itself when opened. To install the TV app the first time, use CouchSubs on a computer once.</string>
+    <string name="target_tv_body">The Nino TV app finds this phone by itself when opened. To install the TV app the first time, use Nino on a computer once.</string>
     <string name="target_phone">On this phone</string>
     <string name="target_tvs_none">No TV seen on the network (it may be off; that\'s fine).</string>
 
@@ -195,13 +195,13 @@
     <string name="settings_target">Subtitle target</string>
     <string name="settings_ps5">PS5 and connection</string>
     <string name="settings_about">About</string>
-    <string name="settings_copyright">CouchSubs · © 2026 Sinan Yorulmaz · AGPL-3.0 · Enmera</string>
+    <string name="settings_copyright">Nino · Yunus Demirbağ · Based on CouchSubs (© 2026 Sinan Yorulmaz) · AGPL-3.0</string>
     <string name="main_packs_off">Off</string>
     <string name="packs_free">Free</string>
     <string name="packs_free_count">Free · %1$d games</string>
     <string name="main_paired">Paired</string>
     <string name="packs_switch_note">When off, all lines are translated with your chosen engine.</string>
-    <string name="profile_no_account">CouchSubs has no accounts: your settings stay only on this phone. The app and game packs are free.</string>
+    <string name="profile_no_account">Nino has no accounts: your settings stay only on this phone. The app and game packs are free.</string>
     <string name="notify_disconnect">When the PS5 connection drops</string>
     <string name="profile_tvs">TV and subtitle target</string>
 </resources>

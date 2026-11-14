@@ -37,7 +37,7 @@ html, body {
   position: absolute;
   z-index: 9;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.97);
+  background: rgba(0, 0, 0, 1);
 }
 #subtitle-cover.hidden { display: none; }
 
@@ -57,7 +57,9 @@ html, body {
   padding: 2px 6px;
   border-radius: 6px;
   /* Altındaki İngilizce yazı seçilmesin diye altyazı örtüsü kadar koyu. */
-  background: rgba(0, 0, 0, 0.97);
+  background: #000;
+  /* Kenarlar yumuşak ama tam kapalı: arkadaki İngilizce harfin ucu bile görünmesin. */
+  box-shadow: 0 0 6px 6px #000;
   color: #fff;
   font-weight: 600;
   line-height: 1.15;
@@ -115,9 +117,9 @@ html, body {
   max-width: 1100px;
   padding: 28px 36px;
   border-radius: 24px;
-  border: 2px solid #30333A;
+  border: 2px solid #24335A;
   background: rgba(20, 21, 24, 0.92);
-  color: #F3EEE4;
+  color: #F2F5FB;
   font-size: 26px;
   line-height: 1.5;
 }
@@ -126,12 +128,12 @@ html, body {
 #panel .title { display: flex; align-items: center; font-size: 32px; font-weight: 600; margin-bottom: 18px; }
 #panel .title .logo { width: 48px; height: 48px; border-radius: 11px; margin-right: 16px; }
 #panel .row { display: flex; padding: 6px 0; }
-#panel .label { width: 200px; color: #A9A59C; }
-#panel .keys { margin-top: 18px; padding-top: 16px; border-top: 2px solid #30333A; font-size: 22px; color: #A9A59C; }
+#panel .label { width: 200px; color: #9DA9C6; }
+#panel .keys { margin-top: 18px; padding-top: 16px; border-top: 2px solid #24335A; font-size: 22px; color: #9DA9C6; }
 #panel .keys .key { padding: 3px 0; }
-#panel .keys .key b { display: inline-block; min-width: 150px; color: #F5B83D; font-weight: 600; }
-.muted { color: #A9A59C; }
-.ok { color: #62C990; }
+#panel .keys .key b { display: inline-block; min-width: 150px; color: #2D8CFF; font-weight: 600; }
+.muted { color: #9DA9C6; }
+.ok { color: #5FD39A; }
 .bad { color: #F28B82; }
 
 #waiting {
@@ -144,16 +146,16 @@ html, body {
   max-width: 1100px;
   padding: 56px 72px;
   border-radius: 32px;
-  border: 2px solid #30333A;
+  border: 2px solid #24335A;
   background: rgba(20, 21, 24, 0.94);
-  color: #F3EEE4;
+  color: #F2F5FB;
   text-align: center;
 }
 
 #waiting.hidden { display: none; }
 #waiting .logo { width: 112px; height: 112px; border-radius: 26px; margin-bottom: 28px; }
 #waiting .waiting-title { font-size: 42px; font-weight: 600; line-height: 1.3; }
-#waiting .waiting-hint { margin-top: 16px; font-size: 28px; line-height: 1.4; color: #A9A59C; }
+#waiting .waiting-hint { margin-top: 16px; font-size: 28px; line-height: 1.4; color: #9DA9C6; }
 
 /* Bekleme ekranındaki düğme; kumandayla seçili olduğu belli olsun diye sarı dolgu ve çerçeve. */
 #waiting .button {
@@ -161,13 +163,13 @@ html, body {
   margin-top: 36px;
   padding: 16px 44px;
   border-radius: 14px;
-  border: 3px solid #30333A;
-  background: #1C1E22;
-  color: #F3EEE4;
+  border: 3px solid #24335A;
+  background: #0E1733;
+  color: #F2F5FB;
   font-size: 30px;
   font-weight: 600;
 }
-#waiting .button.focused { background: #F5B83D; border-color: #FFFFFF; color: #1A1A1A; }
+#waiting .button.focused { background: #2D8CFF; border-color: #FFFFFF; color: #FFFFFF; }
 
 /* Demo sırasında sağ üstte ne gösterildiğini anlatan not. */
 #demo-badge {
@@ -178,14 +180,14 @@ html, body {
   max-width: 760px;
   padding: 18px 26px;
   border-radius: 18px;
-  border: 2px solid #30333A;
+  border: 2px solid #24335A;
   background: rgba(20, 21, 24, 0.92);
-  color: #A9A59C;
+  color: #9DA9C6;
   font-size: 24px;
   line-height: 1.4;
 }
 #demo-badge.hidden { display: none; }
-#demo-badge b { display: block; color: #F5B83D; font-size: 26px; margin-bottom: 4px; }
+#demo-badge b { display: block; color: #2D8CFF; font-size: 26px; margin-bottom: 4px; }
 
 /* Samsung: TV kendiliğinden HDMI girişine geçtiyse (Anynet+) sağ üstte ipucu; Tamam ya da Geri ile kapanır. */
 #source-tip {
@@ -196,12 +198,403 @@ html, body {
   max-width: 820px;
   padding: 22px 30px;
   border-radius: 18px;
-  border: 2px solid #F5B83D;
+  border: 2px solid #2D8CFF;
   background: rgba(20, 21, 24, 0.95);
-  color: #F3EEE4;
+  color: #F2F5FB;
   font-size: 26px;
   line-height: 1.45;
 }
 #source-tip.hidden { display: none; }
-#source-tip b { display: block; color: #F5B83D; font-size: 30px; margin-bottom: 8px; }
-#source-tip .close { display: block; margin-top: 12px; font-size: 22px; color: #A9A59C; }
+#source-tip b { display: block; color: #2D8CFF; font-size: 30px; margin-bottom: 8px; }
+#source-tip .close { display: block; margin-top: 12px; font-size: 22px; color: #9DA9C6; }
+
+/* ───────────── Nino görünümü (2026-11-14): cam kartlar, mavi-lacivert, yumuşak animasyonlar ───────────── */
+#waiting {
+  padding: 64px 96px 56px;
+  border-radius: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 18, 42, 0.72);
+  background-image: linear-gradient(160deg, rgba(45, 140, 255, 0.20), rgba(5, 10, 26, 0.0) 55%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  backdrop-filter: blur(40px) saturate(160%);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  min-width: 900px;
+  -webkit-animation: nino-rise 0.8s cubic-bezier(.2, .8, .2, 1) both;
+  animation: nino-rise 0.8s cubic-bezier(.2, .8, .2, 1) both;
+}
+#waiting .logo-wrap { position: relative; width: 220px; height: 220px; margin: 0 auto 18px; }
+#waiting .logo {
+  position: relative; z-index: 2; width: 220px; height: 220px; margin: 0; border-radius: 0;
+  -webkit-animation: nino-float 4s ease-in-out infinite; animation: nino-float 4s ease-in-out infinite;
+}
+#waiting .ring {
+  position: absolute; z-index: 1; left: -20px; top: -20px; width: 260px; height: 260px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(45, 140, 255, 0.55) 0%, rgba(45, 140, 255, 0.0) 68%);
+  -webkit-animation: nino-pulse 3s ease-in-out infinite; animation: nino-pulse 3s ease-in-out infinite;
+}
+#waiting .brand {
+  font-size: 64px; font-weight: 800; letter-spacing: 1px; margin-bottom: 18px;
+  background: linear-gradient(180deg, #FFFFFF, #9FC2FF);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+#waiting .waiting-title { font-size: 40px; font-weight: 600; }
+#waiting .waiting-hint { font-size: 28px; color: #9DA9C6; }
+#waiting .button {
+  margin-top: 44px; padding: 18px 56px; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-transition: all 0.25s ease; transition: all 0.25s ease;
+}
+#waiting .button.focused {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: linear-gradient(180deg, #2D8CFF, #00308A);
+  box-shadow: 0 12px 40px rgba(45, 140, 255, 0.55);
+  -webkit-transform: scale(1.06); transform: scale(1.06);
+}
+
+#panel, #demo-badge, #source-tip {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 18, 42, 0.78);
+  -webkit-backdrop-filter: blur(36px) saturate(160%);
+  backdrop-filter: blur(36px) saturate(160%);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  -webkit-animation: nino-rise 0.5s cubic-bezier(.2, .8, .2, 1) both;
+  animation: nino-rise 0.5s cubic-bezier(.2, .8, .2, 1) both;
+}
+#panel { border-radius: 32px; padding: 32px 40px; }
+#panel .title .logo { width: 56px; height: 56px; border-radius: 0; }
+#panel .keys { border-top: 1px solid rgba(255, 255, 255, 0.12); }
+#demo-badge, #source-tip { border-radius: 24px; }
+#source-tip { border-color: rgba(45, 140, 255, 0.7); }
+
+@-webkit-keyframes nino-rise { from { opacity: 0; -webkit-transform: translate(-50%, -46%) scale(0.96); } to { opacity: 1; -webkit-transform: translate(-50%, -50%) scale(1); } }
+@keyframes nino-rise { from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+#panel, #demo-badge, #source-tip { -webkit-animation-name: nino-fade; animation-name: nino-fade; }
+@-webkit-keyframes nino-fade { from { opacity: 0; -webkit-transform: translateY(-12px); } to { opacity: 1; -webkit-transform: none; } }
+@keyframes nino-fade { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+@-webkit-keyframes nino-float { 0%, 100% { -webkit-transform: translateY(0); } 50% { -webkit-transform: translateY(-10px); } }
+@keyframes nino-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@-webkit-keyframes nino-pulse { 0%, 100% { opacity: 0.55; -webkit-transform: scale(0.92); } 50% { opacity: 1; -webkit-transform: scale(1.08); } }
+@keyframes nino-pulse { 0%, 100% { opacity: 0.55; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.08); } }
+#subtitle-text, #subtitle-prev-text, #subtitle-prev2-text {
+  border-radius: 18px;
+  background: rgba(6, 12, 30, 0.74);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* ───────────── Nino bekleme ekranı: kendi kendine oynayan sinematik demo ───────────── */
+#waiting { display: none !important; }
+#attract { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 5; overflow: hidden; background: #050a1a; }
+#attract.hidden { display: none; }
+#attract .scene { position: absolute; left: -4%; top: -4%; width: 108%; height: 108%;
+  -webkit-animation: nino-pan 26s ease-in-out infinite alternate; animation: nino-pan 26s ease-in-out infinite alternate; }
+#attract .sky { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #060b22 0%, #14204a 38%, #3a2a5a 58%, #b8563c 76%, #f2a65a 86%, #2a1b2e 100%); }
+#attract .stars { position: absolute; left: 0; top: 0; width: 100%; height: 55%; opacity: 0.7;
+  background-image: radial-gradient(2px 2px at 10% 20%, #fff, transparent), radial-gradient(1.5px 1.5px at 30% 12%, #cfe0ff, transparent),
+    radial-gradient(2px 2px at 52% 28%, #fff, transparent), radial-gradient(1.5px 1.5px at 70% 10%, #fff, transparent),
+    radial-gradient(2px 2px at 86% 24%, #cfe0ff, transparent), radial-gradient(1.5px 1.5px at 18% 40%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 62% 44%, #fff, transparent), radial-gradient(2px 2px at 94% 6%, #fff, transparent);
+  -webkit-animation: nino-twinkle 4s ease-in-out infinite; animation: nino-twinkle 4s ease-in-out infinite; }
+#attract .sun { position: absolute; left: 30%; top: 58%; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 214, 140, 0.95) 0%, rgba(255, 150, 80, 0.55) 22%, rgba(255, 120, 60, 0.0) 62%); }
+#attract .ridge { position: absolute; left: 0; width: 100%; }
+#attract .ridge.far { bottom: 22%; height: 46%; fill: #2b2347; opacity: 0.9; }
+#attract .ridge.mid { bottom: 10%; height: 44%; fill: #171533; }
+#attract .cliff { position: absolute; left: 0; top: 0; width: 100%; height: 100%; fill: #07060f; }
+#attract .fog { position: absolute; left: -20%; width: 140%; height: 30%; border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(200, 170, 220, 0.22), rgba(200, 170, 220, 0) 70%); }
+#attract .fog.f1 { bottom: 18%; -webkit-animation: nino-fog 18s linear infinite alternate; animation: nino-fog 18s linear infinite alternate; }
+#attract .fog.f2 { bottom: 4%; opacity: 0.8; -webkit-animation: nino-fog 24s linear infinite alternate-reverse; animation: nino-fog 24s linear infinite alternate-reverse; }
+#attract .embers i { position: absolute; bottom: -20px; width: 6px; height: 6px; border-radius: 50%; background: #ffb46b;
+  box-shadow: 0 0 12px 3px rgba(255, 150, 70, 0.8); opacity: 0;
+  -webkit-animation: nino-ember 9s linear infinite; animation: nino-ember 9s linear infinite; }
+#attract .embers i:nth-child(1) { left: 58%; -webkit-animation-delay: 0s; animation-delay: 0s; }
+#attract .embers i:nth-child(2) { left: 66%; -webkit-animation-delay: 1.2s; animation-delay: 1.2s; }
+#attract .embers i:nth-child(3) { left: 74%; -webkit-animation-delay: 2.6s; animation-delay: 2.6s; }
+#attract .embers i:nth-child(4) { left: 81%; -webkit-animation-delay: 3.4s; animation-delay: 3.4s; }
+#attract .embers i:nth-child(5) { left: 62%; -webkit-animation-delay: 4.8s; animation-delay: 4.8s; }
+#attract .embers i:nth-child(6) { left: 88%; -webkit-animation-delay: 5.5s; animation-delay: 5.5s; }
+#attract .embers i:nth-child(7) { left: 70%; -webkit-animation-delay: 6.7s; animation-delay: 6.7s; }
+#attract .embers i:nth-child(8) { left: 92%; -webkit-animation-delay: 7.9s; animation-delay: 7.9s; }
+#attract .vignette { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.65) 100%); }
+
+/* Oyunun kendi İngilizce altyazısı (Nino'nunki tam üstüne biner). */
+#game-sub { position: absolute; left: 8%; right: 8%; bottom: 7%; z-index: 9; text-align: center;
+  font-size: 44px; line-height: 1.3; font-weight: 500; color: #f4f1e8; letter-spacing: 0.3px;
+  text-shadow: 0 2px 3px #000, 0 0 10px rgba(0, 0, 0, 0.8); opacity: 0;
+  -webkit-transition: opacity 0.35s ease; transition: opacity 0.35s ease; }
+#game-sub.on { opacity: 1; }
+
+/* Sol üstte küçük cam kart: logo, ne yapılacağı, bekleme noktaları. */
+#attract-card { position: absolute; top: 56px; left: 56px; z-index: 12; display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center; padding: 22px 34px 22px 22px; border-radius: 32px; max-width: 980px;
+  border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(10, 18, 42, 0.62);
+  -webkit-backdrop-filter: blur(30px) saturate(160%); backdrop-filter: blur(30px) saturate(160%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  -webkit-animation: nino-fade 0.8s cubic-bezier(.2, .8, .2, 1) both; animation: nino-fade 0.8s cubic-bezier(.2, .8, .2, 1) both; }
+#attract-card .logo { width: 112px; height: 112px; margin-right: 26px;
+  -webkit-animation: nino-float 4s ease-in-out infinite; animation: nino-float 4s ease-in-out infinite; }
+#attract-card .waiting-title { font-size: 36px; font-weight: 700; color: #fff; }
+#attract-card .waiting-hint { margin-top: 8px; font-size: 24px; color: #b9c6e4; }
+#attract-card .dots { display: inline-block; margin-right: 12px; vertical-align: middle; }
+#attract-card .dots i { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: #2D8CFF;
+  -webkit-animation: nino-dot 1.2s ease-in-out infinite; animation: nino-dot 1.2s ease-in-out infinite; }
+#attract-card .dots i:nth-child(2) { -webkit-animation-delay: 0.2s; animation-delay: 0.2s; }
+#attract-card .dots i:nth-child(3) { -webkit-animation-delay: 0.4s; animation-delay: 0.4s; }
+
+/* Sağ üstte "ÖRNEK" rozeti. */
+#attract-badge { position: absolute; top: 64px; right: 64px; z-index: 12; padding: 10px 22px; border-radius: 999px;
+  font-size: 22px; font-weight: 700; letter-spacing: 3px; color: #fff;
+  background: linear-gradient(180deg, #2D8CFF, #00308A); box-shadow: 0 10px 30px rgba(45, 140, 255, 0.45); }
+
+/* Demo sırasında Nino'nun Türkçe altyazısı biraz daha belirgin: hafif mavi kenar. */
+body.attract #subtitle-text { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(45, 140, 255, 0.35); }
+
+@-webkit-keyframes nino-pan { from { -webkit-transform: scale(1.0) translateX(0); } to { -webkit-transform: scale(1.06) translateX(-2%); } }
+@keyframes nino-pan { from { transform: scale(1.0) translateX(0); } to { transform: scale(1.06) translateX(-2%); } }
+@-webkit-keyframes nino-fog { from { -webkit-transform: translateX(-6%); } to { -webkit-transform: translateX(6%); } }
+@keyframes nino-fog { from { transform: translateX(-6%); } to { transform: translateX(6%); } }
+@-webkit-keyframes nino-ember { 0% { opacity: 0; -webkit-transform: translate(0, 0); } 10% { opacity: 1; } 100% { opacity: 0; -webkit-transform: translate(-160px, -900px); } }
+@keyframes nino-ember { 0% { opacity: 0; transform: translate(0, 0); } 10% { opacity: 1; } 100% { opacity: 0; transform: translate(-160px, -900px); } }
+@-webkit-keyframes nino-twinkle { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.85; } }
+@keyframes nino-twinkle { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.85; } }
+@-webkit-keyframes nino-dot { 0%, 100% { opacity: 0.25; -webkit-transform: scale(0.8); } 50% { opacity: 1; -webkit-transform: scale(1.15); } }
+@keyframes nino-dot { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.15); } }
+
+/* ───────────── Gece şehri sahnesi ───────────── */
+#attract .noir .sky { background: linear-gradient(180deg, #02040b 0%, #0a1426 40%, #142338 70%, #0b1220 100%); }
+#attract .noir .moon { position: absolute; left: 72%; top: 14%; width: 210px; height: 210px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #f4f1e4 0%, #d9d6c8 55%, #b9b6a8 100%);
+  box-shadow: 0 0 80px 30px rgba(220, 230, 255, 0.25), 0 0 200px 80px rgba(150, 180, 230, 0.12); }
+#attract .noir .cloud { position: absolute; height: 120px; border-radius: 60px; background: rgba(20, 30, 50, 0.85);
+  -webkit-filter: blur(18px); filter: blur(18px); }
+#attract .noir .cloud.c1 { left: 60%; top: 20%; width: 520px; -webkit-animation: nino-cloud 40s linear infinite alternate; animation: nino-cloud 40s linear infinite alternate; }
+#attract .noir .cloud.c2 { left: 10%; top: 12%; width: 700px; opacity: 0.7; -webkit-animation: nino-cloud 55s linear infinite alternate-reverse; animation: nino-cloud 55s linear infinite alternate-reverse; }
+#attract .noir .beam { position: absolute; left: 30%; bottom: 30%; width: 180px; height: 1200px; margin-left: -90px;
+  background: linear-gradient(0deg, rgba(230, 240, 255, 0.35), rgba(230, 240, 255, 0.0) 85%);
+  -webkit-transform-origin: 50% 100%; transform-origin: 50% 100%;
+  -webkit-clip-path: polygon(45% 100%, 55% 100%, 100% 0, 0 0); clip-path: polygon(45% 100%, 55% 100%, 100% 0, 0 0);
+  -webkit-animation: nino-beam 9s ease-in-out infinite alternate; animation: nino-beam 9s ease-in-out infinite alternate; }
+#attract .noir .city { position: absolute; left: 0; width: 100%; }
+#attract .noir .city.far { bottom: 18%; height: 62%; fill: #0d1628; }
+#attract .noir .city.near { bottom: 0; height: 48%; fill: #070c18; }
+#attract .noir .windows { position: absolute; left: 0; width: 100%; opacity: 0.55;
+  background-image: radial-gradient(2px 3px at 6% 30%, #ffd98a, transparent), radial-gradient(2px 3px at 14% 52%, #ffd98a, transparent),
+    radial-gradient(2px 3px at 23% 40%, #ffe7b0, transparent), radial-gradient(2px 3px at 31% 64%, #ffd98a, transparent),
+    radial-gradient(2px 3px at 38% 22%, #ffe7b0, transparent), radial-gradient(2px 3px at 47% 58%, #ffd98a, transparent),
+    radial-gradient(2px 3px at 55% 35%, #ffd98a, transparent), radial-gradient(2px 3px at 63% 70%, #ffe7b0, transparent),
+    radial-gradient(2px 3px at 71% 45%, #ffd98a, transparent), radial-gradient(2px 3px at 82% 28%, #ffe7b0, transparent),
+    radial-gradient(2px 3px at 90% 60%, #ffd98a, transparent), radial-gradient(2px 3px at 96% 38%, #ffd98a, transparent);
+  -webkit-animation: nino-twinkle 6s ease-in-out infinite; animation: nino-twinkle 6s ease-in-out infinite; }
+#attract .noir .windows.far-w { bottom: 22%; height: 40%; }
+#attract .noir .windows.near-w { bottom: 4%; height: 30%; opacity: 0.4; }
+#attract .noir .roof { position: absolute; left: 0; top: 0; width: 100%; height: 100%; fill: #020308; }
+#attract .noir .roof .cape { -webkit-transform-origin: 1350px 760px; transform-origin: 1350px 760px;
+  -webkit-animation: nino-cape 3s ease-in-out infinite; animation: nino-cape 3s ease-in-out infinite; }
+#attract .noir .rain { position: absolute; left: -10%; top: -10%; width: 120%; height: 120%; opacity: 0.35;
+  background-image: repeating-linear-gradient(105deg, rgba(180, 200, 230, 0.0) 0px, rgba(180, 200, 230, 0.0) 14px, rgba(180, 200, 230, 0.55) 15px, rgba(180, 200, 230, 0.0) 16px);
+  background-size: 100% 140px; -webkit-animation: nino-rain 0.45s linear infinite; animation: nino-rain 0.45s linear infinite; }
+#attract .noir .rain.r2 { opacity: 0.2; background-size: 100% 90px; -webkit-animation-duration: 0.3s; animation-duration: 0.3s; }
+#attract .noir .flash { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #dfe8ff; opacity: 0;
+  -webkit-animation: nino-flash 11s linear infinite; animation: nino-flash 11s linear infinite; }
+#attract .noir .vignette { background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.75) 100%); }
+
+@-webkit-keyframes nino-cloud { from { -webkit-transform: translateX(-80px); } to { -webkit-transform: translateX(80px); } }
+@keyframes nino-cloud { from { transform: translateX(-80px); } to { transform: translateX(80px); } }
+@-webkit-keyframes nino-beam { from { -webkit-transform: rotate(-24deg); } to { -webkit-transform: rotate(18deg); } }
+@keyframes nino-beam { from { transform: rotate(-24deg); } to { transform: rotate(18deg); } }
+@-webkit-keyframes nino-rain { from { background-position: 0 0; } to { background-position: -40px 140px; } }
+@keyframes nino-rain { from { background-position: 0 0; } to { background-position: -40px 140px; } }
+@-webkit-keyframes nino-cape { 0%, 100% { -webkit-transform: skewX(0deg); } 50% { -webkit-transform: skewX(-6deg) scaleX(1.04); } }
+@keyframes nino-cape { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(-6deg) scaleX(1.04); } }
+@-webkit-keyframes nino-flash { 0%, 90%, 100% { opacity: 0; } 91% { opacity: 0.35; } 92% { opacity: 0.05; } 93.5% { opacity: 0.25; } 95% { opacity: 0; } }
+@keyframes nino-flash { 0%, 90%, 100% { opacity: 0; } 91% { opacity: 0.35; } 92% { opacity: 0.05; } 93.5% { opacity: 0.25; } 95% { opacity: 0; } }
+#attract .noir .city.far { fill: #1a2846; }
+#attract .noir .city.near { fill: #0b1426; }
+#attract .noir .haze { position: absolute; left: -10%; bottom: 8%; width: 120%; height: 55%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 160, 80, 0.22) 0%, rgba(120, 140, 200, 0.12) 40%, rgba(0, 0, 0, 0) 70%); }
+#attract .noir .beam { width: 320px; margin-left: -160px; background: linear-gradient(0deg, rgba(230, 240, 255, 0.45), rgba(230, 240, 255, 0.0) 85%); }
+#attract .noir .beam.b2 { left: 58%; opacity: 0.6; -webkit-animation-duration: 13s; animation-duration: 13s; -webkit-animation-direction: alternate-reverse; animation-direction: alternate-reverse; }
+#attract-card { max-width: 1300px; }
+#attract-card .waiting-title { font-size: 32px; white-space: nowrap; }
+/* Net görüntü: bulanık bulutlar yerine yumuşak ama keskin kenarsız degrade, banding azaltmak için düz renk katmanları. */
+#attract .noir .cloud { -webkit-filter: none; filter: none; background: radial-gradient(ellipse at center, rgba(28, 40, 66, 0.9) 0%, rgba(28, 40, 66, 0) 70%); height: 180px; }
+#attract .noir .city.far rect, #attract .noir .city.near rect { shape-rendering: crispEdges; }
+#attract .scene { -webkit-animation-duration: 40s; animation-duration: 40s; }
+
+/* Kart: logo + ad, altında üç kısa madde, en altta bekleme durumu. */
+#attract-card { display: block; padding: 28px 36px 26px; border-radius: 32px; max-width: 760px; min-width: 620px; }
+#attract-card .head { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-bottom: 18px; }
+#attract-card .logo { width: 76px; height: 76px; margin-right: 18px; }
+#attract-card .brand { font-size: 46px; font-weight: 800; letter-spacing: 0.5px;
+  background: linear-gradient(180deg, #FFFFFF, #9FC2FF); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+#attract-card .steps { list-style: none; margin: 0; padding: 0; }
+#attract-card .steps li { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
+  font-size: 28px; line-height: 1.3; color: #eef3ff; padding: 9px 0; }
+#attract-card .steps li b { display: inline-block; -webkit-flex: none; flex: none; width: 42px; height: 42px; line-height: 42px; margin-right: 18px;
+  border-radius: 50%; text-align: center; font-size: 22px; color: #fff;
+  background: linear-gradient(180deg, #2D8CFF, #00308A); box-shadow: 0 6px 18px rgba(45, 140, 255, 0.45); }
+#attract-card .status { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 22px; color: #b9c6e4; }
+
+/* Altyazıyı gösteren ok ve etiketi. */
+#attract-arrow { position: absolute; left: 13%; bottom: 17%; z-index: 12; width: 420px;
+  -webkit-animation: nino-bob 2.2s ease-in-out infinite; animation: nino-bob 2.2s ease-in-out infinite; }
+#attract-arrow .label { display: inline-block; padding: 12px 24px; border-radius: 999px; font-size: 26px; font-weight: 700; color: #fff;
+  background: rgba(10, 18, 42, 0.72); border: 1px solid rgba(255, 255, 255, 0.22);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); }
+#attract-arrow svg { display: block; width: 180px; height: 140px; margin-left: 160px; margin-top: -4px; overflow: visible;
+  fill: none; stroke: #5AA6FF; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round;
+  -webkit-filter: drop-shadow(0 0 8px rgba(45, 140, 255, 0.8)); filter: drop-shadow(0 0 8px rgba(45, 140, 255, 0.8)); }
+@-webkit-keyframes nino-bob { 0%, 100% { -webkit-transform: translateY(0); } 50% { -webkit-transform: translateY(10px); } }
+@keyframes nino-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+#attract-arrow .label { white-space: nowrap; }
+body.overlay #attract, body.overlay #attract-arrow { display: none !important; }
+
+/* ───────────── Nino altyazı temaları ───────────── */
+body[data-theme="cinema"] #subtitle-text, body[data-theme="cinema"] #subtitle-prev-text, body[data-theme="cinema"] #subtitle-prev2-text {
+  background: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none;
+  letter-spacing: 0.5px; text-shadow: 0 2px 3px #000, 0 0 14px rgba(0, 0, 0, 0.95), 0 0 2px #000; }
+body[data-theme="minimal"] #subtitle-text, body[data-theme="minimal"] #subtitle-prev-text, body[data-theme="minimal"] #subtitle-prev2-text {
+  background: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none;
+  font-weight: 500 !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.6); }
+body[data-theme="glass"] #subtitle-text, body[data-theme="glass"] #subtitle-prev-text, body[data-theme="glass"] #subtitle-prev2-text {
+  background: rgba(10, 18, 42, 0.62) !important; -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  border: 2px solid rgba(90, 166, 255, 0.55); border-radius: 22px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 26px rgba(45, 140, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+body[data-theme="contrast"] #subtitle-text, body[data-theme="contrast"] #subtitle-prev-text, body[data-theme="contrast"] #subtitle-prev2-text {
+  background: #000 !important; border-radius: 6px; box-shadow: none !important; text-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+body[data-theme="outline"] #subtitle-text, body[data-theme="outline"] #subtitle-prev-text, body[data-theme="outline"] #subtitle-prev2-text {
+  background: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none;
+  text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 0 0 8px rgba(0, 0, 0, 0.8); }
+/* Nino Cam = demo ekranındaki görünüm (kullanıcı beğendi). */
+body[data-theme="glass"] #subtitle-text, body[data-theme="glass"] #subtitle-prev-text, body[data-theme="glass"] #subtitle-prev2-text {
+  background: rgba(6, 12, 30, 0.86) !important; border: 2px solid rgba(45, 140, 255, 0.45); border-radius: 22px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45), 0 0 22px rgba(45, 140, 255, 0.22) !important; }
+
+/* Nino: "Üstünü örtsün"de çeviri oyunun altyazısı gibi görünür: siyah örtünün içinde çerçevesiz, düz beyaz yazı. */
+body.covering #subtitle-text, body.covering #subtitle-prev-text, body.covering #subtitle-prev2-text {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; text-shadow: none !important; }
+#subtitle-cover { border-radius: 6px; }
+
+/* Nino: düğme simgesi rozeti (oyundaki gibi beyaz halkalı daire; L1–R3 için yuvarlatılmış kutu). */
+.btn-icon {
+  display: inline-block; box-sizing: border-box; min-width: 1.3em; height: 1.3em; padding: 0 0.15em;
+  margin: 0 0.18em; border: 0.12em solid currentColor; border-radius: 50%;
+  font-size: 0.82em; line-height: 1.08em; text-align: center; vertical-align: middle; font-weight: 700; }
+.btn-icon.pill { border-radius: 0.35em; font-size: 0.62em; min-width: 1.9em; height: 1.6em; line-height: 1.36em; }
+.btn-icon.stick { font-size: 0.6em; min-width: 2em; height: 2em; line-height: 1.76em; }
+.btn-icon.marker { color: #1b1b1b; background: #e8d36a; border-color: #e8d36a; font-size: 0.7em; line-height: 1.2em; }
+.btn-icon.dpad { border-radius: 0.3em; }
+.btn-icon.pad { min-width: 2.4em; height: 1.4em; background: repeating-linear-gradient(90deg, currentColor 0 0.12em, transparent 0.12em 0.42em); }
+
+/* ───────────── Nino bilgi paneli (OK tuşu): sağda boydan boya beyaz cam ───────────── */
+#panel { position: absolute; top: 40px; right: 40px; bottom: 40px; left: auto; width: 600px; min-width: 0; max-width: none;
+  box-sizing: border-box; padding: 34px 34px 22px; border-radius: 40px; overflow: hidden;
+  font-size: 22px; line-height: 1.35; color: #0B1530;
+  background: rgba(248, 250, 255, 0.86); border: 1px solid rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%);
+  box-shadow: 0 40px 120px rgba(0, 10, 40, 0.45), inset 0 1px 0 #fff;
+  display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column;
+  -webkit-animation: nino-slide 0.45s cubic-bezier(.2, .8, .2, 1) both; animation: nino-slide 0.45s cubic-bezier(.2, .8, .2, 1) both; }
+#panel.hidden { display: none; }
+@-webkit-keyframes nino-slide { from { opacity: 0; -webkit-transform: translateX(60px); } to { opacity: 1; -webkit-transform: none; } }
+@keyframes nino-slide { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: none; } }
+
+#panel .p-top { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+#panel .p-top .logo { width: 58px; height: 58px; margin-right: 14px; border-radius: 0; }
+#panel .brand { -webkit-flex: 1; flex: 1; font-size: 38px; font-weight: 800; letter-spacing: 0.3px; color: #0B1530; }
+#panel .ver { padding: 5px 13px; border-radius: 999px; font-size: 17px; font-weight: 700; color: #0070D1; background: rgba(0, 112, 209, 0.1); }
+
+/* Durum: büyük halka; renk bağlantının durumundan. */
+#panel .hero { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
+  margin-top: 26px; padding: 22px; border-radius: 28px; background: #fff; box-shadow: 0 10px 30px rgba(0, 30, 90, 0.08); }
+#panel .ring { -webkit-flex: none; flex: none; position: relative; width: 84px; height: 84px; margin-right: 20px; border-radius: 50%;
+  background: #FFB547; background: conic-gradient(#FFB547 0 70%, rgba(255, 181, 71, 0.18) 70% 100%); }
+#panel .ring i { position: absolute; top: 9px; left: 9px; right: 9px; bottom: 9px; border-radius: 50%; background: #fff; }
+#panel .ring i:after { content: '…'; position: absolute; left: 0; right: 0; top: 50%; margin-top: -24px; text-align: center;
+  font-size: 34px; font-weight: 800; line-height: 44px; color: #E09A2B; }
+#panel .hero[data-state="ok"] .ring { background: linear-gradient(135deg, #34D17F, #0FA864); }
+#panel .hero[data-state="ok"] .ring i:after { content: '✓'; color: #0FA864; }
+#panel .hero[data-state="bad"] .ring { background: linear-gradient(135deg, #FF7A6E, #E5483B); }
+#panel .hero[data-state="bad"] .ring i:after { content: '!'; color: #E5483B; }
+#panel .hero-text { min-width: 0; }
+#panel .h-title { font-size: 30px; font-weight: 800; color: #0B1530; }
+#panel .h-title span { display: none; }
+#panel .hero .s-wait { display: inline; }
+#panel .hero[data-state="ok"] .s-wait, #panel .hero[data-state="bad"] .s-wait { display: none; }
+#panel .hero[data-state="ok"] .s-ok, #panel .hero[data-state="bad"] .s-bad { display: inline; }
+#panel .h-sub { margin-top: 3px; font-size: 18px; color: #5B6B8C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#panel .h-sub .bad, #panel .h-sub .muted, #panel .h-sub .ok { color: inherit; }
+
+/* Son altyazı, oyunun üstünde göründüğü gibi: küçük bir "ekran" içinde. */
+#panel .p-preview { margin-top: 18px; }
+#panel .p-label { font-size: 15px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #7A88A6; margin: 0 0 8px 4px; }
+#panel .screen { position: relative; height: 140px; border-radius: 22px; overflow: hidden;
+  background: radial-gradient(ellipse at 30% 20%, #3E5F8F 0%, #1A2A48 55%, #0B1324 100%);
+  display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end;
+  -webkit-justify-content: center; justify-content: center; padding-bottom: 18px; box-sizing: border-box; }
+#panel .screen .sub { max-width: 88%; padding: 4px 12px; border-radius: 6px; background: #000; color: #fff;
+  font-size: 20px; font-weight: 600; text-align: center; }
+
+/* Kumanda: yön tuşları çizimi ve açıklamalar. */
+#panel .p-remote { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-top: 22px; }
+#panel .dpad { -webkit-flex: none; flex: none; position: relative; width: 150px; height: 150px; margin-right: 24px; border-radius: 50%;
+  background: linear-gradient(180deg, #FFFFFF, #E6ECF7); box-shadow: 0 8px 22px rgba(0, 30, 90, 0.16), inset 0 1px 0 #fff; }
+#panel .dpad b { position: absolute; font-size: 18px; color: #6C7A99; }
+#panel .dpad .u { top: 10px; left: 0; right: 0; text-align: center; }
+#panel .dpad .d { bottom: 10px; left: 0; right: 0; text-align: center; }
+#panel .dpad .l { left: 14px; top: 50%; margin-top: -13px; }
+#panel .dpad .r { right: 14px; top: 50%; margin-top: -13px; }
+#panel .dpad .ok { top: 50%; left: 50%; width: 62px; height: 62px; margin: -31px 0 0 -31px; border-radius: 50%; line-height: 62px;
+  text-align: center; font-size: 18px; font-weight: 800; color: #fff; background: linear-gradient(180deg, #2D8CFF, #0058B8);
+  box-shadow: 0 6px 16px rgba(0, 112, 209, 0.45); }
+#panel .r-list { min-width: 0; }
+#panel .r-list div { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
+  padding: 6px 0; font-size: 19px; color: #24314F; }
+#panel .r-list b { -webkit-flex: none; flex: none; width: 66px; margin-right: 10px; font-size: 17px; font-weight: 800; color: #0070D1; }
+
+#panel .p-colors { display: -webkit-box; display: -webkit-flex; display: flex; margin-top: 16px; }
+#panel .p-colors div { -webkit-flex: 1; flex: 1; margin-right: 10px; padding: 10px 12px; border-radius: 16px; background: #fff;
+  font-size: 17px; font-weight: 600; color: #24314F; box-shadow: 0 4px 14px rgba(0, 30, 90, 0.06);
+  display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+#panel .p-colors div:last-child { margin-right: 0; }
+#panel .p-colors i { -webkit-flex: none; flex: none; width: 18px; height: 18px; margin-right: 10px; border-radius: 50%; }
+#panel .p-colors .red { background: #FF4D4D; } #panel .p-colors .green { background: #2FD07A; } #panel .p-colors .blue { background: #3D8BFF; }
+
+#panel .p-diag { margin-top: auto; padding-top: 12px; font-size: 13px; color: #9AA6C0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#panel .p-diag #st-diag { color: #9AA6C0; }
+/* TV sayfası ~720 piksel yüksek: panel sığsın diye sıkı ölçüler. */
+#panel { top: 22px; bottom: 22px; right: 26px; width: 540px; padding: 22px 26px 12px; border-radius: 34px; }
+#panel .p-top .logo { width: 44px; height: 44px; margin-right: 12px; }
+#panel .brand { font-size: 30px; }
+#panel .hero { margin-top: 14px; padding: 14px 16px; border-radius: 24px; }
+#panel .ring { width: 62px; height: 62px; margin-right: 16px; }
+#panel .ring i { top: 7px; left: 7px; right: 7px; bottom: 7px; }
+#panel .ring i:after { font-family: -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif; font-style: normal; font-size: 26px; margin-top: -18px; line-height: 36px; }
+#panel .h-title { font-size: 25px; }
+#panel .h-sub { font-size: 15px; }
+#panel .p-preview { margin-top: 12px; }
+#panel .p-label { font-size: 13px; margin-bottom: 6px; }
+#panel .screen { height: 92px; border-radius: 18px; padding-bottom: 12px; }
+#panel .screen .sub { font-size: 17px; }
+#panel .screen .sub.empty { background: transparent; color: rgba(255, 255, 255, 0.55); font-weight: 500; }
+#panel .p-remote { margin-top: 14px; }
+#panel .dpad { width: 118px; height: 118px; margin-right: 20px; }
+#panel .dpad b { font-size: 15px; }
+#panel .dpad .u { top: 7px; } #panel .dpad .d { bottom: 7px; }
+#panel .dpad .l { left: 10px; margin-top: -11px; } #panel .dpad .r { right: 10px; margin-top: -11px; }
+#panel .dpad .ok { width: 50px; height: 50px; margin: -25px 0 0 -25px; line-height: 50px; font-size: 15px; }
+#panel .r-list div { padding: 3px 0; font-size: 16px; }
+#panel .r-list b { width: 54px; font-size: 15px; }
+#panel .p-colors { margin-top: 12px; }
+#panel .p-colors div { padding: 8px 10px; border-radius: 14px; font-size: 15px; }
+#panel .p-colors i { width: 14px; height: 14px; margin-right: 8px; }
+#panel .p-diag { font-size: 11px; padding-top: 8px; }
+#panel { bottom: auto; }
+#panel .p-diag { margin-top: 12px; }

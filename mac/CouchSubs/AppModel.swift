@@ -87,12 +87,20 @@ struct TVPairing: Equatable {
 /// PS5 bağlantısı (gerçekte `StreamSession`).
 protocol StreamControlling: AnyObject {
     var onFrame: ((CGImage) -> Void)? { get set }
+    /// Nino: PS5'in sesi (konuşanı tanımak için); `wantsAudio` bağlanmadan önce açılır.
+    var onAudio: (([Float]) -> Void)? { get set }
+    var wantsAudio: Bool { get set }
     var onState: ((SessionState) -> Void)? { get set }
     /// PS5 ağda yeni bir adreste bulundu; yeni adres kaydedilir.
     var onConsoleMoved: ((RegisteredConsole) -> Void)? { get set }
     func start()
     func stop()
     func reconnectNow()
+}
+
+extension StreamControlling {
+    var onAudio: (([Float]) -> Void)? { get { nil } set {} }
+    var wantsAudio: Bool { get { false } set {} }
 }
 
 /// TV uygulamasını açık tutan görevli (gerçekte `TVKeeper`).
@@ -321,7 +329,7 @@ enum AppError: LocalizedError, Equatable {
         case .invalidPin: String(localized: "The code must be 8 digits.")
         case .invalidLogin: String(localized: "Sign-in did not complete. Please try again.")
         case .missingAccount: String(localized: "Sign in to PlayStation Network first.")
-        case .wrongAccount: String(localized: "The PS5 did not recognise this account. Get the code from the PS5 user signed in with the account you used in CouchSubs, or sign in again with that user's account.")
+        case .wrongAccount: String(localized: "The PS5 did not recognise this account. Get the code from the PS5 user signed in with the account you used in Nino, or sign in again with that user's account.")
         case .registrationFailed: String(localized: "The PS5 refused the code. Open Pair Device again on the PS5 and enter the new code.")
         case .missingConsole: String(localized: "No PS5 found. Make sure it is on and on the same network, or enter its IP address.")
         case .wrongCode: String(localized: "The code is wrong or has expired. Open Pair Device again on the PS5 and enter the new code.")
@@ -329,14 +337,14 @@ enum AppError: LocalizedError, Equatable {
         case .consoleNoReply: String(localized: "The PS5 received the request but did not answer in time. Open Pair Device again on the PS5 and enter the new code.")
         case .consoleInUse: String(localized: "Remote Play is in use on another device. Close it there and enter a new code.")
         case .consoleCrashed: String(localized: "The PS5 Remote Play service stopped unexpectedly. Restart the PS5 and enter a new code.")
-        case .consoleVersion: String(localized: "This PS5 system version is not supported yet. Update CouchSubs and try again.")
+        case .consoleVersion: String(localized: "This PS5 system version is not supported yet. Update Nino and try again.")
         case .badAddress: String(localized: "No PS5 found at this address. Check the PS5's IP address under Settings › Network › Connection Status.")
-        case .localNetworkBlocked: String(localized: "macOS blocked the connection to the local network. Turn on CouchSubs in System Settings › Privacy & Security › Local Network, then enter a new code.")
+        case .localNetworkBlocked: String(localized: "macOS blocked the connection to the local network. Turn on Nino in System Settings › Privacy & Security › Local Network, then enter a new code.")
         case .loginRefused: String(localized: "Sony did not complete the sign-in. Wait a minute, then press Sign in again and sign in with the second account.")
         case .loginRateLimited: String(localized: "Sony received too many sign-in attempts. Wait about 15 minutes, then sign in again.")
         case .loginServer: String(localized: "Sony's sign-in server returned an error. Wait a few minutes, then sign in again.")
         case .loginNetwork: String(localized: "Could not reach Sony's sign-in server. Check the internet connection, then sign in again.")
-        case .loginBadResponse: String(localized: "Sony's answer could not be read. Sign in again; if it keeps happening, update CouchSubs.")
+        case .loginBadResponse: String(localized: "Sony's answer could not be read. Sign in again; if it keeps happening, update Nino.")
         case .loginWindowClosed: String(localized: "The sign-in window was closed before sign-in finished. Press Sign in and finish signing in in the window.")
         case .loginPageFailed: String(localized: "Sony's sign-in page could not be loaded. Check the internet connection, then sign in again.")
         }
@@ -407,7 +415,7 @@ final class AppModel: ObservableObject {
     /// TV'nin eşleşme anahtarı kayıtlı.
     @Published private var tvKeySaved: Bool
     @Published var tvApp = TVAppState.unknown
-    /// LG geliştirici modunun kalan süresi (saat); CouchSubs uzattıktan sonra bilinir.
+    /// LG geliştirici modunun kalan süresi (saat); Nino uzattıktan sonra bilinir.
     @Published var devModeHoursLeft: Int?
     /// Son eşleşmede TV uygulaması açılamadı.
     @Published private var tvAppMissing = false
@@ -508,6 +516,8 @@ final class AppModel: ObservableObject {
 
     // Dublaj
     private var dubber: Dubber?
+    /// Nino: PS5'ten gelen son saniyelerin sesi (dublajda konuşanı tanımak için).
+    let voiceTracker = VoiceTracker()
     /// Model indiriliyorsa ilerleme (0…1).
     @Published var dubbingDownload: Double?
     @Published var dubbingError: String?
@@ -548,7 +558,7 @@ final class AppModel: ObservableObject {
         // PS5 bağlantı günlüğü (~/Library/Logs/CouchSubs/remoteplay.log); eşleştirme olmazsa kullanıcı bunu gönderir.
         if !testing {
             RemotePlayLog.enable()
-            RemotePlayLog.write("CouchSubs \(AppIdentity.version), macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
+            RemotePlayLog.write("Nino \(AppIdentity.version), macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
             // Altyazı günlüğü (aynı klasörde altyazi.log): okunan satırlar ve akıbetleri, görüntü duraklamaları.
             SubtitleLog.enable()
             let stalls = VideoStallTracker()
@@ -581,7 +591,7 @@ final class AppModel: ObservableObject {
     }
 
     /// Kurulum bitmiş mi. "Bitti" yalnız sihirbazın sonuna gelinince kaydedilir (TV adımı başarıyla geçildi ya da
-    /// "TV'm yok" seçildi). Sihirbaz başlarken `false` yazılır: Samsung'da TV eşleşip uygulama kurulurken CouchSubs
+    /// "TV'm yok" seçildi). Sihirbaz başlarken `false` yazılır: Samsung'da TV eşleşip uygulama kurulurken Nino
     /// kapatılırsa eşleşme kayıtlı olsa da kurulum bitmiş sayılmaz. Hiç kayıt yoksa (beta.25'ten önce kurulmuş)
     /// eskisi gibi eşleşmiş TV yeter ve "bitti" kaydedilir.
     static func setupIsComplete(store: AppStore, accountId: Data?, console: RegisteredConsole?, paired: Bool) -> Bool {
@@ -789,7 +799,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Samsung ya da Android TV'ye daha önce CouchSubs'ın kurduğu sürüm.
+    /// Samsung ya da Android TV'ye daha önce Nino'ın kurduğu sürüm.
     private var installedAppVersion: String? { store.load(String.self, for: StoreKey.tvAppVersion) }
 
     private func needsInstall(_ bundled: BundledTVApp) -> Bool {
@@ -810,7 +820,7 @@ final class AppModel: ObservableObject {
         await install(tv: tv, devKey: devKey, bundled: bundled)
     }
 
-    /// Samsung: geliştirici modu açıksa TV'deki CouchSubs sürümüne bakar, yoksa ya da eskiyse imzalayıp kurar
+    /// Samsung: geliştirici modu açıksa TV'deki Nino sürümüne bakar, yoksa ya da eskiyse imzalayıp kurar
     /// (sertifika yoksa Samsung girişi istenir). Önceden yalnız bu Mac'in kurduğu sürüm hatırlanıyordu; TV'de eski
     /// kalan uygulama (ör. 0.9.10 gelirken 0.9.7) hiç güncellenmiyordu.
     private func refreshSamsungApp(_ tv: LGTV) async {
@@ -910,7 +920,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Seçili TV'ye uygulamayı CouchSubs kurabilir mi (paket uygulamayla geldi mi)?
+    /// Seçili TV'ye uygulamayı Nino kurabilir mi (paket uygulamayla geldi mi)?
     var canInstallTVApp: Bool {
         guard let tv else { return false }
         return tv.brand == .lg ? services.bundledTVAppVersion != nil : services.bundledApp(for: tv.brand) != nil
@@ -994,6 +1004,11 @@ final class AppModel: ObservableObject {
     /// Ana ekrandaki "TV'de test et": sunucu henüz açık değilse açılır, deneme altyazısı gönderilir.
     func testSubtitle() async {
         try? await startServer()
+        // Nino: TV uygulaması bağlı değilse önce TV'de açılır (bu bilgisayarın adresiyle), en çok ~10 sn beklenir.
+        if let tv, settings.output.showsOnTV, tvClients == 0 {
+            if tv.brand == .androidTV { await refreshAndroidApp(tv) } else { await openTVAppAfterInstall(tv) }
+            for _ in 0..<20 where tvClients == 0 { try? await Task.sleep(for: .milliseconds(500)) }
+        }
         sendTestSubtitle()
     }
 
@@ -1003,6 +1018,12 @@ final class AppModel: ObservableObject {
         let region = settings.region
         let box = lastSubtitleBox ?? TextBox(left: 0.3, top: region.bottom - 0.1, right: 0.7, bottom: region.bottom - 0.03)
         server.sendSubtitle(String(localized: "This is a test subtitle. Can you see it on top of the game?"), durationMs: 8000, box: box)
+    }
+
+    /// Nino: PSN hesabından çıkış (yalnız hesap kimliği silinir).
+    func signOutPSN() {
+        store.remove(StoreKey.accountId)
+        accountId = nil
     }
 
     /// Kurulumu baştan başlatır (kayıtlı her şeyi siler).
@@ -1035,7 +1056,7 @@ final class AppModel: ObservableObject {
         sessionStartedAt = Date()
         lastMetrics = nil
         if settings.dubbing.enabled, dubbingModelReady { makeDubber().prepare() }
-        SubtitleLog.write("oturum başladı: CouchSubs \(AppIdentity.version), \(settings.sourceLanguage)→\(settings.targetLanguage), "
+        SubtitleLog.write("oturum başladı: Nino \(AppIdentity.version), \(settings.sourceLanguage)→\(settings.targetLanguage), "
             + "motor: \(onlineTranslationActive ? settings.onlineEngine.rawValue : "ücretsiz"), paketler: \(settings.gamePacks ? "açık" : "kapalı")")
 
         RemotePlayLog.write("Çeviri başladı; PS5'e bağlanılıyor: \(console.name) \(console.host)")
@@ -1046,6 +1067,12 @@ final class AppModel: ObservableObject {
             // Karenin geldiği an: canlı altyazı alanındaki gecikme buradan TV'ye gidene kadar ölçülür.
             let capturedAt = SubtitleStabilizer.uptimeMs()
             Task { @MainActor in await self?.handle(frame, capturedAt: capturedAt) }
+        }
+        // Nino: dublaj açıksa PS5'in sesi de alınır; altyazı süresince konuşanın sesinden kim olduğu anlaşılır.
+        if settings.dubbing.enabled {
+            let tracker = voiceTracker
+            session.wantsAudio = true
+            session.onAudio = { samples in tracker.append(samples) }
         }
         session.start()
         self.session = session
@@ -1155,6 +1182,118 @@ final class AppModel: ObservableObject {
         }
     }
 
+    // MARK: Nino: köşe yazıları
+
+    private var cornerTask: Task<Void, Never>?
+    private var cornerLastCheck = Date.distantPast
+    private var cornerTexts = ["", ""]
+    private var cornerItems: [[ScreenTranslation.Item]] = [[], []]
+    private var promptText = ""
+    private var promptItems: [ScreenTranslation.Item] = []
+    private var promptTask: Task<Void, Never>?
+
+    /// Okuma alanındaki tuş ipuçları ("Hold ✕ to aim"): değiştiğinde simgesi korunarak çevrilip kendi yerine konur.
+    private func showPrompts(_ prompts: Reading) {
+        // En alttaki menü şeridi köşe okuyucusunun ("alt şerit"); burada da okunursa iki kutu üst üste biniyordu.
+        let hudTop = currentHudTop ?? 1
+        let prompts = Reading(lines: prompts.lines.filter { ($0.box?.top ?? 0) < hudTop })
+        // Kullanıcı isteği: altyazı alanındaki tuş ipuçları çevrilmez (yalnız altyazı ve sol üst).
+        guard Self.translatePrompts, settings.translateCorners, prompts.text != promptText, promptTask == nil else { return }
+        promptText = prompts.text
+        let translator = makeTranslator()
+        promptTask = Task { [weak self] in
+            let items = prompts.text.isEmpty ? [] :
+                ((try? await ScreenTranslation.translate(prompts, using: { try await translator.translate($0) })) ?? [])
+            guard let self else { return }
+            if !prompts.text.isEmpty {
+                SubtitleLog.write("ipucu: \"\(prompts.text.replacingOccurrences(of: "\n", with: " / "))\" → \(items.map(\.translation).joined(separator: " / "))")
+            }
+            promptItems = items
+            sendOverlays()
+            promptTask = nil
+        }
+    }
+
+    /// Köşe ve ipucu çevirilerini birlikte TV'ye gönderir (ekran çevirisi tek liste ister).
+    private func sendOverlays() {
+        guard isRunning else { return }
+        let all = cornerItems.flatMap { $0 } + promptItems
+        if all.isEmpty { server.clearScreen() } else { server.sendScreen(all, durationMs: 120_000) }
+    }
+    /// Sol üst: oyunun ipucu kutusu ("HELP"); ekranın en üstünden başlar (RDR2'de ilk satır en üstte, %4'ün üstünde).
+    /// Kullanıcı isteği: yalnız altyazı ve sol üstteki ipucu kutusu çevrilir; alt bant (menü, tuş listesi) kapalı,
+    /// çünkü çok yazı birden kaplanınca ekran bozuk görünüyordu.
+    /// En alttaki görev ve öğretici satırı ("Chase down and lasso the O'Driscoll", "… hold □ to stow …") da çevrilir;
+    /// yalnız ortalanmış satırlar alınır (sağdaki menü ve tuş listeleri değil).
+    /// Görev şeridi oyunun öğrenilen altyazı şeridinin altından başlar (`hudTop`); altyazısı en altta olan oyunda yoktur.
+    private var cornerRegions: [CropRegion] {
+        var regions = [CropRegion(top: 0.0, bottom: 0.36, left: 0.0, right: 0.40)]
+        if let hudTop = currentHudTop { regions.append(CropRegion(top: hudTop, bottom: 0.995, left: 0.08, right: 0.92)) }
+        return regions
+    }
+
+    /// Alt şeritte ekranın ortasına yakın duran satır görev/öğretici yazısıdır; kenardaki menü yazıları atlanır.
+    private static func isObjectiveLine(_ line: TextLine) -> Bool {
+        guard let box = line.box else { return false }
+        let center = (box.left + box.right) / 2
+        return center > 0.32 && center < 0.68
+    }
+    /// Nino: oyunların altyazı yeri öğrenilir (bkz. `SubtitleLayout`); bu çizginin altındaki yazılar altyazı sayılmaz.
+    private lazy var layoutStore = SubtitleLayoutStore(file: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent(AppIdentity.name, isDirectory: true).appendingPathComponent("subtitle-layout.json"))
+    /// Şu anki oyun (çeviri paketinden); bilinmiyorsa "genel".
+    private var currentGame: String { packs.searchScope ?? "genel" }
+    private var currentHudTop: Double? { layoutStore.current.hudTop(for: currentGame) }
+    private static let translatePrompts = false
+
+    private static let cornerNames = ["sol üst", "görev"]
+
+    /// Köşeleri ~1,5 sn'de bir okur; yazı değiştiyse çevirip TV'de kendi yerine koyar (Ekranı çevir'deki gibi).
+    private func watchCorners(_ frame: CGImage) {
+        guard settings.translateCorners, cornerTask == nil, screenTask == nil,
+              Date().timeIntervalSince(cornerLastCheck) > 1.5 else { return }
+        cornerLastCheck = Date()
+        let reader = VisionReader(language: settings.sourceLanguage)
+        let regions = cornerRegions
+        cornerTask = Task { [weak self] in
+            var readings = [Reading?](repeating: nil, count: regions.count)
+            for (i, region) in regions.enumerated() {
+                let place = TextBox(left: region.left, top: region.top, right: region.right, bottom: region.bottom)
+                let reading = await Task.detached(priority: .utility) { () -> Reading in
+                    let area = RegionCropper.crop(frame, to: region)
+                    return ((try? reader.readLines(area, deep: false)) ?? .empty).withoutOcrNoise().placed(in: place)
+                }.value
+                readings[i] = i == 1 ? Reading(lines: reading.lines.filter(Self.isObjectiveLine)) : reading
+            }
+            guard let self else { return }
+            var changed = false
+            let translator = makeTranslator()
+            for i in 0..<readings.count {
+                guard let reading = readings[i] else { continue }
+                let text = reading.text
+                if text == cornerTexts[i] { continue }
+                cornerTexts[i] = text
+                changed = true
+                cornerItems[i] = text.isEmpty ? [] :
+                    ((try? await ScreenTranslation.translate(reading, using: { try await translator.translate($0) })) ?? [])
+                SubtitleLog.write("köşe \(Self.cornerNames[i]): \"\(text.replacingOccurrences(of: "\n", with: " / "))\" → \(cornerItems[i].map(\.translation).joined(separator: " / "))")
+            }
+            if changed { sendOverlays() }
+            cornerTask = nil
+        }
+    }
+
+    private func resetCorners() {
+        cornerTask?.cancel()
+        cornerTask = nil
+        cornerTexts = ["", ""]
+        cornerItems = [[], []]
+        promptTask?.cancel()
+        promptTask = nil
+        promptText = ""
+        promptItems = []
+    }
+
     private func hideScreen() {
         screenShownUntil = .distantPast
         server.clearScreen()
@@ -1178,9 +1317,23 @@ final class AppModel: ObservableObject {
             self?.lastSource = source
             self?.lastTranslation = translation
             self?.addToHistory(source: source, translation: translation, origin: pipeline?.lastOrigin == "paket" ? .pack : .engine)
-            if let box = pipeline?.lastBox { self?.lastSubtitleBox = box }
+            if let box = pipeline?.lastBox, let self {
+                self.lastSubtitleBox = box
+                // Nino: altyazının yeri bu oyun için öğrenilir; sınır her satırda güncellenir.
+                let game = self.currentGame
+                let before = self.layoutStore.current.band(for: game) == nil
+                self.layoutStore.record(box, game: game)
+                pipeline?.hudTop = self.currentHudTop
+                if before, let band = self.layoutStore.current.band(for: game) {
+                    SubtitleLog.write(String(format: "altyazı yeri öğrenildi (%@): %.3f–%.3f, sınır %@", game, band.top, band.bottom,
+                                             self.currentHudTop.map { String(format: "%.3f", $0) } ?? "yok"))
+                }
+            }
         }
         pipeline.onMetrics = { [weak self] metrics in self?.lastMetrics = metrics }
+        pipeline.onPrompts = { [weak self] prompts in self?.showPrompts(prompts) }
+        // En alttaki öğretici/menü yazısı altyazı sanılmasın; yoksa üstündeki gerçek altyazı hiç okunmuyordu.
+        pipeline.hudTop = currentHudTop
         // Dil paketi bu arada indirilmiş olabilir; her çeviri sonucu durumu günceller.
         pipeline.onTranslationResult = { [weak self] error in
             self?.translatorStatus = Self.translatorStatus(after: error)
@@ -1345,6 +1498,7 @@ final class AppModel: ObservableObject {
     }
 
     func stop() {
+        resetCorners()
         session?.stop()
         session = nil
         keeper?.stop()
@@ -1475,6 +1629,10 @@ final class AppModel: ObservableObject {
 
     private func handle(_ frame: CGImage, capturedAt: Int) async {
         lastFrame = frame
+        #if DEBUG
+        NinoDebugFrames.capture(frame, region: settings.region, box: lastSubtitleBox, source: lastSource, translation: lastTranslation)
+        #endif
+        if isRunning { watchCorners(frame) }
         guard pipeline != nil else { return }
         // Önceki kare hâlâ işleniyorsa bu kare atlanır; okuma kareleri biriktirmez.
         var entry = frameGate.enter(now: SubtitleStabilizer.uptimeMs())
@@ -1545,6 +1703,8 @@ extension AppModel {
             return dubber
         }
         let dubber = Dubber(server: server, serverPort: serverPort, settings: settings.dubbing)
+        dubber.tracker = voiceTracker
+        dubber.onLog = { SubtitleLog.write($0) }
         dubber.onCastChanged = { [weak self] cast in self?.settings.dubbing.cast = cast }
         dubber.onError = { [weak self] message in self?.dubbingError = message }
         self.dubber = dubber

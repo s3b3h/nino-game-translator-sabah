@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>CouchSubs</string>
+	<string>Nino</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,16 +23,14 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>AGPL-3.0. Uses chiaki-ng (AGPL-3.0).</string>
+	<string>AGPL-3.0. Based on CouchSubs by Sinan Yorulmaz. Uses chiaki-ng (AGPL-3.0).</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>CouchSubs finds your PS5 and TV on the local network to send translated subtitles.</string>
+	<string>Nino finds your PS5 and TV on the local network to send translated subtitles.</string>
 	<key>SUEnableAutomaticChecks</key>
-	<true/>
-	<key>SUScheduledCheckInterval</key>
-	<integer>3600</integer>
-	<key>SUFeedURL</key>
-	<string>https://github.com/yorulmazsinan/couchsubs/releases/latest/download/appcast.xml</string>
+	<false/>
 	<key>SUPublicEDKey</key>
 	<string>GRsdOlnDQSm2yPnUTF/VoD/0202u2J0GPmJ8CCzVdfc=</string>
+	<key>SUScheduledCheckInterval</key>
+	<integer>3600</integer>
 </dict>
 </plist>

@@ -11,7 +11,7 @@ actor PocketTTSEngine {
 
         var errorDescription: String? {
             switch self {
-            case .missing: String(localized: "The voice engine is missing from the app. Download CouchSubs again.")
+            case .missing: String(localized: "The voice engine is missing from the app. Download Nino again.")
             case .notReady: String(localized: "The voice engine did not start.")
             case .failed(let detail): detail
             }
@@ -28,7 +28,7 @@ actor PocketTTSEngine {
         let server = PocketTTSServer(executable: executable, config: DubbingModelStore.config,
                                      defaultVoice: DubbingModelStore.voiceFile(.male1),
                                      pidFile: DubbingModelStore.root.appendingPathComponent("pocket-tts.pid"))
-        // CouchSubs kapanınca ses motoru da kapanır (çökerse bir sonraki açılışta kapatılır).
+        // Nino kapanınca ses motoru da kapanır (çökerse bir sonraki açılışta kapatılır).
         quitObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil,
                                                               queue: nil) { _ in server.terminate() }
         self.server = server

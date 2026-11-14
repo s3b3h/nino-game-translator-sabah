@@ -90,6 +90,8 @@ public sealed partial class AndroidTvInstaller(string host, string keyDirectory,
         {
             // Bu izni vermeyen eski bir CouchSubs'ın kurduğu güncel uygulama da izni alsın.
             await GrantOverlayAsync(adb, cancellationToken);
+            // Nino: kurulu ve güncelse de uygulama açılır (deneme altyazısı ve çeviri başlarken TV uygulaması hazır olsun).
+            await adb.RunAsync($"shell:am start -n {PackageName}/.MainActivity", cancellationToken: cancellationToken);
             return (installed, false);
         }
         await InstallAsync(adb, apkPath, cancellationToken);

@@ -27,7 +27,7 @@ data class SubtitleStyle(
     val fontSize: Int = 46,
     val bottomPercent: Int = 7,
     val placement: SubtitlePlacement = SubtitlePlacement.COVER,
-    val background: Int = 72,
+    val background: Int = 100,
     val bold: Boolean = false,
     val textColor: SubtitleTextColor = SubtitleTextColor.WHITE,
     val displayMode: TvDisplayMode = TvDisplayMode.IN_APP,

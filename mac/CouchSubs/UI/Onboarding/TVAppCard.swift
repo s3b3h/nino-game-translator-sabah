@@ -17,23 +17,23 @@ struct TVAppCard: View {
             case .unknown:
                 EmptyView()
             case .working:
-                Card(title: "CouchSubs TV app") {
+                Card(title: "Nino TV app") {
                     HStack(spacing: Theme.space("s")) {
                         ProgressView().controlSize(.small)
                         Text("Installing the TV app…").foregroundStyle(Color.csSecondary)
                     }
                 }
             case .upToDate(let version):
-                Card(title: "CouchSubs TV app") {
+                Card(title: "Nino TV app") {
                     DoneLabel(text: String(format: String(localized: "The TV app is ready (version %@)."), version))
                     if brand == .lg {
                         if let hours = model.devModeHoursLeft {
-                            HintText(text: "Developer Mode: \(hours) hours left. CouchSubs extends it by itself each time you use it.")
+                            HintText(text: "Developer Mode: \(hours) hours left. Nino extends it by itself each time you use it.")
                         } else {
-                            HintText(text: "CouchSubs extends Developer Mode by itself each time you use it.")
+                            HintText(text: "Nino extends Developer Mode by itself each time you use it.")
                         }
                     } else if brand == .samsung {
-                        HintText(text: "If the TV keeps switching to HDMI 1 or another source while the CouchSubs TV app is open, turn off Anynet+ (HDMI-CEC) and Auto Source Switching on the TV: Settings › All Settings › Connection › External Device Manager.")
+                        HintText(text: "If the TV keeps switching to HDMI 1 or another source while the Nino TV app is open, turn off Anynet+ (HDMI-CEC) and Auto Source Switching on the TV: Settings › All Settings › Connection › External Device Manager.")
                     }
                 }
             case .devModeOff:
@@ -48,7 +48,7 @@ struct TVAppCard: View {
             case .needsPassphrase(let error):
                 passphraseCard(error: error)
             case .signIn(let url):
-                Card(title: "CouchSubs TV app") {
+                Card(title: "Nino TV app") {
                     Text("The Samsung account page opened in your browser. Finish signing in there. If you do not see it, switch to the browser or press Open the page again.")
                     HintText(text: "Samsung signs the app for your TV with your free Samsung account.")
                     HintText(text: "No account? You can create a free one on the same page. If the browser asks to allow access to devices on your network, allow it.")
@@ -67,7 +67,7 @@ struct TVAppCard: View {
                     }
                 }
             case .approveOnTV:
-                Card(title: "CouchSubs TV app") {
+                Card(title: "Nino TV app") {
                     Text("Look at the TV: it asks whether to allow debugging from this computer.")
                     HintText(text: "Tick “Always allow from this computer” and choose Allow. The app then installs by itself.")
                     HStack(spacing: Theme.space("s")) {
@@ -76,7 +76,7 @@ struct TVAppCard: View {
                     }
                 }
             case .failed(let error, let reason):
-                Card(title: "CouchSubs TV app") {
+                Card(title: "Nino TV app") {
                     ErrorText(error: Self.message(for: error, brand: brand, reason: reason))
                     Button("Try again") { Task { await model.refreshTVApp() } }.buttonStyle(.secondary)
                 }
@@ -88,25 +88,25 @@ struct TVAppCard: View {
     private var devModeSteps: some View {
         switch brand {
         case .lg:
-            Card(title: "CouchSubs TV app") {
-                Text("The TV app is not installed. CouchSubs can install it once Developer Mode is on.")
+            Card(title: "Nino TV app") {
+                Text("The TV app is not installed. Nino can install it once Developer Mode is on.")
                 HintText(text: "1. Create a free account at webostv.developer.lge.com.")
                 HintText(text: "2. On the TV, install Developer Mode from the LG Content Store and sign in.")
                 HintText(text: "3. Turn on Dev Mode Status. The TV restarts and this screen continues by itself.")
             }
         case .samsung:
-            Card(title: "CouchSubs TV app") {
-                Text("The TV app is not installed. CouchSubs installs it once Developer Mode is on.")
+            Card(title: "Nino TV app") {
+                Text("The TV app is not installed. Nino installs it once Developer Mode is on.")
                 HintText(text: "1. On the TV, open Apps and scroll to the very bottom of the page.")
                 HintText(text: "2. There, press 1 2 3 4 5 on the remote (or type 12345 on the on-screen keypad). The Developer Mode window opens.")
                 HintText(text: "3. Turn Developer mode On, type this computer's address as Host PC IP: \(model.computerAddress ?? "?") and press OK.")
                 HintText(text: "4. Restart the TV: hold the power button on the remote for about 2 seconds until the TV turns off, then turn it on again. This screen continues by itself.")
                 HintText(text: "Later you sign in once with a free Samsung account; Samsung needs it to sign the app for your TV.")
-                HintText(text: "If the TV keeps switching to HDMI 1 or another source while the CouchSubs TV app is open, turn off Anynet+ (HDMI-CEC) and Auto Source Switching on the TV: Settings › All Settings › Connection › External Device Manager.")
+                HintText(text: "If the TV keeps switching to HDMI 1 or another source while the Nino TV app is open, turn off Anynet+ (HDMI-CEC) and Auto Source Switching on the TV: Settings › All Settings › Connection › External Device Manager.")
             }
         case .androidTV:
-            Card(title: "CouchSubs TV app") {
-                Text("The TV app is not installed. CouchSubs installs it over the network once debugging is on.")
+            Card(title: "Nino TV app") {
+                Text("The TV app is not installed. Nino installs it over the network once debugging is on.")
                 HintText(text: "1. On the TV, open Settings › Device Preferences › About (Google TV: Settings › System › About).")
                 HintText(text: "2. Press OK on Build 7 times until it says you are a developer.")
                 HintText(text: "3. Go back to Device Preferences (Google TV: System) › Developer options and turn on USB debugging. Turn on Network debugging too if you see it.")
@@ -121,7 +121,7 @@ struct TVAppCard: View {
     }
 
     private func passphraseCard(error: DevModeError?) -> some View {
-        Card(title: "CouchSubs TV app") {
+        Card(title: "Nino TV app") {
             Text("Developer Mode is on. One last step to install the TV app:")
             HintText(text: "Open the Developer Mode app on the TV, turn on Key Server and keep the app on screen. Type the Passphrase it shows.")
             HStack {
@@ -147,7 +147,7 @@ struct TVAppCard: View {
         // Mac App Store sürümü sandbox'ta kurar (ssh, ssh-keygen ve yardımcı sandbox'ı miras alır). Sandbox bir adımı
         // engellerse kullanıcı çıkışsız kalmasın: TV uygulaması bir kez GitHub (DMG) sürümüyle kurulur, sonrası yeter.
         if Distribution.isAppStore, error == .installFailed {
-            text += "\n\n" + String(localized: "If the Mac App Store version cannot install the TV app, install it once with the GitHub (DMG) version of CouchSubs. After that, this version is enough.")
+            text += "\n\n" + String(localized: "If the Mac App Store version cannot install the TV app, install it once with the GitHub (DMG) version of Nino. After that, this version is enough.")
         }
         guard samsung else { return text }
         if error == .installFailed || error == .certificateRejected {
@@ -159,7 +159,7 @@ struct TVAppCard: View {
         }
         // TV kurulum sırasında HDMI-CEC yüzünden başka kaynağa geçerse bağlantı kopar.
         if error == .connectionLost {
-            text += "\n\n" + String(localized: "If the TV keeps switching to HDMI 1 or another source while the CouchSubs TV app is open, turn off Anynet+ (HDMI-CEC) and Auto Source Switching on the TV: Settings › All Settings › Connection › External Device Manager.")
+            text += "\n\n" + String(localized: "If the TV keeps switching to HDMI 1 or another source while the Nino TV app is open, turn off Anynet+ (HDMI-CEC) and Auto Source Switching on the TV: Settings › All Settings › Connection › External Device Manager.")
         }
         let send = String(format: String(localized: "If this keeps happening, send us this file: %@"), TVInstallLog.displayPath)
         return text + "\n\n" + send
@@ -178,18 +178,18 @@ struct TVAppCard: View {
             String(localized: "The TV app could not be installed. Try again; if it fails again, send us the reason below.")
         case .installFailed: String(localized: "The TV app could not be installed. Try again.")
         case .notEnoughSpace: String(localized: "The TV is out of free space. Remove an app you do not use from the TV and try again.")
-        case .tooOld: String(localized: "This Samsung TV is too old for the CouchSubs TV app (2017 models and later are supported).")
+        case .tooOld: String(localized: "This Samsung TV is too old for the Nino TV app (2017 models and later are supported).")
         case .signInFailed: String(localized: "Samsung sign-in did not complete. Try again and finish signing in on the page that opens.")
         case .certificateFailed: String(localized: "Samsung did not issue the signing certificate. Try again in a few minutes.")
         case .notApproved: String(localized: "Debugging was not allowed on the TV. Try again and choose Allow on the TV.")
         case .certificateMismatch:
-            String(localized: "A CouchSubs TV app signed on another computer is still on the TV and could not be removed. On the TV, open Apps, select CouchSubs, delete it and try again.")
+            String(localized: "A Nino TV app signed on another computer is still on the TV and could not be removed. On the TV, open Apps, select Nino, delete it and try again.")
         case .certificateRejected:
-            String(localized: "The TV did not accept the signing certificate. Make sure the TV is connected to the internet (it checks the certificate with Samsung) and its date and time are right (Settings › General › System Manager › Time), then try again. CouchSubs gets a new certificate, so you sign in to Samsung once more.")
+            String(localized: "The TV did not accept the signing certificate. Make sure the TV is connected to the internet (it checks the certificate with Samsung) and its date and time are right (Settings › General › System Manager › Time), then try again. Nino gets a new certificate, so you sign in to Samsung once more.")
         case .tvClockWrong:
             String(localized: "The TV's clock is behind, so the new certificate is not valid for it yet. Set the TV's date and time (Settings › General › System Manager › Time) or wait a few minutes, then try again.")
         case .packageBlocked:
-            String(localized: "The TV refuses CouchSubs because an earlier CouchSubs is still registered on it (Tizen error 118, -22), even if it no longer appears among the apps. If CouchSubs is among the TV's apps, delete it there and try again. Otherwise reset Smart Hub (Settings › Support › Device Care › Self Diagnosis › Reset Smart Hub; menu names differ a little by model) and try again. Resetting Smart Hub also removes the other apps you downloaded.")
+            String(localized: "The TV refuses Nino because an earlier Nino is still registered on it (Tizen error 118, -22), even if it no longer appears among the apps. If Nino is among the TV's apps, delete it there and try again. Otherwise reset Smart Hub (Settings › Support › Device Care › Self Diagnosis › Reset Smart Hub; menu names differ a little by model) and try again. Resetting Smart Hub also removes the other apps you downloaded.")
         case .connectionLost:
             String(localized: "The connection to the TV dropped during the install. Keep the TV on and on the same network as this computer, then try again.")
         }

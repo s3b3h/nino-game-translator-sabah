@@ -40,11 +40,20 @@ final class ScreenTranslationTests: XCTestCase {
         XCTAssertEqual(groups.count, 2)
     }
 
-    func testNumbersAndPromptsAreNotTranslated() {
+    /// Nino: sayılar çevrilmez; kumanda ipuçları ise simgesi korunarak çevrilir.
+    func testNumbersAreNotTranslatedButPromptsAre() {
         let groups = ScreenTranslation.groups(Reading(lines: [
             line("23m", 0.50, 0.05, 0.55), line("9", 0.90, 0.05, 0.92), line("R2 Swing", 0.80, 0.90, 0.95), line("HP 120/300", 0.05, 0.90, 0.20),
         ]))
-        XCTAssertEqual(groups.map(\.paragraphs), [["HP 120/300"]])
+        XCTAssertEqual(groups.map(\.paragraphs), [["R2 Swing"], ["HP 120/300"]])
+    }
+
+    func testIconsStayInPlace() async throws {
+        let out = try await ScreenTranslation.translatePreservingIcons("SELECT & BACK O") { text in
+            text.replacingOccurrences(of: "SELECT", with: "SEÇ").replacingOccurrences(of: "BACK", with: "GERİ")
+        }
+        // Menü yazısı oyundaki gibi her sözcük büyük harfle başlar.
+        XCTAssertEqual(out, "Seç ● Geri ○")
     }
 
     func testEveryGroupIsTranslatedAndProgressIsReported() async throws {
@@ -66,5 +75,35 @@ final class ScreenTranslationTests: XCTestCase {
         XCTAssertEqual(ScreenTranslation.displayMilliseconds([item(0)]), 12000)
         XCTAssertEqual(ScreenTranslation.displayMilliseconds([item(200)]), 18000)
         XCTAssertEqual(ScreenTranslation.displayMilliseconds([item(5000)]), 60000)
+    }
+}
+
+final class NinoIconTests: XCTestCase {
+    func testL3LookalikesBecomeButtons() {
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("13) Stand up"), "L3 Stand up")
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("L3] Stand up"), "L3 Stand up")
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("(R3 Focus"), "R3 Focus")
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("I gave him 13 dollars."), "I gave him 13 dollars.")
+        XCTAssertTrue(ButtonPrompts.isPrompt(ButtonPrompts.normalizedIcons("13) Stand up")))
+    }
+
+    func testLegendKeepsLabelsNextToTheirIcons() async throws {
+        let words = ["SELECT": "SEÇ", "BACK": "Geri", "PHOTO MODE": "fotoğraf modu"]
+        let result = try await ScreenTranslation.translatePreservingIcons("SELECT X BACK O") { words[$0] ?? $0 }
+        XCTAssertEqual(result, "Seç ✕ Geri ○")
+        let star = try await ScreenTranslation.translatePreservingIcons("SELECT * BACK O") { words[$0] ?? $0 }
+        XCTAssertEqual(star, "Seç ✕ Geri ○")
+        let junk = try await ScreenTranslation.translatePreservingIcons("# SELECT X BACK O") { words[$0] ?? $0 }
+        XCTAssertEqual(junk, "Seç ✕ Geri ○")
+        let bar = try await ScreenTranslation.translatePreservingIcons("I SELECT X BACK O") { words[$0] ?? $0 }
+        XCTAssertEqual(bar, "Seç ✕ Geri ○")
+        XCTAssertTrue(ButtonPrompts.isPrompt("PHOTO MODE ME SELECT"))
+        let photo = try await ScreenTranslation.translatePreservingIcons("PHOTO MODE ME SELECT X BACK O") { words[$0] ?? $0 }
+        XCTAssertEqual(photo, "Fotoğraf Modu Seç ✕ Geri ○")
+        // Simgesi okunamayan menü yine parça parça çevrilir (tek cümle gibi değil).
+        let oneIcon = try await ScreenTranslation.translatePreservingIcons("PHOTO MODE MO SELECT BACK O") { words[$0] ?? $0 }
+        XCTAssertTrue(oneIcon.hasPrefix("Fotoğraf Modu "), oneIcon)
+        let maintain = try await ScreenTranslation.translatePreservingIcons("MAINTAIN R3") { $0 == "MAINTAIN" ? "Sürdür" : "R3'i koru" }
+        XCTAssertEqual(maintain, "Sürdür R3")
     }
 }
