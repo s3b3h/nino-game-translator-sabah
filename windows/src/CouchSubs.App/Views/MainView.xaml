@@ -15,7 +15,7 @@
                     <!-- Koyu temada logonun kenarı zeminden ayrılsın. -->
                     <Border BorderBrush="{DynamicResource borderBrush}" BorderThickness="1" CornerRadius="8.1" />
                 </Grid>
-                <TextBlock Text="CouchSubs" Style="{StaticResource TitleText}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                <TextBlock Text="Nino" Style="{StaticResource TitleText}" Margin="12,0,0,0" VerticalAlignment="Center" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Padding="16,0" Margin="0,0,8,0" ToolTip="{t:T 'History'}" Click="OnHistory">

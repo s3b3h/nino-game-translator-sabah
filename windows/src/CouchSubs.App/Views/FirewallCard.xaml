@@ -9,7 +9,7 @@
         <StackPanel>
             <TextBlock x:Name="Headline" FontWeight="SemiBold" Foreground="{DynamicResource warningBrush}" TextWrapping="Wrap" />
             <TextBlock x:Name="Hint" Style="{StaticResource HintText}" Margin="0,8,0,0" TextWrapping="Wrap" />
-            <Button x:Name="Allow" HorizontalAlignment="Left" Margin="0,12,0,0" Content="{t:T 'Allow CouchSubs through Windows Firewall'}" Click="OnAllow" />
+            <Button x:Name="Allow" HorizontalAlignment="Left" Margin="0,12,0,0" Content="{t:T 'Allow Nino through Windows Firewall'}" Click="OnAllow" />
         </StackPanel>
     </c:Card>
 </UserControl>

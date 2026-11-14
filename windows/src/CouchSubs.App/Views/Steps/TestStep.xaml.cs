@@ -22,7 +22,7 @@ public partial class TestStep : UserControl
     {
         if (Controller.Settings.Output != SubtitleOutput.Computer) return;
         var text = Localizer.Current;
-        Layout.Message = text["CouchSubs will show a sample subtitle on this computer's screen, at the bottom."];
+        Layout.Message = text["Nino will show a sample subtitle on this computer's screen, at the bottom."];
         Question.Title = text["Do you see it on the screen?"];
         Hint.Text = text["If you don't see it, send it again. It shows for a few seconds at the bottom of the screen."];
         Adjust.Visibility = Visibility.Visible;

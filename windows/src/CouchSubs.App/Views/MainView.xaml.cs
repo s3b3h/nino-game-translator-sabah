@@ -54,7 +54,7 @@ public partial class MainView : UserControl
     {
         var text = Localizer.Current;
         UpdateCard.Visibility = controller.UpdateVersion is null ? Visibility.Collapsed : Visibility.Visible;
-        UpdateTitle.Text = text["A new version of CouchSubs is available: %@"].Replace("%@", controller.UpdateVersion ?? "");
+        UpdateTitle.Text = text["A new version of Nino is available: %@"].Replace("%@", controller.UpdateVersion ?? "");
         UpdateButton.Content = text[controller.CanUpdateItself ? "Update now" : "Download"];
         UpdateButton.IsEnabled = !controller.Updating;
         UpdateBar.Visibility = controller.Updating ? Visibility.Visible : Visibility.Collapsed;

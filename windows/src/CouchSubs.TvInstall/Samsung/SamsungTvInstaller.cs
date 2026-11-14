@@ -170,7 +170,7 @@ public sealed partial class SamsungTvInstaller(string host, string profilesDirec
 
         var onTv = await ReadInstalledVersionAsync(device, cancellationToken);
         if (version is not null && onTv is not null && !Versions.IsNewer(version, onTv)) return (onTv, false);
-        Log.Write(onTv is null ? "TV'de CouchSubs görünmüyor; kuruluyor." : $"TV'de {onTv} var, {version ?? "yeni sürüm"} kuruluyor.");
+        Log.Write(onTv is null ? "TV'de Nino görünmüyor; kuruluyor." : $"TV'de {onTv} var, {version ?? "yeni sürüm"} kuruluyor.");
 
         var duid = await ReadDuidAsync(device, cancellationToken);
         Log.Write($"DUID: {duid}");

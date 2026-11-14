@@ -166,12 +166,17 @@ jobs:
           ./scripts/package-tv.sh
           ./scripts/package-tizen.sh
           if [ -d android-apk ]; then ./scripts/bundle-android-apk.sh "$(ls android-apk/*.apk | head -1)"; fi
+          # Nino: TV APK'sı ayrıca derlenmediyse son Nino sürümündekini göm (Windows TV uygulamasını kendisi kursun).
+          if [ ! -d android-apk ]; then
+            curl -fsSL -o nino-tv.apk https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-TV.apk \
+              && ./scripts/bundle-android-apk.sh nino-tv.apk || echo "Nino TV APK'sı indirilemedi; gömülmeden devam."
+          fi
 
       # Sürüm etiketten gelir (v0.1.0-beta.10 → 0.1.0-beta.10); uygulama içi güncelleme bununla karşılaştırır.
       - name: Yayınla
         shell: bash
         run: |
-          if [[ "$GITHUB_REF_TYPE" == tag ]]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION=0.1.0-dev; fi
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION=$(sed -n 's/.*MARKETING_VERSION: *"\([^"]*\)".*/\1/p' mac/project.yml | head -1); fi
           dotnet publish windows/src/CouchSubs.App -c Release -r win-x64 --self-contained -o publish/CouchSubs -p:Version="$VERSION"
 
       # Ücretsiz çeviri motoru (ONNX Runtime) Visual C++ çalışma zamanına bağlı: onnxruntime.dll VCRUNTIME140(_1).dll ve
@@ -235,20 +240,21 @@ jobs:
       - name: Kurulum dosyası
         shell: pwsh
         run: |
-          $version = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME.TrimStart("v") } else { "0.1.0-dev" }
+          # Nino: etiketsiz derlemede sürüm Mac'inkiyle aynı (mac/project.yml).
+          $version = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME.TrimStart("v") } else { (Select-String -Path mac/project.yml -Pattern 'MARKETING_VERSION: *"([^"]+)"').Matches[0].Groups[1].Value }
           Copy-Item -Recurse publish/CouchSubs pack
           Copy-Item LICENSE, THIRD-PARTY-NOTICES.md pack/
           dotnet tool install -g vpk --version 1.2.161
-          if ($env:GITHUB_REF_TYPE -eq "tag") {
-            vpk download github --repoUrl https://github.com/yorulmazsinan/couchsubs -o Releases
+          if ($true) {
+            vpk download github --repoUrl https://github.com/yunusdemirbag/nino-game-translator -o Releases
             if ($LASTEXITCODE -ne 0) { Write-Host "Önceki Velopack sürümü yok; yalnız tam paket üretilecek." }
           }
           # --framework webview2: PlayStation giriş penceresi WebView2 ister; eksik bilgisayarlarda kurulum onu da kurar.
-          vpk pack --packId CouchSubsApp --packVersion $version --packDir pack --mainExe CouchSubs.exe --framework webview2 `
-            --packTitle CouchSubs --packAuthors Enmera --icon windows/src/CouchSubs.App/Assets/CouchSubs.ico --outputDir Releases
+          vpk pack --packId NinoGameTranslator --packVersion $version --packDir pack --mainExe CouchSubs.exe --framework webview2 `
+            --packTitle "Nino Game Translator" --packAuthors "Yunus Demirbag" --icon windows/src/CouchSubs.App/Assets/CouchSubs.ico --outputDir Releases
           if ($LASTEXITCODE -ne 0) { throw "vpk pack başarısız" }
           New-Item -ItemType Directory installer | Out-Null
-          Move-Item Releases/CouchSubsApp-win-Setup.exe installer/CouchSubs-windows-Setup.exe
+          Move-Item Releases/NinoGameTranslator-win-Setup.exe installer/Nino-Windows-Setup.exe
           # Bu sürümün güncelleme dosyaları; önceki sürümden indirilen paketler sürüme yeniden eklenmez.
           Get-ChildItem Releases -File |
             Where-Object { ($_.Name -like "*$version*" -or $_.Name -like "releases.*.json" -or $_.Name -like "assets.*.json" -or $_.Name -eq "RELEASES") -and $_.Name -notlike "*Portable*" } |

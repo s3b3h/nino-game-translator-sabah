@@ -63,7 +63,7 @@ public class SamsungInstallTests
             "\t-------------app_tizen_id  =  AprZAARz4r.Jellyfin-----------------",
             "\t-------------app_version  =  1.2.3-----------------------------",
             rule,
-            "\t-------------app_title  =  CouchSubs----------------------------",
+            "\t-------------app_title  =  Nino----------------------------",
             "\t-------------app_tizen_id  =  CouchSubsT.CouchSubs----------------",
             "\t-------------app_version  =  0.9.7-----------------------------",
             rule,

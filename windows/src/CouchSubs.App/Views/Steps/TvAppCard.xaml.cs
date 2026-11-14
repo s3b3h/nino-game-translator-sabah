@@ -78,9 +78,9 @@ public partial class TvAppCard : UserControl
             TvAppKind.UpToDate => string.Format(text["The TV app is ready (version %@)."].Replace("%@", "{0}"), state.Version),
             TvAppKind.DevModeOff => brand switch
             {
-                TvBrand.Lg => text["The TV app is not installed. CouchSubs can install it once Developer Mode is on."],
-                TvBrand.Samsung => text["The TV app is not installed. CouchSubs installs it once Developer Mode is on."],
-                _ => text["The TV app is not installed. CouchSubs installs it over the network once debugging is on."],
+                TvBrand.Lg => text["The TV app is not installed. Nino can install it once Developer Mode is on."],
+                TvBrand.Samsung => text["The TV app is not installed. Nino installs it once Developer Mode is on."],
+                _ => text["The TV app is not installed. Nino installs it over the network once debugging is on."],
             },
             TvAppKind.NeedsPassphrase => text["Developer Mode is on. One last step to install the TV app:"],
             TvAppKind.SignIn => text["The Samsung account page opened in your browser. Finish signing in there. If you do not see it, switch to the browser or press Open the page again."],
@@ -93,8 +93,8 @@ public partial class TvAppCard : UserControl
                                 text["No account? You can create a free one on the same page. If the browser asks to allow access to devices on your network, allow it."],
             TvAppKind.ApproveOnTv => text["Tick “Always allow from this computer” and choose Allow. The app then installs by itself."],
             TvAppKind.UpToDate when brand == TvBrand.Lg => controller?.DevModeHoursLeft is { } hours
-                ? text["Developer Mode: %lld hours left. CouchSubs extends it by itself each time you use it."].Replace("%lld", hours.ToString())
-                : text["CouchSubs extends Developer Mode by itself each time you use it."],
+                ? text["Developer Mode: %lld hours left. Nino extends it by itself each time you use it."].Replace("%lld", hours.ToString())
+                : text["Nino extends Developer Mode by itself each time you use it."],
             TvAppKind.UpToDate when brand == TvBrand.Samsung => text[TvAppMessages.SourceSwitchTip],
             _ => "",
         };

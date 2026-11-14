@@ -14,7 +14,7 @@ public static class TvAppMessages
 
     /// <summary>TV uygulaması açıkken Samsung kendi kendine başka kaynağa geçiyorsa (HDMI-CEC).</summary>
     public const string SourceSwitchTip =
-        "If the TV keeps switching to HDMI 1 or another source while the CouchSubs TV app is open, turn off Anynet+ (HDMI-CEC) and Auto Source Switching on the TV: Settings › All Settings › Connection › External Device Manager.";
+        "If the TV keeps switching to HDMI 1 or another source while the Nino TV app is open, turn off Anynet+ (HDMI-CEC) and Auto Source Switching on the TV: Settings › All Settings › Connection › External Device Manager.";
 
     /// <param name="samsungLog">Samsung kurulum günlüğünün yolu; Samsung hatalarında metnin sonunda yazar.</param>
     public static string Problem(TvAppState state, TvBrand brand, Localizer text, string samsungLog)
@@ -46,10 +46,10 @@ public static class TvAppMessages
         if (brand == TvBrand.Samsung)
         {
             if (error is SsapException { Reason: "rejected" })
-                return text["The TV refused the connection. Allow CouchSubs in Settings › General › External Device Manager › Device Connection Manager › Device List on the TV, then press Connect again."];
+                return text["The TV refused the connection. Allow Nino in Settings › General › External Device Manager › Device Connection Manager › Device List on the TV, then press Connect again."];
             // Bağlantı kuruldu ama izin 60 saniyede gelmedi (ya da TV bekletip kapattı).
             if (error is OperationCanceledException || error is SsapException { Reason: "cannot connect" })
-                return text["The TV's permission box was not accepted within 60 seconds. If no box appeared, open the TV's home screen and press Connect again. If CouchSubs was denied before, allow it in Settings › General › External Device Manager › Device Connection Manager › Device List."];
+                return text["The TV's permission box was not accepted within 60 seconds. If no box appeared, open the TV's home screen and press Connect again. If Nino was denied before, allow it in Settings › General › External Device Manager › Device Connection Manager › Device List."];
             return text[noAnswer];
         }
         // TV yanıt verdi ama reddetti ya da süre doldu: gerçek nedeni göster.
@@ -66,19 +66,19 @@ public static class TvAppMessages
             "The TV did not accept this computer. In the TV's Developer Mode window, check that Host PC IP is this computer's address, then restart the TV.",
         DevModeError.Unreachable => "The TV did not respond. Make sure it is on and on the same network.",
         DevModeError.ToolMissing => "Windows' OpenSSH Client is missing. Add it in Settings › System › Optional features and try again.",
-        DevModeError.TooOld => "This Samsung TV is too old for the CouchSubs TV app (2017 models and later are supported).",
+        DevModeError.TooOld => "This Samsung TV is too old for the Nino TV app (2017 models and later are supported).",
         DevModeError.SignInFailed => "Samsung sign-in did not complete. Try again and finish signing in on the page that opens.",
         DevModeError.CertificateFailed => "Samsung did not issue the signing certificate. Try again in a few minutes.",
         DevModeError.NotApproved => "Debugging was not allowed on the TV. Try again and choose Allow on the TV.",
         DevModeError.NotEnoughSpace => "The TV is out of free space. Remove an app you do not use from the TV and try again.",
         DevModeError.CertificateMismatch =>
-            "A CouchSubs TV app signed on another computer is still on the TV and could not be removed. On the TV, open Apps, select CouchSubs, delete it and try again.",
+            "A Nino TV app signed on another computer is still on the TV and could not be removed. On the TV, open Apps, select Nino, delete it and try again.",
         DevModeError.CertificateRejected =>
-            "The TV did not accept the signing certificate. Make sure the TV is connected to the internet (it checks the certificate with Samsung) and its date and time are right (Settings › General › System Manager › Time), then try again. CouchSubs gets a new certificate, so you sign in to Samsung once more.",
+            "The TV did not accept the signing certificate. Make sure the TV is connected to the internet (it checks the certificate with Samsung) and its date and time are right (Settings › General › System Manager › Time), then try again. Nino gets a new certificate, so you sign in to Samsung once more.",
         DevModeError.TvClockWrong =>
             "The TV's clock is behind, so the new certificate is not valid for it yet. Set the TV's date and time (Settings › General › System Manager › Time) or wait a few minutes, then try again.",
         DevModeError.PackageBlocked =>
-            "The TV refuses CouchSubs because an earlier CouchSubs is still registered on it (Tizen error 118, -22), even if it no longer appears among the apps. If CouchSubs is among the TV's apps, delete it there and try again. Otherwise reset Smart Hub (Settings › Support › Device Care › Self Diagnosis › Reset Smart Hub; menu names differ a little by model) and try again. Resetting Smart Hub also removes the other apps you downloaded.",
+            "The TV refuses Nino because an earlier Nino is still registered on it (Tizen error 118, -22), even if it no longer appears among the apps. If Nino is among the TV's apps, delete it there and try again. Otherwise reset Smart Hub (Settings › Support › Device Care › Self Diagnosis › Reset Smart Hub; menu names differ a little by model) and try again. Resetting Smart Hub also removes the other apps you downloaded.",
         DevModeError.ConnectionLost =>
             "The connection to the TV dropped during the install. Keep the TV on and on the same network as this computer, then try again.",
         _ => "The TV app could not be installed. Try again; if it fails again, send us the reason below.",

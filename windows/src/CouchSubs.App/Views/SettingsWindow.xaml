@@ -103,7 +103,7 @@
                                     <ComboBoxItem Content="{t:T 'Overlay (for a black screen)'}" Tag="Overlay" />
                                 </ComboBox>
                                 <TextBlock Style="{StaticResource HintText}" Margin="0,0,0,16"
-                                           Text="{t:T 'If the PS5 picture stays black inside the CouchSubs TV app, choose Overlay: the TV shows the PS5 on its own HDMI input and the subtitles appear on top. If the picture never arrives, the TV app switches to Overlay by itself.'}" />
+                                           Text="{t:T 'If the PS5 picture stays black inside the Nino TV app, choose Overlay: the TV shows the PS5 on its own HDMI input and the subtitles appear on top. If the picture never arrives, the TV app switches to Overlay by itself.'}" />
                             </StackPanel>
                             <Button Content="{t:T 'Send test subtitle'}" Click="OnTest" />
                         </StackPanel>
@@ -384,9 +384,9 @@
                     </c:Card>
                 </StackPanel>
             </TabItem>
-            <TabItem Header="{t:T 'About CouchSubs'}">
+            <TabItem Header="{t:T 'About Nino'}">
                 <StackPanel>
-                    <TextBlock Text="{t:T 'About CouchSubs'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
+                    <TextBlock Text="{t:T 'About Nino'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
                     <s:TvAppCard Margin="0,0,0,16" />
                     <!-- Uygulamanın görünümü: koyu (varsayılan), açık ya da Windows'un temasıyla aynı; anında uygulanır. -->
                     <c:Card Margin="0,0,0,16">
@@ -401,7 +401,7 @@
                     </c:Card>
                     <c:Card>
                         <Grid>
-                            <Button Content="{t:T 'About CouchSubs'}" Click="OnAbout" />
+                            <Button Content="{t:T 'About Nino'}" Click="OnAbout" />
                             <Button Content="{t:T 'Set up again…'}" HorizontalAlignment="Right" Foreground="{DynamicResource dangerBrush}" Click="OnReset" />
                         </Grid>
                     </c:Card>

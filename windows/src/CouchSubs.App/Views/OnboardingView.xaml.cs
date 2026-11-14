@@ -69,7 +69,7 @@ public partial class OnboardingView : UserControl
     /// <summary>Adımların adları: her adımın kendi başlığı.</summary>
     private static string StepTitle(OnboardingStep step) => step switch
     {
-        OnboardingStep.Welcome => "Welcome to CouchSubs",
+        OnboardingStep.Welcome => "Welcome to Nino",
         OnboardingStep.SecondAccount => "A second PSN account",
         OnboardingStep.PsnLogin => "Sign in with the second account",
         OnboardingStep.Console => "Connect your PS5",

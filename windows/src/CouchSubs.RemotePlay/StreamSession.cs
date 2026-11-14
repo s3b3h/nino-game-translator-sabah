@@ -129,7 +129,7 @@ public sealed class StreamSession : IStreamSession
     private RegisteredConsole console;
     private DateTime nextRelocate = DateTime.MinValue;
     private readonly byte[] accountId;
-    private readonly SerialQueue queue = new("CouchSubs stream session");
+    private readonly SerialQueue queue = new("Nino stream session");
     private readonly FrameDelivery delivery;
     private readonly ReconnectPolicy policy = new();
     /// <summary>Yalnız kuyrukta okunup yazılır.</summary>
@@ -482,7 +482,7 @@ internal sealed class FrameDelivery : IDisposable
     public FrameDelivery(Action<Frame> deliver)
     {
         this.deliver = deliver;
-        thread = new Thread(Run) { IsBackground = true, Name = "CouchSubs frames" };
+        thread = new Thread(Run) { IsBackground = true, Name = "Nino frames" };
         thread.Start();
     }
 

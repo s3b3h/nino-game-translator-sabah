@@ -118,7 +118,7 @@ static async Task SelfTestAsync()
     try
     {
         using var key = RSA.Create(2048);
-        var request = new CertificateRequest("CN=CouchSubs self-test", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var request = new CertificateRequest("CN=Nino self-test", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         using var withKey = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
         var p12 = Path.Combine(dir, "test.p12");
         await File.WriteAllBytesAsync(p12, new X509Certificate2Collection { withKey }.ExportPkcs12(

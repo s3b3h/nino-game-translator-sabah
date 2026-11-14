@@ -772,7 +772,7 @@ public class AppControllerTests
 
     [Theory]
     [InlineData("The free translation engine could not start on this computer.", "Ücretsiz çeviri motoru bu bilgisayarda açılamadı.")]
-    [InlineData("Choose Gemini (free) or DeepL in Settings › Translation.", "Ayarlar › Çeviri'den Gemini (ücretsiz) ya da DeepL seçin.")]
+    [InlineData("Choose Gemini (free) or DeepL in Settings › Translation.", "Ayarlar › Çeviri'den Gemini'yi (ücretsiz) ya da DeepL'i seçin.")]
     public void EngineFailureStringsAreTranslated(string key, string turkish) => Assert.Equal(turkish, Localizer.ForLanguage("tr")[key]);
 }
 
@@ -1126,7 +1126,7 @@ public class AppControllerRunTests
         await controller.CompletePsnLoginAsync(new Uri("https://x/?code=x"));
         await controller.RegisterAsync("192.168.1.70", "12345678");
         Assert.Equal("Paired with PS5-789. Connects when you start translating.", controller.Ps5StatusText);
-        Assert.Equal("PS5-789 ile eşleşti. Çeviriyi başlatınca bağlanır.",
+        Assert.Equal("PS5-789 ile eşleşti. Çeviriyi başlattığınızda bağlanır.",
             AppController.StatusText(SessionState.Disconnected(DisconnectKind.Stopped), false, Localizer.ForLanguage("tr"), "PS5-789"));
     }
 
@@ -1364,7 +1364,7 @@ public class TvAppInstallTests
 
         var text = TvAppMessages.Problem(controller.TvApp, TvBrand.Samsung, Localizer.ForLanguage("tr"), @"C:\CouchSubs\tvinstall.log");
         Assert.Contains("Smart Hub", text);
-        Assert.Contains("Ayrıntı: app_id[CouchSubsT.CouchSubs] install failed[118, -22]", text);
+        Assert.Contains("Ayrıntılar: app_id[CouchSubsT.CouchSubs] install failed[118, -22]", text);
         Assert.EndsWith(@"C:\CouchSubs\tvinstall.log", text);
     }
 

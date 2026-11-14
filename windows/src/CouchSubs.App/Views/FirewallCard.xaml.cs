@@ -48,7 +48,7 @@ public partial class FirewallCard : UserControl
         Allow.Visibility = prompt is FirewallPrompt.Offer or FirewallPrompt.Failed or FirewallPrompt.Working ? Visibility.Visible : Visibility.Collapsed;
         Allow.IsEnabled = prompt != FirewallPrompt.Working;
         Headline.Text = prompt == FirewallPrompt.Allowed
-            ? text["Windows Firewall now allows CouchSubs."]
+            ? text["Windows Firewall now allows Nino."]
             : text["Windows Firewall may be blocking the connection."];
         Hint.Text = prompt switch
         {
@@ -56,8 +56,8 @@ public partial class FirewallCard : UserControl
             FirewallPrompt.Failed => text["The firewall rule was not added. Try again and choose Yes when Windows asks."],
             FirewallPrompt.Allowed when running => text["Reconnecting…"],
             FirewallPrompt.Allowed => text["Open Pair Device again on the PS5 and enter the new code."],
-            _ when running => text["CouchSubs needs incoming connections from the PS5 and the TV. Windows asks for permission once."],
-            _ => text["Allow CouchSubs, then open Pair Device again on the PS5 and enter the new code."],
+            _ when running => text["Nino needs incoming connections from the PS5 and the TV. Windows asks for permission once."],
+            _ => text["Allow Nino, then open Pair Device again on the PS5 and enter the new code."],
         };
     }
 

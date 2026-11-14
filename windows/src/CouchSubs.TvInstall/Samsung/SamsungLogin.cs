@@ -36,7 +36,7 @@ public static class SamsungLogin
         var listener = new TcpListener(IPAddress.IPv6Any, CallbackPort);
         listener.Server.DualMode = true;
         try { listener.Start(); }
-        catch (SocketException error) { throw new SamsungInstallException(SamsungInstallError.LoginFailed, $"giriş dönüşü için localhost:{CallbackPort} açılamadı (başka bir CouchSubs kurulumu açık olabilir): {error.Message}"); }
+        catch (SocketException error) { throw new SamsungInstallException(SamsungInstallError.LoginFailed, $"giriş dönüşü için localhost:{CallbackPort} açılamadı (başka bir Nino kurulumu açık olabilir): {error.Message}"); }
 
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         limit.CancelAfter(timeout);
@@ -150,8 +150,8 @@ public static class SamsungLogin
     private static async Task RespondAsync(NetworkStream stream, int status, bool signedIn, CancellationToken cancellationToken)
     {
         var page = signedIn
-            ? "<!doctype html><meta charset=utf-8><title>CouchSubs</title><body style=\"font-family:system-ui;padding:3em\">" +
-              "<h2>Giriş tamam / Signed in</h2><p>Bu sekmeyi kapatıp CouchSubs'a dönebilirsiniz.<br>You can close this tab and return to CouchSubs.</p>"
+            ? "<!doctype html><meta charset=utf-8><title>Nino</title><body style=\"font-family:system-ui;padding:3em\">" +
+              "<h2>Giriş tamam / Signed in</h2><p>Bu sekmeyi kapatıp Nino'ya dönebilirsiniz.<br>You can close this tab and return to Nino.</p>"
             : "Not found";
         var reason = status switch { 200 => "OK", 400 => "Bad Request", _ => "Not Found" };
         var body = Encoding.UTF8.GetBytes(page);

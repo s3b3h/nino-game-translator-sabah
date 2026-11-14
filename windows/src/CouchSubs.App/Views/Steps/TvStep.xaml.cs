@@ -57,7 +57,7 @@ public partial class TvStep : UserControl
         Tvs.IsEnabled = false;
         // Samsung'da izin kutusu ve bekleme süresi açıkça söylenir.
         Waiting.Text = tv.Brand == TvBrand.Samsung
-            ? Localizer.Current["Accept the permission box on the TV with the remote (Allow). CouchSubs waits 60 seconds."]
+            ? Localizer.Current["Accept the permission box on the TV with the remote (Allow). Nino waits 60 seconds."]
             : Localizer.Current["Accept the request on the TV…"];
         Waiting.Visibility = Visibility.Visible;
         Error.Text = "";
