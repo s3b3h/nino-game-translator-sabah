@@ -4,8 +4,5 @@
 
 // Paket sunucusu (server/packs, Cloudflare Worker). "//" xcconfig'te yorum olduğu için https:/$()/... yazılır.
 PACKS_API_BASE_URL =
-// Meta (Facebook) uygulama kimliği ve istemci jetonu. Boşsa Meta SDK kurulmaz.
-FACEBOOK_APP_ID =
-FACEBOOK_CLIENT_TOKEN =
 
 #include? "Secrets.xcconfig"

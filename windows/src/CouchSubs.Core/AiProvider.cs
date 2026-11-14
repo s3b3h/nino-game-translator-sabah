@@ -148,7 +148,7 @@ public sealed record LocalAiServer
     /// <summary>LM Studio'nun yerel sunucusu (lmstudio.ai/docs/app/api/endpoints/openai).</summary>
     public const string LmStudioUrl = "http://localhost:1234/v1";
     /// <summary>Türkçeyi iyi bilen, sıradan bir bilgisayarda çalışan model.</summary>
-    public const string DefaultModel = "qwen2.5:7b";
+    public const string DefaultModel = "translategemma:4b";
 
     private LocalAiServer(Uri baseUrl, string model)
     {

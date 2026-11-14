@@ -4910,7 +4910,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deneniyor…"
+            "value" : "Test ediliyor…"
           }
         }
       }
@@ -8632,7 +8632,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ücretsiz ve kotasız. Bu bilgisayardaki bir yapay zekâ modeli (Ollama ya da LM Studio) çevirir; altyazı metni bilgisayardan çıkmaz. Hız bilgisayarınıza bağlıdır. Modele ulaşılamazsa ücretsiz çeviri devreye girer."
+            "value" : "Ücretsiz ve kotasız. Bu bilgisayardaki bir yapay zekâ modeli (Ollama ya da LM Studio) çevirir; çeviri için altyazı metni bilgisayardan çıkmaz. Hız bilgisayarınıza bağlıdır. Modele ulaşılamazsa ücretsiz çeviri devreye girer."
           }
         }
       }
@@ -8845,18 +8845,18 @@
         }
       }
     },
-    "Type the model name as the server shows it. In Ollama, download it first: ollama pull qwen2.5:7b (downloaded models: ollama list). In LM Studio, load the model and start the local server." : {
+    "Type the model name as the server shows it. In Ollama, download it first: ollama pull translategemma:4b (with 16 GB of memory or more, translategemma:12b translates better). Xiaomi's MiLMMT also translates well: ollama pull hf.co/mradermacher/MiLMMT-46-4B-v1.0-GGUF:Q4_K_M. Downloaded models: ollama list. In LM Studio, load the model and start the local server." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Type the model name as the server shows it. In Ollama, download it first: ollama pull qwen2.5:7b (downloaded models: ollama list). In LM Studio, load the model and start the local server."
+            "value" : "Type the model name as the server shows it. In Ollama, download it first: ollama pull translategemma:4b (with 16 GB of memory or more, translategemma:12b translates better). Xiaomi's MiLMMT also translates well: ollama pull hf.co/mradermacher/MiLMMT-46-4B-v1.0-GGUF:Q4_K_M. Downloaded models: ollama list. In LM Studio, load the model and start the local server."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Model adını sunucunun gösterdiği gibi yazın. Ollama'da önce modeli indirin: ollama pull qwen2.5:7b (indirilen modeller: ollama list). LM Studio'da modeli yükleyin ve yerel sunucuyu başlatın."
+            "value" : "Model adını sunucunun gösterdiği gibi yazın. Ollama'da önce modeli indirin: ollama pull translategemma:4b (16 GB ya da daha çok belleğiniz varsa translategemma:12b daha iyi çevirir). Xiaomi'nin MiLMMT modeli de iyi çevirir: ollama pull hf.co/mradermacher/MiLMMT-46-4B-v1.0-GGUF:Q4_K_M. İndirilen modeller: ollama list. LM Studio'da modeli yükleyin ve yerel sunucuyu başlatın."
           }
         }
       }
@@ -8888,7 +8888,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bağlantıyı dene"
+            "value" : "Bağlantıyı test et"
           }
         }
       }
@@ -10163,6 +10163,256 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nino'nun yeni sürümü hazır"
+          }
+        }
+      }
+    },
+    "Gemini's free daily limit is used up. A free key is never charged. It renews every day (next: %@)." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemini'nin günlük ücretsiz hakkı doldu. Ücretsiz anahtardan para alınmaz; hak her gün yenilenir (sıradaki: %@)."
+          }
+        }
+      }
+    },
+    "On the same screen, turn off the last option at the bottom. Otherwise the PS5 keeps showing a Remote Play notification over the game." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aynı ekranda en alttaki seçeneği kapatın. Yoksa PS5 oyunun üstünde sürekli \"Uzaktan Oynama\" bildirimi gösterir."
+          }
+        }
+      }
+    },
+    "Free and open source under the GNU AGPL-3.0 license. Remote Play uses chiaki-ng (AGPL-3.0)." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GNU AGPL-3.0 lisansıyla ücretsiz ve açık kaynak. Remote Play bağlantısı chiaki-ng ile (AGPL-3.0)."
+          }
+        }
+      }
+    },
+    "Looking for Ollama…" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ollama aranıyor…"
+          }
+        }
+      }
+    },
+    "Ollama is running on this computer." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ollama bu bilgisayarda çalışıyor."
+          }
+        }
+      }
+    },
+    "Ollama is not running." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ollama çalışmıyor."
+          }
+        }
+      }
+    },
+    "Download and open Ollama (free), then come back here." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ollama'yı indirip açın (ücretsiz), sonra buraya dönün."
+          }
+        }
+      }
+    },
+    "Check again" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeniden bak"
+          }
+        }
+      }
+    },
+    "Downloaded" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İndirildi"
+          }
+        }
+      }
+    },
+    "Download (%@ GB)" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İndir (%@ GB)"
+          }
+        }
+      }
+    },
+    "Google's translation model. Runs on most computers." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google'ın çeviri modeli. Çoğu bilgisayarda çalışır."
+          }
+        }
+      }
+    },
+    "Translates better. Needs 16 GB of memory or more." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha iyi çevirir. 16 GB ya da daha çok bellek ister."
+          }
+        }
+      }
+    },
+    "Xiaomi's translation model. Fast and natural." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xiaomi'nin çeviri modeli. Hızlı ve doğal."
+          }
+        }
+      }
+    },
+    "For LM Studio or another model, type the model name as the server shows it. In LM Studio, load the model and start the local server." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LM Studio ya da başka bir model için model adını sunucunun gösterdiği gibi yazın. LM Studio'da modeli yükleyin ve yerel sunucuyu başlatın."
+          }
+        }
+      }
+    },
+    "The download did not finish. Check your internet connection and that Ollama is open, then try again." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İndirme tamamlanmadı. İnternet bağlantınızı ve Ollama'nın açık olduğunu kontrol edip yeniden deneyin."
+          }
+        }
+      }
+    },
+    "Updates" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güncellemeler"
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sürüm %@"
+          }
+        }
+      }
+    },
+    "Checking…" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denetleniyor…"
+          }
+        }
+      }
+    },
+    "Check for updates" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güncellemeleri denetle"
+          }
+        }
+      }
+    },
+    "Nino %@ is ready." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino %@ hazır."
+          }
+        }
+      }
+    },
+    "What's new" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yenilikler"
+          }
+        }
+      }
+    },
+    "Open the downloaded zip and drag Nino into Applications, replacing the old one. Your settings stay." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İnen zip dosyasını açın ve Nino'yu Uygulamalar klasörüne sürükleyip eskisinin yerine koyun. Ayarlarınız kalır."
+          }
+        }
+      }
+    },
+    "You have the latest version." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En son sürümü kullanıyorsunuz."
+          }
+        }
+      }
+    },
+    "Could not check for updates. Check your internet connection." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güncellemeler denetlenemedi. İnternet bağlantınızı kontrol edin."
+          }
+        }
+      }
+    },
+    "Nino also checks for a new version by itself when it opens and tells you on the main screen." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino açılırken yeni sürümü kendisi de denetler ve ana ekranda haber verir."
           }
         }
       }

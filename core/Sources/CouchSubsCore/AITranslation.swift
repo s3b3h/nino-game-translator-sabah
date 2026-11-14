@@ -130,8 +130,9 @@ public struct LocalAIServer: Equatable, Sendable {
     public static let ollamaURL = "http://localhost:11434/v1"
     /// LM Studio'nun yerel sunucusu (lmstudio.ai/docs/app/api/endpoints/openai).
     public static let lmStudioURL = "http://localhost:1234/v1"
-    /// Türkçeyi iyi bilen, sıradan bir bilgisayarda çalışan model.
-    public static let defaultModel = "qwen2.5:7b"
+    /// Nino: çeviri için eğitilmiş Google TranslateGemma (4B, 3,3 GB; sıradan bir bilgisayarda çalışır). Küçük Qwen
+    /// modelleri Türkçede çok hata yapıyordu. Belleği bol bilgisayarda translategemma:12b daha iyi çevirir.
+    public static let defaultModel = "translategemma:4b"
 
     /// Sondaki "/" atılmış temel adres.
     public let baseURL: URL
@@ -326,6 +327,17 @@ public enum AIRequest {
             ]
             if let effort = model.effort { body["output_config"] = ["effort": effort] }
             if let thinking = model.thinking { body["thinking"] = ["type": thinking] }
+        case .local where TranslationModelPrompt.matches(model.id):
+            let server = server ?? LocalAIServer(baseURL: LocalAIServer.ollamaURL, model: model.id)!
+            request = URLRequest(url: server.chatURL)
+            if !key.isEmpty { request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
+            body = [
+                "model": model.id,
+                "messages": TranslationModelPrompt.messages(model: model.id, sentences: sentences, context: context)!,
+                "temperature": localTemperature,
+                "max_tokens": maxOutputTokens,
+                "stream": false,
+            ]
         case .local:
             // Ollama ve LM Studio'nun OpenAI uyumlu Chat Completions'ı: POST {adres}/chat/completions. Yalnız iki
             // sunucunun da tanıdığı alanlar gider ("developer" rolü, reasoning_effort, max_completion_tokens gitmez).
@@ -386,7 +398,12 @@ public enum AIRequest {
             guard list.count == count else { throw AIFailure.unreachable }
             return list.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         }
-        guard count == 1 else { throw AIFailure.unreachable }
+        // TranslateGemma düz metin döner: birden çok cümle satır satır gelir.
+        if count > 1 {
+            let lines = trimmed.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            guard lines.count == count else { throw AIFailure.unreachable }
+            return lines
+        }
         return [trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”"))]
     }
 
@@ -635,5 +652,52 @@ public final class AITranslationCore: @unchecked Sendable {
     }
 
     /// Denemede çevrilen örnek satır.
-    public static let sample = "KRATOS: We go now. Stay close, boy."
+    public static let sample = "BATMAN: I'm Batman."
+}
+
+/// Nino: çeviri için eğitilmiş yerel modeller Nino'nun JSON dizili isteğini değil, kendi kısa kalıplarını ister.
+/// Önceki altyazılar bağlam olarak aynı kalıpta soru-cevap çiftleri halinde gider; cümleler satır satır.
+public enum TranslationModelPrompt {
+    public static func matches(_ model: String) -> Bool { TranslateGemma.matches(model) || MiLMMT.matches(model) }
+
+    /// Modelin kendi kalıbıyla iletiler; genel bir sohbet modeliyse nil (Nino'nun yönergesi kullanılır).
+    public static func messages(model: String, sentences: [String], context: [AIContextLine]) -> [[String: String]]? {
+        let prompt: (String) -> String
+        if TranslateGemma.matches(model) { prompt = TranslateGemma.prompt }
+        else if MiLMMT.matches(model) { prompt = MiLMMT.prompt }
+        else { return nil }
+        var messages: [[String: String]] = []
+        for line in context {
+            guard let translation = line.translation else { continue }
+            messages.append(["role": "user", "content": prompt(line.source)])
+            messages.append(["role": "assistant", "content": translation])
+        }
+        let text = sentences.map { $0.replacingOccurrences(of: "\n", with: " ") }.joined(separator: "\n")
+        messages.append(["role": "user", "content": prompt(text)])
+        return messages
+    }
+}
+
+/// Xiaomi'nin çeviri modeli MiLMMT-46 (Gemma 3 tabanlı, Türkçe destekli; huggingface.co/xiaomi-research/MiLMMT-46-4B-v1.0).
+/// Ollama'da: ollama pull hf.co/mradermacher/MiLMMT-46-4B-v1.0-GGUF:Q4_K_M. Kalıp model kartındaki gibidir.
+public enum MiLMMT {
+    public static func matches(_ model: String) -> Bool { model.lowercased().contains("milmmt") }
+
+    public static func prompt(_ text: String) -> String {
+        "Translate this from English to Turkish:\nEnglish: \(text)\nTurkish:"
+    }
+}
+
+/// Nino: Google'ın çeviri modeli TranslateGemma kendi kalıbını ister: yönerge yok, tek bir kullanıcı iletisi
+/// (ollama.com/library/translategemma, "Prompt Format"; metinden önce iki boş satır). Nino'nun JSON dizili isteğini
+/// anlamıyor. Önceki altyazılar bağlam olarak aynı kalıpta soru-cevap çiftleri halinde gider; cümleler satır satır.
+public enum TranslateGemma {
+    public static func matches(_ model: String) -> Bool { model.lowercased().contains("translategemma") }
+
+    public static func prompt(_ text: String) -> String {
+        "You are a professional English (en) to Turkish (tr) translator. Your goal is to accurately convey the meaning "
+            + "and nuances of the original English text while adhering to Turkish grammar, vocabulary, and cultural "
+            + "sensitivities. Produce only the Turkish translation, without any additional explanations or commentary. "
+            + "Please translate the following English text into Turkish:\n\n\n\(text)"
+    }
 }

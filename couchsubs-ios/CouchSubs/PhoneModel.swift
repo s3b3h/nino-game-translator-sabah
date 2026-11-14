@@ -139,7 +139,7 @@ final class PhoneModel: ObservableObject {
         let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         if !testing {
             RemotePlayLog.enable()
-            RemotePlayLog.write("CouchSubs iOS \(AppIdentity.version)")
+            RemotePlayLog.write("Nino iOS \(AppIdentity.version)")
         }
         let poolFile = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent(AppIdentity.name, isDirectory: true).appendingPathComponent("pool.json")
@@ -393,6 +393,8 @@ final class PhoneModel: ObservableObject {
             self?.noteLine(source: source, translation: translation, fromPack: fromPack)
         }
         pipeline.onMetrics = { [weak self] metrics in self?.lastMetrics = metrics }
+        // Nino: zaten Türkçe olan satır (PS5 menüsü) çevirmene gitmez.
+        pipeline.targetLanguage = settings.targetLanguage
         pipeline.onTranslationResult = { [weak self] error in
             let status: TranslatorStatus = switch error {
             case nil: .ready

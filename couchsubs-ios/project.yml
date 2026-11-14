@@ -1,9 +1,9 @@
-# iPhone/iPad uygulaması: bilgisayarın yerine telefon PS5'e bağlanır, altyazıyı okur, çevirir ve TV'ye (ya da kendi
+# Nino Game Translator, iPhone uygulaması (CouchSubs'tan türetildi): bilgisayarın yerine telefon PS5'e bağlanır, altyazıyı okur, çevirir ve TV'ye (ya da kendi
 # ekranına) gönderir. Proje dosyası XcodeGen ile üretilir: cd couchsubs-ios && xcodegen
 # Remote Play kütüphanesi önce derlenmeli: scripts/build-chiaki-ios.sh (bkz. docs/ios-plan.md).
 name: CouchSubs
 options:
-  bundleIdPrefix: com.couchsubs
+  bundleIdPrefix: com.ninotranslator
   deploymentTarget:
     iOS: "16.0"
   developmentLanguage: en
@@ -14,10 +14,11 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.1.4"
     CURRENT_PROJECT_VERSION: "1"
-    # Enmera (kuruluş hesabı; Mac uygulamasını imzalayan takım).
-    DEVELOPMENT_TEAM: 79N3CT6T46
+    # Nino: Apple geliştirici takımı burada değil; gerçek iPhone'a kurarken Xcode'da kendi takımınızı seçin
+    # (Signing & Capabilities) ya da DEVELOPMENT_TEAM=... ile derleyin. Simülatör imza istemez.
+    DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     # libchiaki ve bağımlılıkları yalnız arm64 için derleniyor (cihaz ve Apple Silicon simülatörü).
     ARCHS: arm64
@@ -27,15 +28,7 @@ packages:
     path: ../core
   RemotePlay:
     path: ../remoteplay
-  # Analytics ve Crashlytics (uygulama ücretsiz ve hesapsız; Auth yok). Reklam yok: AdMob, Google'ın izin formu (UMP) ve
-  # Remote Config'teki reklam anahtarı 2026-11-12'de kaldırıldı.
-  Firebase:
-    url: https://github.com/firebase/firebase-ios-sdk
-    from: 12.0.0
-  # Meta App Events: reklam kimliği (IDFA) toplanmaz, izleme izni (ATT) istenmez.
-  Facebook:
-    url: https://github.com/facebook/facebook-ios-sdk
-    from: 18.0.0
+  # Nino: Firebase (Analytics, Crashlytics) ve Meta App Events kaldırıldı; Nino hiçbir ölçüm ya da izleme yapmaz.
 targets:
   CouchSubs:
     type: application
@@ -45,6 +38,8 @@ targets:
       # Mac uygulamasıyla ortak arayüz parçaları (tasarım değerleri, bileşenler, PSN giriş sayfası).
       - path: ../mac/CouchSubs/UI/Theme.swift
       - path: ../mac/CouchSubs/UI/Components.swift
+      # Nino: cam yüzeyler ve arka plan (Components.swift bunları kullanır).
+      - path: ../mac/CouchSubs/UI/NinoStyle.swift
       - path: ../mac/CouchSubs/UI/LoginWebView.swift
       # Altyazı bölgesinin canlı önizlemesi (sürüklenen çerçeve).
       - path: ../mac/CouchSubs/UI/RegionPreview.swift
@@ -58,40 +53,18 @@ targets:
     dependencies:
       - package: CouchSubsCore
       - package: RemotePlay
-      # Reklam kimliği (IDFA) desteği ve reklam dönüşüm kitaplığı olmayan sürüm (GoogleAppMeasurementCore).
-      - package: Firebase
-        product: FirebaseAnalyticsCore
-      - package: Firebase
-        product: FirebaseCrashlytics
-      - package: Facebook
-        product: FacebookCore
-    postBuildScripts:
-      # Firebase ayar dosyası depoda değil (gitignore); varsa uygulamaya kopyalanır, yoksa Firebase kapalı çalışır.
-      - name: GoogleService-Info.plist (varsa)
-        basedOnDependencyAnalysis: false
-        script: |
-          src="${PROJECT_DIR}/Config/GoogleService-Info.plist"
-          if [ -f "$src" ]; then cp "$src" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist"; fi
-      # Crashlytics sembol yüklemesi: yalnız Firebase dosyası varken ve Release derlemesinde.
-      - name: Crashlytics dSYM (varsa)
-        basedOnDependencyAnalysis: false
-        inputFiles:
-          - ${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}
-          - $(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)
-        script: |
-          run="${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
-          if [ "$CONFIGURATION" = "Release" ] && [ -f "${PROJECT_DIR}/Config/GoogleService-Info.plist" ] && [ -x "$run" ]; then "$run"; fi
     info:
       path: CouchSubs/Info.plist
       properties:
-        CFBundleDisplayName: CouchSubs
+        # Kullanıcı isteği: ana ekranda da tam ad (iPhone sığmazsa sonunu kısaltır).
+        CFBundleDisplayName: Nino Game Translator
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleLocalizations: [en, tr]
         LSApplicationCategoryType: public.app-category.utilities
         # Yalnız standart şifreleme (TLS, Remote Play'in standart AES'i): ihracat beyanı her yüklemede sorulmasın.
         ITSAppUsesNonExemptEncryption: false
-        NSLocalNetworkUsageDescription: CouchSubs connects to your PS5 and TV on the home network to read and send translated subtitles.
+        NSLocalNetworkUsageDescription: Nino connects to your PS5 and TV on the home network to read and send translated subtitles.
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
         UIRequiresFullScreen: false
@@ -104,23 +77,9 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        UIUserInterfaceStyle: Dark
+        UIUserInterfaceStyle: Light
         # Config/App.xcconfig + Secrets.xcconfig'ten (bkz. AppConfig.swift).
         CSPacksBaseURL: $(PACKS_API_BASE_URL)
-        FacebookAppID: $(FACEBOOK_APP_ID)
-        FacebookClientToken: $(FACEBOOK_CLIENT_TOKEN)
-        FacebookDisplayName: CouchSubs
-        # Meta reklam kimliği (IDFA) hiç toplamaz; olaylar karşılama ekranından sonra kendiliğinden de gönderilir
-        # (Integrations.startMeta).
-        FacebookAutoLogAppEventsEnabled: false
-        FacebookAdvertiserIDCollectionEnabled: false
-        # Meta girişi ya da paylaşımı kullanılmıyor; "fb" adres şeması gerekmez. Anahtarsız yapıda yalnız "fb" kalıyor ve
-        # App Store yüklemeyi reddediyor ("URL schemes ... disallowed: [fb]").
-        # Meta'nın SKAdNetwork kimlikleri (Meta reklamlarının yükleme ölçümü). Google'ın (AdMob) listesi reklamla birlikte
-        # kaldırıldı.
-        SKAdNetworkItems:
-          - SKAdNetworkIdentifier: v9wttpbfk9.skadnetwork
-          - SKAdNetworkIdentifier: n38lu8286q.skadnetwork
     entitlements:
       path: CouchSubs/CouchSubs.entitlements
       properties:
@@ -130,14 +89,15 @@ targets:
         com.apple.developer.networking.multicast: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.couchsubs.ios
+        PRODUCT_BUNDLE_IDENTIFIER: com.ninotranslator.ios
+        PRODUCT_NAME: Nino
+        # Kodun modül adı aynı kalır (testler "@testable import CouchSubs" der).
+        PRODUCT_MODULE_NAME: CouchSubs
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Yalnız iPhone: iPad'de iPhone uyumluluk kipinde açılır (App Store iPad ekran görüntüsü istemez).
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_EMIT_LOC_STRINGS: YES
         DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
-        # Crashlytics betiği Info.plist'i okur.
-        ENABLE_USER_SCRIPT_SANDBOXING: NO
   CouchSubsTests:
     type: bundle.unit-test
     platform: iOS
@@ -147,9 +107,9 @@ targets:
       - target: CouchSubs
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.couchsubs.ios.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.ninotranslator.ios.tests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/CouchSubs.app/CouchSubs"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Nino.app/Nino"
         BUNDLE_LOADER: "$(TEST_HOST)"
 schemes:
   CouchSubs:

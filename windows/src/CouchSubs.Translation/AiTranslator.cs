@@ -116,9 +116,9 @@ public static class AiRequest
                 body = new JsonObject
                 {
                     ["model"] = model.Id,
-                    ["messages"] = new JsonArray(
-                        new JsonObject { ["role"] = "system", ["content"] = SystemPrompt },
-                        new JsonObject { ["role"] = "user", ["content"] = user }),
+                    ["messages"] = TranslationModelPrompt.Messages(model.Id, sentences, context) ?? new JsonArray(
+                            new JsonObject { ["role"] = "system", ["content"] = SystemPrompt },
+                            new JsonObject { ["role"] = "user", ["content"] = user }),
                     ["temperature"] = LocalTemperature,
                     ["max_tokens"] = MaxOutputTokens,
                     ["stream"] = false,
@@ -206,7 +206,13 @@ public static class AiRequest
             }
             catch (JsonException) { /* dizi değil; düz metin olabilir */ }
         }
-        if (count != 1) throw new AiException(OnlineKeyState.Unreachable);
+        // TranslateGemma düz metin döner: birden çok cümle satır satır gelir.
+        if (count > 1)
+        {
+            var lines = trimmed.Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToArray();
+            if (lines.Length != count) throw new AiException(OnlineKeyState.Unreachable);
+            return lines;
+        }
         return [trimmed.Trim('"', '“', '”')];
     }
 
@@ -298,7 +304,7 @@ public sealed class AiTranslator : ITextTranslator, IOnlineTranslator
     /// <summary>Dakikalık sınır aşılınca en çok bu kadar beklenir (hizmet bekleme önermezse de bu kadar).</summary>
     public static readonly TimeSpan RateLimitPause = TimeSpan.FromSeconds(20);
     /// <summary>Denemede çevrilen örnek satır.</summary>
-    public const string Sample = "KRATOS: We go now. Stay close, boy.";
+    public const string Sample = "BATMAN: I'm Batman.";
 
     /// <summary>Bulut hizmetinde beklenen en uzun süre.</summary>
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
@@ -511,4 +517,51 @@ public sealed class AiTranslator : ITextTranslator, IOnlineTranslator
     }
 
     private sealed class FailedException : Exception;
+}
+
+/// <summary>
+/// Nino: çeviri için eğitilmiş yerel modeller (TranslateGemma, MiLMMT) Nino'nun JSON dizili isteğini değil, kendi kısa
+/// kalıplarını ister. Önceki altyazılar aynı kalıpta soru-cevap çiftleri halinde gider; cümleler satır satır (Mac ile aynı).
+/// </summary>
+public static class TranslationModelPrompt
+{
+    public static JsonArray? Messages(string model, IReadOnlyList<string> sentences, IReadOnlyList<AiContextLine> context)
+    {
+        Func<string, string> prompt;
+        if (TranslateGemma.Matches(model)) prompt = TranslateGemma.Prompt;
+        else if (MiLMMT.Matches(model)) prompt = MiLMMT.Prompt;
+        else return null;
+        var messages = new JsonArray();
+        foreach (var line in context)
+        {
+            if (line.Translation is null) continue;
+            messages.Add(new JsonObject { ["role"] = "user", ["content"] = prompt(line.Source) });
+            messages.Add(new JsonObject { ["role"] = "assistant", ["content"] = line.Translation });
+        }
+        var text = string.Join("\n", sentences.Select(s => s.Replace("\n", " ")));
+        messages.Add(new JsonObject { ["role"] = "user", ["content"] = prompt(text) });
+        return messages;
+    }
+}
+
+/// <summary>Xiaomi'nin çeviri modeli MiLMMT-46 (huggingface.co/xiaomi-research/MiLMMT-46-4B-v1.0); kalıp model kartındaki gibi.</summary>
+public static class MiLMMT
+{
+    public static bool Matches(string model) => model.Contains("milmmt", StringComparison.OrdinalIgnoreCase);
+
+    public static string Prompt(string text) => $"Translate this from English to Turkish:\nEnglish: {text}\nTurkish:";
+}
+
+/// <summary>
+/// Google'ın çeviri modeli TranslateGemma (ollama.com/library/translategemma, "Prompt Format"; metinden önce iki boş satır).
+/// </summary>
+public static class TranslateGemma
+{
+    public static bool Matches(string model) => model.Contains("translategemma", StringComparison.OrdinalIgnoreCase);
+
+    public static string Prompt(string text) =>
+        "You are a professional English (en) to Turkish (tr) translator. Your goal is to accurately convey the meaning " +
+        "and nuances of the original English text while adhering to Turkish grammar, vocabulary, and cultural " +
+        "sensitivities. Produce only the Turkish translation, without any additional explanations or commentary. " +
+        "Please translate the following English text into Turkish:\n\n\n" + text;
 }

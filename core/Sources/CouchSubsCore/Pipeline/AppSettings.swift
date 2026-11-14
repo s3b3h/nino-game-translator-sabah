@@ -111,8 +111,9 @@ public struct UserSettings: Codable, Equatable {
     /// Oyun paketlerindeki hazır Türkçe çeviriler kullanılır (yalnız İngilizce→Türkçe).
     public var gamePacks = true
     /// Pakette bulunmayan İngilizce satırlar ortak havuza gönderilir (anonim; bkz. `LinePool`).
-    /// Nino: ortak havuz CouchSubs'ın sunucusuna gider; Nino'da varsayılan kapalı.
-    public var sharePool = false
+    /// Nino: ortak havuz CouchSubs'ın sunucusuna gider (yeni oyun yamaları bu satırlardan hazırlanıyor). Kullanıcı
+    /// kararı: Nino'nun kendi havuzu kurulana kadar varsayılan açık (Windows ve Android'deki gibi); Ayarlar'dan kapanır.
+    public var sharePool = true
     /// Nino: sol üstteki ipucu kutusu da çevrilir (alt kısımdaki menü ve tuş yazıları çevrilmez; altyazıya odak).
     public var translateCorners = true
     /// Koyu, açık ya da sistemle aynı. Eski kayıtlarda yoktur; onlar da koyu açılır.
@@ -138,6 +139,8 @@ public struct UserSettings: Codable, Equatable {
         claudeModel = try values.decodeIfPresent(String.self, forKey: .claudeModel) ?? defaults.claudeModel
         localAIBaseURL = try values.decodeIfPresent(String.self, forKey: .localAIBaseURL) ?? defaults.localAIBaseURL
         localAIModel = try values.decodeIfPresent(String.self, forKey: .localAIModel) ?? defaults.localAIModel
+        // Nino: eski varsayılan (Qwen, Türkçede çok hata yapıyor) kullanıcı seçmeden kaydedilmişti; yeni öneriye geçer.
+        if localAIModel == "qwen2.5:7b" { localAIModel = defaults.localAIModel }
         output = (try? values.decodeIfPresent(SubtitleOutput.self, forKey: .output)) ?? defaults.output
         overlayClickThrough = try values.decodeIfPresent(Bool.self, forKey: .overlayClickThrough) ?? defaults.overlayClickThrough
         gamePacks = try values.decodeIfPresent(Bool.self, forKey: .gamePacks) ?? defaults.gamePacks

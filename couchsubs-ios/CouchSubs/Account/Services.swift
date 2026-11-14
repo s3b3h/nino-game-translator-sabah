@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Ölçüm arayüzü. Uygulama tamamen ücretsiz ve hesapsızdır; gerçek ölçüm Firebase Analytics ve Meta App Events'e gider
-// (Measurement.swift), testlerde ve anahtarlar yokken boşu kullanılır.
+// Ölçüm arayüzü (CouchSubs'tan). Nino hiçbir ölçüm göndermez: yalnız boş uygulaması (NoAnalytics) kullanılır.
 
 import Foundation
 

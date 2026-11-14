@@ -1188,6 +1188,12 @@ final class AppModel: ObservableObject {
     private var cornerLastCheck = Date.distantPast
     private var cornerTexts = ["", ""]
     private var cornerItems: [[ScreenTranslation.Item]] = [[], []]
+    /// Nino: son çevrilen köşe yazıları. Aynı kutu her okumada biraz farklı çıkar ("STUDIO I" / "STUDIO L"); benzeri
+    /// daha önce çevrildiyse çevirmene yeniden gitmez (Gemini'nin günlük hakkı bunlarla bitiyordu).
+    private var cornerMemory: [(text: String, items: [ScreenTranslation.Item])] = []
+    /// Nino: bir önceki okumada görülen ama henüz çevrilmeyen yazı. Kutu belirirken ya da kaybolurken yarım okunan yazı
+    /// çevrilmez; yazı iki okumada aynı (ya da çok benzer) görünürse çevrilir.
+    private var cornerPending = ["", ""]
     private var promptText = ""
     private var promptItems: [ScreenTranslation.Item] = []
     private var promptTask: Task<Void, Never>?
@@ -1273,10 +1279,33 @@ final class AppModel: ObservableObject {
                 guard let reading = readings[i] else { continue }
                 let text = reading.text
                 if text == cornerTexts[i] { continue }
+                if !text.isEmpty {
+                    let seen = TextMatch.normalize(text), before = TextMatch.normalize(cornerPending[i])
+                    cornerPending[i] = text
+                    guard seen == before || (seen.count >= 30 && TextMatch.isSimilar(seen, before, threshold: 0.8)) else { continue }
+                }
+                cornerPending[i] = ""
                 cornerTexts[i] = text
                 changed = true
+                // Kullanıcı isteği: yalnız oyunun yazıları çevrilir. Satırlarından biri zaten Türkçeyse bu PS5'in kendi
+                // ekranıdır (ana ekran, menü); çevrilmez.
+                if !text.isEmpty, TargetLanguage.hasLine(text, in: settings.targetLanguage) {
+                    if !cornerItems[i].isEmpty { SubtitleLog.write("köşe \(Self.cornerNames[i]): PS5 ekranı, çevrilmedi") }
+                    cornerItems[i] = []
+                    continue
+                }
+                let key = TextMatch.normalize(text)
+                // Kısa yazıda tek harf anlamı değiştirir ("Follow John" / "Follow Josh"); benzerlik yalnız uzun kutuda.
+                if let known = cornerMemory.last(where: { $0.text == key || (key.count >= 30 && TextMatch.isSimilar($0.text, key, threshold: 0.8)) }) {
+                    cornerItems[i] = known.items
+                    continue
+                }
                 cornerItems[i] = text.isEmpty ? [] :
                     ((try? await ScreenTranslation.translate(reading, using: { try await translator.translate($0) })) ?? [])
+                if !text.isEmpty, !cornerItems[i].isEmpty {
+                    cornerMemory.append((key, cornerItems[i]))
+                    if cornerMemory.count > 40 { cornerMemory.removeFirst() }
+                }
                 SubtitleLog.write("köşe \(Self.cornerNames[i]): \"\(text.replacingOccurrences(of: "\n", with: " / "))\" → \(cornerItems[i].map(\.translation).joined(separator: " / "))")
             }
             if changed { sendOverlays() }
@@ -1289,6 +1318,8 @@ final class AppModel: ObservableObject {
         cornerTask = nil
         cornerTexts = ["", ""]
         cornerItems = [[], []]
+        cornerMemory = []
+        cornerPending = ["", ""]
         promptTask?.cancel()
         promptTask = nil
         promptText = ""
@@ -1335,6 +1366,7 @@ final class AppModel: ObservableObject {
         pipeline.onPrompts = { [weak self] prompts in self?.showPrompts(prompts) }
         // En alttaki öğretici/menü yazısı altyazı sanılmasın; yoksa üstündeki gerçek altyazı hiç okunmuyordu.
         pipeline.hudTop = currentHudTop
+        pipeline.targetLanguage = settings.targetLanguage
         // Dil paketi bu arada indirilmiş olabilir; her çeviri sonucu durumu günceller.
         pipeline.onTranslationResult = { [weak self] error in
             self?.translatorStatus = Self.translatorStatus(after: error)

@@ -12,7 +12,6 @@ struct ProfileScreen: View {
     @EnvironmentObject private var app: AppModel
     @Binding var path: [Route]
     @AppStorage("notifyPackUpdates") private var notifyPackUpdates = true
-    @AppStorage(UsageData.key) private var usageData = true
 
     var body: some View {
         MobileScreen {
@@ -22,7 +21,7 @@ struct ProfileScreen: View {
                 HStack(spacing: Mobile.Space.gap) {
                     LogoView(size: 56)
                     VStack(alignment: .leading, spacing: Mobile.Space.hair) {
-                        Text(verbatim: "CouchSubs").font(Mobile.TypeScale.title)
+                        Text(verbatim: "Nino Game Translator").font(Mobile.TypeScale.title)
                         Text("Free, no account needed").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
                     }
                     Spacer(minLength: 0)
@@ -51,8 +50,6 @@ struct ProfileScreen: View {
                 toggleRow("Notifications", "New packs and updates", isOn: $notifyPackUpdates)
                 RowDivider()
                 toggleRow("Contribute to the shared pool", "English lines that are read, anonymous", isOn: $model.settings.sharePool)
-                RowDivider()
-                toggleRow("Usage data", "Error and usage statistics", isOn: $usageData)
             }
             Tile(spacing: 0) {
                 Link(destination: AppConfig.privacyURL) { ListRow(symbol: "hand.raised", title: "Data and privacy") }
@@ -62,12 +59,11 @@ struct ProfileScreen: View {
                 NavigationLink(value: Route.about) { ListRow(symbol: "info.circle", title: "About", detail: AppIdentity.version) }
             }
             .buttonStyle(.plain)
-            Text(verbatim: "CouchSubs \(AppIdentity.version) · Copyright © 2026 Sinan Yorulmaz · AGPL-3.0")
+            Text(verbatim: "Nino Game Translator \(AppIdentity.version) · © 2026 Yunus Demirbağ · AGPL-3.0")
                 .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary).frame(maxWidth: .infinity)
         } bottom: {
             EmptyView()
         }
-        .onChange(of: usageData) { value in app.analytics.setCollection(value) }
         .onAppear { app.analytics.screen("profile") }
     }
 
@@ -161,7 +157,9 @@ struct SettingsScreen: View {
                     .tint(Mobile.Palette.accent)
                 Text(verbatim: "Dinliyor musun beni?")
                     .font(Mobile.TypeScale.subtitle(landscape: false, scale: Double(percent) / 100))
-                    .foregroundStyle(model.settings.style.textColor == .yellow ? Mobile.Palette.accent : Mobile.Palette.text)
+                    .foregroundStyle(model.settings.style.textColor == .yellow ? Mobile.Palette.subtitleYellow : Mobile.Palette.subtitleWhite)
+                    .padding(.horizontal, Mobile.Space.gap).padding(.vertical, Mobile.Space.inline)
+                    .background(Color.black.opacity(0.85), in: RoundedRectangle(cornerRadius: Mobile.Radius.inner))
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
                 HStack {
@@ -170,8 +168,9 @@ struct SettingsScreen: View {
                     ForEach([SubtitleTextColor.white, .yellow], id: \.self) { color in
                         Button { model.settings.style.textColor = color } label: {
                             Circle()
-                                .fill(color == .yellow ? Mobile.Palette.accent : Mobile.Palette.text)
+                                .fill(color == .yellow ? Mobile.Palette.subtitleYellow : Mobile.Palette.subtitleWhite)
                                 .frame(width: 28, height: 28)
+                                .overlay(Circle().strokeBorder(Mobile.Palette.borderStrong))
                                 .overlay(Circle().strokeBorder(Mobile.Palette.accent, lineWidth: model.settings.style.textColor == color ? 2 : 0).padding(-4))
                         }
                         .buttonStyle(.plain)
@@ -252,10 +251,13 @@ struct AboutScreen: View {
         } content: {
             Tile {
                 LogoView(size: 56)
-                Text(verbatim: "CouchSubs \(AppIdentity.version)").font(Mobile.TypeScale.title)
-                Text(verbatim: "Copyright © 2026 Sinan Yorulmaz").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                Text("CouchSubs is free and open source (AGPL-3.0). Remote Play uses chiaki-ng (AGPL-3.0).")
+                Text(verbatim: "Nino Game Translator \(AppIdentity.version)").font(Mobile.TypeScale.title)
+                Text(verbatim: "Nino © 2026 Yunus Demirbağ").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
+                Text("Free and open source under the GNU AGPL-3.0 license. Remote Play uses chiaki-ng (AGPL-3.0).")
                     .font(Mobile.TypeScale.body).foregroundStyle(Mobile.Palette.secondary)
+                // AGPL-3.0: türetilen projenin bildirimi (NOTICE).
+                Text(verbatim: "Based on CouchSubs by Sinan Yorulmaz (https://github.com/yorulmazsinan/couchsubs), modified on 2026-11-15. CouchSubs © 2026 Sinan Yorulmaz.")
+                    .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
                 Link("Source code", destination: AppIdentity.sourceURL).font(Mobile.TypeScale.headline).tint(Mobile.Palette.accent)
             }
         } bottom: {

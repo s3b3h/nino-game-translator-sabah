@@ -39,6 +39,16 @@ struct WelcomeFlow: View {
     private var pageOne: some View {
         VStack(alignment: .leading, spacing: Mobile.Space.gap) {
             Spacer(minLength: 0)
+            // Nino: Mac'teki karşılamadaki gibi logo ve iki satırlı ad.
+            VStack(spacing: Mobile.Space.inline) {
+                LogoView(size: 132)
+                    .shadow(color: Mobile.Palette.accent.opacity(0.35), radius: 24, y: 10)
+                Text(verbatim: "Nino").font(.system(size: 40, weight: .bold, design: .rounded))
+                Text(verbatim: "GAME TRANSLATOR").font(Mobile.TypeScale.caption.weight(.semibold)).tracking(4)
+                    .foregroundStyle(Mobile.Palette.accent)
+            }
+            .frame(maxWidth: .infinity)
+            Spacer(minLength: 0)
             Tile {
                 Text(verbatim: "Are you listening to me?").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
                 Text("Are you listening to me?").font(Mobile.TypeScale.headline)
@@ -298,7 +308,7 @@ struct PS5PairScreen: View {
         .sheet(isPresented: $showManual) {
             VStack(alignment: .leading, spacing: Mobile.Space.gap) {
                 ScreenTitle(title: "Can't find the PS5?",
-                            message: "Make sure the PS5 is on (not in rest mode) and on the same Wi-Fi, and that CouchSubs is allowed in Settings › Privacy & Security › Local Network. You can also type the PS5's IP address (PS5: Settings › Network › Connection Status).")
+                            message: "Make sure the PS5 is on (not in rest mode) and on the same Wi-Fi, and that Nino is allowed in Settings › Privacy & Security › Local Network. You can also type the PS5's IP address (PS5: Settings › Network › Connection Status).")
                 TextField("IP address, e.g. 192.168.1.20", text: $manualHost)
                     .textFieldStyle(MobileFieldStyle())
                     .keyboardType(.decimalPad)
@@ -388,7 +398,7 @@ struct TargetScreen: View {
                 .buttonStyle(.plain)
             }
             if model.tvAppMissing {
-                MobileNote(text: String(localized: "To install the TV app for the first time, use CouchSubs on a computer once. After that this phone is enough."))
+                MobileNote(text: String(localized: "To install the TV app for the first time, use Nino on a computer once. After that this phone is enough."))
             }
             if let error { MobileNote(text: error) }
         } bottom: {
@@ -414,7 +424,7 @@ struct TargetScreen: View {
                 .foregroundStyle(selected ? Mobile.Palette.accent : Mobile.Palette.secondary)
             VStack(alignment: .leading, spacing: Mobile.Space.hair) {
                 Text(verbatim: tv.name).font(Mobile.TypeScale.headline)
-                Text(verbatim: Self.brandName(tv.brand) + (ready == true ? " · " + String(localized: "CouchSubs installed") : ready == false ? " · " + String(localized: "no app") : ""))
+                Text(verbatim: Self.brandName(tv.brand) + (ready == true ? " · " + String(localized: "Nino installed") : ready == false ? " · " + String(localized: "no app") : ""))
                     .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
             }
             Spacer()
@@ -441,7 +451,7 @@ struct TargetScreen: View {
     private var manualSheet: some View {
         VStack(alignment: .leading, spacing: Mobile.Space.gap) {
             ScreenTitle(title: "My TV is not listed",
-                        message: "CouchSubs works with LG (webOS 4+), Samsung (Tizen, 2019+) and Android TV / Google TV. Type the TV's IP address, or choose Android TV: its CouchSubs app finds this phone by itself.")
+                        message: "Nino works with LG (webOS 4+), Samsung (Tizen, 2019+) and Android TV / Google TV. Type the TV's IP address, or choose Android TV: its Nino app finds this phone by itself.")
             SegmentedTabs(options: [TVBrand.lg: "LG", .samsung: "Samsung", .androidTV: "Android TV"], selection: $manualBrand)
             if manualBrand != .androidTV {
                 TextField("IP address, e.g. 192.168.1.20", text: $manualHost)

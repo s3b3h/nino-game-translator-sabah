@@ -1,27 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import CouchSubsCore
-import FacebookCore
 import RemotePlay
 import SwiftUI
 import UIKit
 
-/// SDK'lar uygulama açılırken kurulur (Firebase, Meta); her biri yalnız anahtarı/dosyası varsa.
-final class AppDelegate: NSObject, UIApplicationDelegate {
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        MainActor.assumeIsolated {
-            _ = Integrations.configureFirebase()
-            _ = Integrations.configureMeta(application: application, options: options)
-        }
-        return true
-    }
-}
-
-/// CouchSubs tamamen ücretsizdir ve hesap istemez: ücretsiz çeviri, DeepL, kendi yapay zekâ anahtarı ve oyun paketleri
-/// herkese açık.
+/// Nino Game Translator tamamen ücretsizdir, hesap istemez ve hiçbir ölçüm ya da izleme yapmaz (CouchSubs'taki Firebase
+/// ve Meta kitaplıkları kaldırıldı).
 @main
 struct CouchSubsApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model: PhoneModel
     @StateObject private var app: AppModel
     @Environment(\.scenePhase) private var scenePhase
@@ -30,8 +17,6 @@ struct CouchSubsApp: App {
 
     init() {
         let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-        // AppDelegate bu noktada henüz çağrılmadı; Firebase burada da (bir kez) kurulur.
-        let firebase = !testing && MainActor.assumeIsolated { Integrations.configureFirebase() }
         // Uygulamayla gelen paketler, üstüne sunucudan indirilen güncel sürümleri.
         let library = GamePackLibrary(bundled: GamePackLibrary.bundledDirectory,
                                       user: PackStore.filesDirectory(in: PackStore.defaultDirectory))
@@ -42,7 +27,7 @@ struct CouchSubsApp: App {
         // Çevrilen son satırlar ("Geçmiş"); testlerde dosyaya dokunulmaz.
         if !testing { model.loadHistory() }
 
-        let analytics = AppAnalytics(firebase: firebase, meta: !testing && AppConfig.facebookAppID != nil)
+        let analytics = NoAnalytics()
         let store = testing ? nil : AppConfig.packsBaseURL.map { PackStore(baseURL: $0, directory: PackStore.defaultDirectory) }
         let app = AppModel(analytics: analytics, packStore: store, library: library)
         model.onAnalytics = { [analytics] event in analytics.log(event) }
@@ -74,11 +59,6 @@ struct CouchSubsApp: App {
                 .environmentObject(model)
                 .environmentObject(app)
                 .appSurface()
-                // Meta'nın dönüş adresleri.
-                .onOpenURL { url in
-                    guard AppConfig.facebookAppID != nil else { return }
-                    ApplicationDelegate.shared.application(UIApplication.shared, open: url, sourceApplication: nil, annotation: nil)
-                }
                 .task { await app.start() }
         }
         .onChange(of: scenePhase) { phase in
@@ -111,15 +91,13 @@ struct RootView: View {
                 home
             }
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
         .tint(Mobile.Palette.accent)
     }
 
     private func finishWelcome() {
         welcomeSeen = true
         if model.step == .welcome { model.advance() }
-        // Meta'nın otomatik olayları karşılamadan sonra açılır (reklam kimliği olmadan; izin formu ya da ATT yok).
-        Integrations.startMeta()
     }
 
     /// Kurulum: PSN girişi → PS5 eşleme → altyazının yeri.

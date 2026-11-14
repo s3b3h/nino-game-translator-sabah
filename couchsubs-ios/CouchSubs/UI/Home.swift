@@ -97,7 +97,7 @@ struct HomeScreen: View {
                 StatTile(symbol: "globe", label: "Translation", value: engineName)
                 StatTile(symbol: "clock.arrow.circlepath", label: "Last session", value: lastSession)
             }
-            if model.tvAppMissing { MobileNote(text: String(localized: "To install the TV app for the first time, use CouchSubs on a computer once. After that this phone is enough.")) }
+            if model.tvAppMissing { MobileNote(text: String(localized: "To install the TV app for the first time, use Nino on a computer once. After that this phone is enough.")) }
             // Dil paketi yalnız Apple çevirisinin kullanılabildiği sistemde (iOS 26 ve sonrası) istenir.
             if model.translatorStatus == .needsDownload, #available(iOS 26, *) {
                 LanguagePackTile()
@@ -238,7 +238,7 @@ struct RunningScreen: View {
                         .font(Mobile.TypeScale.title).lineLimit(1).minimumScaleFactor(0.6)
                 }
             }
-            Text("Keep CouchSubs open on the screen while you play. iOS stops the connection when the app goes to the background; the screen stays on while translating.")
+            Text("Keep Nino open on the screen while you play. iOS stops the connection when the app goes to the background; the screen stays on while translating.")
                 .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
         } bottom: {
             if model.settings.output.showsOnComputer {
@@ -298,7 +298,7 @@ struct SubtitleScreen: View {
             .padding(.bottom, Mobile.Space.screen * 2)
             Text("The screen stays on · brightness is lowered automatically")
                 .font(Mobile.TypeScale.caption)
-                .foregroundStyle(Mobile.Palette.tertiary)
+                .foregroundStyle(Color.white.opacity(0.5))
                 .padding(.bottom, Mobile.Space.inline)
         }
         .overlay(alignment: .topLeading) {
@@ -329,8 +329,8 @@ struct SubtitleScreen: View {
 
     private var textColor: Color {
         switch model.settings.style.textColor {
-        case .yellow: Mobile.Palette.accent
-        case .white: Mobile.Palette.text
+        case .yellow: Mobile.Palette.subtitleYellow
+        case .white: Mobile.Palette.subtitleWhite
         }
     }
 

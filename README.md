@@ -84,11 +84,14 @@ TV'de Nino'yu açınca TV, PS5'in bağlı olduğu HDMI girişine geçer ve Nino 
 - Altyazı okuma (yazı tanıma) tamamen bilgisayarınızda yapılır.
 - Ücretsiz çeviri bilgisayarınızda, internetsiz çalışır.
 - Gemini gibi bir çeviri hizmeti seçerseniz yalnızca oyunun altyazı metni, **sizin anahtarınızla** o hizmete gider.
+- **Ortak havuz:** Hazır yamada bulunmayan İngilizce altyazı satırları (yalnız oyunun metni, adsız) CouchSubs'ın ortak havuzuna gönderilir; yeni oyun yamaları bu satırlardan hazırlanır. İstemezseniz Ayarlar'dan kapatabilirsiniz.
 - Nino hesap açtırmaz, reklam göstermez, sizi izlemez.
 
 ## Sık sorulanlar
 
 **Neden ikinci bir PSN hesabı gerekiyor?** Remote Play, PS5'e bağlanmak için bir hesap ister. Kendi hesabınızla oyun oynarken aynı anda o hesapla Remote Play açılamaz; ikinci (ücretsiz) hesap bunu çözer.
+
+**Ekranda sürekli "Uzaktan Oynama" bildirimi çıkıyor.** PS5'te **Ayarlar › Sistem › Uzaktan Oynama**'ya gidip en alttaki seçeneği kapatın.
 
 **Altyazı İngilizcenin tam üstüne gelmiyor.** Nino ilk birkaç altyazıda oyunun altyazı yerini öğrenir. Sorun sürerse Ayarlar › Altyazı'dan yerleşimi değiştirin.
 

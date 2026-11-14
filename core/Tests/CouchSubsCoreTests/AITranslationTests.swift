@@ -208,7 +208,7 @@ final class AITranslationTests: XCTestCase {
         XCTAssertEqual(Set(parsed.keys), Set(AIProvider.cloud.map(\.rawValue)))
         // Yerel modelin listesi yoktur; model adını kullanıcı yazar.
         XCTAssertTrue(AIProvider.local.models.isEmpty)
-        XCTAssertEqual(AIProvider.local.defaultModel.id, "qwen2.5:7b")
+        XCTAssertEqual(AIProvider.local.defaultModel.id, "translategemma:4b")
     }
 
     // MARK: - Yerel model (Ollama, LM Studio)
@@ -238,6 +238,38 @@ final class AITranslationTests: XCTestCase {
         XCTAssertEqual(messages.map { $0["role"] as? String }, ["system", "user"])
         XCTAssertEqual(messages[0]["content"] as? String, AIRequest.systemPrompt)
         XCTAssertTrue(user(0).hasSuffix("[\"We go now.\"]"))
+    }
+
+    /// Nino: TranslateGemma yönergesiz, kendi kalıbında tek kullanıcı iletisi ister; bağlam soru-cevap çifti olarak gider.
+    func testTranslateGemmaRequestUsesItsOwnPromptFormat() throws {
+        let model = AIProvider.local.model("translategemma:12b")
+        let request = AIRequest.make(provider: .local, key: "", model: model, sentences: ["We go now.", "Stay close."],
+                                     context: [AIContextLine(source: "Arthur?", translation: "Arthur?"), AIContextLine(source: "Hm.")])
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as? [String: Any])
+        let messages = try XCTUnwrap(body["messages"] as? [[String: String]])
+        XCTAssertEqual(messages.map { $0["role"] }, ["user", "assistant", "user"])
+        XCTAssertEqual(messages[0]["content"], TranslateGemma.prompt("Arthur?"))
+        XCTAssertEqual(messages[1]["content"], "Arthur?")
+        XCTAssertTrue(messages[2]["content"]!.hasPrefix("You are a professional English (en) to Turkish (tr) translator."))
+        XCTAssertTrue(messages[2]["content"]!.hasSuffix("into Turkish:\n\n\nWe go now.\nStay close."))
+        XCTAssertFalse(messages.contains { $0["content"] == AIRequest.systemPrompt })
+    }
+
+    /// MiLMMT kendi kalıbını alır; genel modeller (Qwen, Llama) Nino'nun yönergesiyle gider.
+    func testMiLMMTUsesItsModelCardPrompt() throws {
+        let model = AIProvider.local.model("hf.co/mradermacher/MiLMMT-46-4B-v1.0-GGUF:Q4_K_M")
+        let request = AIRequest.make(provider: .local, key: "", model: model, sentences: ["Somebody's coming. Hide!"], context: [])
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as? [String: Any])
+        let messages = try XCTUnwrap(body["messages"] as? [[String: String]])
+        XCTAssertEqual(messages, [["role": "user", "content": "Translate this from English to Turkish:\nEnglish: Somebody's coming. Hide!\nTurkish:"]])
+        XCTAssertNil(TranslationModelPrompt.messages(model: "qwen2.5:7b", sentences: ["Hi"], context: []))
+    }
+
+    /// TranslateGemma düz metin döner; birden çok cümle satır satır okunur, sayı tutmazsa hata.
+    func testPlainTextRepliesAreSplitByLine() throws {
+        XCTAssertEqual(try AIRequest.translations(from: "Şimdi gidiyoruz.\nYakın dur.", count: 2), ["Şimdi gidiyoruz.", "Yakın dur."])
+        XCTAssertEqual(try AIRequest.translations(from: "Şimdi gidiyoruz.", count: 1), ["Şimdi gidiyoruz."])
+        XCTAssertThrowsError(try AIRequest.translations(from: "Şimdi gidiyoruz.", count: 2))
     }
 
     /// LM Studio adresi ve isteğe bağlı anahtar (yalnız doluysa Bearer olarak gider).
@@ -272,7 +304,7 @@ final class AITranslationTests: XCTestCase {
         XCTAssertEqual(LocalAIServer(baseURL: "http://192.168.1.20:8080/v1", model: "m")?.kind, .other)
         // Yazılan model adı listeye bakılmadan kullanılır; boşsa varsayılan.
         XCTAssertEqual(AIProvider.local.model("llama3.1:8b").id, "llama3.1:8b")
-        XCTAssertEqual(AIProvider.local.model(" ").id, "qwen2.5:7b")
+        XCTAssertEqual(AIProvider.local.model(" ").id, "translategemma:4b")
         XCTAssertNil(RequestBudget.shared(provider: .local, model: AIProvider.local.defaultModel))
     }
 
@@ -317,7 +349,7 @@ final class AITranslationTests: XCTestCase {
     func testLocalTestWorksWithoutKey() async {
         let server = LocalAIServer(baseURL: LocalAIServer.ollamaURL, model: "qwen2.5:7b")
         let result = await AITranslationCore.test(provider: .local, key: "", model: "qwen2.5:7b", server: server, session: FakeAI.session())
-        XCTAssertEqual(result, .success("KRATOS: [tr] We go now. [tr] Stay close, boy."))
+        XCTAssertEqual(result, .success("BATMAN: [tr] I'm Batman."))
         XCTAssertNil(FakeAI.requests[0].request.value(forHTTPHeaderField: "Authorization"))
 
         FakeAI.timeout = true
@@ -559,7 +591,7 @@ final class AITranslationTests: XCTestCase {
 
     func testTestTranslatesTheSample() async {
         let result = await AITranslationCore.test(provider: .gemini, key: secret, model: nil, session: FakeAI.session())
-        XCTAssertEqual(result, .success("KRATOS: [tr] We go now. [tr] Stay close, boy."))
+        XCTAssertEqual(result, .success("BATMAN: [tr] I'm Batman."))
     }
 
     /// Anahtar hiçbir hata metninde ya da durumda görünmez.

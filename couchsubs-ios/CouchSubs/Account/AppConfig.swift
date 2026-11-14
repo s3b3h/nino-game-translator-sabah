@@ -11,15 +11,9 @@ enum AppConfig {
         return trimmed.isEmpty || trimmed.hasPrefix("$(") ? nil : trimmed
     }
 
-    /// Firebase: GoogleService-Info.plist uygulamaya kopyalandıysa (derleme adımı, dosya varsa).
-    static var hasFirebase: Bool { Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil }
-
-    static var facebookAppID: String? { value("FacebookAppID") }
-    static var facebookClientToken: String? { value("FacebookClientToken") }
-
     /// Paket sunucusu (Cloudflare Worker, server/packs). Yoksa yalnız uygulamayla gelen paketler kullanılır.
     static var packsBaseURL: URL? { value("CSPacksBaseURL").flatMap(URL.init(string:)) }
 
-    static let privacyURL = URL(string: "https://github.com/yorulmazsinan/couchsubs/blob/main/PRIVACY.md")!
-    static let helpURL = URL(string: "https://github.com/yorulmazsinan/couchsubs/issues")!
+    static let privacyURL = URL(string: "https://github.com/yunusdemirbag/nino-game-translator#gizlilik")!
+    static let helpURL = URL(string: "https://github.com/yunusdemirbag/nino-game-translator/issues")!
 }

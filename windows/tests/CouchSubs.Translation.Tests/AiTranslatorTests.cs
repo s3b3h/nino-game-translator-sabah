@@ -209,7 +209,7 @@ public class AiTranslatorTests
         Assert.Equal(parsed.Keys.Order(), AiProviders.Cloud.Select(p => p.Id()).Order());
         // Yerel modelin listesi yoktur; model adını kullanıcı yazar.
         Assert.Empty(AiProvider.Local.Models());
-        Assert.Equal("qwen2.5:7b", AiProvider.Local.DefaultModel().Id);
+        Assert.Equal("translategemma:4b", AiProvider.Local.DefaultModel().Id);
         foreach (var provider in AiProviders.Cloud)
         {
             Assert.Equal(parsed[provider.Id()], provider.Models());
@@ -297,7 +297,7 @@ public class AiTranslatorTests
         Assert.Equal(LocalAiServerKind.Other, LocalAiServer.Create("http://192.168.1.20:8080/v1", "m")!.Kind);
         // Yazılan model adı listeye bakılmadan kullanılır; boşsa varsayılan.
         Assert.Equal("llama3.1:8b", AiProvider.Local.Model("llama3.1:8b").Id);
-        Assert.Equal("qwen2.5:7b", AiProvider.Local.Model(" ").Id);
+        Assert.Equal("translategemma:4b", AiProvider.Local.Model(" ").Id);
         Assert.Null(RequestBudget.Shared(AiProvider.Local, AiProvider.Local.DefaultModel()));
     }
 
@@ -345,7 +345,7 @@ public class AiTranslatorTests
         var fake = new FakeAi();
         var server = LocalAiServer.Create(LocalAiServer.OllamaUrl, "qwen2.5:7b");
         var result = await AiTranslator.TestAsync(AiProvider.Local, "", "qwen2.5:7b", new HttpClient(fake), server: server);
-        Assert.Equal(new AiTestResult(OnlineKeyState.Valid, "KRATOS: [tr] We go now. [tr] Stay close, boy."), result);
+        Assert.Equal(new AiTestResult(OnlineKeyState.Valid, "BATMAN: [tr] I'm Batman."), result);
         Assert.Null(fake.Requests[0].Request.Headers.Authorization);
 
         var down = new FakeAi((_, _) => throw new TaskCanceledException("timeout"));
@@ -621,7 +621,7 @@ public class AiTranslatorTests
     public async Task TestTranslatesTheSample()
     {
         var result = await AiTranslator.TestAsync(AiProvider.Gemini, Secret, null, new HttpClient(new FakeAi()));
-        Assert.Equal(new AiTestResult(OnlineKeyState.Valid, "KRATOS: [tr] We go now. [tr] Stay close, boy."), result);
+        Assert.Equal(new AiTestResult(OnlineKeyState.Valid, "BATMAN: [tr] I'm Batman."), result);
     }
 
     /// <summary>Anahtar hiçbir hata metninde ya da durumda görünmez.</summary>
@@ -640,5 +640,19 @@ public class AiTranslatorTests
         var timeout = new FakeAi((_, _) => throw new TaskCanceledException("timeout"));
         Assert.Equal(OnlineKeyState.Unreachable, (await AiTranslator.TestAsync(AiProvider.OpenAi, Secret, null, new HttpClient(timeout))).State);
         Assert.Equal(OnlineKeyState.Invalid, (await AiTranslator.TestAsync(AiProvider.Claude, "  ", null)).State);
+    }
+
+    /// Nino: TranslateGemma yönergesiz, kendi kalıbında tek kullanıcı iletisi ister (Mac ile aynı).
+    [Fact]
+    public async Task TranslateGemmaRequestUsesItsOwnPromptFormat()
+    {
+        var request = AiRequest.Build(AiProvider.Local, "", AiProvider.Local.Model("translategemma:12b"), ["We go now.", "Stay close."],
+            [new AiContextLine("Arthur?", "Arthur?"), new AiContextLine("Hm.")]);
+        var body = JsonNode.Parse(await request.Content!.ReadAsStringAsync())!;
+        var messages = body["messages"]!.AsArray();
+        Assert.Equal(["user", "assistant", "user"], messages.Select(m => m!["role"]!.GetValue<string>()));
+        Assert.Equal(TranslateGemma.Prompt("Arthur?"), messages[0]!["content"]!.GetValue<string>());
+        Assert.EndsWith("into Turkish:\n\n\nWe go now.\nStay close.", messages[2]!["content"]!.GetValue<string>());
+        Assert.Equal(["Şimdi gidiyoruz.", "Yakın dur."], AiRequest.Translations("Şimdi gidiyoruz.\nYakın dur.", 2));
     }
 }

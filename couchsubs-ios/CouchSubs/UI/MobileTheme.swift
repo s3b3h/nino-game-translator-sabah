@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Mobil tasarım sistemi: TASARIM-MOBIL.md'deki tokenlar ve bileşenler (Android ile ortak belge; onaylı tuval
-// "CouchSubs Mobil ve Windows Tasarımı", AI Design Check ile sadeleştirildi). Köşe ve yazı ölçeği design/tokens.json ile
-// aynıdır (16/12/8/6, 13/15/17/22/28). Düz yüzey: parıltı, degrade, hale yok. Ekranlar sabit değer kullanmaz.
+// Mobil tasarım sistemi. Nino: Mac ve Android'deki Nino görünümü (açık buz mavisi zemin, beyaz cam karolar, mavi-lacivert
+// birincil düğme; renkler Android'in Tokens.Color'ıyla aynı). Ekranlar sabit değer kullanmaz, hepsi buradan alır.
 
 import SwiftUI
 import UIKit
@@ -16,8 +15,8 @@ enum Mobile {
     }
 
     enum Radius {
-        static let tile: CGFloat = 16
-        static let control: CGFloat = 12
+        static let tile: CGFloat = 22
+        static let control: CGFloat = 16
         static let inner: CGFloat = 8
         static let tag: CGFloat = 6
         static let pill: CGFloat = 999
@@ -32,28 +31,34 @@ enum Mobile {
         static let tag: CGFloat = 24
     }
 
-    /// Basamaklar: deep → bg → surface → surface2 → raised; katmanlar %8 ince çizgiyle ayrılır.
+    /// Nino'nun açık paleti (Android Tokens.Color ile aynı değerler).
     enum Palette {
-        static let deep = Color(hex: 0x0E0F11)
-        static let bg = Color(hex: 0x141518)
-        static let surface = Color(hex: 0x1C1E23)
-        static let surface2 = Color(hex: 0x25282F)
-        /// İnce çizgi (%8): karo ve alan çerçevesi, ayraç.
-        static let border = Color(.sRGB, red: 0xF3 / 255, green: 0xEE / 255, blue: 0xE4 / 255, opacity: 0.08)
-        /// `raised`: seçili segment, kapalı anahtar, boş adım, sayfa noktası.
-        static let borderStrong = Color(hex: 0x30333A)
-        static let text = Color(hex: 0xF3EEE4)
-        static let secondary = Color(hex: 0xA9A59C)
-        static let tertiary = Color(hex: 0x94908A)
-        static let accent = Color(hex: 0xF5B83D)
-        static let accentHi = Color(hex: 0xFFCF6B)
-        static let onAccent = Color(hex: 0x17181B)
-        static let pro = Color(hex: 0xA78BFA)
-        static let proSoft = Color(hex: 0x322F45)
-        static let success = Color(hex: 0x62C990)
-        static let warning = Color(hex: 0xF2A55A)
-        static let danger = Color(hex: 0xF28B82)
-        static let dangerSoft = Color(hex: 0x2F2325)
+        static let deep = Color(hex: 0xE3ECFA)
+        static let bg = Color(hex: 0xEEF3FB)
+        /// Cam karo: yarı saydam beyaz.
+        static let surface = Color.white.opacity(0.85)
+        static let surface2 = Color(hex: 0xE6EDF8)
+        /// Camın kenarı: yarı saydam beyaz çizgi.
+        static let border = Color.white.opacity(0.75)
+        static let borderStrong = Color(hex: 0xD3DEEF)
+        static let text = Color(hex: 0x0A1430)
+        static let secondary = Color(hex: 0x55607A)
+        static let tertiary = Color(hex: 0x8A93A8)
+        static let accent = Color(hex: 0x0070D1)
+        static let accentHi = Color(hex: 0x1A86E8)
+        static let navy = Color(hex: 0x003085)
+        static let onAccent = Color.white
+        static let pro = Color(hex: 0x00205B)
+        static let proSoft = Color(hex: 0xE2E8F5)
+        static let success = Color(hex: 0x1E6B45)
+        static let warning = Color(hex: 0x9A4A08)
+        static let danger = Color(hex: 0xB3261E)
+        static let dangerSoft = Color(hex: 0xFBE4E2)
+        /// Altyazının kendi renkleri (koyu zemin üstünde; temadan bağımsız).
+        static let subtitleWhite = Color.white
+        static let subtitleYellow = Color(hex: 0xFFD54A)
+        /// Birincil düğme ve simge kutuları: mavi → lacivert.
+        static let gradient = LinearGradient(colors: [accentHi, navy], startPoint: .top, endPoint: .bottom)
     }
 
     /// Yalnız bu beş arayüz boyu (altyazı içeriği hariç).
@@ -94,7 +99,7 @@ struct MobileButtonStyle: ButtonStyle {
             .background { background(pressed: pressed) }
             .overlay {
                 if kind == .secondary {
-                    RoundedRectangle(cornerRadius: Mobile.Radius.control).strokeBorder(Mobile.Palette.border)
+                    RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous).strokeBorder(Mobile.Palette.borderStrong)
                 }
             }
             .scaleEffect(pressed ? 0.97 : 1)
@@ -112,12 +117,14 @@ struct MobileButtonStyle: ButtonStyle {
         }
     }
 
-    /// Düz dolgu, gölge yok; basılı birincil düğme biraz açık sarı.
+    /// Nino: birincil düğme mavi-lacivert degrade ve mavi gölge; ikincil beyaz cam.
     @ViewBuilder private func background(pressed: Bool) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Mobile.Radius.control)
+        let shape = RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous)
         switch kind {
-        case .primary: shape.fill(pressed ? Mobile.Palette.accentHi : Mobile.Palette.accent)
-        case .secondary: shape.fill(Mobile.Palette.surface2)
+        case .primary:
+            shape.fill(Mobile.Palette.gradient).opacity(pressed ? 0.85 : 1)
+                .shadow(color: Mobile.Palette.accent.opacity(0.35), radius: 12, y: 6)
+        case .secondary: shape.fill(Color.white.opacity(0.9))
         case .ghost: Color.clear
         case .destructive: shape.fill(Mobile.Palette.dangerSoft)
         }
@@ -144,8 +151,9 @@ struct IconButton: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: Mobile.Control.icon, height: Mobile.Control.icon)
-                .background(Mobile.Palette.surface2, in: RoundedRectangle(cornerRadius: Mobile.Radius.control))
-                .overlay(RoundedRectangle(cornerRadius: Mobile.Radius.control).strokeBorder(Mobile.Palette.border))
+                .background(Mobile.Palette.surface, in: RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous).strokeBorder(Mobile.Palette.border))
+                .shadow(color: Mobile.Palette.pro.opacity(0.08), radius: 8, y: 3)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(label))
@@ -168,8 +176,9 @@ struct AvatarButton: View {
             }
             .foregroundStyle(Mobile.Palette.text)
             .frame(width: Mobile.Control.icon, height: Mobile.Control.icon)
-            .background(Mobile.Palette.surface2, in: RoundedRectangle(cornerRadius: Mobile.Radius.control))
-            .overlay(RoundedRectangle(cornerRadius: Mobile.Radius.control).strokeBorder(Mobile.Palette.border))
+            .background(Mobile.Palette.surface, in: RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous).strokeBorder(Mobile.Palette.border))
+            .shadow(color: Mobile.Palette.pro.opacity(0.08), radius: 8, y: 3)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Profile"))
@@ -178,10 +187,10 @@ struct AvatarButton: View {
 
 // MARK: - Karolar (§6, §7)
 
-/// Karonun vurgusu: seçili (1 pt amber çerçeve). Parıltı, degrade ve renkli çerçeve yok.
+/// Karonun vurgusu: seçili (mavi çerçeve).
 enum TileEmphasis { case none, selected }
 
-/// Karo: düz yüzey, %8 ince çerçeve, köşe 16.
+/// Karo (Nino): beyaz cam, ince beyaz kenar, yumuşak lacivert gölge, köşe 22.
 struct Tile<Content: View>: View {
     var emphasis: TileEmphasis = .none
     var spacing: CGFloat = Mobile.Space.inline
@@ -193,7 +202,9 @@ struct Tile<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Mobile.Space.tile)
             .background(Mobile.Palette.surface, in: shape)
-            .overlay(shape.strokeBorder(emphasis == .selected ? Mobile.Palette.accent : Mobile.Palette.border))
+            .overlay(shape.strokeBorder(emphasis == .selected ? Mobile.Palette.accent : Mobile.Palette.border,
+                                        lineWidth: emphasis == .selected ? 1.5 : 1))
+            .shadow(color: Mobile.Palette.pro.opacity(0.10), radius: 14, y: 6)
     }
 }
 
@@ -254,7 +265,8 @@ struct MobileTileIcon: View {
 
     private var color: Color {
         switch tint {
-        case .neutral, .ok, .accent: Mobile.Palette.secondary
+        case .neutral: Mobile.Palette.secondary
+        case .ok, .accent: Mobile.Palette.accent
         case .pro: Mobile.Palette.pro
         case .danger: Mobile.Palette.danger
         }
@@ -344,7 +356,7 @@ struct PageDots: View {
         HStack(spacing: Mobile.Space.inline) {
             ForEach(0..<count, id: \.self) { index in
                 Capsule()
-                    .fill(index == current ? Mobile.Palette.text : Mobile.Palette.borderStrong)
+                    .fill(index == current ? Mobile.Palette.accent : Mobile.Palette.secondary.opacity(0.25))
                     .frame(width: index == current ? 24 : 8, height: 8)
             }
         }
@@ -371,7 +383,8 @@ struct SegmentedTabs<Value: Hashable>: View {
                         .frame(maxWidth: .infinity, minHeight: 36)
                         .background {
                             if selected {
-                                RoundedRectangle(cornerRadius: Mobile.Radius.inner).fill(Mobile.Palette.borderStrong)
+                                RoundedRectangle(cornerRadius: Mobile.Radius.inner).fill(Color.white)
+                                    .shadow(color: Mobile.Palette.pro.opacity(0.10), radius: 4, y: 2)
                             }
                         }
                         .contentShape(Rectangle())
@@ -393,8 +406,8 @@ struct MobileFieldStyle: TextFieldStyle {
             .foregroundStyle(Mobile.Palette.text)
             .padding(.horizontal, Mobile.Space.tile)
             .frame(minHeight: Mobile.Control.field)
-            .background(Mobile.Palette.surface2, in: RoundedRectangle(cornerRadius: Mobile.Radius.control))
-            .overlay(RoundedRectangle(cornerRadius: Mobile.Radius.control).strokeBorder(Mobile.Palette.border))
+            .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous).strokeBorder(Mobile.Palette.borderStrong))
     }
 }
 
@@ -430,15 +443,25 @@ extension ListRow where Trailing == AnyView {
 
 /// Satırlar arası 1 px ayraç.
 struct RowDivider: View {
-    var body: some View { Rectangle().fill(Mobile.Palette.border).frame(height: 1) }
+    var body: some View { Rectangle().fill(Mobile.Palette.borderStrong.opacity(0.7)).frame(height: 1) }
 }
 
 // MARK: - Ekran iskeleti
 
-/// Ekran zemini: düz `bg` (hale ve ışık yok).
+/// Ekran zemini (Nino): beyazdan buz mavisine degrade ve camın arkasında iki yumuşak ışık (Android ile aynı).
 struct MobileBackground: View {
     var body: some View {
-        Mobile.Palette.bg.ignoresSafeArea()
+        GeometryReader { proxy in
+            let width = proxy.size.width, height = proxy.size.height
+            ZStack {
+                LinearGradient(colors: [Color(hex: 0xF7FAFF), Color(hex: 0xE3ECFA)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                RadialGradient(colors: [Mobile.Palette.accent.opacity(0.22), .clear],
+                               center: UnitPoint(x: 0.1, y: 0.08), startRadius: 0, endRadius: width * 0.9)
+                RadialGradient(colors: [Mobile.Palette.pro.opacity(0.16), .clear],
+                               center: UnitPoint(x: 0.95, y: 0.95), startRadius: 0, endRadius: max(width, height * 0.5))
+            }
+        }
+        .ignoresSafeArea()
     }
 }
 

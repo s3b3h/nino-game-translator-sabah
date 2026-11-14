@@ -5,7 +5,7 @@ import SwiftUI
 
 /// Ayarların bölümleri; solda kenar çubuğunda listelenir, sağda seçili olan gösterilir.
 enum SettingsSection: CaseIterable, Identifiable {
-    case appearance, display, dubbing, translation, packs, language, area, obs, about
+    case appearance, display, dubbing, translation, packs, language, area, obs, updates, about
 
     var id: Self { self }
 
@@ -19,6 +19,7 @@ enum SettingsSection: CaseIterable, Identifiable {
         case .language: "Language"
         case .area: "Subtitle area"
         case .obs: "OBS overlay"
+        case .updates: "Updates"
         case .about: "About Nino"
         }
     }
@@ -33,6 +34,7 @@ enum SettingsSection: CaseIterable, Identifiable {
         case .language: "character.bubble"
         case .area: "rectangle.dashed"
         case .obs: "dot.radiowaves.left.and.right"
+        case .updates: "arrow.down.circle"
         case .about: "info.circle"
         }
     }
@@ -50,6 +52,7 @@ extension SettingsSection {
         case .language: Color(red: 0.20, green: 0.70, blue: 0.40)
         case .area: Color(red: 0.35, green: 0.40, blue: 0.95)
         case .obs: Color(red: 0.92, green: 0.26, blue: 0.30)
+        case .updates: Color(red: 0.12, green: 0.62, blue: 0.36)
         case .about: Color(red: 0.45, green: 0.50, blue: 0.60)
         }
     }
@@ -114,7 +117,7 @@ private struct SettingsList: View {
     private let groups: [[SettingsSection]] = [
         [.appearance, .display, .translation, .language],
         [.packs, .dubbing, .area, .obs],
-        [.about],
+        [.updates, .about],
     ]
 
     var body: some View {
@@ -271,6 +274,7 @@ private struct SettingsPage: View {
             case .language: LanguageCard()
             case .area: AreaCards()
             case .obs: OBSCard()
+            case .updates: UpdatesCard()
             case .about:
                 AppThemeCard()
                 AboutCard()
@@ -441,6 +445,47 @@ private struct AppThemeCard: View {
                 Text("Light").tag(AppAppearance.light)
                 Text("Same as system").tag(AppAppearance.system)
             }
+        }
+    }
+}
+
+/// Nino: güncellemeler. Bu sürüm, "Güncellemeleri denetle" düğmesi ve yeni sürüm varsa İndir.
+private struct UpdatesCard: View {
+    @ObservedObject private var updates = NinoUpdates.shared
+
+    var body: some View {
+        Card {
+            HStack(spacing: Theme.space("m")) {
+                LogoView(size: 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: "Nino Game Translator").font(.csHeadline)
+                    Text(String(format: String(localized: "Version %@"), AppIdentity.version))
+                        .font(.csCallout).foregroundStyle(Color.csSecondary)
+                }
+                Spacer()
+                Button(updates.state == .checking ? LocalizedStringKey("Checking…") : LocalizedStringKey("Check for updates")) {
+                    Task { await updates.check(force: true) }
+                }
+                .buttonStyle(.secondary)
+                .disabled(updates.state == .checking)
+            }
+            if let release = updates.available {
+                HStack(spacing: Theme.space("m")) {
+                    Image(systemName: "sparkles").foregroundStyle(Color.csAccent)
+                    Text(String(format: String(localized: "Nino %@ is ready."), release.version)).font(.csBody.weight(.semibold))
+                    Spacer()
+                    Button("What's new") { updates.openNotes() }.buttonStyle(.secondary)
+                    Button("Download") { updates.open() }.buttonStyle(CSButtonStyle(kind: .primary))
+                }
+                HintText(text: "Open the downloaded zip and drag Nino into Applications, replacing the old one. Your settings stay.")
+            } else {
+                switch updates.state {
+                case .upToDate: DoneLabel(text: String(localized: "You have the latest version."))
+                case .failed: ErrorText(error: String(localized: "Could not check for updates. Check your internet connection."))
+                case .idle, .checking: EmptyView()
+                }
+            }
+            HintText(text: "Nino also checks for a new version by itself when it opens and tells you on the main screen.")
         }
     }
 }
@@ -626,10 +671,22 @@ struct TranslationCard: View {
         return switch state {
         case .valid: String(localized: "It works.")
         case .invalid: String(format: String(localized: "%@ did not accept this key. Copy it again from your account page."), name)
+        // Nino: Gemini'de bu hata çoğunlukla ücretsiz anahtarın günlük hakkının bitmesidir; "bakiye" sözü kullanıcıyı
+        // para gitti sanıp korkutuyordu. Hak Pasifik saatiyle gece yarısı yenilenir; saat kullanıcının saatine çevrilir.
+        case .quotaExceeded where engine == .gemini:
+            String(format: String(localized: "Gemini's free daily limit is used up. A free key is never charged. It renews every day (next: %@)."),
+                   Self.geminiQuotaReset().formatted(date: .omitted, time: .shortened))
         case .quotaExceeded: String(format: String(localized: "Your %@ account has no credit left or has reached its limit."), name)
         case .modelRejected: String(format: String(localized: "%@ did not accept the request. Choose the other model or try again later."), name)
         case .unreachable: String(format: String(localized: "%@ could not be reached. Check your internet connection."), name)
         }
+    }
+
+    /// Gemini'nin günlük hakkının yenileneceği an: sıradaki Pasifik saatiyle gece yarısı.
+    static func geminiQuotaReset(after now: Date = Date()) -> Date {
+        var pacific = Calendar(identifier: .gregorian)
+        pacific.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        return pacific.nextDate(after: now, matching: DateComponents(hour: 0, minute: 0), matchingPolicy: .nextTime) ?? now
     }
 
     /// Yerel model sunucusunun (Ollama, LM Studio) hatası; sunucunun türüne göre ne yapılacağı söylenir (Windows ile aynı).
@@ -731,11 +788,25 @@ private struct DeepLKeySection: View {
 
     var body: some View {
         if model.hasDeepLKey {
-            Button("Remove key") {
-                model.removeDeepLKey()
-                status = nil
+            // Nino: Gemini'deki gibi "Anahtar kayıtlı", Dene (aylık kullanımı okur) ve Anahtarı Sil.
+            HStack(spacing: Theme.space("m")) {
+                DoneLabel(text: String(localized: "Key saved"))
+                Spacer()
+                Button(checking ? LocalizedStringKey("Testing…") : LocalizedStringKey("Test")) {
+                    checking = true
+                    Task {
+                        status = await model.deepLUsage()
+                        checking = false
+                    }
+                }
+                .buttonStyle(.secondary)
+                .disabled(checking)
+                Button("Remove key") {
+                    model.removeDeepLKey()
+                    status = nil
+                }
+                .buttonStyle(.secondary)
             }
-            .buttonStyle(.secondary)
         } else {
             HStack(spacing: Theme.space("m")) {
                 SecureField("DeepL API key", text: $key).textFieldStyle(CSTextFieldStyle())
@@ -857,9 +928,9 @@ private struct AIKeySection: View {
     }
 }
 
-/// Yerel model (Ollama, LM Studio): sunucu adresi, model adı (kullanıcı yazar), isteğe bağlı anahtar ve "Bağlantıyı
-/// dene" (Windows'taki ayarlarla aynı). Adres ve model, alandan çıkınca ya da Return'e basınca kaydedilir; her tuşta
-/// çeviri hattı yeniden kurulmasın.
+/// Yerel model (Ollama, LM Studio). Nino: kullanıcı Terminal'e komut yazmasın. Üstte Ollama'nın durumu (çalışıyor mu),
+/// altında önerilen çeviri modelleri: biri seçilir, kurulu değilse İndir'e basılır, Nino Ollama'ya indirtir. Sunucu
+/// adresi, model adı, LM Studio ve anahtar "Gelişmiş"te (Windows'taki ayarlarla aynı alanlar).
 private struct LocalAISection: View {
     @EnvironmentObject private var model: AppModel
     @State private var address = ""
@@ -868,11 +939,130 @@ private struct LocalAISection: View {
     @State private var checking = false
     @State private var result: Result<String, AIFailure>?
     @FocusState private var focused: Field?
+    /// Ollama'daki modeller; nil: Ollama'ya ulaşılamadı (kurulu değil ya da açık değil). Boş dizi: henüz bakılmadı.
+    @State private var installed: [String]?
+    @State private var looked = false
+    @State private var downloading: String?
+    @State private var progress = 0.0
+    @State private var downloadError: String?
+    @State private var advanced = false
 
     private enum Field { case address, model }
 
+    private var serverURL: URL? { LocalAIServer.normalize(model.settings.localAIBaseURL) }
+    private var usesOllama: Bool { model.settings.localAIServer?.kind == .ollama }
+
     var body: some View {
         Group {
+            if usesOllama { ollamaStatus }
+            if usesOllama {
+                VStack(spacing: Theme.space("s")) {
+                    ForEach(LocalModelPreset.all) { preset in presetRow(preset) }
+                }
+                if let downloadError { ErrorText(error: downloadError) }
+            }
+            HStack(spacing: Theme.space("m")) {
+                Button(checking ? LocalizedStringKey("Testing…") : LocalizedStringKey("Test connection")) { test() }
+                    .buttonStyle(.secondary)
+                    .disabled(checking || downloading != nil || LocalAIServer.normalize(address) == nil)
+                Spacer()
+            }
+            if let result {
+                switch result {
+                case .success(let sample):
+                    Text(String(format: String(localized: "It works. Sample translation: %@"), sample))
+                        .font(.csCallout)
+                        .foregroundStyle(Color.csSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                case .failure(let failure):
+                    ErrorText(error: TranslationCard.describe(OnlineKeyState(failure), engine: .local, server: model.settings.localAIServer))
+                }
+            }
+            DisclosureGroup(isExpanded: $advanced) { advancedFields } label: {
+                Text("Advanced").font(.csCallout).foregroundStyle(Color.csSecondary)
+            }
+        }
+        .onAppear {
+            address = model.settings.localAIBaseURL
+            modelName = model.settings.localAIModel
+        }
+        .task(id: model.settings.localAIBaseURL) { await refresh() }
+        .onChange(of: focused) { _ in commit() }
+    }
+
+    /// Ollama çalışıyor mu; değilse indirme bağlantısı.
+    @ViewBuilder private var ollamaStatus: some View {
+        HStack(spacing: Theme.space("s")) {
+            if !looked {
+                ProgressView().controlSize(.small)
+                Text("Looking for Ollama…").font(.csCallout).foregroundStyle(Color.csSecondary)
+            } else if installed != nil {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.csSuccess)
+                Text("Ollama is running on this computer.").font(.csCallout)
+            } else {
+                Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Color.csWarning)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ollama is not running.").font(.csCallout)
+                    Text("Download and open Ollama (free), then come back here.").font(.csCaption).foregroundStyle(Color.csSecondary)
+                }
+            }
+            Spacer()
+            if looked && installed == nil {
+                Link("Download Ollama", destination: AIProvider.local.keyPage).buttonStyle(.secondary)
+                Button("Check again") { Task { await refresh() } }.buttonStyle(.secondary)
+            }
+        }
+    }
+
+    /// Önerilen bir model: seçim, açıklama, boyut ve durum (Kurulu / İndir / ilerleme).
+    private func presetRow(_ preset: LocalModelPreset) -> some View {
+        let selected = AIProvider.local.model(model.settings.localAIModel).id.caseInsensitiveCompare(preset.id) == .orderedSame
+        let isInstalled = installed.map { OllamaAPI.contains($0, preset.id) } ?? false
+        let shape = RoundedRectangle(cornerRadius: Theme.radius("control"), style: .continuous)
+        return HStack(alignment: .center, spacing: Theme.space("m")) {
+            Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                .font(.system(size: 18))
+                .foregroundStyle(selected ? Color.csAccent : Color.csSecondary)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: Theme.space("xs")) {
+                    Text(verbatim: preset.title).font(.csHeadline)
+                    if preset.recommended {
+                        Text("Recommended")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Capsule().fill(LinearGradient(colors: [Color.csAccentHi, Color(red: 0.0, green: 0.19, blue: 0.52)],
+                                                                      startPoint: .top, endPoint: .bottom)))
+                    }
+                }
+                Text(LocalizedStringKey(preset.detail)).font(.csCaption).foregroundStyle(Color.csSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: Theme.space("s"))
+            if downloading == preset.id {
+                VStack(alignment: .trailing, spacing: 4) {
+                    ProgressView(value: progress).frame(width: 120)
+                    Text(verbatim: "\(Int(progress * 100))%").font(.csCaption).monospacedDigit().foregroundStyle(Color.csSecondary)
+                }
+            } else if isInstalled {
+                Label(String(localized: "Downloaded"), systemImage: "checkmark").font(.csCaption).foregroundStyle(Color.csSuccess)
+            } else {
+                Button(String(format: String(localized: "Download (%@ GB)"),
+                              preset.gigabytes.formatted(.number.precision(.fractionLength(1))))) { download(preset) }
+                    .buttonStyle(.secondary)
+                    .disabled(installed == nil || downloading != nil)
+            }
+        }
+        .padding(Theme.space("m"))
+        .background(shape.fill(selected ? Color.csAccent.opacity(0.08) : Color.clear))
+        .overlay(shape.strokeBorder(selected ? Color.csAccent : Color.csBorder, lineWidth: selected ? 1.5 : 1))
+        .contentShape(shape)
+        .onTapGesture { select(preset) }
+    }
+
+    /// Eski alanlar: elle adres ve model (LM Studio ya da başka bir model için), anahtar.
+    @ViewBuilder private var advancedFields: some View {
+        VStack(alignment: .leading, spacing: Theme.space("s")) {
             Grid(alignment: .leading, horizontalSpacing: Theme.space("m"), verticalSpacing: Theme.space("s")) {
                 GridRow {
                     Text("Server address")
@@ -897,7 +1087,7 @@ private struct LocalAISection: View {
             if LocalAIServer.normalize(address) == nil {
                 ErrorText(error: String(format: String(localized: "This address is not valid. Example: %@"), LocalAIServer.ollamaURL))
             }
-            HintText(text: "Type the model name as the server shows it. In Ollama, download it first: ollama pull qwen2.5:7b (downloaded models: ollama list). In LM Studio, load the model and start the local server.")
+            HintText(text: "For LM Studio or another model, type the model name as the server shows it. In LM Studio, load the model and start the local server.")
             if model.hasKey(.local) {
                 HStack(spacing: Theme.space("m")) {
                     DoneLabel(text: String(localized: "Key saved"))
@@ -911,30 +1101,42 @@ private struct LocalAISection: View {
             } else {
                 SecureField("API key (optional)", text: $key).textFieldStyle(CSTextFieldStyle())
             }
-            HStack(spacing: Theme.space("m")) {
-                Button(checking ? LocalizedStringKey("Testing…") : LocalizedStringKey("Test connection")) { test() }
-                    .buttonStyle(.secondary)
-                    .disabled(checking || LocalAIServer.normalize(address) == nil)
-                Spacer()
-                Link("Download Ollama", destination: AIProvider.local.keyPage).font(.csCallout)
-            }
-            if let result {
-                switch result {
-                case .success(let sample):
-                    Text(String(format: String(localized: "It works. Sample translation: %@"), sample))
-                        .font(.csCallout)
-                        .foregroundStyle(Color.csSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                case .failure(let failure):
-                    ErrorText(error: TranslationCard.describe(OnlineKeyState(failure), engine: .local, server: model.settings.localAIServer))
+        }
+        .padding(.top, Theme.space("s"))
+    }
+
+    private func refresh() async {
+        guard usesOllama, let serverURL else {
+            looked = true
+            installed = nil
+            return
+        }
+        installed = await OllamaAPI.installedModels(baseURL: serverURL)
+        looked = true
+    }
+
+    private func select(_ preset: LocalModelPreset) {
+        modelName = preset.id
+        commit()
+    }
+
+    private func download(_ preset: LocalModelPreset) {
+        guard let serverURL else { return }
+        select(preset)
+        downloading = preset.id
+        progress = 0
+        downloadError = nil
+        Task {
+            do {
+                try await OllamaAPI.pull(preset.id, baseURL: serverURL) { value in
+                    Task { @MainActor in progress = value }
                 }
+            } catch {
+                downloadError = String(localized: "The download did not finish. Check your internet connection and that Ollama is open, then try again.")
             }
+            downloading = nil
+            await refresh()
         }
-        .onAppear {
-            address = model.settings.localAIBaseURL
-            modelName = model.settings.localAIModel
-        }
-        .onChange(of: focused) { _ in commit() }
     }
 
     private func use(_ url: String) {

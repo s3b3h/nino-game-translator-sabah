@@ -91,6 +91,8 @@ public final class SubtitlePipeline {
     /// Nino: ekranda bu çizginin (0–1, üstten) altında başlayan satırlar altyazı sayılmaz. Oyunlar öğretici ve menü
     /// yazılarını en alta koyar; en alttaki blok seçildiği için üstündeki gerçek altyazı okunmuyordu.
     public var hudTop: Double?
+    /// Nino: hedef dil (ör. "tr"). Satır zaten bu dildeyse (PS5'in Türkçe menüsü) çevirmene hiç gitmez.
+    public var targetLanguage: String?
     /// Nino: satırın (yazısıyla) ekranda ilk görüldüğü an. Görev ve öğretici yazıları uzun süre aynı kalır,
     /// altyazılar birkaç saniyede değişir.
     private var lineSince: [String: Int] = [:]
@@ -375,6 +377,11 @@ public final class SubtitlePipeline {
 
     private func translate(_ request: Request) async {
         let source = request.source
+        if let target = targetLanguage, TargetLanguage.isAlready(source, in: target) {
+            remember(request.number, source, nil)
+            log(request, "zaten hedef dilde, çevirmene gönderilmedi")
+            return
+        }
         let started = now()
         let probe = TranslationProbe()
         do {
