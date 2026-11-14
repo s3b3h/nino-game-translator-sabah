@@ -7,7 +7,9 @@ Oyundaki İngilizce altyazıyı anlık olarak Türkçeye çevirir ve TV'de, oyun
 Ücretsiz · açık kaynak · reklamsız · abonelik yok</p>
 
 <p align="center">
-  <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest"><b>⬇️ Mac için indir</b></a> &nbsp;·&nbsp;
+  <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip"><b>⬇️ Mac</b></a> &nbsp;·&nbsp;
+  <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe"><b>⬇️ Windows</b></a> &nbsp;·&nbsp;
+  <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk"><b>⬇️ Android telefon</b></a><br>
   <b>📺 TV için: Downloader'a ya da TV'nin tarayıcısına <code>is.gd/ninoapk</code> yazın</b>
 </p>
 
@@ -44,7 +46,7 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 |---|---|
 | **Konsol** | PS5 (Remote Play açık) |
 | **PSN** | İkinci, ücretsiz bir PSN hesabı (Remote Play için; oyun sizin hesabınızda oynanır) |
-| **Bilgisayar** | Apple Silicon (M1 ve sonrası) Mac, macOS 13 veya üzeri |
+| **Bilgisayar ya da telefon** | Apple Silicon (M1 ve sonrası) Mac, macOS 13 veya üzeri (en çok denenen) · Windows 10/11 (64 bit) · Android 8 ve üzeri telefon |
 | **TV** | Android TV / Google TV (test edildi). LG webOS ve Samsung Tizen: deneysel, henüz gerçek TV'de denenmedi |
 | **Çeviri** | Ücretsiz çeviri bilgisayarda, internetsiz çalışır. Daha iyi çeviri için ücretsiz bir **Gemini** anahtarı önerilir |
 
@@ -54,6 +56,18 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 1. [Son sürümden](https://github.com/yunusdemirbag/nino-game-translator/releases/latest) `Nino-Mac.zip` dosyasını indirin, açın ve **Nino**'yu **Uygulamalar** klasörüne sürükleyin.
 2. İlk açılışta Mac "doğrulanamadı" diyebilir: **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**.
 3. Nino adım adım yol gösterir: ikinci PSN hesabıyla giriş, PS5'i 8 haneli kodla eşleme, TV'yi seçme, deneme altyazısı.
+
+### Windows
+1. [Son sürümden](https://github.com/yunusdemirbag/nino-game-translator/releases/latest) `Nino-Windows-Setup.exe` dosyasını indirip çalıştırın. Yönetici izni istemez; kurulunca kendini günceller.
+2. Windows "bilgisayarınızı korudu" derse **Ek bilgi › Yine de çalıştır**'a basın (uygulama imzasız olduğu için).
+3. Nino adım adım yol gösterir (PSN girişi, PS5 eşleme, TV).
+
+> Windows sürümü CouchSubs'ın Windows uygulamasından geliyor. Nino'nun Mac'teki yenilikleri (kumanda simgeleri, oyuna göre altyazı yeri, konuşanı tanıyan dublaj) henüz Windows'ta yok.
+
+### Android telefon (bilgisayar yerine)
+1. Telefonda [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk) dosyasını indirin ve açın.
+2. Telefon izin isterse **Bu kaynaktan yüklemeye izin ver**'i açıp kurun.
+3. Telefon PS5'e Remote Play ile bağlanır, altyazıyı okur ve TV'ye gönderir. Telefon şarja takılı ve aynı Wi-Fi'de kalmalı.
 
 ### TV (Android TV / Google TV)
 - **En kolayı:** TV'de USB hata ayıklama açıksa Mac'teki Nino TV uygulamasını kendisi kurar ve günceller.
@@ -91,7 +105,7 @@ cd mac && xcodegen generate && xcodebuild -scheme CouchSubs -configuration Relea
 ```
 
 TV uygulaması: `tv-android` (Android TV), `tv-webos` (LG ve paylaşılan TV sayfası), `tv-tizen` (Samsung).
-Android telefon uygulaması: `couchsubs-android`. Ayrıntılar CouchSubs'ın [orijinal README'sinde](docs/README-CouchSubs.md).
+Windows uygulaması: `windows` (.NET/WPF). Android telefon uygulaması: `couchsubs-android`. Ayrıntılar CouchSubs'ın [orijinal README'sinde](docs/README-CouchSubs.md).
 
 ## Lisans ve teşekkür
 
@@ -113,4 +127,4 @@ Geliştiren: **Yunus Demirbağ** · Destekleyenler: **M. Akif Demirbağ**
 
 ### English
 
-**Nino** translates the English subtitles of PS5 games into Turkish in real time and shows them on your TV, right on top of the game. A Mac watches the game through Remote Play (with a second, free PSN account), reads the subtitles, translates them and sends them to the Nino app on the TV. Free, open source (AGPL-3.0), no ads, no subscriptions. Based on CouchSubs by Sinan Yorulmaz.
+**Nino** translates the English subtitles of PS5 games into Turkish in real time and shows them on your TV, right on top of the game. A Mac (or a Windows PC, or an Android phone) watches the game through Remote Play (with a second, free PSN account), reads the subtitles, translates them and sends them to the Nino app on the TV. Free, open source (AGPL-3.0), no ads, no subscriptions. Based on CouchSubs by Sinan Yorulmaz.
