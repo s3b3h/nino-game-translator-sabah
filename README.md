@@ -8,7 +8,7 @@ Oyundaki İngilizce altyazıyı anlık olarak Türkçeye çevirir ve TV'de, oyun
 
 <p align="center">
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest"><b>⬇️ Mac için indir</b></a> &nbsp;·&nbsp;
-  <b>📺 TV için: Downloader'a <code>is.gd/ninoapk</code> yazın</b>
+  <b>📺 TV için: Downloader'a ya da TV'nin tarayıcısına <code>is.gd/ninoapk</code> yazın</b>
 </p>
 
 ---
@@ -60,7 +60,7 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 - **Elle:**
   1. TV'de Google Play'den ücretsiz **Downloader** uygulamasını kurun.
   2. Downloader'a **Bilinmeyen kaynaklardan yükleme** izni verin.
-  3. Downloader'da **`is.gd/ninoapk`** yazıp **Git**'e basın, inen dosyayı kurun. Bu adres her zaman en yeni sürümü indirir.
+  3. Downloader'da (ya da TV'de tarayıcı varsa onun adres çubuğunda) **`is.gd/ninoapk`** yazıp **Git**'e basın, inen dosyayı kurun. Bu adres her zaman en yeni sürümü indirir.
   4. Bazı TV'lerde (TCL gibi) **Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster › Nino** iznini açın.
 
 TV'de Nino'yu açınca TV, PS5'in bağlı olduğu HDMI girişine geçer ve Nino görünmez bir katman olarak altyazıyı oyunun üstüne yazar. Kumandadaki **OK** tuşu bilgi panelini açar.

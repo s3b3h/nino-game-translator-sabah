@@ -20,7 +20,7 @@ final class NinoFrameProbe: XCTestCase {
                   let image = CGImageSourceCreateImageAtIndex(src, 0, nil) else { continue }
             for region in regions {
                 let area = RegionCropper.crop(image, to: region)
-                let lines = try VisionReader(language: "en").readLines(area, deep: false).lines.map(\.text)
+                let lines = try VisionReader(language: "en", edgeIcons: true).readLines(area, deep: false).lines.map(\.text)
                 if !lines.isEmpty { print("PROBE", (file as NSString).lastPathComponent, region.top, lines) }
             }
         }

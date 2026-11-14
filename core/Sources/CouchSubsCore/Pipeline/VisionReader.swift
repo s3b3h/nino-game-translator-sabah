@@ -21,8 +21,13 @@ extension TextReader {
 public struct VisionReader: TextReader {
     public var language = "en"
 
-    public init(language: String = "en") {
+    /// Nino: satırın başında ve sonunda da düğme simgesi aranır ("△ Get back on the wagon"). Yalnız ipucu ve görev
+    /// yazılarında açılır; her karede okunan altyazıda gereksiz yük olmasın.
+    public var edgeIcons = false
+
+    public init(language: String = "en", edgeIcons: Bool = false) {
         self.language = language
+        self.edgeIcons = edgeIcons
     }
 
     public func read(_ image: CGImage) throws -> String {
@@ -109,7 +114,8 @@ public struct VisionReader: TextReader {
         let lines = raw.map { line -> TextLine in
             // Vision'ın kutusu sol alttan ölçülür; burada üstten ölçülür.
             let box = line.box
-            let text = Self.withIcons(line, image: image)
+            var text = Self.withIcons(line, image: image)
+            if edgeIcons { text = Self.withEdgeIcons(text, line: line, image: image) }
             return TextLine(ButtonPrompts.normalizedIcons(text.trimmingCharacters(in: .whitespacesAndNewlines)),
                             box: TextBox(left: box.minX, top: 1 - box.maxY, right: box.maxX, bottom: 1 - box.minY),
                             confidence: Double(line.confidence))
@@ -178,6 +184,30 @@ public struct VisionReader: TextReader {
             }
         }
         return changed ? out.joined(separator: " ") : text
+    }
+
+    /// Satırın hemen solunda ve sağında simge genişliğinde bir alan görüntüden tanınır; simge varsa satıra eklenir.
+    private static func withEdgeIcons(_ text: String, line: RawLine, image: CGImage) -> String {
+        let box = line.box
+        let w = Double(image.width), h = Double(image.height)
+        let lineHeight = Double(box.height) * h
+        guard lineHeight > 4 else { return text }
+        let span = lineHeight * 1.8 / w
+        let top = 1 - Double(box.maxY), bottom = 1 - Double(box.minY)
+        let first = text.split(separator: " ").first.map(String.init) ?? ""
+        let last = text.split(separator: " ").last.map(String.init) ?? ""
+        var result = text
+        if !ButtonPrompts.isIcon(first), Double(box.minX) - span > 0,
+           let icon = ButtonIcons.classify(image, box: TextBox(left: Double(box.minX) - span, top: top,
+                                                              right: Double(box.minX) - span * 0.1, bottom: bottom), strict: true) {
+            result = icon + " " + result
+        }
+        if !ButtonPrompts.isIcon(last), Double(box.maxX) + span < 1,
+           let icon = ButtonIcons.classify(image, box: TextBox(left: Double(box.maxX) + span * 0.1, top: top,
+                                                              right: Double(box.maxX) + span, bottom: bottom), strict: true) {
+            result = result + " " + icon
+        }
+        return result
     }
 
     /// Simgenin yanlış okunmuş hali olabilecek parça: harfsiz kısa parça ("•", "(x)", "&") ya da tek büyük harf

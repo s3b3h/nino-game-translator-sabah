@@ -13,19 +13,27 @@ import Vision
 /// yazı yoksa içindeki sembol (koyu ya da açık olabilir) ✕ ○ △ □ şablonlarıyla karşılaştırılır.
 enum ButtonIcons {
     /// `box`: simgenin görüntüdeki kabaca yeri (0–1, üstten). Tanınamazsa nil.
-    static func classify(_ image: CGImage, box: TextBox) -> String? {
+    /// `strict`: satırın kenarında aranırken (orada simge olmayabilir) yalnız belirgin, tek başına duran bir düğme
+    /// rozeti kabul edilir; arka plandaki leke simge sanılmasın.
+    static func classify(_ image: CGImage, box: TextBox, strict: Bool = false) -> String? {
         guard let crop = crop(image, box) else { return nil }
-        let result = classify(crop)
+        let result = classify(crop, strict: strict)
         #if DEBUG
         dump(crop, result)
         #endif
         return result
     }
 
-    static func classify(_ crop: CGImage) -> String? {
+    static func classify(_ crop: CGImage, strict: Bool = false) -> String? {
         guard let gray = Gray(crop, height: 48), let blob = gray.iconBlob() else { return nil }
         let w = blob.maxX - blob.minX + 1, h = blob.maxY - blob.minY + 1
         let aspect = Double(w) / Double(h)
+        if strict {
+            // Kesit satırın iki katı yüksekliğinde: rozet satır boyunda (kesitin %27–65'i), kareye yakın, kenara değmiyor.
+            let relative = Double(h) / Double(gray.height)
+            guard relative > 0.27, relative < 0.65, aspect > 0.78, aspect < 1.28,
+                  blob.minX > 0, blob.minY > 0, blob.maxX < gray.width - 1, blob.maxY < gray.height - 1 else { return nil }
+        }
         // Renkli (ör. sarı) daire: düğme değil, haritadaki görev işareti; içindeki harf daire içinde gösterilir.
         if blob.saturation > 0.28 {
             if let letter = readText(crop), letter.count == 1, let scalar = letter.unicodeScalars.first,
@@ -48,7 +56,7 @@ enum ButtonIcons {
         if aspect > 1.45, gray.stripes(in: blob) >= 4 { return "▦" }
         // Yazılı kutu ama yazı okunamadı: daire/kare sembol sanılmasın.
         if aspect > 1.15 { return nil }
-        return gray.symbol(in: blob)
+        return gray.symbol(in: blob, minimum: strict ? 0.5 : 0.3)
     }
 
     /// Simgenin aranacağı kesit: boşluğun tamamı (dar ise satır yüksekliği kadar genişletilir), satırın ~1,6 katı yükseklik.
@@ -278,14 +286,14 @@ private struct Gray {
 
     /// Simgenin içindeki sembol: iç dairede azınlıkta kalan renk (beyaz daire üstünde koyu çarpı ya da koyu zeminde
     /// beyaz çarpı) ✕ ○ △ □ şablonlarıyla karşılaştırılır.
-    func symbol(in b: Blob) -> String? {
+    func symbol(in b: Blob, minimum: Double = 0.3) -> String? {
         // Simgeler iç içe halkalı olabilir (halka, gri disk, içinde kare): sembol birkaç iç yarıçapta aranır, en iyi
         // eşleşme seçilir.
         var best: (name: String, score: Double)?
         for factor in [0.74, 0.6, 0.48] {
             if let found = symbol(in: b, radius: factor), best == nil || found.score > best!.score { best = found }
         }
-        guard let best, best.score > 0.3 else { return nil }
+        guard let best, best.score > minimum else { return nil }
         return best.name
     }
 

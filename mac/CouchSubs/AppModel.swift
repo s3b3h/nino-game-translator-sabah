@@ -1253,7 +1253,8 @@ final class AppModel: ObservableObject {
         guard settings.translateCorners, cornerTask == nil, screenTask == nil,
               Date().timeIntervalSince(cornerLastCheck) > 1.5 else { return }
         cornerLastCheck = Date()
-        let reader = VisionReader(language: settings.sourceLanguage)
+        // İpucu ve görev satırlarında simge çoğu zaman yazının başında durur ("△ Get back on the wagon").
+        let reader = VisionReader(language: settings.sourceLanguage, edgeIcons: true)
         let regions = cornerRegions
         cornerTask = Task { [weak self] in
             var readings = [Reading?](repeating: nil, count: regions.count)
