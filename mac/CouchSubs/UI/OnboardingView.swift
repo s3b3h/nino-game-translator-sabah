@@ -10,7 +10,7 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             HStack(spacing: Theme.space("s")) {
                 LogoView(size: 26)
-                Text(verbatim: "Nino").font(.system(size: 16, weight: .semibold, design: .rounded))
+                NinoWordmark(size: 16, alignment: .leading)
                 Spacer()
             }
             .padding(.horizontal, Theme.space("xl"))

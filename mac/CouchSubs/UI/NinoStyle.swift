@@ -113,8 +113,7 @@ struct SplashView: View {
                         .opacity(logoIn ? 1 : 0)
                 }
                 VStack(spacing: 6) {
-                    Text(verbatim: "Nino")
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                    NinoWordmark(size: 34)
                     Text("Your games, in Turkish.")
                         .font(.csBody)
                         .foregroundStyle(Color.csSecondary)
@@ -251,5 +250,24 @@ struct OptionCard: View {
         .buttonStyle(.plain)
         .opacity(isEnabled ? 1 : 0.5)
         .onHover { h in withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { hovering = h } }
+    }
+}
+
+
+/// Nino: uygulamanın adı, logodaki gibi: büyük "Nino", altında harf aralıklı "GAME TRANSLATOR".
+struct NinoWordmark: View {
+    var size: CGFloat = 24
+    var alignment: HorizontalAlignment = .center
+
+    var body: some View {
+        VStack(alignment: alignment, spacing: size * 0.02) {
+            Text(verbatim: "Nino").font(.system(size: size, weight: .bold, design: .rounded))
+            Text(verbatim: "GAME TRANSLATOR")
+                .font(.system(size: max(8, size * 0.32), weight: .semibold, design: .rounded))
+                .tracking(size * 0.09)
+                .foregroundStyle(Color.csSecondary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: "Nino Game Translator"))
     }
 }

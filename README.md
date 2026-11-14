@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/nino/banner.png" width="640" alt="Nino"></p>
 
-<h1 align="center">Nino</h1>
+<h1 align="center">Nino Game Translator</h1>
 
 <p align="center"><b>PS5 oyunlarını Türkçe oynayın.</b><br>
 Oyundaki İngilizce altyazıyı anlık olarak Türkçeye çevirir ve TV'de, oyunun üstünde gösterir.<br>

@@ -396,7 +396,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nino Hakkında"
+            "value" : "Nino Game Translator Hakkında"
           }
         }
       }
@@ -3854,7 +3854,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nino'ya hoş geldiniz"
+            "value" : "Nino Game Translator'a hoş geldiniz"
           }
         }
       }

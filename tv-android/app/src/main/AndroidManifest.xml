@@ -14,7 +14,7 @@
         android:allowBackup="false"
         android:banner="@drawable/banner"
         android:icon="@mipmap/icon"
-        android:label="Nino"
+        android:label="Nino Game Translator"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
         android:usesCleartextTraffic="true">
         <activity

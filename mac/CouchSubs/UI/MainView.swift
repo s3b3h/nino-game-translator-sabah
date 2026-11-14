@@ -244,7 +244,7 @@ private struct MainHeader: View {
     var body: some View {
         HStack(spacing: Theme.space("s")) {
             LogoView(size: 46)
-            Text(verbatim: "Nino").font(.system(size: 24, weight: .bold, design: .rounded))
+            NinoWordmark(size: 24, alignment: .leading)
             Spacer()
             CircleIconButton(symbol: "clock.arrow.circlepath", help: "History") { model.showHistory = true }
             CircleIconButton(symbol: "gearshape.fill", help: "Settings") { model.showSettings = true }
