@@ -3,7 +3,7 @@ import XCTest
 
 final class VoiceTrackerTests: XCTestCase {
     /// Sesli konuşmaya benzeyen sinyal: temel perde + harmonikler (renk `tilt` ile değişir), biraz gürültü.
-    private func voice(_ f0: Double, seconds: Double, tilt: Double = 0.7, amplitude: Float = 0.2) -> [Float] {
+    private func voice(_ f0: Double, seconds: Double, tilt: Double = 0.7, amplitude: Float = 0.6) -> [Float] {
         let n = Int(seconds * VoiceTracker.sampleRate)
         var rng = SystemRandomNumberGenerator()
         return (0..<n).map { i in
@@ -117,5 +117,14 @@ final class QuietGateTests: XCTestCase {
         let meter = EmotionMeter()
         XCTAssertTrue(meter.isTooQuiet(VoiceSample(pitch: 230, voiced: 1, print: [], loudness: -38, spread: 4)))
         XCTAssertFalse(meter.isTooQuiet(VoiceSample(pitch: 125, voiced: 1, print: [], loudness: -23, spread: 2)))
+    }
+}
+
+
+final class FemaleEvidenceTests: XCTestCase {
+    func testBorderlineOrQuietHighVoiceIsMale() {
+        XCTAssertEqual(VoiceSample(pitch: 186, voiced: 1, print: [], loudness: -30, spread: 4).gender, .male)
+        XCTAssertEqual(VoiceSample(pitch: 230, voiced: 1, print: [], loudness: -33, spread: 4).gender, .male)
+        XCTAssertEqual(VoiceSample(pitch: 225, voiced: 1, print: [], loudness: -22, spread: 3).gender, .female)
     }
 }

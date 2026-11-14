@@ -9,6 +9,7 @@ import SwiftUI
 struct MainView: View {
     @EnvironmentObject private var model: AppModel
     @State private var settingsSection: SettingsSection?
+    @ObservedObject private var updates = NinoUpdates.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,6 +18,7 @@ struct MainView: View {
                 .padding(.top, Theme.space("m"))
             ScrollView {
                 VStack(spacing: Theme.space("l")) {
+                    if let release = updates.available { UpdateBanner(version: release.version) { updates.open() } }
                     TVScreenCard()
                         .padding(.top, Theme.space("s"))
                     SlideToTranslate()
@@ -37,6 +39,7 @@ struct MainView: View {
             .scrollIndicators(.never)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task { await updates.check() }
         .sheet(isPresented: $model.showSettings) { SettingsView().appSurface() }
         .sheet(item: $settingsSection) { SettingsView(section: $0).appSurface() }
         .sheet(isPresented: $model.showHistory) { HistoryView().appSurface() }
@@ -569,5 +572,27 @@ private struct HistoryRow: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .textSelection(.enabled)
+    }
+}
+
+
+/// Nino: yeni sürüm bildirimi (GitHub'daki son sürüm). Tıklayınca yeni sürüm indirilir.
+private struct UpdateBanner: View {
+    let version: String
+    let action: () -> Void
+
+    var body: some View {
+        HStack(spacing: Theme.space("m")) {
+            Image(systemName: "arrow.down.circle.fill").font(.system(size: 22)).foregroundStyle(Color.csAccent)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("A new version of Nino is available").font(.csCallout.weight(.semibold))
+                Text(verbatim: "Nino \(version)").font(.csCaption).foregroundStyle(Color.csSecondary)
+            }
+            Spacer()
+            Button("Download", action: action).buttonStyle(.primary)
+        }
+        .padding(Theme.space("m"))
+        .frame(maxWidth: 640)
+        .ninoGlass(in: RoundedRectangle(cornerRadius: Theme.radius("card"), style: .continuous))
     }
 }

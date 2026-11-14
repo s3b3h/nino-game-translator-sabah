@@ -10156,6 +10156,16 @@
           }
         }
       }
+    },
+    "A new version of Nino is available" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino'nun yeni sürümü hazır"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

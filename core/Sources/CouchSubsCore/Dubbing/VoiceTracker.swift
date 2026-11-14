@@ -18,8 +18,9 @@ public struct VoiceSample: Equatable, Sendable {
     /// Perdenin cümle içinde ne kadar oynadığı (yarım ton, standart sapma).
     public var spread: Double = 0
 
-    /// Erkek ve kadın sesinin perdeleri kabaca 85–180 ve 165–255 Hz; bağıran erkek 170'lere çıkabildiği için sınır 180.
-    public var gender: DubbingVoice.Gender { pitch < 185 ? .male : .female }
+    /// Kadın sesi yalnız güçlü kanıtla: perde 200 Hz ve üstü ve ses normal konuşma gücünde (−28 dB ve üstü). Belirsiz
+    /// her durum erkek sayılır; erkeklerin konuştuğu sahnede kadın sesi duymak, tersinden çok daha kötü.
+    public var gender: DubbingVoice.Gender { pitch >= 200 && loudness >= -28 ? .female : .male }
 }
 
 public final class VoiceTracker: @unchecked Sendable {
@@ -218,7 +219,9 @@ public struct SpeakerBook: Sendable {
         public var pitch: Double
         public var print: [Float]
         public var count: Int
-        public var gender: DubbingVoice.Gender { pitch < 185 ? .male : .female }
+        /// Kişinin cinsiyeti tek cümleden değil, duyulduğu cümlelerin çoğunluğundan (bkz. `identify`).
+        public var femaleVotes = 0
+        public var gender: DubbingVoice.Gender { femaleVotes * 2 > count && pitch >= 200 ? .female : .male }
     }
 
     public private(set) var speakers: [Speaker] = []
@@ -240,10 +243,12 @@ public struct SpeakerBook: Sendable {
             s.pitch = s.pitch * (1 - w) + sample.pitch * w
             s.print = zip(s.print, sample.print).map { $0 * Float(1 - w) + $1 * Float(w) }
             s.count += 1
+            if sample.gender == .female { s.femaleVotes += 1 }
             speakers[best.index] = s
             return s
         }
-        let speaker = Speaker(id: speakers.count + 1, pitch: sample.pitch, print: sample.print, count: 1)
+        var speaker = Speaker(id: speakers.count + 1, pitch: sample.pitch, print: sample.print, count: 1)
+        if sample.gender == .female { speaker.femaleVotes = 1 }
         speakers.append(speaker)
         return speaker
     }
