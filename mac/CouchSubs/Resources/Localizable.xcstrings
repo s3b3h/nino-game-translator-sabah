@@ -8845,12 +8845,12 @@
         }
       }
     },
-    "Type the model name as the server shows it. In Ollama, download it first: ollama pull translategemma:4b (with 16 GB of memory or more, translategemma:12b translates better). Xiaomi's MiLMMT also translates well: ollama pull hf.co/mradermacher/MiLMMT-46-4B-v1.0-GGUF:Q4_K_M. Downloaded models: ollama list. In LM Studio, load the model and start the local server." : {
+    "Type the model name as the server shows it. In Ollama, download it first: ollama pull translategemma:4b (with 16 GB of memory or more, translategemma:12b translates better). MiLMMT from Xiaomi also translates well: ollama pull hf.co/mradermacher/MiLMMT-46-4B-v1.0-GGUF:Q4_K_M. Downloaded models: ollama list. In LM Studio, load the model and start the local server." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Type the model name as the server shows it. In Ollama, download it first: ollama pull translategemma:4b (with 16 GB of memory or more, translategemma:12b translates better). Xiaomi's MiLMMT also translates well: ollama pull hf.co/mradermacher/MiLMMT-46-4B-v1.0-GGUF:Q4_K_M. Downloaded models: ollama list. In LM Studio, load the model and start the local server."
+            "value" : "Type the model name as the server shows it. In Ollama, download it first: ollama pull translategemma:4b (with 16 GB of memory or more, translategemma:12b translates better). MiLMMT from Xiaomi also translates well: ollama pull hf.co/mradermacher/MiLMMT-46-4B-v1.0-GGUF:Q4_K_M. Downloaded models: ollama list. In LM Studio, load the model and start the local server."
           }
         },
         "tr" : {

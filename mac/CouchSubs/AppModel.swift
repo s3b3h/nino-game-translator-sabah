@@ -1270,7 +1270,8 @@ final class AppModel: ObservableObject {
                     let area = RegionCropper.crop(frame, to: region)
                     return ((try? reader.readLines(area, deep: false)) ?? .empty).withoutOcrNoise().placed(in: place)
                 }.value
-                readings[i] = i == 1 ? Reading(lines: reading.lines.filter(Self.isObjectiveLine)) : reading
+                // Sol üst: yalnız ipucu kutusu ya da görev kartı (haritadaki yer adları değil; bkz. CornerBlock).
+                readings[i] = i == 1 ? Reading(lines: reading.lines.filter(Self.isObjectiveLine)) : CornerBlock.tipBox(in: reading)
             }
             guard let self else { return }
             var changed = false

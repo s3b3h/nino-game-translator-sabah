@@ -204,6 +204,9 @@ public enum ButtonPrompts {
         s = s.replacingOccurrences(of: #"(?<![\w])[\(\[]([LR])([123])(?=\s|$)"#, with: "$1$2", options: .regularExpression)
         // "(C1" = L1 simgesi.
         s = s.replacingOccurrences(of: #"(?<![\w])[\(\[]C([12])[\)\]]?(?=\s|$)"#, with: "L$1", options: .regularExpression)
+        // Nino: tek düğme simgesi iki kez okunabiliyor ("Hold ✕ ✕ to …": simge hem yazı içinden hem kenardan bulunuyor).
+        // Yan yana aynı simge tek simgedir.
+        s = s.replacingOccurrences(of: #"([✕○△□↑↓←→✜▦◆●Ⓐ-Ⓩ])(?:\s+\1)+"#, with: "$1", options: .regularExpression)
         return s
     }
 

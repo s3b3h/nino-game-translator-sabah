@@ -30,3 +30,12 @@ final class TargetLanguageTests: XCTestCase {
         XCTAssertFalse(TargetLanguage.isAlready("We never saw her again.", in: "de"))
     }
 }
+
+/// Nino: yan yana okunan aynı simge tek simgedir (RDR2: "Hold ✕ to maintain the horse's canter").
+final class DuplicateIconTests: XCTestCase {
+    func testRepeatedIconCollapses() {
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("Hold ✕ ✕ to maintain the horse's canter"), "Hold ✕ to maintain the horse's canter")
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("Press ○ ○ ○ quickly"), "Press ○ quickly")
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("Use ← → to choose"), "Use ← → to choose")
+    }
+}
