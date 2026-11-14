@@ -207,6 +207,7 @@ public enum ButtonPrompts {
         // Nino: tek düğme simgesi iki kez okunabiliyor ("Hold ✕ ✕ to …": simge hem yazı içinden hem kenardan bulunuyor).
         // Yan yana aynı simge tek simgedir.
         s = s.replacingOccurrences(of: #"([✕○△□↑↓←→✜▦◆●Ⓐ-Ⓩ])(?:\s+\1)+"#, with: "$1", options: .regularExpression)
+        s = s.replacingOccurrences(of: #"(?<![\w])([LR][123]|OPTIONS|TOUCHPAD)(?:\s+\1)+(?![\w])"#, with: "$1", options: .regularExpression)
         return s
     }
 

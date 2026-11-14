@@ -37,5 +37,8 @@ final class DuplicateIconTests: XCTestCase {
         XCTAssertEqual(ButtonPrompts.normalizedIcons("Hold ✕ ✕ to maintain the horse's canter"), "Hold ✕ to maintain the horse's canter")
         XCTAssertEqual(ButtonPrompts.normalizedIcons("Press ○ ○ ○ quickly"), "Press ○ quickly")
         XCTAssertEqual(ButtonPrompts.normalizedIcons("Use ← → to choose"), "Use ← → to choose")
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("Hold L2 L2 to interact with the witness"), "Hold L2 to interact with the witness")
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("Pressing ✕ ✕ ✕ in a consistent rhythm"), "Pressing ✕ in a consistent rhythm")
+        XCTAssertEqual(ButtonPrompts.normalizedIcons("Press L1 R1 together"), "Press L1 R1 together")
     }
 }

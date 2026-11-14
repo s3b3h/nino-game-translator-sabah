@@ -121,9 +121,11 @@ public struct VisionReader: TextReader {
                             confidence: Double(line.confidence))
         }
         .sorted { ($0.box?.top ?? 0) < ($1.box?.top ?? 0) }
+        // Nino: satırlar birleşirken araya simge eklenir; aynı simge iki kez gelebiliyor ("Hold L2 L2 to …"). Birleşmiş
+        // satır yeniden sadeleştirilir.
         return Reading(lines: Self.mergedRows(lines, aspect: Double(image.width) / Double(max(image.height, 1))) {
             ButtonIcons.classify(image, box: $0)
-        })
+        }.map { TextLine(ButtonPrompts.normalizedIcons($0.text), box: $0.box, confidence: $0.confidence) })
     }
 
     private static func words(of candidate: VNRecognizedText) -> [(word: String, box: CGRect)] {
