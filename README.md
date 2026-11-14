@@ -9,7 +9,8 @@ Oyundaki İngilizce altyazıyı anlık olarak Türkçeye çevirir ve TV'de, oyun
 <p align="center">
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip"><b>⬇️ Mac</b></a> &nbsp;·&nbsp;
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe"><b>⬇️ Windows</b></a> &nbsp;·&nbsp;
-  <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk"><b>⬇️ Android telefon</b></a><br>
+  <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk"><b>⬇️ Android telefon</b></a> &nbsp;·&nbsp;
+  <b>📱 iPhone: çok yakında App Store'da</b><br>
   <b>📺 TV için: Downloader'a ya da TV'nin tarayıcısına <code>is.gd/ninoapk</code> yazın</b>
 </p>
 
@@ -68,6 +69,9 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 1. Telefonda [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk) dosyasını indirin ve açın.
 2. Telefon izin isterse **Bu kaynaktan yüklemeye izin ver**'i açıp kurun.
 3. Telefon PS5'e Remote Play ile bağlanır, altyazıyı okur ve TV'ye gönderir. Telefon şarja takılı ve aynı Wi-Fi'de kalmalı.
+
+### iPhone
+Çok yakında App Store'da. iPhone uygulaması hazır; Apple'ın incelemesinden geçince buraya bağlantısı eklenecek.
 
 ### TV (Android TV / Google TV)
 - **En kolayı:** TV'de USB hata ayıklama açıksa Mac'teki Nino TV uygulamasını kendisi kurar ve günceller.

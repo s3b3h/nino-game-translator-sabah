@@ -82,11 +82,13 @@ targets:
         CSPacksBaseURL: $(PACKS_API_BASE_URL)
     entitlements:
       path: CouchSubs/CouchSubs.entitlements
-      properties:
+      # Nino: şimdilik boş (aşağıdaki multicast yetkisi Apple onayı bekliyor).
+      properties: {}
         # PS5 ve TV'yi ağda bulmak (UDP yayını, SSDP) bu yetkiyi ister; Apple'dan ayrıca istenir
         # (developer.apple.com/contact/request/networking-multicast). Onay gelene kadar cihaz imzası için
         # bu satır kaldırılır ve PS5/TV adresi elle yazılır (docs/ios-plan.md).
-        com.apple.developer.networking.multicast: true
+        # Nino: Apple onayı gelene kadar kapalı (App Store derlemesi bu yetkiyle imzalanamaz). Onay gelince geri açın.
+        # com.apple.developer.networking.multicast: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ninotranslator.ios
