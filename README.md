@@ -88,7 +88,7 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 2. Windows "bilgisayarınızı korudu" derse **Ek bilgi › Yine de çalıştır**'a basın (uygulama imzasız olduğu için).
 3. Nino adım adım yol gösterir (PSN girişi, PS5 eşleme, TV).
 
-> Windows sürümü CouchSubs'ın Windows uygulamasından geliyor. Nino'nun Mac'teki yenilikleri (kumanda simgeleri, oyuna göre altyazı yeri, konuşanı tanıyan dublaj) henüz Windows'ta yok.
+> 0.1.6'dan itibaren Windows'ta da Mac'teki ana ekranlar (Salon, Cam düğme), Arayüz seçimi ve Sistem sağlığı var. Kumanda simgeleri, oyuna göre altyazı yeri ve konuşanı tanıyan dublaj henüz yalnız Mac'te.
 
 ### Android telefon (bilgisayar yerine)
 1. Telefonda [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk) dosyasını indirin ve açın.
