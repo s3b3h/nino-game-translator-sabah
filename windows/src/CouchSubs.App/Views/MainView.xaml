@@ -52,7 +52,7 @@
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <Button Style="{StaticResource LinkStrip}" Click="OnSettings">
-                        <TextBlock><Run Text="{t:T 'Translation'}" Foreground="{DynamicResource textSecondaryBrush}" /> <Run x:Name="EngineValue" FontWeight="SemiBold" /> <Run Text="›" Foreground="{DynamicResource textSecondaryBrush}" /></TextBlock>
+                        <TextBlock Foreground="{DynamicResource textPrimaryBrush}"><Run Text="{t:T 'Translation'}" Foreground="{DynamicResource textSecondaryBrush}" /> <Run x:Name="EngineValue" FontWeight="SemiBold" /> <Run Text="›" Foreground="{DynamicResource textSecondaryBrush}" /></TextBlock>
                     </Button>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
