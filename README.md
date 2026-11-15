@@ -1,10 +1,10 @@
-<p align="center"><img src="docs/nino/banner.png" width="640" alt="Nino"></p>
+<p align="center"><img src="docs/nino/afis.jpg" width="420" alt="Nino Game Translator: PS5 oyunlarına Türkçe altyazı"></p>
 
 <h1 align="center">Nino Game Translator</h1>
 
-<p align="center"><b>PS5 oyunlarını Türkçe oynayın.</b><br>
-Oyundaki İngilizce altyazıyı anlık olarak Türkçeye çevirir ve TV'de, oyunun üstünde gösterir.<br>
-Ücretsiz · açık kaynak · reklamsız · abonelik yok</p>
+<p align="center"><b>Türkçe desteği olmayan PS5 oyunlarını Türkçe oynayın.</b><br>
+Oyundaki İngilizce altyazıyı anlık olarak Türkçeye çevirir ve TV'de, oyunun tam üstünde gösterir.<br>
+Tamamen ücretsiz · açık kaynak · reklamsız · abonelik yok · hesap yok</p>
 
 <p align="center">
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip"><b>⬇️ Mac</b></a> &nbsp;·&nbsp;
@@ -21,11 +21,11 @@ Oyundaki İngilizce altyazıyı anlık olarak Türkçeye çevirir ve TV'de, oyun
 ```
 PS5 ──HDMI──▶ TV  ◀── Türkçe altyazı (TV'deki Nino uygulaması, oyunun üstünde)
  │                         ▲
- └─ Remote Play ──▶ Mac'teki Nino: görüntüyü okur → Türkçeye çevirir ─┘
+ └─ Remote Play ──▶ Nino (Mac, Windows ya da Android telefon): okur → çevirir ─┘
     (ikinci, ücretsiz PSN hesabıyla)
 ```
 
-Oyunu her zamanki gibi TV'de, kendi kolunuzla oynarsınız. Mac'teki Nino aynı görüntüyü Remote Play ile izler,
+Oyunu her zamanki gibi TV'de, kendi kolunuzla oynarsınız. Bilgisayardaki (ya da telefondaki) Nino aynı görüntüyü Remote Play ile izler,
 altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizcenin tam üstüne, tam opak bir kutuyla koyar.
 
 <p align="center"><img src="docs/nino/mac-ana.png" width="720" alt="Nino Mac uygulaması"></p>
@@ -40,6 +40,28 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 - **Türkçe dublaj (deneysel):** Çeviriyi Türkçe seslendirir. Oyunun kendi sesinden kimin konuştuğunu ve nasıl konuştuğunu (bağırma, fısıltı, soru) anlar; her karaktere kendi sesini verir.
 - **Altyazı temaları:** Klasik, Sinema, Cam ve daha fazlası; ayarlar ekranında canlı önizleme.
 - **Kendi kendini günceller:** Yeni sürüm çıkınca Mac uygulaması ana ekranda haber verir.
+
+## Kimler kullanabilir
+
+| Nino'yu çalıştıran cihaz | Durum |
+|---|---|
+| **Mac** (Apple Silicon: M1 ve sonrası) | ✅ Hazır, en çok denenen |
+| **Windows 10/11** bilgisayar | ✅ Hazır |
+| **Android telefon** (Android 8 ve üzeri) | ✅ Hazır |
+| **iPhone** | 🔜 Çok yakında App Store'da |
+
+| Altyazının çıktığı TV | Durum |
+|---|---|
+| **Android TV / Google TV** (TCL, Sony, Philips, Xiaomi, Hisense ve diğerleri) | ✅ Hazır, denendi |
+| **LG** (webOS) | 🧪 Deneysel |
+| **Samsung** (Tizen) | 🧪 Deneysel |
+| TV uygulaması kurmadan | ✅ Altyazı bilgisayar ya da telefon ekranında da gösterilebilir |
+
+<p align="center">
+  <img src="docs/nino/app-store/2-ana-ekran.png" width="200" alt="iPhone ana ekran">&nbsp;
+  <img src="docs/nino/app-store/3-ayarlar.png" width="200" alt="iPhone ayarlar">&nbsp;
+  <img src="docs/nino/app-store/1-karsilama.png" width="200" alt="iPhone karşılama">
+</p>
 
 ## Gerekenler
 
@@ -125,6 +147,13 @@ Nino şu projelerin üzerine kuruludur:
 2. **[chiaki-ng](https://github.com/streetpea/chiaki-ng)** — Street Pea ve katkıda bulunanlar: Chiaki'nin bakımı süren devamı.
 3. **[CouchSubs](https://github.com/yorulmazsinan/couchsubs)** — Sinan Yorulmaz: Nino'nun kodunun başladığı altyazı okuma ve çeviri uygulaması.
 4. **Dublaj sesleri:** Kyutai'nin [pocket-tts](https://github.com/kyutai-labs/pocket-tts)'i ve [Pocket TTS Turkish](https://huggingface.co/wite-tech/pocket-tts-turkish) (wite-tech, CC BY 4.0). Sesler yapaydır, gerçek kişilere ait değildir.
+5. **Ücretsiz, internetsiz çeviri:** Windows'ta Helsinki Üniversitesi'nin [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) İngilizce→Türkçe modeli (CC BY 4.0); Mac ve iPhone'da Apple'ın, Android'de Google ML Kit'in cihaz içi çevirisi.
+6. **Yazı tanıma:** Apple Vision (Mac, iPhone), Windows OCR ve Google ML Kit (Android).
+7. **Bilgisayarda yapay zekâ ile çeviri (isteğe bağlı):** [Ollama](https://ollama.com), Google'ın [TranslateGemma](https://ollama.com/library/translategemma)'sı ve Xiaomi'nin [MiLMMT](https://huggingface.co/xiaomi-research/MiLMMT-46-4B-v1.0)'si.
+8. **Çevrimiçi çeviri (isteğe bağlı, kendi anahtarınızla):** Google Gemini, DeepL, OpenAI, Claude.
+9. **Diğer açık kaynak parçalar:** FFmpeg, OpenSSL, curl, nanopb, Jerasure, GF-Complete, json-c, libevent, miniupnpc, ONNX Runtime, Velopack (Windows kurulumu ve güncelleme), SSH.NET ve Patrick Stel'in [tizen-sdb](https://github.com/PatrickSt1991/tizen-sdb)'si (LG ve Samsung TV kurulumu). Tam liste: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+Bu projelerin geliştiricilerine çok teşekkürler. Nino onların emeği olmadan olmazdı. 🙏
 
 Geliştiren: **Yunus Demirbağ** · Destekleyenler: **M. Akif Demirbağ**
 
