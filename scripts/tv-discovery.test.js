@@ -118,6 +118,9 @@ function startTv({ saved, alive, localIp, hasLocalAddress }) {
   const document = {
     hidden: false,
     documentElement: { clientHeight: 1080, clientWidth: 1920 },
+    // Sayfa body'nin sınıflarına da bakar (ör. katman modunda demo oynamaz).
+    body: element(),
+    head: element(),
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, element());
       return elements.get(id);
