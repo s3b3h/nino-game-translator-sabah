@@ -2,6 +2,10 @@
 // Profil (cihazlar ve tercihler; hesap yok) ve ayarlar (tuval: Telefon-Profil, -Ayarlar).
 package com.couchsubs.mobile.ui
 
+import com.couchsubs.mobile.settings.HomeStyle
+
+import androidx.compose.foundation.layout.height
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -101,7 +105,7 @@ fun ProfileScreen(onBack: () -> Unit, onSettings: () -> Unit, onPairing: () -> U
 
 /** Ayarlar (tuval Telefon-Ayarlar): motor ve anahtar, altyazı görünümü, paketler, hedef, PS5, hakkında. */
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit, onPairing: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit, onPairing: () -> Unit, onHealth: () -> Unit = {}) {
     val context = LocalContext.current
     val settings = Services.settings
     var engine by remember { mutableStateOf(settings.engine) }
@@ -109,6 +113,7 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
     var scale by remember { mutableStateOf(settings.subtitleScale.toFloat()) }
     var color by remember { mutableStateOf(settings.textColor) }
     var screenOn by remember { mutableStateOf(settings.keepScreenOn) }
+    var homeStyle by remember { mutableStateOf(settings.homeStyle) }
     // Tuvaldeki dört seçenek: Ücretsiz, DeepL, Gemini, Diğer (OpenAI / Claude).
     val segment = when (engine) {
         EngineChoice.FREE -> 0
@@ -121,6 +126,26 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
         settings.engine = choice
     }
     ScreenScaffold(top = { TopBar(stringResource(R.string.settings), onBack = onBack) }) {
+        // Nino: Arayüz (Mac ile aynı iki ana ekran).
+        Tile(Modifier.fillMaxWidth()) {
+            TileLabel("Arayüz")
+            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
+                listOf(HomeStyle.LIVING_ROOM to "Salon", HomeStyle.TOGGLE to "Cam düğme").forEach { (style, name) ->
+                    val selected = homeStyle == style
+                    Column(Modifier.weight(1f).border(if (selected) 2.dp else 1.dp, if (selected) Tokens.Color.accent else Tokens.Color.borderStrong,
+                        RoundedCornerShape(Tokens.Radius.control)).clickable { homeStyle = style; settings.homeStyle = style }.padding(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Box(Modifier.fillMaxWidth().height(64.dp), contentAlignment = Alignment.Center) {
+                            if (style == HomeStyle.LIVING_ROOM) LivingRoomThumbnail(Modifier.fillMaxWidth()) else GlassToggleThumbnail(Modifier.fillMaxWidth())
+                        }
+                        Text(name, style = Tokens.Type.body, color = if (selected) Tokens.Color.accentText else Tokens.Color.text)
+                    }
+                }
+            }
+            Text(if (homeStyle == HomeStyle.LIVING_ROOM) "Fişi prize takın; TV'de Nino açılsın, altyazı aksın." else "Düğmeyi sağa kaydırın; canlı TV yukarıdan insin.",
+                style = Tokens.Type.caption, color = Tokens.Color.secondary)
+        }
+        RowList(listOf({ RowItem("Sistem sağlığı", "Ağ, PS5 bağlantısı, görüntü ve çeviri hızı", onClick = onHealth) }))
         Tile(Modifier.fillMaxWidth()) {
             TileLabel(stringResource(R.string.settings_engine))
             Segmented(listOf(stringResource(R.string.engine_free_short), "DeepL", "Gemini", stringResource(R.string.engine_other)), segment) { index ->

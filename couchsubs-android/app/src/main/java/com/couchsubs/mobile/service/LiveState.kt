@@ -11,6 +11,8 @@ data class LiveStatus(
     val running: Boolean = false,
     /** Kısa durum metni: "PS5'e bağlanılıyor…", "Altyazılar okunuyor" gibi. */
     val phase: String = "",
+    /** Nino: PS5 görüntüsü şu an geliyor mu (bağlanırken ve koptuğunda false). */
+    val streaming: Boolean = false,
     val connectedTvs: Int = 0,
     /** Son gösterilen çeviriler, yeniden eskiye. */
     val recent: List<ShownPair> = emptyList(),
@@ -31,6 +33,8 @@ data class LiveStatus(
 
 object LiveState {
     private const val RECENT = 20
+    /** Nino: Sistem sağlığı ölçümleri (hizmet yazar, Ayarlar › Sistem sağlığı okur). */
+    val health = com.couchsubs.mobile.core.HealthRecorder()
     private val state = MutableStateFlow(LiveStatus())
     val status: StateFlow<LiveStatus> = state
 

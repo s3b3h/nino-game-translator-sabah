@@ -38,6 +38,7 @@ object Routes {
     const val PACKS = "packs"
     const val PROFILE = "profile"
     const val SETTINGS = "settings"
+    const val HEALTH = "health"
 
     /** Kurulumun eksik ilk adımı; hepsi tamamsa ana ekran. */
     fun next(): String {
@@ -128,8 +129,10 @@ class MainActivity : ComponentActivity() {
                     }
                     composable(Routes.SETTINGS) {
                         SettingsScreen(onBack = { navigation.popBackStack() }, onPacks = { navigation.navigate(Routes.PACKS) },
-                            onTarget = { navigation.navigate(Routes.TARGET) }, onPairing = { pairing(navigation) })
+                            onTarget = { navigation.navigate(Routes.TARGET) }, onPairing = { pairing(navigation) },
+                            onHealth = { navigation.navigate(Routes.HEALTH) })
                     }
+                    composable(Routes.HEALTH) { SystemHealthScreen(onBack = { navigation.popBackStack() }) }
                 }
                 if (showSplash) NinoSplash { showSplash = false }
                 }

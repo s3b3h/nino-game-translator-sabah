@@ -151,6 +151,7 @@ class TranslationService : Service() {
         acquireLocks()
         startedAt = System.currentTimeMillis()
         LiveState.update { LiveStatus(running = true, phase = getString(R.string.phase_preparing), startedAt = startedAt, engineLabel = engineLabel()) }
+        LiveState.health.sessionStarted()
         Telemetry.event(Telemetry.SESSION_START, "target" to settings.target.name.lowercase(), "engine" to settings.engine.name.lowercase(),
             "packs" to settings.packsEnabled)
         // Paketlerin açılması, çeviri modeli ve sunucu kurulumu ana iş parçacığında yapılırsa zayıf telefonda
@@ -214,6 +215,7 @@ class TranslationService : Service() {
                     hudTop = layout.hudTop(game)
                 }
                 LiveState.shown(pair, pair.packId?.let { packTitles[it] ?: it })
+                LiveState.health.line(pair.translationMs)
                 // Paket başına oturumda bir kez (her satırda olay göndermeyelim); toplam sayı oturum sonunda gider.
                 pair.packId?.let { id -> if (packsUsed.add(id)) Telemetry.event(Telemetry.PACK_HIT, "pack" to id) }
             }
@@ -242,7 +244,14 @@ class TranslationService : Service() {
                 }
             }
         }
-        val onState: (SessionState) -> Unit = { state -> LiveState.update { it.copy(phase = describe(state)) } }
+        val onState: (SessionState) -> Unit = { state ->
+            when (state) {
+                SessionState.Connecting -> LiveState.health.connecting()
+                SessionState.Streaming -> LiveState.health.streaming()
+                is SessionState.Disconnected -> LiveState.health.disconnected(if (state.kind == DisconnectKind.STOPPED) null else state.kind.name)
+            }
+            LiveState.update { it.copy(phase = describe(state), streaming = state == SessionState.Streaming) }
+        }
         val source = replacement?.create(this, onFrame, onState)
             ?: StreamSession(console, accountId, onFrame, onState, onConsoleMoved = { moved -> settings.console = moved })
         synchronized(lifecycle) {
@@ -256,7 +265,10 @@ class TranslationService : Service() {
             source.start()
         }
         background.scheduleWithFixedDelay({
-            session?.let { s -> LiveState.update { it.copy(framesReceived = s.framesReceived) } }
+            session?.let { s ->
+                LiveState.health.frameTotal(s.framesReceived)
+                LiveState.update { it.copy(framesReceived = s.framesReceived) }
+            }
         }, 2, 2, TimeUnit.SECONDS)
     }
 
@@ -358,11 +370,12 @@ class TranslationService : Service() {
         if (startedAt > 0) Telemetry.event(Telemetry.SESSION_STOP, "seconds" to (System.currentTimeMillis() - startedAt) / 1000,
             "pack_lines" to (pipeline?.packHits ?: 0), "lines" to LiveState.status.value.recent.size)
         releaseParts()
+        LiveState.health.sessionEnded()
         background.shutdownNow()
         ocr.shutdownNow()
         wakeLock?.takeIf { it.isHeld }?.release()
         wifiLock?.takeIf { it.isHeld }?.release()
-        LiveState.update { it.copy(running = false, phase = "", current = "") }
+        LiveState.update { it.copy(running = false, phase = "", current = "", streaming = false) }
         super.onDestroy()
     }
 }

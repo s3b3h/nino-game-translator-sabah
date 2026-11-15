@@ -20,6 +20,9 @@ import javax.crypto.spec.GCMParameterSpec
 /** Altyazının gösterileceği yer. */
 enum class SubtitleTarget { TV, PHONE }
 
+/** Nino: ana ekran arayüzü (Mac ile aynı): Salon (fişi prize takın) ya da Cam düğme. */
+enum class HomeStyle { LIVING_ROOM, TOGGLE }
+
 /** Çeviri motoru: ücretsiz cihaz üstü (ML Kit) ya da kullanıcının anahtarıyla çevrimiçi hizmet. */
 enum class EngineChoice { FREE, DEEPL, GEMINI, OPENAI, CLAUDE }
 
@@ -190,6 +193,11 @@ class AppSettings(context: Context) {
     var tourShown: Boolean
         get() = prefs.getBoolean("tourShown", false)
         set(value) = prefs.edit().putBoolean("tourShown", value).apply()
+
+    /** Nino: ana ekran arayüzü; varsayılan Salon (Mac'teki gibi). */
+    var homeStyle: HomeStyle
+        get() = enumOr(prefs.getString("homeStyle", null), HomeStyle.LIVING_ROOM)
+        set(value) = prefs.edit().putString("homeStyle", value.name).apply()
 
     /** Bildirim tercihleri: bağlantı koptuğunda ve yeni paket geldiğinde. */
     var notifyDisconnect: Boolean

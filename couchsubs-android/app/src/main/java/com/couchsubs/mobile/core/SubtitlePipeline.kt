@@ -12,7 +12,9 @@ fun interface TextTranslator {
 /** Gösterilen bir çeviri: nereden geldiği ("paket" ya da "motor") ve paketse hangi oyunun paketi. */
 data class ShownPair(val source: String, val translation: String, val origin: String, val packId: String? = null,
                      /** Nino: oyundaki altyazının ekrandaki yeri (öğrenmek için). */
-                     val box: TextBox? = null)
+                     val box: TextBox? = null,
+                     /** Nino: motorun çeviri süresi (Sistem sağlığı); paketten geldiyse null. */
+                     val translationMs: Long? = null)
 
 /**
  * Okunan satırlar → kararlılık → paket / çeviri → TV (Windows: SubtitlePipeline.cs, aynı kurallar). Yazı tanıma
@@ -199,6 +201,7 @@ class SubtitlePipeline(
 
     private fun translate(request: Request) {
         val source = request.source
+        val began = System.nanoTime()
         val translated = try {
             translator.translate(source)
         } catch (error: Exception) {
@@ -211,6 +214,7 @@ class SubtitlePipeline(
             return
         }
         onTranslationResult?.invoke(null)
+        val tookMs = (System.nanoTime() - began) / 1_000_000
         synchronized(lock) {
             if (request.session != session) return
             val shouldSend = stabilizer.shouldSend(source, translated)
@@ -223,7 +227,7 @@ class SubtitlePipeline(
             lastShown = request.number
             sender.sendSubtitle(translated, if (onScreen) 15000 else readingTime(translated), request.box)
         }
-        onPairShown?.invoke(ShownPair(source, translated, "motor", box = request.box))
+        onPairShown?.invoke(ShownPair(source, translated, "motor", box = request.box, translationMs = tookMs))
     }
 
     private fun remember(number: Int, source: String, translation: String?) {

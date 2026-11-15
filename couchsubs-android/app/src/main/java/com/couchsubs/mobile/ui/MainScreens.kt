@@ -61,6 +61,8 @@ import com.couchsubs.mobile.R
 import com.couchsubs.mobile.Services
 import com.couchsubs.mobile.service.LiveStatus
 import com.couchsubs.mobile.settings.SubtitleTarget
+import com.couchsubs.mobile.settings.HomeStyle
+import androidx.compose.ui.draw.clip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -120,35 +122,30 @@ fun MainScreen(
     }
 
     Box(Modifier.fillMaxSize()) {
-        // Nino (tasarım A): ortada TV'nin küçük kopyası, altında kaydırmalı anahtar ve tek satır kısayol.
+        // Nino: Mac ile aynı iki arayüz (Ayarlar › Arayüz). Salon: fişi prize takın. Cam düğme: sağa kaydırın, canlı TV insin.
         ScreenScaffold(top = topBar) {
             val onTv = settings.target == SubtitleTarget.TV
-            DemoScene(
-                height = 230.dp,
-                live = if (status.running) status.current else null,
-                badge = if (status.running) "CANLI" else "ÖRNEK",
-                chips = {
-                    ScreenChip("PS5 · " + (settings.console?.name ?: stringResource(R.string.profile_not_paired)), ok = if (paired) true else false, onClick = onPairing)
-                    if (onTv) ScreenChip("TV · " + (if (status.connectedTvs > 0) "Bağlı" else (settings.tvName ?: "Bekleniyor")),
-                        ok = if (status.connectedTvs > 0) true else null, onClick = onTarget)
-                },
-            )
-            Text(if (status.running) "Altyazılar canlı çevriliyor" else if (onTv) "TV'nizde böyle görünecek" else "Telefonunuzda böyle görünecek",
-                style = Tokens.Type.caption, color = Tokens.Color.secondary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-            SlideToTranslate(
-                running = status.running,
-                label = when {
-                    status.running -> "Türkçe altyazı açık"
-                    !paired -> "Önce PS5'inizi eşleyin"
-                    else -> "Kaydırın, Türkçe altyazı açılsın"
-                },
-                locked = !paired && !status.running,
-                modifier = mark(TourStep.START),
-                onStart = onStart, onStop = onStop, onLocked = onPairing,
-            )
+            if (settings.homeStyle == HomeStyle.LIVING_ROOM) {
+                Spacer(Modifier.height(8.dp))
+                LivingRoomScene(status, paired, mark(TourStep.START), onStart = onStart, onStop = onStop, onLocked = onPairing)
+                LivingRoomHint(status.running, paired)
+            } else {
+                androidx.compose.animation.AnimatedVisibility(status.running,
+                    enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                    exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()) {
+                    Box(Modifier.fillMaxWidth().height(200.dp).background(Color.Black, RoundedCornerShape(Tokens.Radius.tile))
+                        .clip(RoundedCornerShape(Tokens.Radius.tile))) { LiveTvScreen(status) }
+                }
+                Spacer(Modifier.height(if (status.running) 8.dp else 60.dp))
+                GlassTranslateToggle(status.running, starting = false, paired = paired, modifier = mark(TourStep.START),
+                    onStart = onStart, onStop = onStop, onLocked = onPairing)
+                Spacer(Modifier.height(12.dp))
+            }
             androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickLink(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, "Çıkış", if (onTv) "TV" else "Telefon", mark(TourStep.TARGET), onClick = onTarget)
+                QuickLink(Icons.Filled.SportsEsports, "PS5", settings.console?.name ?: stringResource(R.string.profile_not_paired), onClick = onPairing)
+                QuickLink(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, "Çıkış",
+                    if (onTv) (if (status.connectedTvs > 0) "TV · Bağlı" else "TV") else "Telefon", mark(TourStep.TARGET), onClick = onTarget)
                 QuickLink(Icons.Filled.Inventory2, "Paketler", if (settings.packsEnabled) stringResource(R.string.packs_free) else null, mark(TourStep.PACKS), onClick = onPacks)
                 QuickLink(Icons.Filled.Translate, "Çeviri", status.engineLabel.ifEmpty { engineName(context) }, onClick = onSettings)
             }
