@@ -39,7 +39,10 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 - **Oyun paketleri:** Red Dead Redemption 2 gibi oyunların hazır Türkçe çevirileri anında gelir.
 - **Türkçe dublaj (deneysel):** Çeviriyi Türkçe seslendirir. Oyunun kendi sesinden kimin konuştuğunu ve nasıl konuştuğunu (bağırma, fısıltı, soru) anlar; her karaktere kendi sesini verir.
 - **Altyazı temaları:** Klasik, Sinema, Cam ve daha fazlası; ayarlar ekranında canlı önizleme.
-- **Kendi kendini günceller:** Yeni sürüm çıkınca Mac uygulaması ana ekranda haber verir.
+- **İki ana ekran:** *Salon*: fişi prize takın, TV'de Nino açılsın, mavi LED'ler yansın ve altyazı aksın. *Cam düğme*: sağa kaydırın, canlı TV yukarıdan insin. Ayarlar › Arayüz'den seçilir.
+- **Sistem sağlığı:** Mac'in ağı (kablo/Wi-Fi), PS5 bağlantısı, görüntü kaybı ve çeviri hızı tek bakışta; sorun varsa ne yapılacağını söyler, kayıtları tek tıkla kaydeder.
+- **TV'nin girişine dokunmaz:** Nino HDMI'yi kendisi değiştirmez; TV'de "PS5'iniz HDMI 2'de" gibi yol gösterir, kumandanın kaynak tuşu hep çalışır.
+- **Kendi kendini günceller:** 0.1.5'ten itibaren Mac uygulaması yeni sürümü arka planda indirip kendisi kurar (0.1.4 ve öncesinden bir kez elle geçilir).
 
 ## Kimler kullanabilir
 
