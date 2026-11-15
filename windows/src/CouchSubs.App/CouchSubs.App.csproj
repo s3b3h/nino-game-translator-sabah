@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\logo.png" />
+    <Resource Include="Assets\living-room.png" />
     <!-- ShellWindow.xaml pencere simgesi olarak bunu okur; ApplicationIcon yalnız exe simgesidir. -->
     <Resource Include="Assets\CouchSubs.ico" />
   </ItemGroup>

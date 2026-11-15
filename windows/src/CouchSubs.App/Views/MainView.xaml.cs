@@ -11,7 +11,10 @@ using CouchSubs.Shell;
 
 namespace CouchSubs.App.Views;
 
-/// <summary>Ana ekran: başlat/durdur, PS5 ve TV durumu, uyarılar, son altyazı.</summary>
+/// <summary>
+/// Nino ana ekranı (Mac ile aynı düzen): ortada seçili arayüz (1. Salon, 2. Cam düğme; Ayarlar › Arayüz), altında
+/// uyarı kartları, en altta PS5 ve TV durumuyla Çeviri kısayolu.
+/// </summary>
 public partial class MainView : UserControl
 {
     private readonly AppController controller;
@@ -23,7 +26,7 @@ public partial class MainView : UserControl
         this.controller = controller;
         DataContext = controller;
         InitializeComponent();
-        OutputCard.Attach(controller);
+        ShowHome();
         controller.PropertyChanged += OnChanged;
         connectionWatch.Tick += async (_, _) => await controller.CheckConnectionsAsync();
         Loaded += (_, _) => connectionWatch.Start();
@@ -33,7 +36,7 @@ public partial class MainView : UserControl
             connectionWatch.Stop();
         };
         Refresh();
-        ShowTiles();
+        ShowStrip();
         ShowUpdate();
         _ = controller.CheckForUpdateAsync();
     }
@@ -43,8 +46,14 @@ public partial class MainView : UserControl
         if (e.PropertyName is nameof(AppController.IsRunning) or nameof(AppController.TranslatorStatus) or nameof(AppController.ModelInstalled)
             or nameof(AppController.OnlineIssue) or nameof(AppController.CanStart) or nameof(AppController.IsStarting))
             Refresh();
-        if (e.PropertyName is nameof(AppController.Settings) or nameof(AppController.InstalledPacks))
-            ShowTiles();
+        if (e.PropertyName is nameof(AppController.Settings))
+        {
+            ShowHome();
+            ShowStrip();
+        }
+        if (e.PropertyName is nameof(AppController.Ps5StatusText) or nameof(AppController.Ps5Tone) or nameof(AppController.TvStatusText)
+            or nameof(AppController.TvTone) or nameof(AppController.IsRunning) or nameof(AppController.SessionState))
+            ShowStrip();
         if (e.PropertyName is nameof(AppController.UpdateVersion) or nameof(AppController.Updating)
             or nameof(AppController.UpdateProgress) or nameof(AppController.UpdateError))
             ShowUpdate();
@@ -63,19 +72,45 @@ public partial class MainView : UserControl
         UpdateErrorText.Visibility = controller.UpdateError is null ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    /// <summary>
-    /// Çeviri karosunda seçili motor; paket karosu yalnız paketler açık, çeviri İngilizce→Türkçe ve kurulu paket varken
-    /// görünür (paketler yalnız o dil çiftinde kullanılır).
-    /// </summary>
-    private void ShowTiles()
+    private HomeStyle? shownHome;
+
+    /// <summary>Ayarlardaki arayüz: Salon ya da Cam düğme (değişince yeniden kurulur).</summary>
+    private void ShowHome()
+    {
+        var style = controller.Settings.HomeStyle;
+        if (shownHome == style) return;
+        shownHome = style;
+        HomeHost.Content = style == HomeStyle.LivingRoom ? new LivingRoomScene(controller) : new GlassToggleView(controller);
+    }
+
+    /// <summary>Alt şerit: PS5 ve TV (renkli nokta ve kısa durum), sağda seçili çeviri motoru.</summary>
+    private void ShowStrip()
     {
         var text = Localizer.Current;
         var settings = controller.Settings;
-        EngineText.Text = settings.Engine == TranslationEngine.Free ? text["Free"] : settings.Engine.DisplayName();
-        var packs = controller.InstalledPacks.Count;
-        var active = settings.GamePacks && settings.SourceLanguage == "en" && settings.TargetLanguage == "tr" && packs > 0;
-        PackTile.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
-        PackText.Text = text.Format("Game packs are on · %lld games translated in advance", packs);
+        EngineValue.Text = settings.Engine == TranslationEngine.Free ? text["Free"] : settings.Engine.DisplayName();
+        // Çeviri kapalıyken eşleşmiş PS5 için kısa yazı (uzun durum yazısı şeride sığmıyordu).
+        Ps5Value.Text = !controller.IsRunning && controller.Console is { } console
+            ? text["%@ · ready"].Replace("%@", string.IsNullOrEmpty(console.Name) ? "PS5" : console.Name)
+            : controller.Ps5StatusText;
+        Ps5Dot.Fill = ToneBrush(controller.Ps5Tone);
+        var tvVisible = controller.ShowsOnTv;
+        TvDot.Visibility = TvText.Visibility = tvVisible ? Visibility.Visible : Visibility.Collapsed;
+        TvValue.Text = controller.HasTv ? controller.TvStatusText : text["Connect a TV"] + " ›";
+        TvDot.Fill = controller.HasTv ? ToneBrush(controller.TvTone) : (System.Windows.Media.Brush)FindResource("warningBrush");
+    }
+
+    private System.Windows.Media.Brush ToneBrush(StatusTone tone) => (System.Windows.Media.Brush)FindResource(tone switch
+    {
+        StatusTone.Good => "successBrush",
+        StatusTone.Warning => "warningBrush",
+        _ => "textSecondaryBrush",
+    });
+
+    /// <summary>TV kurulmamışsa şeritteki TV yazısı sihirbazın TV adımını açar.</summary>
+    private void OnTvClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (!controller.HasTv) controller.Step = OnboardingStep.Tv;
     }
 
     private async void OnUpdate(object sender, RoutedEventArgs e) => await controller.InstallUpdateAsync();
@@ -83,11 +118,6 @@ public partial class MainView : UserControl
     private void Refresh()
     {
         var running = controller.IsRunning;
-        Toggle.Style = (Style)FindResource(running ? "DangerButton" : "PrimaryButton");
-        ToggleGlyph.Text = running ? Glyphs.Stop : Glyphs.Play;
-        ToggleText.Text = Localizer.Current[running ? "Stop translating" : "Start translating"];
-        // Altyazının gideceği bir yer yoksa (TV seçili ama bağlı değil) çeviri başlatılamaz.
-        Toggle.IsEnabled = !controller.IsStarting && (running || controller.CanStart);
         ModelCard.Visibility = controller.ModelInstalled ? Visibility.Collapsed : Visibility.Visible;
         EngineCard.Visibility = controller.TranslatorStatus == TranslatorStatus.EngineFailed ? Visibility.Visible : Visibility.Collapsed;
         // Çevrimiçi motor çeviremiyor; satırlar bu arada cihaz üstü modelle geliyor.
@@ -101,37 +131,9 @@ public partial class MainView : UserControl
         }
     }
 
-    /// <summary>
-    /// async void: buradan kaçan hata uygulamanın genel hata işleyicisine düşerdi. Başlatma ya da durdurma hatası
-    /// kaydedilir ve gösterilir; uygulama açık kalır.
-    /// </summary>
-    private async void OnToggle(object sender, RoutedEventArgs e)
-    {
-        var starting = !controller.IsRunning;
-        try
-        {
-            if (starting) await controller.StartAsync(); else controller.Stop();
-        }
-        catch (Exception error)
-        {
-            StartupGuard.Log(starting ? "Çeviri başlatılamadı" : "Çeviri durdurulamadı", error);
-            StartupGuard.Show(Application.Current, StartupGuard.ErrorMessage(error));
-        }
-    }
-
     private void OnSettings(object sender, RoutedEventArgs e) => SettingsWindow.Open(Window.GetWindow(this), controller);
 
     private void OnHistory(object sender, RoutedEventArgs e) => HistoryWindow.Open(Window.GetWindow(this), controller);
-
-    /// <summary>Deneme altyazısı (çeviri başlamadıysa altyazı sunucusu da açılır).</summary>
-    private async void OnTest(object sender, RoutedEventArgs e)
-    {
-        try { await controller.SendTestSubtitleAsync(); }
-        catch (Exception error) { StartupGuard.Log("Deneme altyazısı gönderilemedi", error); }
-    }
-
-    /// <summary>TV'siz kurulmuş uygulamada TV'yi sonradan bağlamak için sihirbazın TV adımı açılır.</summary>
-    private void OnConnectTv(object sender, RoutedEventArgs e) => controller.Step = OnboardingStep.Tv;
 
     private void OnDownload(object sender, RoutedEventArgs e) => controller.StartModelDownload();
 

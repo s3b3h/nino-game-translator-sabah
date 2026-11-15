@@ -15,10 +15,51 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TabControl x:Name="Sections" Style="{StaticResource SidebarTabs}" Tag="{t:T 'Settings'}">
+            <!-- Nino: Arayüz (Mac ile aynı): ana ekranın iki arayüzü ve uygulamanın görünümü. -->
+            <TabItem Header="{t:T 'Interface'}">
+                <StackPanel>
+                    <TextBlock Text="{t:T 'Interface'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
+                    <c:Card Title="{t:T 'Home screen'}" Margin="0,0,0,16">
+                        <UniformGrid Columns="2">
+                            <Button x:Name="HomeLivingRoom" Tag="LivingRoom" Click="OnHomeStyle" Margin="0,0,8,0" Padding="10" HorizontalContentAlignment="Stretch">
+                                <StackPanel>
+                                    <Border Background="#FF0A1433" CornerRadius="10" Height="130" Padding="12">
+                                        <Image Source="/Assets/living-room.png" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                                    </Border>
+                                    <TextBlock Text="{t:T 'Living room'}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                                    <TextBlock Text="{t:T 'Plug the cable into the socket to turn on Turkish subtitles.'}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="HomeToggle" Tag="Toggle" Click="OnHomeStyle" Margin="8,0,0,0" Padding="10" HorizontalContentAlignment="Stretch">
+                                <StackPanel>
+                                    <Border Background="#FF0A1433" CornerRadius="10" Height="130">
+                                        <Grid Width="150" Height="40">
+                                            <Border CornerRadius="20" Background="#FF5C6E99" />
+                                            <Ellipse Width="50" Height="50" HorizontalAlignment="Left" Margin="-5,-5,0,-5" Fill="#FF5C6E99" Stroke="#CCFFFFFF" StrokeThickness="1.5" />
+                                        </Grid>
+                                    </Border>
+                                    <TextBlock Text="{t:T 'Glass switch'}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                                    <TextBlock Text="{t:T 'Slide the glass switch; the TV drops down with the live subtitle.'}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Button>
+                        </UniformGrid>
+                    </c:Card>
+                    <!-- Uygulamanın görünümü: koyu, açık ya da Windows'un temasıyla aynı (varsayılan); anında uygulanır. -->
+                    <c:Card>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{t:T 'Appearance'}" VerticalAlignment="Center" Margin="0,0,16,0" />
+                            <ComboBox x:Name="AppearanceChoice" SelectionChanged="OnAppearance" MinWidth="200">
+                                <ComboBoxItem Content="{t:T 'Dark'}" Tag="Dark" />
+                                <ComboBoxItem Content="{t:T 'Light'}" Tag="Light" />
+                                <ComboBoxItem Content="{t:T 'Same as system'}" Tag="System" />
+                            </ComboBox>
+                        </StackPanel>
+                    </c:Card>
+                </StackPanel>
+            </TabItem>
             <TabItem Header="{t:T 'Subtitle appearance'}">
                 <StackPanel>
                     <TextBlock Text="{t:T 'Subtitle appearance'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
-                    <local:SubtitleOutputCard x:Name="OutputCard" Detailed="True" Margin="0,0,0,16" />
                     <!-- Görünüm ayarları bilgisayar ekranındaki pencereye de uygulanır. -->
                     <c:Card x:Name="StyleCard" Title="{t:T 'On the TV'}">
                         <StackPanel>
@@ -384,21 +425,16 @@
                     </c:Card>
                 </StackPanel>
             </TabItem>
+            <!-- Nino: Sistem sağlığı (Mac ile aynı); içerik kodla kurulur (SystemHealthPage). TV uygulaması kartı da burada. -->
+            <TabItem Header="{t:T 'System health'}">
+                <StackPanel>
+                    <TextBlock Text="{t:T 'System health'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
+                    <ContentControl x:Name="HealthHost" Focusable="False" />
+                </StackPanel>
+            </TabItem>
             <TabItem Header="{t:T 'About Nino'}">
                 <StackPanel>
                     <TextBlock Text="{t:T 'About Nino'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
-                    <s:TvAppCard Margin="0,0,0,16" />
-                    <!-- Uygulamanın görünümü: koyu (varsayılan), açık ya da Windows'un temasıyla aynı; anında uygulanır. -->
-                    <c:Card Margin="0,0,0,16">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{t:T 'Appearance'}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                            <ComboBox x:Name="AppearanceChoice" SelectionChanged="OnAppearance" MinWidth="200">
-                                <ComboBoxItem Content="{t:T 'Dark'}" Tag="Dark" />
-                                <ComboBoxItem Content="{t:T 'Light'}" Tag="Light" />
-                                <ComboBoxItem Content="{t:T 'Same as system'}" Tag="System" />
-                            </ComboBox>
-                        </StackPanel>
-                    </c:Card>
                     <c:Card>
                         <Grid>
                             <Button Content="{t:T 'About Nino'}" Click="OnAbout" />

@@ -55,7 +55,7 @@ public partial class SettingsWindow : Window
         controller.SnapshotRequested += OnSnapshot;
         Closed += (_, _) => controller.SnapshotRequested -= OnSnapshot;
         Dubbing.Attach(controller);
-        OutputCard.Attach(controller);
+        HealthHost.Content = new SystemHealthPage(controller);
         ShowStyleTitle();
         controller.PropertyChanged += OnControllerChanged;
         Closed += (_, _) => controller.PropertyChanged -= OnControllerChanged;
@@ -65,6 +65,7 @@ public partial class SettingsWindow : Window
         SharePool.IsChecked = settings.SharePool;
         ShowPacks();
         AppearanceChoice.SelectedItem = AppearanceChoice.Items.Cast<ComboBoxItem>().First(item => (string)item.Tag == settings.Appearance.ToString());
+        ShowHomeStyle();
         loading = false;
     }
 
@@ -614,14 +615,38 @@ public partial class SettingsWindow : Window
 
     private void OnAbout(object sender, RoutedEventArgs e) => AboutWindow.Open(this);
 
+    /// <summary>Nino: Baştan Kur iki seçenekli (Mac ile aynı): TV'den itibaren (PS5 hesabı kalır) ya da her şeyi sıfırla.</summary>
     private void OnReset(object sender, RoutedEventArgs e)
     {
-        var text = Localizer.Current;
-        var answer = MessageBox.Show(this, text["The saved PS5, account and TV connection will be removed."], text["Set up again?"],
-            MessageBoxButton.OKCancel, MessageBoxImage.Warning);
-        if (answer != MessageBoxResult.OK) return;
-        controller.ResetSetup();
-        Close();
+        switch (ResetChoiceWindow.Ask(this))
+        {
+            case ResetChoiceWindow.Choice.FromTv:
+                controller.ResetFromTv();
+                Close();
+                break;
+            case ResetChoiceWindow.Choice.Everything:
+                controller.ResetSetup();
+                Close();
+                break;
+        }
+    }
+
+    /// <summary>Arayüz kartları: seçili olanın çerçevesi vurgulanır.</summary>
+    private void OnHomeStyle(object sender, RoutedEventArgs e)
+    {
+        if (loading || sender is not Button { Tag: string tag } || !Enum.TryParse<HomeStyle>(tag, out var style)) return;
+        Update(s => s with { HomeStyle = style });
+        ShowHomeStyle();
+    }
+
+    private void ShowHomeStyle()
+    {
+        var style = controller.Settings.HomeStyle;
+        foreach (var (button, value) in new[] { (HomeLivingRoom, HomeStyle.LivingRoom), (HomeToggle, HomeStyle.Toggle) })
+        {
+            button.SetResourceReference(BorderBrushProperty, style == value ? "accentBrush" : "borderBrush");
+            button.BorderThickness = new Thickness(style == value ? 2 : 1);
+        }
     }
 
     private void OnDone(object sender, RoutedEventArgs e) => Close();
