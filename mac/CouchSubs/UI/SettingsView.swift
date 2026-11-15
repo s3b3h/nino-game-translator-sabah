@@ -5,20 +5,21 @@ import SwiftUI
 
 /// Ayarların bölümleri; solda kenar çubuğunda listelenir, sağda seçili olan gösterilir.
 enum SettingsSection: CaseIterable, Identifiable {
-    case appearance, display, dubbing, translation, packs, language, area, obs, updates, about
+    case interface, appearance, dubbing, translation, packs, language, area, obs, health, updates, about
 
     var id: Self { self }
 
     var title: LocalizedStringKey {
         switch self {
+        case .interface: "Interface"
         case .appearance: "Subtitle appearance"
-        case .display: "TV and screen"
         case .dubbing: "Turkish dubbing"
         case .translation: "Translation"
         case .packs: "Game packs"
         case .language: "Language"
         case .area: "Subtitle area"
         case .obs: "OBS overlay"
+        case .health: "System health"
         case .updates: "Updates"
         case .about: "About Nino"
         }
@@ -26,14 +27,15 @@ enum SettingsSection: CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
+        case .interface: "macwindow"
         case .appearance: "captions.bubble"
-        case .display: "tv"
         case .dubbing: "waveform"
         case .translation: "globe"
         case .packs: "shippingbox"
         case .language: "character.bubble"
         case .area: "rectangle.dashed"
         case .obs: "dot.radiowaves.left.and.right"
+        case .health: "waveform.path.ecg"
         case .updates: "arrow.down.circle"
         case .about: "info.circle"
         }
@@ -44,14 +46,15 @@ extension SettingsSection {
     /// Sistem Ayarları'ndaki gibi her bölümün kendi renkli simge kutusu.
     var tint: Color {
         switch self {
+        case .interface: Color(red: 0.36, green: 0.30, blue: 0.95)
         case .appearance: Color(red: 0.0, green: 0.44, blue: 0.82)
-        case .display: Color(red: 0.10, green: 0.55, blue: 0.95)
         case .dubbing: Color(red: 0.55, green: 0.33, blue: 0.95)
         case .translation: Color(red: 0.0, green: 0.62, blue: 0.75)
         case .packs: Color(red: 0.98, green: 0.55, blue: 0.10)
         case .language: Color(red: 0.20, green: 0.70, blue: 0.40)
         case .area: Color(red: 0.35, green: 0.40, blue: 0.95)
         case .obs: Color(red: 0.92, green: 0.26, blue: 0.30)
+        case .health: Color(red: 0.95, green: 0.30, blue: 0.45)
         case .updates: Color(red: 0.12, green: 0.62, blue: 0.36)
         case .about: Color(red: 0.45, green: 0.50, blue: 0.60)
         }
@@ -115,9 +118,9 @@ private struct SettingsList: View {
     @Binding var section: SettingsSection?
 
     private let groups: [[SettingsSection]] = [
-        [.appearance, .display, .translation, .language],
+        [.interface, .appearance, .translation, .language],
         [.packs, .dubbing, .area, .obs],
-        [.updates, .about],
+        [.health, .updates, .about],
     ]
 
     var body: some View {
@@ -265,18 +268,16 @@ private struct SettingsPage: View {
                     AppearanceCard()
                 }
                 SubtitleThemePicker(columns: 6)
-            case .display:
-                SubtitleOutputCard(detailed: true)
-                TVAppCard()
             case .dubbing: DubbingCard()
             case .translation: TranslationCard()
             case .packs: GamePacksPage()
             case .language: LanguageCard()
             case .area: AreaCards()
             case .obs: OBSCard()
+            case .health: SystemHealthPage()
             case .updates: UpdatesCard()
+            case .interface: InterfacePage()
             case .about:
-                AppThemeCard()
                 AboutCard()
             }
         }
@@ -435,17 +436,74 @@ private struct OBSCard: View {
 }
 
 /// Uygulamanın görünümü: koyu (varsayılan, onaylı tasarım), açık ya da sistemle aynı. Tüm pencerelere anında uygulanır.
-private struct AppThemeCard: View {
+/// Nino: Ayarlar › Arayüz. Ana ekranın iki arayüzü önizleme kartlarıyla seçilir (1. Salon, 2. Cam düğme); altta
+/// uygulama penceresinin görünümü (koyu, açık, sistemle aynı).
+private struct InterfacePage: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        Card {
-            Picker("Appearance", selection: $model.settings.appearance) {
-                Text("Dark").tag(AppAppearance.dark)
-                Text("Light").tag(AppAppearance.light)
-                Text("Same as system").tag(AppAppearance.system)
+        VStack(alignment: .leading, spacing: Theme.space("gap")) {
+            Card(title: "Home screen") {
+                HStack(alignment: .top, spacing: Theme.space("m")) {
+                    choice(.livingRoom, title: "Living room", detail: "Plug the cable into the socket to turn on Turkish subtitles.") {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(red: 0.04, green: 0.08, blue: 0.2))
+                            Image("LivingRoom").resizable().scaledToFit().padding(12)
+                                .shadow(color: Color(red: 0.12, green: 0.36, blue: 1.0).opacity(0.7), radius: 14)
+                        }
+                    }
+                    choice(.toggle, title: "Glass switch", detail: "Slide the glass switch; the TV drops down with the live subtitle.") {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(red: 0.04, green: 0.08, blue: 0.2))
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(LinearGradient(colors: [Color(red: 0.47, green: 0.55, blue: 0.70), Color(red: 0.30, green: 0.36, blue: 0.52)],
+                                                              startPoint: .top, endPoint: .bottom))
+                                    .frame(width: 150, height: 40)
+                                Circle().fill(Color(red: 0.36, green: 0.43, blue: 0.60))
+                                    .overlay(Circle().strokeBorder(Color.white.opacity(0.8), lineWidth: 1.5))
+                                    .overlay(Image(systemName: "power").font(.system(size: 16, weight: .bold)).foregroundStyle(.white))
+                                    .frame(width: 50, height: 50)
+                                    .offset(x: -5)
+                            }
+                        }
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            Card {
+                Picker("Appearance", selection: $model.settings.appearance) {
+                    Text("Dark").tag(AppAppearance.dark)
+                    Text("Light").tag(AppAppearance.light)
+                    Text("Same as system").tag(AppAppearance.system)
+                }
             }
         }
+    }
+
+    private func choice<Preview: View>(_ style: HomeStyle, title: LocalizedStringKey, detail: LocalizedStringKey,
+                                       @ViewBuilder preview: () -> Preview) -> some View {
+        let selected = model.settings.homeStyle == style
+        return Button { model.settings.homeStyle = style } label: {
+            VStack(alignment: .leading, spacing: Theme.space("s")) {
+                preview()
+                    .frame(height: 130)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                HStack(spacing: 6) {
+                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(selected ? Color.csAccent : Color.csSecondary)
+                    Text(title).font(.csBody.weight(.semibold)).foregroundStyle(Color.csText)
+                }
+                Text(detail).font(.csCaption).foregroundStyle(Color.csSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Theme.space("s"))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(selected ? Color.csAccent : Color.ninoGlassEdge, lineWidth: selected ? 2 : 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
@@ -503,13 +561,18 @@ private struct AboutCard: View {
                 Button("Set up again…") { confirmReset = true }.buttonStyle(.danger)
             }
         }
+        // Nino: çoğu zaman yalnız TV yeniden kurulmak istenir; PS5 hesabını yeniden girmek gerekmesin.
         .confirmationDialog("Set up again?", isPresented: $confirmReset) {
-            Button("Set up again", role: .destructive) {
+            Button("Set up again from the TV") {
+                model.resetFromTV()
+                dismiss()
+            }
+            Button("Reset everything", role: .destructive) {
                 model.resetSetup()
                 dismiss()
             }
         } message: {
-            Text("The saved PS5, account and TV connection will be removed.")
+            Text("From the TV: your PS5 account and PS5 pairing stay; only the TV connection is set up again. Reset everything: the saved PS5, account and TV connection are removed and you sign in to PSN again.")
         }
     }
 }

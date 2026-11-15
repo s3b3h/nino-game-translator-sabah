@@ -6,21 +6,21 @@ import XCTest
 
 /// Ayarlardaki görünüm: varsayılan koyu, kaydedilip geri okunur (Windows ile aynı testler).
 final class AppAppearanceTests: XCTestCase {
-    func testNewSettingsAreDark() {
-        XCTAssertEqual(UserSettings().appearance, .light)
+    func testNewSettingsFollowTheSystem() {
+        XCTAssertEqual(UserSettings().appearance, .system)
     }
 
-    func testExistingSettingsOpenDark() throws {
+    func testExistingSettingsFollowTheSystem() throws {
         let old = try JSONDecoder().decode(UserSettings.self,
                                            from: Data(#"{"sourceLanguage":"en","style":{"fontSize":58},"gamePacks":false}"#.utf8))
-        XCTAssertEqual(old.appearance, .light)
+        XCTAssertEqual(old.appearance, .system)
         XCTAssertEqual(old.style.fontSize, 58)
         XCTAssertFalse(old.gamePacks)
     }
 
-    func testUnknownAppearanceOpensDarkAndKeepsOtherSettings() throws {
+    func testUnknownAppearanceFollowsTheSystemAndKeepsOtherSettings() throws {
         let saved = try JSONDecoder().decode(UserSettings.self, from: Data(#"{"appearance":"sepia","targetLanguage":"de"}"#.utf8))
-        XCTAssertEqual(saved.appearance, .light)
+        XCTAssertEqual(saved.appearance, .system)
         XCTAssertEqual(saved.targetLanguage, "de")
     }
 
@@ -32,5 +32,16 @@ final class AppAppearanceTests: XCTestCase {
             XCTAssertTrue(String(decoding: data, as: UTF8.self).contains(#""appearance":"\#(appearance.rawValue)""#))
             XCTAssertEqual(try JSONDecoder().decode(UserSettings.self, from: data).appearance, appearance)
         }
+    }
+
+    func testHomeStyleIsSavedAndOldOrUnknownValuesOpenTheLivingRoom() throws {
+        XCTAssertEqual(UserSettings().homeStyle, .livingRoom)
+        var settings = UserSettings()
+        settings.homeStyle = .toggle
+        let saved = try JSONDecoder().decode(UserSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(saved.homeStyle, .toggle)
+        let unknown = try JSONDecoder().decode(UserSettings.self, from: Data(#"{"homeStyle":"spaceship","targetLanguage":"de"}"#.utf8))
+        XCTAssertEqual(unknown.homeStyle, .livingRoom)
+        XCTAssertEqual(unknown.targetLanguage, "de")
     }
 }

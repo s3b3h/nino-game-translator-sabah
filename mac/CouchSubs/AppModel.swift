@@ -561,8 +561,11 @@ final class AppModel: ObservableObject {
             RemotePlayLog.write("Nino \(AppIdentity.version), macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
             // Altyazı günlüğü (aynı klasörde altyazi.log): okunan satırlar ve akıbetleri, görüntü duraklamaları.
             SubtitleLog.enable()
+            // Ağ türü (kablo/Wi-Fi) ilk oturum başlamadan bilinsin.
+            _ = NetworkWatcher.shared
             let stalls = VideoStallTracker()
             RemotePlayLog.observe { line in
+                HealthRecorder.shared.remotePlayLine(line)
                 if let note = stalls.note(line) { SubtitleLog.write(note) }
             }
         }
@@ -774,8 +777,8 @@ final class AppModel: ObservableObject {
         store.save(SamsungTokenHolder.keptToken(stored: savedKey, received: pairing.key), for: StoreKey.tvKey)
         tvKeySaved = true
         tvAppMissing = !pairing.launched
-        // Daha önce "TV'm yok" seçildiyse TV bağlanınca altyazı TV'ye gider.
-        if settings.output == .computer { settings.output = .tv }
+        // Daha önce "TV'm yok" seçildiyse TV bağlanınca altyazı TV'ye de gider (Nino: hep ikisinde de).
+        if settings.output == .computer { settings.output = .both }
         if tv.brand == .lg {
             await refreshTVApp()
         } else {
@@ -1040,6 +1043,20 @@ final class AppModel: ObservableObject {
         step = .welcome
     }
 
+    /// Nino: "TV'den itibaren yeniden kur". PS5 hesabı (ikinci PSN hesabı) ve PS5 eşleşmesi korunur; yalnız TV bağlantısı ve
+    /// TV uygulamasının kaydı silinir, sihirbaz TV adımından devam eder (ardından deneme ve daha iyi çeviri).
+    func resetFromTV() {
+        stop()
+        [StoreKey.tv, StoreKey.tvKey, StoreKey.tvDevKey, StoreKey.tvAppVersion, StoreKey.setupComplete].forEach(store.remove)
+        tv = nil
+        tvKeySaved = false
+        tvApp = .unknown
+        tvAppMissing = false
+        // "TV'm yok" seçilmişse de TV adımı yeniden sorulur.
+        if settings.output == .computer { settings.output = .both }
+        step = .tv
+    }
+
     // MARK: - Çeviri
 
     func start() async {
@@ -1057,7 +1074,9 @@ final class AppModel: ObservableObject {
         lastMetrics = nil
         if settings.dubbing.enabled, dubbingModelReady { makeDubber().prepare() }
         SubtitleLog.write("oturum başladı: Nino \(AppIdentity.version), \(settings.sourceLanguage)→\(settings.targetLanguage), "
-            + "motor: \(onlineTranslationActive ? settings.onlineEngine.rawValue : "ücretsiz"), paketler: \(settings.gamePacks ? "açık" : "kapalı")")
+            + "motor: \(onlineTranslationActive ? settings.onlineEngine.rawValue : "ücretsiz"), paketler: \(settings.gamePacks ? "açık" : "kapalı")"
+            + ", ağ: \(NetworkWatcher.shared.kind)")
+        HealthRecorder.shared.sessionStarted()
 
         RemotePlayLog.write("Çeviri başladı; PS5'e bağlanılıyor: \(console.name) \(console.host)")
         let session = services.makeStream(console: console, accountId: accountId)
@@ -1370,7 +1389,10 @@ final class AppModel: ObservableObject {
                 }
             }
         }
-        pipeline.onMetrics = { [weak self] metrics in self?.lastMetrics = metrics }
+        pipeline.onMetrics = { [weak self] metrics in
+            self?.lastMetrics = metrics
+            HealthRecorder.shared.line(translationMs: metrics.translationMs)
+        }
         pipeline.onPrompts = { [weak self] prompts in self?.showPrompts(prompts) }
         // En alttaki öğretici/menü yazısı altyazı sanılmasın; yoksa üstündeki gerçek altyazı hiç okunmuyordu.
         pipeline.hudTop = currentHudTop
@@ -1546,7 +1568,13 @@ final class AppModel: ObservableObject {
         keeper?.stop()
         keeper = nil
         pipeline?.reset()
-        if pipeline != nil { SubtitleLog.write("oturum bitti") }
+        if pipeline != nil {
+            // Nino: oturumun sağlık özeti günlüğe de yazılır (kayıtları gönderen kullanıcının ekranını görmeden okunur).
+            HealthRecorder.shared.sessionEnded()
+            let summary = HealthReport.summary(HealthRecorder.shared.snapshot(), network: NetworkWatcher.shared.kind)
+            SubtitleLog.write("sağlık: " + summary.replacingOccurrences(of: "\n", with: " · "))
+            SubtitleLog.write("oturum bitti")
+        }
         pipeline = nil
         // Yeni "Başlat" eski oturumdan kalan (belki takılmış) okumayı beklemeden temiz başlar.
         frameGate.reset()
@@ -1575,9 +1603,18 @@ final class AppModel: ObservableObject {
         // Altyazı günlüğünde yalnız durumun türü (adres ve ayrıntı remoteplay.log'da).
         if state != sessionState {
             switch state {
-            case .connecting: SubtitleLog.write("PS5: bağlanıyor")
-            case .streaming: SubtitleLog.write("PS5: bağlandı")
-            case .disconnected: SubtitleLog.write("PS5: bağlantı yok")
+            case .connecting:
+                SubtitleLog.write("PS5: bağlanıyor")
+                HealthRecorder.shared.connecting()
+            case .streaming:
+                SubtitleLog.write("PS5: bağlandı")
+                HealthRecorder.shared.streaming()
+            case .disconnected(let reason):
+                SubtitleLog.write("PS5: bağlantı yok")
+                // Kullanıcının durdurması kopma sayılmaz.
+                // Yalnız sebebin adı (notFound("192.168…") gibi adres taşıyanların adresi özete girmez).
+                let name = String(String(describing: reason).prefix { $0 != "(" })
+                HealthRecorder.shared.disconnected(reason: reason == .stopped ? nil : name)
             }
         }
         sessionState = state

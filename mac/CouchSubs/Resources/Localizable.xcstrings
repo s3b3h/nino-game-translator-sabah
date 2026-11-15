@@ -10416,6 +10416,1094 @@
           }
         }
       }
+    },
+    "%1$@ lost packets and %2$@ freezes per minute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ lost packets and %2$@ freezes per minute"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dakikada %1$@ kayıp paket, %2$@ donma"
+          }
+        }
+      }
+    },
+    "%1$@ s per line (%2$d lines)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ s per line (%2$d lines)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Satır başına %1$@ sn (%2$d satır)"
+          }
+        }
+      }
+    },
+    "Cable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cable"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kablo"
+          }
+        }
+      }
+    },
+    "Connected, no drops" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected, no drops"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlı, kopma yok"
+          }
+        }
+      }
+    },
+    "Copy details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy details"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayrıntıları kopyala"
+          }
+        }
+      }
+    },
+    "Could be better" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could be better"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İyileştirilebilir"
+          }
+        }
+      }
+    },
+    "Could not be installed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not be installed"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurulamadı"
+          }
+        }
+      }
+    },
+    "Could not connect (%d tries)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not connect (%d tries)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlanamadı (%d deneme)"
+          }
+        }
+      }
+    },
+    "Details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayrıntılar"
+          }
+        }
+      }
+    },
+    "Dropped %d times while playing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dropped %d times while playing"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oynarken %d kez koptu"
+          }
+        }
+      }
+    },
+    "Good" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İyi"
+          }
+        }
+      }
+    },
+    "Installed (version %@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installed (version %@)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurulu (sürüm %@)"
+          }
+        }
+      }
+    },
+    "Look at the TV: tick “Always allow from this computer” and choose Allow." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look at the TV: tick “Always allow from this computer” and choose Allow."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'ye bakın: “Bu bilgisayardan her zaman izin ver” kutusunu işaretleyip İzin ver'i seçin."
+          }
+        }
+      }
+    },
+    "Measuring…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Measuring…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ölçülüyor…"
+          }
+        }
+      }
+    },
+    "No line translated yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No line translated yet"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Henüz çevrilen satır yok"
+          }
+        }
+      }
+    },
+    "No network" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No network"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ağ yok"
+          }
+        }
+      }
+    },
+    "Not installed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not installed"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurulu değil"
+          }
+        }
+      }
+    },
+    "Not measured yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not measured yet"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Henüz ölçülmedi"
+          }
+        }
+      }
+    },
+    "Not started" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not started"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başlamadı"
+          }
+        }
+      }
+    },
+    "Other connection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other connection"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başka bağlantı"
+          }
+        }
+      }
+    },
+    "PS5 connection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 connection"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 bağlantısı"
+          }
+        }
+      }
+    },
+    "PS5 picture" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 picture"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 görüntüsü"
+          }
+        }
+      }
+    },
+    "Problem" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problem"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorun var"
+          }
+        }
+      }
+    },
+    "Remote Play is being used on another device. Close it there." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote Play is being used on another device. Close it there."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzaktan Oynatma başka bir cihazda açık. Oradan kapatın."
+          }
+        }
+      }
+    },
+    "Results of the last translation session. They are measured again when you start translation." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Results of the last translation session. They are measured again when you start translation."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son çeviri oturumunun sonuçları. Çeviriyi başlatınca yeniden ölçülür."
+          }
+        }
+      }
+    },
+    "Save logs as zip" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save logs as zip"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kayıtları zip olarak kaydet"
+          }
+        }
+      }
+    },
+    "Start translation and play for a few minutes; Nino measures the connection while you play." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start translation and play for a few minutes; Nino measures the connection while you play."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çeviriyi başlatıp birkaç dakika oynayın; Nino bağlantıyı siz oynarken ölçer."
+          }
+        }
+      }
+    },
+    "Subtitles are not sent to a TV" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtitles are not sent to a TV"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altyazı TV'ye gönderilmiyor"
+          }
+        }
+      }
+    },
+    "System health" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System health"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem sağlığı"
+          }
+        }
+      }
+    },
+    "The PS5 did not accept this Mac. Pair the PS5 again from Settings › About Nino › Set up again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The PS5 did not accept this Mac. Pair the PS5 again from Settings › About Nino › Set up again."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 bu Mac'i kabul etmedi. PS5'i Ayarlar › Nino Hakkında › Yeniden kur'dan yeniden eşleyin."
+          }
+        }
+      }
+    },
+    "The PS5 is off or asleep. Turn it on, or turn on “Stay connected to the internet” in its rest mode settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The PS5 is off or asleep. Turn it on, or turn on “Stay connected to the internet” in its rest mode settings."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 kapalı ya da dinlenme modunda. Açın ya da dinlenme modu ayarlarında “İnternete bağlı kal”ı açın."
+          }
+        }
+      }
+    },
+    "The PS5 picture is losing data. Connect this Mac to the modem with a cable (a USB-C Ethernet adapter works). If that is not possible, move closer to the modem and use 5 GHz Wi-Fi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The PS5 picture is losing data. Connect this Mac to the modem with a cable (a USB-C Ethernet adapter works). If that is not possible, move closer to the modem and use 5 GHz Wi-Fi."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 görüntüsü veri kaybediyor. Bu Mac'i modeme kabloyla bağlayın (USB-C Ethernet adaptörü olur). Olmuyorsa modeme yaklaşın ve 5 GHz Wi-Fi kullanın."
+          }
+        }
+      }
+    },
+    "The TV app is not connected. Open the Nino app on the TV and check that the TV is on the same network as this Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The TV app is not connected. Open the Nino app on the TV and check that the TV is on the same network as this Mac."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV uygulaması bağlı değil. TV'de Nino uygulamasını açın ve TV'nin bu Mac'le aynı ağda olduğunu kontrol edin."
+          }
+        }
+      }
+    },
+    "The connection to the PS5 keeps dropping. Connect both the PS5 and this Mac to the modem with a cable." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The connection to the PS5 keeps dropping. Connect both the PS5 and this Mac to the modem with a cable."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 bağlantısı sık kopuyor. PS5'i ve bu Mac'i modeme kabloyla bağlayın."
+          }
+        }
+      }
+    },
+    "The logs could not be saved." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The logs could not be saved."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kayıtlar kaydedilemedi."
+          }
+        }
+      }
+    },
+    "The second account has a PS5 login passcode. Remove it on the PS5." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The second account has a PS5 login passcode. Remove it on the PS5."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İkinci hesabın PS5 giriş şifresi var. PS5'te şifreyi kaldırın."
+          }
+        }
+      }
+    },
+    "This Mac's network" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Mac's network"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Mac'in ağı"
+          }
+        }
+      }
+    },
+    "Translation is slow. Choose the Free engine in Settings › Translation and see whether it gets faster." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translation is slow. Choose the Free engine in Settings › Translation and see whether it gets faster."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çeviri yavaş. Ayarlar › Çeviri'de Ücretsiz motoru seçip hızlanıp hızlanmadığına bakın."
+          }
+        }
+      }
+    },
+    "Translation speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translation speed"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çeviri hızı"
+          }
+        }
+      }
+    },
+    "Turn on developer mode on the TV (Settings › TV and screen shows how)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on developer mode on the TV (Settings › TV and screen shows how)."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'de geliştirici modunu açın (Ayarlar › TV ve ekran nasıl yapılacağını gösterir)."
+          }
+        }
+      }
+    },
+    "Waiting for approval on the TV" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for approval on the TV"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'de onay bekleniyor"
+          }
+        }
+      }
+    },
+    "When the picture freezes, Nino cannot read the subtitles. Connect both the PS5 and this Mac to the modem with a cable." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the picture freezes, Nino cannot read the subtitles. Connect both the PS5 and this Mac to the modem with a cable."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görüntü donunca Nino altyazıyı okuyamaz. PS5'i ve bu Mac'i modeme kabloyla bağlayın."
+          }
+        }
+      }
+    },
+    "Wi-Fi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi"
+          }
+        }
+      }
+    },
+    "If something does not work, send the zip to whoever helps you. The logs contain the subtitles Nino read, the PS5's name and its address on your home network, but no password, key or account information." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If something does not work, send the zip to whoever helps you. The logs contain the subtitles Nino read, the PS5's name and its address on your home network, but no password, key or account information."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir şey çalışmazsa bu zip dosyasını size yardım eden kişiye gönderin. Kayıtlarda Nino'nun okuduğu altyazılar, PS5'in adı ve ev ağındaki adresi var; parola, anahtar ya da hesap bilgisi yok."
+          }
+        }
+      }
+    },
+    "This Mac is not connected to a network. Connect it to the same modem as the PS5." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Mac is not connected to a network. Connect it to the same modem as the PS5."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Mac bir ağa bağlı değil. PS5'le aynı modeme bağlayın."
+          }
+        }
+      }
+    },
+    "The PS5 did not answer on the network. Check that it is on (or in rest mode) and on the same network as this Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The PS5 did not answer on the network. Check that it is on (or in rest mode) and on the same network as this Mac."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 ağda yanıt vermedi. Açık (ya da dinlenme modunda) ve bu Mac'le aynı ağda olduğunu kontrol edin."
+          }
+        }
+      }
+    },
+    "Translation is slow. Close other heavy apps on this Mac and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translation is slow. Close other heavy apps on this Mac and try again."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çeviri yavaş. Bu Mac'te açık olan ağır uygulamaları kapatıp yeniden deneyin."
+          }
+        }
+      }
+    },
+    "Nino reads the PS5's English subtitles and shows them in Turkish on your TV." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino reads the PS5's English subtitles and shows them in Turkish on your TV."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino, PS5'teki İngilizce altyazıyı okur ve TV'nizde Türkçe gösterir."
+          }
+        }
+      }
+    },
+    "Subtitles are on" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtitles are on"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altyazı açık"
+          }
+        }
+      }
+    },
+    "Tap to start setup" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to start setup"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuruluma başlamak için dokunun"
+          }
+        }
+      }
+    },
+    "Turkish" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turkish"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Türkçe"
+          }
+        }
+      }
+    },
+    "Turkish subtitles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turkish subtitles"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Türkçe altyazı"
+          }
+        }
+      }
+    },
+    "Waiting for the next subtitle…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for the next subtitle…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıradaki altyazı bekleniyor…"
+          }
+        }
+      }
+    },
+    "Turn on" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aç"
+          }
+        }
+      }
+    },
+    "%@ · ready" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · ready"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · hazır"
+          }
+        }
+      }
+    },
+    "Connection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantı"
+          }
+        }
+      }
+    },
+    "Plug in to turn on Turkish subtitles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plug in to turn on Turkish subtitles"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Türkçe altyazı için fişi prize takın"
+          }
+        }
+      }
+    },
+    "Unplug to stop" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unplug to stop"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durdurmak için fişi çekin"
+          }
+        }
+      }
+    },
+    "NO SIGNAL" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NO SIGNAL"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SİNYAL YOK"
+          }
+        }
+      }
+    },
+    "Home screen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home screen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ana ekran"
+          }
+        }
+      }
+    },
+    "Glass switch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glass switch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cam düğme"
+          }
+        }
+      }
+    },
+    "Living room" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Living room"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salon"
+          }
+        }
+      }
+    },
+    "Interface" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interface"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arayüz"
+          }
+        }
+      }
+    },
+    "Plug the cable into the socket to turn on Turkish subtitles." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plug the cable into the socket to turn on Turkish subtitles."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Türkçe altyazıyı açmak için fişi prize takın."
+          }
+        }
+      }
+    },
+    "Slide the glass switch; the TV drops down with the live subtitle." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slide the glass switch; the TV drops down with the live subtitle."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cam düğmeyi kaydırın; canlı altyazıyla TV yukarıdan iner."
+          }
+        }
+      }
+    },
+    "Set up again from the TV" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set up again from the TV"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'den itibaren yeniden kur"
+          }
+        }
+      }
+    },
+    "Reset everything" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset everything"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her şeyi sıfırla"
+          }
+        }
+      }
+    },
+    "From the TV: your PS5 account and PS5 pairing stay; only the TV connection is set up again. Reset everything: the saved PS5, account and TV connection are removed and you sign in to PSN again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From the TV: your PS5 account and PS5 pairing stay; only the TV connection is set up again. Reset everything: the saved PS5, account and TV connection are removed and you sign in to PSN again."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'den itibaren: PS5 hesabınız ve PS5 eşleşmesi kalır, yalnız TV bağlantısı yeniden kurulur. Her şeyi sıfırla: kayıtlı PS5, hesap ve TV bağlantısı silinir, PSN'e yeniden giriş yaparsınız."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

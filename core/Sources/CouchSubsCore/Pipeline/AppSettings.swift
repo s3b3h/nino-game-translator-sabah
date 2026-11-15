@@ -77,9 +77,15 @@ public enum SubtitleOutput: String, Codable, CaseIterable {
     public var showsOnComputer: Bool { self != .tv }
 }
 
-/// Uygulama pencerelerinin görünümü (Windows'taki `AppAppearance` ile aynı). Onaylı tasarım koyudur; varsayılan da odur.
+/// Uygulama pencerelerinin görünümü (Windows'taki `AppAppearance` ile aynı). Nino: varsayılan sistemle aynıdır (açık ya da koyu).
 public enum AppAppearance: String, Codable, CaseIterable {
     case dark, light, system
+}
+
+/// Nino: ana ekranın arayüzü. 1. `livingRoom` (varsayılan): salon sahnesi (TV, sehpa, konsol, priz); fiş prize takılınca
+/// çeviri başlar, çekilince durur. 2. `toggle`: ortada cam anahtar, açılınca üstte canlı TV.
+public enum HomeStyle: String, Codable, CaseIterable {
+    case livingRoom, toggle
 }
 
 /// Kalıcı ayarlar (Anahtarlık değil, sıradan tercihler).
@@ -104,8 +110,9 @@ public struct UserSettings: Codable, Equatable {
     /// kullanıcının yazdığı model adı.
     public var localAIBaseURL = LocalAIServer.ollamaURL
     public var localAIModel = LocalAIServer.defaultModel
-    /// Altyazı TV'de mi, bilgisayar ekranındaki pencerede mi, ikisinde de mi. Eski kayıtlar TV ile açılır.
-    public var output = SubtitleOutput.tv
+    /// Altyazı TV'de mi, bilgisayar ekranındaki pencerede mi, ikisinde de mi. Nino: kullanıcı seçmez (Ayarlar'dan
+    /// kaldırıldı); TV'si olan herkeste ikisinde de görünür. Yalnız "TV'm yok" seçildiyse içeride `computer` kalır.
+    public var output = SubtitleOutput.both
     /// Bilgisayar ekranındaki altyazı penceresi tıklamaları alttaki pencereye (oyun, PS Remote Play) geçirir.
     public var overlayClickThrough = false
     /// Oyun paketlerindeki hazır Türkçe çeviriler kullanılır (yalnız İngilizce→Türkçe).
@@ -117,7 +124,9 @@ public struct UserSettings: Codable, Equatable {
     /// Nino: sol üstteki ipucu kutusu da çevrilir (alt kısımdaki menü ve tuş yazıları çevrilmez; altyazıya odak).
     public var translateCorners = true
     /// Koyu, açık ya da sistemle aynı. Eski kayıtlarda yoktur; onlar da koyu açılır.
-    public var appearance = AppAppearance.light
+    public var appearance = AppAppearance.system
+    /// Nino: ana ekranın arayüzü. Eski kayıtlarda yoktur; salon sahnesiyle açılır.
+    public var homeStyle = HomeStyle.livingRoom
 
     public init() {}
 
@@ -142,11 +151,14 @@ public struct UserSettings: Codable, Equatable {
         // Nino: eski varsayılan (Qwen, Türkçede çok hata yapıyor) kullanıcı seçmeden kaydedilmişti; yeni öneriye geçer.
         if localAIModel == "qwen2.5:7b" { localAIModel = defaults.localAIModel }
         output = (try? values.decodeIfPresent(SubtitleOutput.self, forKey: .output)) ?? defaults.output
+        // Nino: eski "yalnız TV" seçimi artık yok; TV'si olanlarda altyazı ikisinde de görünür.
+        if output == .tv { output = .both }
         overlayClickThrough = try values.decodeIfPresent(Bool.self, forKey: .overlayClickThrough) ?? defaults.overlayClickThrough
         gamePacks = try values.decodeIfPresent(Bool.self, forKey: .gamePacks) ?? defaults.gamePacks
         sharePool = try values.decodeIfPresent(Bool.self, forKey: .sharePool) ?? defaults.sharePool
         translateCorners = (try? values.decodeIfPresent(Bool.self, forKey: .translateCorners)) ?? defaults.translateCorners
         appearance = (try? values.decodeIfPresent(AppAppearance.self, forKey: .appearance)) ?? defaults.appearance
+        homeStyle = (try? values.decodeIfPresent(HomeStyle.self, forKey: .homeStyle)) ?? defaults.homeStyle
     }
 
     /// Hazır bölge seçilir; Özel seçilince kayıtlı bölge olduğu gibi kalır.

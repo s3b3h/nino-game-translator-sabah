@@ -16,27 +16,50 @@ struct MainView: View {
             MainHeader()
                 .padding(.horizontal, Theme.space("xl"))
                 .padding(.top, Theme.space("m"))
-            ScrollView {
-                VStack(spacing: Theme.space("l")) {
-                    if let release = updates.available { UpdateBanner(version: release.version) { updates.open() } }
-                    TVScreenCard()
-                        .padding(.top, Theme.space("s"))
-                    SlideToTranslate()
-                        .frame(maxWidth: 560)
-                    QuickLinks(open: { settingsSection = $0 })
-                    if model.settings.output.showsOnComputer {
-                        Button("Adjust the subtitle window") { model.overlayAdjusting = true }
-                            .buttonStyle(.ghost)
-                            .disabled(model.overlayAdjusting)
+            // Nino: ana ekran neredeyse tek düğme; pencere ne boyda olursa olsun düğme dikeyde ortada durur.
+            GeometryReader { geo in
+                ScrollView {
+                    VStack(spacing: Theme.space("l")) {
+                        if let release = updates.available { UpdateBanner(version: release.version) { updates.open() } }
+                        Spacer(minLength: 0)
+                        if (DebugPreview.home ?? model.settings.homeStyle) == .livingRoom {
+                            // Nino: ikinci arayüz, salon sahnesi (fişi prize tak → çeviri başlar).
+                            VStack(spacing: 14) {
+                                LivingRoomScene(available: CGSize(width: geo.size.width - 64, height: geo.size.height - 70))
+                                LivingRoomHint()
+                            }
+                            .frame(maxWidth: .infinity)
+                        } else {
+                        VStack(spacing: model.isRunning || DebugPreview.live ? 20 : 28) {
+                            // Çeviri açılınca TV yukarıdan iner, altındakiler aşağı kayar.
+                            if model.isRunning || DebugPreview.live {
+                                LiveTVScreen()
+                                    .transition(.move(edge: .top).combined(with: .opacity).combined(with: .scale(scale: 0.94)))
+                            }
+                            GlassTranslateToggle()
+                            LiveLine()
+                        }
+                        .padding(.vertical, model.isRunning || DebugPreview.live ? 12 : 40)
+                        .frame(maxWidth: .infinity)
+                        .animation(.spring(response: 0.6, dampingFraction: 0.86), value: model.isRunning)
+                        .background(PowerHalo())
+                        }
+                        if model.settings.output.showsOnComputer {
+                            Button("Adjust the subtitle window") { model.overlayAdjusting = true }
+                                .buttonStyle(.ghost)
+                                .disabled(model.overlayAdjusting)
+                        }
+                        VStack(spacing: Theme.space("m")) { MainWarnings() }
+                            .frame(maxWidth: 640)
+                        Spacer(minLength: 0)
                     }
-                    VStack(spacing: Theme.space("m")) { MainWarnings() }
-                        .frame(maxWidth: 640)
+                    .frame(maxWidth: .infinity, minHeight: geo.size.height)
+                    .padding(.horizontal, Theme.space("xl"))
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, Theme.space("xl"))
-                .padding(.bottom, Theme.space("xl"))
+                .scrollIndicators(.never)
             }
-            .scrollIndicators(.never)
+            // Durum ve kısayollar en altta tek satırlık ince şeritte (ortada yalnız TV ve düğme).
+            MainBottomBar(open: { settingsSection = $0 })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { await updates.check() }
@@ -46,194 +69,33 @@ struct MainView: View {
     }
 }
 
-/// TV'nin küçük kopyası: seçili temayla altyazı (çeviri sürerken gerçek satır), sol üstte PS5/TV durumu, sağ üstte canlı.
-private struct TVScreenCard: View {
+/// Çeviri sürerken TV'ye giden son Türkçe satır (önizleme kaldırıldı; satır düğmenin altında görünür).
+private struct LiveLine: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        VStack(spacing: Theme.space("s")) {
-            SubtitleStylePreview(style: model.settings.style, size: CGSize(width: 640, height: 360),
-                                 live: model.isRunning ? (model.lastTranslation, model.lastSource) : nil)
-                .overlay(alignment: .topLeading) {
-                    HStack(spacing: 6) {
-                        ScreenChip(text: "PS5 · " + model.ps5StatusText,
-                                   tone: AppModel.ps5Tone(model.sessionState, running: model.isRunning))
-                        if model.settings.output.showsOnTV {
-                            if model.hasTV {
-                                ScreenChip(text: "TV · " + (model.tvClients > 0 ? String(localized: "Connected") : String(localized: "Waiting for the TV app")),
-                                           tone: AppModel.tvTone(clients: model.tvClients, running: model.isRunning))
-                            } else {
-                                Button { model.step = .tv } label: { ScreenChip(text: String(localized: "Connect a TV") + " ›", tone: .warning) }
-                                    .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                    .padding(12)
-                }
-                .overlay(alignment: .topTrailing) {
-                    if model.isRunning {
-                        HStack(spacing: 6) {
-                            LiveDot()
-                            Text("LIVE").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-                        }
-                        .padding(.horizontal, 10).frame(height: 26)
-                        .background(Capsule().fill(Color.black.opacity(0.45)))
-                        .padding(12)
-                    } else {
-                        Text("SAMPLE").font(.system(size: 11, weight: .bold)).tracking(1.5).foregroundStyle(.white)
-                            .padding(.horizontal, 10).frame(height: 24)
-                            .background(Capsule().fill(Color.black.opacity(0.4)))
-                            .padding(12)
-                    }
-                }
-                .shadow(color: Color.csPro.opacity(0.18), radius: 24, y: 12)
-            Text(model.isRunning ? "Live on your TV" : "This is how it will look on your TV")
-                .font(.csCaption)
+        // Çeviri sürerken satır TV ekranında görünür; kapalıyken tek cümlelik açıklama.
+        if !model.isRunning && !DebugPreview.live {
+            Text("Nino reads the PS5's English subtitles and shows them in Turkish on your TV.")
+                .font(.csCallout)
                 .foregroundStyle(Color.csSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 420)
         }
     }
 }
 
-/// Önizleme ekranının köşesindeki küçük koyu etiket.
-private struct ScreenChip: View {
-    let text: String
-    let tone: StatusTone
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle().fill(tone == .good ? Color(red: 0.37, green: 0.83, blue: 0.6) : (tone == .warning ? Color.orange : Color.white.opacity(0.6)))
-                .frame(width: 7, height: 7)
-            Text(verbatim: text).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
-        }
-        .padding(.horizontal, 10).frame(height: 26)
-        .background(Capsule().fill(Color.black.opacity(0.45)))
-        .overlay(Capsule().strokeBorder(Color.white.opacity(0.18)))
-    }
-}
-
-/// Kaydırarak açılan çeviri anahtarı: düğmeyi sağa sürükleyince çeviri başlar, sola sürükleyince durur. Düğmeye
-/// tıklamak da aynı işi yapar (erişilebilirlik).
-private struct SlideToTranslate: View {
+/// Düğmenin arkasındaki yumuşak ışık: kapalıyken soluk mavi, açıkken bayrak kırmızısı.
+private struct PowerHalo: View {
     @EnvironmentObject private var model: AppModel
-    @State private var drag: CGFloat = 0
-    @State private var hovering = false
-
-    private var canUse: Bool { model.isRunning || (model.canStart && !model.isStarting) }
 
     var body: some View {
-        GeometryReader { geo in
-            let knob: CGFloat = 48
-            let travel = geo.size.width - knob - 8
-            let on = model.isRunning
-            let base: CGFloat = on ? travel : 0
-            let x = min(max(base + drag, 0), travel)
-            let progress = travel > 0 ? x / travel : 0
-            ZStack(alignment: .leading) {
-                // İz
-                Capsule()
-                    .fill(LinearGradient(colors: [Color.csAccent.opacity(0.15 + 0.85 * progress), Color(red: 0.0, green: 0.19, blue: 0.52).opacity(progress)],
-                                         startPoint: .leading, endPoint: .trailing))
-                    .background(Capsule().fill(Color.ninoGlassFill))
-                    .overlay(Capsule().strokeBorder(on ? Color.white.opacity(0.35) : Color.ninoGlassEdge))
-                // Yazı
-                Text(label)
-                    .font(.csBody.weight(.semibold))
-                    .foregroundStyle(progress > 0.5 ? Color.white : Color.csSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.leading, on ? 0 : knob)
-                    .padding(.trailing, on ? knob : 0)
-                    .opacity(model.isStarting ? 0.4 : 1)
-                // Düğme
-                ZStack {
-                    Circle().fill(on ? AnyShapeStyle(Color.white) : AnyShapeStyle(LinearGradient(colors: [Color.csAccentHi, Color(red: 0.0, green: 0.19, blue: 0.52)], startPoint: .top, endPoint: .bottom)))
-                    if model.isStarting {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Image(systemName: on ? "captions.bubble.fill" : "chevron.right.2")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(on ? Color.csAccent : Color.white)
-                    }
-                }
-                .frame(width: knob, height: knob)
-                .shadow(color: Color.csAccent.opacity(0.4), radius: 8, y: 3)
-                .scaleEffect(hovering ? 1.05 : 1)
-                .offset(x: 4 + x)
-                .gesture(DragGesture()
-                    .onChanged { drag = $0.translation.width }
-                    .onEnded { value in
-                        let end = base + value.translation.width
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { drag = 0 }
-                        if !on && end > travel * 0.7 { Task { await model.start() } }
-                        if on && end < travel * 0.3 { model.stop() }
-                    })
-                .onTapGesture { toggle() }
-                .onHover { h in withAnimation(.spring(response: 0.3)) { hovering = h } }
-            }
-            .frame(height: 56)
-            .animation(.spring(response: 0.45, dampingFraction: 0.8), value: model.isRunning)
-        }
-        .frame(height: 56)
-        .opacity(canUse ? 1 : 0.55)
-        .allowsHitTesting(canUse || !model.canStart)
-        .onTapGesture { if !model.canStart && !model.isRunning { model.step = .console } }
-        .accessibilityElement()
-        .accessibilityLabel(Text(model.isRunning ? "Stop translating" : "Start translating"))
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAction { toggle() }
-    }
-
-    private var label: LocalizedStringKey {
-        if model.isStarting { return "Connecting…" }
-        if model.isRunning { return "Turkish subtitles are on" }
-        if !model.canStart { return "Connect your PS5 first" }
-        return "Slide to turn on Turkish subtitles"
-    }
-
-    private func toggle() {
-        if model.isRunning { model.stop() } else if model.canStart { Task { await model.start() } } else { model.step = .console }
-    }
-}
-
-/// Tek satır kısayol: Tema · Çıkış · Çeviri; her biri ilgili ayar sayfasını açar.
-private struct QuickLinks: View {
-    @EnvironmentObject private var model: AppModel
-    let open: (SettingsSection) -> Void
-
-    var body: some View {
-        HStack(spacing: Theme.space("s")) {
-            link(symbol: "paintpalette", title: "Theme", value: Text(model.settings.style.theme.title)) { open(.appearance) }
-            dot
-            link(symbol: "tv", title: "Output", value: Text(outputName)) { open(.display) }
-            dot
-            link(symbol: "globe", title: "Translation",
-                 value: Text(verbatim: model.settings.translationEngine == .free ? String(localized: "Free") : model.settings.translationEngine.displayName)) { open(.translation) }
-        }
-        .font(.csCallout)
-    }
-
-    private var dot: some View { Text(verbatim: "·").foregroundStyle(Color.csSecondary) }
-
-    private var outputName: LocalizedStringKey {
-        switch model.settings.output {
-        case .tv: "TV"
-        case .computer: "Computer"
-        case .both: "Both"
-        }
-    }
-
-    private func link(symbol: String, title: LocalizedStringKey, value: Text, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: symbol).foregroundStyle(Color.csAccentText)
-                Text(title).foregroundStyle(Color.csSecondary)
-                value.fontWeight(.semibold).foregroundStyle(Color.csText)
-                Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold)).foregroundStyle(Color.csSecondary)
-            }
-            .padding(.horizontal, 12).frame(height: 32)
-            .ninoGlass(in: Capsule())
-            .overlay(Capsule().strokeBorder(Color.ninoGlassEdge))
-        }
-        .buttonStyle(.plain)
+        Circle()
+            .fill(model.isRunning || DebugPreview.live ? GlassTranslateToggle.flagRed.opacity(0.22) : Color.csAccent.opacity(0.10))
+            .frame(width: 520, height: 520)
+            .blur(radius: 90)
+            .animation(.easeInOut(duration: 0.6), value: model.isRunning)
+            .allowsHitTesting(false)
     }
 }
 
@@ -312,7 +174,6 @@ struct MainControls: View {
                 if model.settings.output.showsOnTV { TVStatusTile() }
             }
             .fixedSize(horizontal: false, vertical: true)
-            SubtitleOutputCard()
             HStack(alignment: .top, spacing: Theme.space("gap")) {
                 StatusTile(symbol: "globe", title: "Translation", value: engineName)
                 StatusTile(symbol: "keyboard", title: "Shortcut", value: String(localized: "Translate the screen (⌥⌘T)"))
