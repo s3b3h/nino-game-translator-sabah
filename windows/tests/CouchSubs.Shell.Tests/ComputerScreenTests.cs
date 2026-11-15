@@ -26,11 +26,11 @@ public class ComputerScreenTests
         AppControllerTests.Make(services, store ?? StoreWithoutTv(), settings);
 
     [Fact]
-    public void ExistingSettingsShowOnBoth()
+    public void ExistingSettingsShowOnTvOnly()
     {
-        // Nino: altyazının yeri seçilmez; TV'si olanlarda ikisinde de görünür (eski "yalnız TV" kaydı da açılışta Both olur).
+        // Nino: altyazının yeri seçilmez; TV'si olanlarda yalnız TV'de görünür, bilgisayarda en önde pencere açılmaz.
         var old = JsonSerializer.Deserialize<UserSettings>("""{"SourceLanguage":"en","Style":{"FontSize":58}}""")!;
-        Assert.Equal(SubtitleOutput.Both, old.Output);
+        Assert.Equal(SubtitleOutput.Tv, old.Output);
         Assert.False(old.OverlayClickThrough);
         Assert.Null(old.Overlay);
         Assert.Equal(58, old.Style.FontSize);
@@ -222,8 +222,8 @@ public class ComputerScreenTests
         var controller = Make();
         controller.Settings = controller.Settings with { Output = SubtitleOutput.Computer };
         await controller.PairAsync(new LgTv("LG TV", "192.168.1.153"));
-        // Nino: TV bağlanınca altyazı TV'ye de gider (ikisinde de).
-        Assert.Equal(SubtitleOutput.Both, controller.Settings.Output);
+        // Nino: TV bağlanınca altyazı TV'ye geçer; bilgisayarda en önde pencere açılmaz.
+        Assert.Equal(SubtitleOutput.Tv, controller.Settings.Output);
         controller.Dispose();
     }
 

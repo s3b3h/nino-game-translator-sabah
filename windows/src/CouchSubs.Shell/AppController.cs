@@ -99,8 +99,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         tv = store.Load<LgTv>(StoreKeys.Tv);
         var loaded = settingsStore.Load();
         settings = loaded.WithCuratedModels();
-        // Nino: eski "yalnız TV" seçimi artık yok; TV'si olanlarda altyazı ikisinde de görünür (Mac ile aynı).
-        if (settings.Output == SubtitleOutput.Tv) settings = settings with { Output = SubtitleOutput.Both };
+        // Nino: TV'si olanlarda altyazı yalnız TV'de; bilgisayarda en önde duran pencere açılmaz (Mac ile aynı).
+        if (settings.Output == SubtitleOutput.Both) settings = settings with { Output = SubtitleOutput.Tv };
         // Listede olmayan model varsayılana döndüyse ayar hemen kaydedilir.
         if (settings != loaded) settingsStore.Save(settings);
         var paired = tv is not null && store.Load<string>(StoreKeys.TvKey) is not null;
@@ -444,7 +444,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         store.Save(StoreKeys.TvKey, SamsungTokenHolder.KeptToken(savedKey, pairing.Key));
         tvAppMissing = !pairing.Launched;
         // Daha önce "TV'm yok" seçildiyse TV bağlanınca altyazı TV'ye gider.
-        if (settings.Output == SubtitleOutput.Computer) Settings = settings with { Output = SubtitleOutput.Both };
+        if (settings.Output == SubtitleOutput.Computer) Settings = settings with { Output = SubtitleOutput.Tv };
         Changed(nameof(Tv), nameof(CanAdvance), nameof(CanInstallTvApp), nameof(HasTv), nameof(NeedsTv), nameof(CanStart),
             nameof(TvStatusText), nameof(TvTone));
         if (target.Brand == TvBrand.Lg) await RefreshTvAppAsync();
@@ -984,7 +984,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         tvAppMissing = false;
         TvApp = TvAppState.Unknown;
         // "TV'm yok" seçilmişse de TV adımı yeniden sorulur.
-        if (settings.Output == SubtitleOutput.Computer) Settings = settings with { Output = SubtitleOutput.Both };
+        if (settings.Output == SubtitleOutput.Computer) Settings = settings with { Output = SubtitleOutput.Tv };
         Step = OnboardingStep.Tv;
         Changed(nameof(Tv), nameof(HasTv), nameof(NeedsTv), nameof(CanStart));
     }

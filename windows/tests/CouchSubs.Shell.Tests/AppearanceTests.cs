@@ -55,14 +55,14 @@ public class AppearanceTests
     }
 
     [Fact]
-    public void OldTvOnlyOutputBecomesBothButNoTvStaysComputer()
+    public void OldBothOutputBecomesTvButNoTvStaysComputer()
     {
-        var tvOnly = new MemorySettings();
-        tvOnly.Save(new UserSettings { Output = SubtitleOutput.Tv });
-        Assert.Equal(SubtitleOutput.Both, AppControllerTests.Make(settings: tvOnly).Settings.Output);
+        var both = new MemorySettings();
+        both.Save(new UserSettings { Output = SubtitleOutput.Both });
+        Assert.Equal(SubtitleOutput.Tv, AppControllerTests.Make(settings: both).Settings.Output);
         var noTv = new MemorySettings();
         noTv.Save(new UserSettings { Output = SubtitleOutput.Computer });
         Assert.Equal(SubtitleOutput.Computer, AppControllerTests.Make(settings: noTv).Settings.Output);
-        Assert.Equal(SubtitleOutput.Both, new UserSettings().Output);
+        Assert.Equal(SubtitleOutput.Tv, new UserSettings().Output);
     }
 }

@@ -189,7 +189,7 @@ public sealed record UserSettings
     /// Altyazı TV'de mi, bilgisayar ekranındaki pencerede mi, ikisinde de mi. Nino: kullanıcı seçmez (Ayarlar'dan kaldırıldı);
     /// TV'si olan herkeste ikisinde de görünür. Yalnız "TV'm yok" seçildiyse içeride Computer kalır.
     /// </summary>
-    public SubtitleOutput Output { get; init; } = SubtitleOutput.Both;
+    public SubtitleOutput Output { get; init; } = SubtitleOutput.Tv;
     /// <summary>Bilgisayar ekranındaki altyazı penceresi tıklamaları alttaki pencereye (oyun, PS Remote Play) geçirir.</summary>
     public bool OverlayClickThrough { get; init; }
     /// <summary>Altyazı penceresinin son yeri; null ise ana ekranın altında ortada açılır.</summary>

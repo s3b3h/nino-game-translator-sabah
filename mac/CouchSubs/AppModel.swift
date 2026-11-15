@@ -777,8 +777,8 @@ final class AppModel: ObservableObject {
         store.save(SamsungTokenHolder.keptToken(stored: savedKey, received: pairing.key), for: StoreKey.tvKey)
         tvKeySaved = true
         tvAppMissing = !pairing.launched
-        // Daha önce "TV'm yok" seçildiyse TV bağlanınca altyazı TV'ye de gider (Nino: hep ikisinde de).
-        if settings.output == .computer { settings.output = .both }
+        // Daha önce "TV'm yok" seçildiyse TV bağlanınca altyazı TV'ye geçer (Nino: bilgisayarda pencere açılmaz).
+        if settings.output == .computer { settings.output = .tv }
         if tv.brand == .lg {
             await refreshTVApp()
         } else {
@@ -1053,7 +1053,7 @@ final class AppModel: ObservableObject {
         tvApp = .unknown
         tvAppMissing = false
         // "TV'm yok" seçilmişse de TV adımı yeniden sorulur.
-        if settings.output == .computer { settings.output = .both }
+        if settings.output == .computer { settings.output = .tv }
         step = .tv
     }
 

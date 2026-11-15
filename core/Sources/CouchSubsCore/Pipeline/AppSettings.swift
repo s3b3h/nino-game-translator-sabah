@@ -112,7 +112,7 @@ public struct UserSettings: Codable, Equatable {
     public var localAIModel = LocalAIServer.defaultModel
     /// Altyazı TV'de mi, bilgisayar ekranındaki pencerede mi, ikisinde de mi. Nino: kullanıcı seçmez (Ayarlar'dan
     /// kaldırıldı); TV'si olan herkeste ikisinde de görünür. Yalnız "TV'm yok" seçildiyse içeride `computer` kalır.
-    public var output = SubtitleOutput.both
+    public var output = SubtitleOutput.tv
     /// Bilgisayar ekranındaki altyazı penceresi tıklamaları alttaki pencereye (oyun, PS Remote Play) geçirir.
     public var overlayClickThrough = false
     /// Oyun paketlerindeki hazır Türkçe çeviriler kullanılır (yalnız İngilizce→Türkçe).
@@ -151,8 +151,9 @@ public struct UserSettings: Codable, Equatable {
         // Nino: eski varsayılan (Qwen, Türkçede çok hata yapıyor) kullanıcı seçmeden kaydedilmişti; yeni öneriye geçer.
         if localAIModel == "qwen2.5:7b" { localAIModel = defaults.localAIModel }
         output = (try? values.decodeIfPresent(SubtitleOutput.self, forKey: .output)) ?? defaults.output
-        // Nino: eski "yalnız TV" seçimi artık yok; TV'si olanlarda altyazı ikisinde de görünür.
-        if output == .tv { output = .both }
+        // Nino: TV'si olanlarda altyazı yalnız TV'de; bilgisayarda en önde duran pencere açılmaz (çeviri uygulamanın
+        // içindeki canlı ekranda görünür). Önceki sürümün "ikisi de" varsayılanı TV'ye döner.
+        if output == .both { output = .tv }
         overlayClickThrough = try values.decodeIfPresent(Bool.self, forKey: .overlayClickThrough) ?? defaults.overlayClickThrough
         gamePacks = try values.decodeIfPresent(Bool.self, forKey: .gamePacks) ?? defaults.gamePacks
         sharePool = try values.decodeIfPresent(Bool.self, forKey: .sharePool) ?? defaults.sharePool
