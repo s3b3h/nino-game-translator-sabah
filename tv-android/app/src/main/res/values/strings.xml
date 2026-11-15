@@ -12,4 +12,5 @@
     <string name="overlay_unavailable">The PS5 picture is not coming through inside Nino. On some TVs it stays black here. Overlay mode fixes this, but it is only in the TV app that Nino on your computer installs: uninstall this copy, turn on USB debugging on the TV and start the translation on your computer.</string>
     <string name="overlay_permission_how">Nino on your computer grants it when it installs the TV app: start the translation there with USB debugging on. Or on the TV open Settings › Apps › Special app access › Display over other apps and turn on Nino.</string>
     <string name="overlay_active">Nino is on. Subtitles will appear over the PS5 picture; start translating from Nino on your computer or phone.</string>
+    <string name="press_input_again">Press the input button again to choose the PS5\'s input.</string>
 </resources>

@@ -11,4 +11,5 @@
     <string name="overlay_unavailable">PS5 görüntüsü Nino\'nun içinde gelmiyor. Bazı TV\'lerde görüntü burada siyah kalır. Katman modu bunu çözer ama yalnızca bilgisayardaki Nino\'nun kurduğu TV uygulamasında var: bu kopyayı kaldırın, TV\'de USB hata ayıklamayı açın ve çeviriyi bilgisayardan başlatın.</string>
     <string name="overlay_permission_how">Bilgisayardaki Nino bu izni TV uygulamasını kurarken kendisi verir: USB hata ayıklama açıkken çeviriyi oradan başlatın. Ya da TV\'de Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster\'den Nino\'yu açın.</string>
     <string name="overlay_active">Nino açık. Altyazılar PS5 görüntüsünün üstünde çıkacak; çeviriyi bilgisayardaki ya da telefondaki Nino\'dan başlatın.</string>
+    <string name="press_input_again">PS5\'in girişini seçmek için kaynak tuşuna bir daha basın.</string>
 </resources>

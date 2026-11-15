@@ -53,6 +53,34 @@ final class HdmiInputs {
         return found;
     }
 
+    /**
+     * Nino: PS5'in hangi HDMI'de olduğu, ekranda "HDMI n'e geçin" demek için. Önce kullanıcının TV'de girişe verdiği ad
+     * ("PS5", "PlayStation"), sonra tek bağlı giriş; bilinmiyorsa port 0 (ekranda numara yazılmaz, tahmin edilmez).
+     * Sonuç JSON: {"port": n, "label": "…"}.
+     */
+    static String consoleHint(Context context) {
+        List<TvInputInfo> inputs = list(context);
+        for (int i = 0; i < inputs.size(); i++) {
+            String label = labelOf(context, inputs.get(i));
+            String plain = label.toLowerCase(java.util.Locale.ROOT).replace(" ", "");
+            if (plain.contains("ps5") || plain.contains("playstation")) return hint(i + 1, label);
+        }
+        return hint(consolePort(context), "");
+    }
+
+    private static String labelOf(Context context, TvInputInfo input) {
+        try {
+            CharSequence custom = input.loadCustomLabel(context);
+            if (custom != null && custom.length() > 0) return custom.toString();
+        } catch (RuntimeException ignored) { /* bazı TV'ler desteklemez */ }
+        return "";
+    }
+
+    private static String hint(int port, String label) {
+        String safe = label.replace("\\", "").replace("\"", "");
+        return "{\"port\":" + port + ",\"label\":\"" + safe + "\"}";
+    }
+
     /** Girişte bir cihaz var mı; TV bunu bildirmiyorsa var sayılır. */
     static boolean hasSource(Context context, String id) {
         TvInputManager manager = manager(context);

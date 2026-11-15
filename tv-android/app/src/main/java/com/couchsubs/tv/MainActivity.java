@@ -36,6 +36,8 @@ public class MainActivity extends Activity implements TvPage.Host {
     private static final String EXTRA_DISPLAY_MODE = "displayMode";
     private static final long WATCH_EVERY_MS = 1000;
     private static final long HELP_VISIBLE_MS = 25_000;
+    /** Kaynak tuşundan sonra TV'nin kendi menüsünün açılması için beklenen süre. */
+    private static final long INPUT_MENU_WAIT_MS = 700;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private TvView tvView;
@@ -60,6 +62,12 @@ public class MainActivity extends Activity implements TvPage.Host {
         launchParams = paramsOf(intent);
         TvPage.storeDisplayMode(this, intent.getStringExtra(EXTRA_DISPLAY_MODE));
 
+        // Nino (bilgisayarın kurduğu derleme): TV'nin girişi hiçbir zaman değiştirilmez; bkz. startNino.
+        if (BuildConfig.OVERLAY_MODE) {
+            startNino(intent);
+            return;
+        }
+
         if (OverlayService.running && !intent.getBooleanExtra(EXTRA_FROM_OVERLAY, false)) {
             if (!launchParams.isEmpty()) {
                 // Bilgisayar uygulamayı yeni adresle açtı: katman sürer, adres ona iletilir.
@@ -81,6 +89,39 @@ public class MainActivity extends Activity implements TvPage.Host {
         }
         showInApp();
         if (start == DisplayMode.Start.IN_APP_NEEDS_PERMISSION) showPermissionHelp(R.string.overlay_permission_needed);
+    }
+
+    /**
+     * Nino: açılış. Katman izni varsa katman arka planda açılır (zaten açıksa yeni adres iletilir) ve TV'nin girişine
+     * dokunulmaz; kullanıcı kumandayla PS5'in girişine geçince altyazı oyunun üstünde görünür.
+     * - Ana ekrandan (kumandayla) açıldıysa sade Nino ekranı görünür: bağlantı durumu ve "PS5'iniz HDMI n'de" ipucu.
+     * - Bilgisayar açtıysa (çeviri başlarken) ekran gösterilmez; katman sessizce hazır olur.
+     * İzin yoksa (onaylanmamış kurulum) ekran bir kerelik onayın nasıl verileceğini anlatır.
+     */
+    private void startNino(Intent intent) {
+        boolean fromLauncher = Intent.ACTION_MAIN.equals(intent.getAction());
+        if (overlayAllowed()) {
+            if (!OverlayService.running || !launchParams.isEmpty()) OverlayService.start(this, launchParams);
+            if (!fromLauncher && page == null) {
+                finish();
+                return;
+            }
+            if (page == null) showHome("home");
+        } else if (page == null) {
+            showHome("permission");
+        }
+    }
+
+    /** Nino'nun sade ekranı: HDMI görüntüsü yok (TvView açılmaz), yalnız sayfa. */
+    private void showHome(String mode) {
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(Color.BLACK);
+        page = new TvPage(this, this, launchParams, false);
+        page.setHomeMode(mode);
+        root.addView(page.webView);
+        setContentView(root);
+        page.load();
+        page.webView.requestFocus();
     }
 
     /** Katman açılabilir mi: bu derlemede var (Play paketinde yok) ve "Diğer uygulamaların üzerinde göster" izni verilmiş. */
@@ -242,6 +283,12 @@ public class MainActivity extends Activity implements TvPage.Host {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        if (BuildConfig.OVERLAY_MODE) {
+            String params = paramsOf(intent);
+            if (!params.isEmpty()) launchParams = params;
+            startNino(intent);
+            return;
+        }
         TvPage.storeDisplayMode(this, intent.getStringExtra(EXTRA_DISPLAY_MODE));
         if (page == null) return;
         if (DisplayMode.OVERLAY.equals(TvPage.storedDisplayMode(this)) && overlayAllowed()) {
@@ -265,10 +312,39 @@ public class MainActivity extends Activity implements TvPage.Host {
     /** Geri ve renk tuşlarını sayfaya bildirir; diğerleri WebView'e kendiliğinden gider. */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        // Nino: kaynak (giriş) ve HDMI tuşları sayfaya hiç gitmez, TV'nin kendisine kalır. Bazı TV'lerde (TCL) WebView bu
+        // tuşu yutuyor, kaynak menüsü hiç açılmıyordu.
+        if (isTvInputKey(event.getKeyCode())) {
+            if (event.getAction() == KeyEvent.ACTION_UP && event.getKeyCode() == KeyEvent.KEYCODE_TV_INPUT) {
+                handler.postDelayed(this::inputMenuFallback, INPUT_MENU_WAIT_MS);
+            }
+            return false;
+        }
         int code = pageKey(event.getKeyCode());
         if (code == 0 || page == null) return super.dispatchKeyEvent(event);
         if (event.getAction() == KeyEvent.ACTION_DOWN) page.key(code);
         return true;
+    }
+
+    static boolean isTvInputKey(int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_TV_INPUT
+                || (keyCode >= KeyEvent.KEYCODE_TV_INPUT_HDMI_1 && keyCode <= KeyEvent.KEYCODE_TV_INPUT_HDMI_4);
+    }
+
+    /**
+     * Kaynak tuşuna basıldı ama TV'nin kaynak menüsü açılmadı (Nino ekranı hâlâ odakta): Nino TV'nin canlı yayın
+     * ekranına (en son girişi) bırakılır ve kapanır; orada kaynak tuşu her TV'de çalışır.
+     */
+    private void inputMenuFallback() {
+        if (isFinishing() || !hasWindowFocus()) return;
+        if (tvView != null) tvView.reset();
+        try {
+            startActivity(new Intent("com.android.tv.action.FORCE_LAUNCH_ON_BOOT").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            Toast.makeText(this, R.string.press_input_again, Toast.LENGTH_LONG).show();
+        } catch (RuntimeException ignored) {
+            // Canlı yayın uygulaması yok: Nino kapanır, TV ana ekranına döner.
+        }
+        finish();
     }
 
     private static int pageKey(int keyCode) {

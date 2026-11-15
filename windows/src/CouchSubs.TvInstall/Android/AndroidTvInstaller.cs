@@ -94,6 +94,9 @@ public sealed partial class AndroidTvInstaller(string host, string keyDirectory,
             await adb.RunAsync($"shell:am start -n {PackageName}/.MainActivity", cancellationToken: cancellationToken);
             return (installed, false);
         }
+        // Nino: eski sürüm varsa önce tamamen kaldırılır (ayarları ve kalıntılarıyla), yeni sürüm temiz kurulur.
+        if (installed is not null)
+            await adb.RunAsync($"shell:pm uninstall {PackageName}", cancellationToken: cancellationToken);
         await InstallAsync(adb, apkPath, cancellationToken);
         await GrantOverlayAsync(adb, cancellationToken);
         await adb.RunAsync($"shell:am start -n {PackageName}/.MainActivity", cancellationToken: cancellationToken);

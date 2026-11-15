@@ -44,6 +44,8 @@ final class TvPage {
     private final boolean overlay;
     private final Handler ui = new Handler(Looper.getMainLooper());
     private String launchParams;
+    /** Nino: "home" (ana ekran, katman izinli), "permission" (izin gerekiyor) ya da "" (eski uygulama içi görünüm). */
+    private String homeMode = "";
 
     TvPage(Context context, Host host, String launchParams, boolean overlay) {
         this.context = context;
@@ -69,6 +71,8 @@ final class TvPage {
         webView.setInitialScale(fitScalePercent());
         webView.addJavascriptInterface(new Bridge(), "AndroidTV");
     }
+
+    void setHomeMode(String mode) { homeMode = mode == null ? "" : mode; }
 
     void load() {
         webView.loadUrl("file:///android_asset/tv/index.html");
@@ -145,6 +149,12 @@ final class TvPage {
 
         @JavascriptInterface
         public int consolePort() { return HdmiInputs.consolePort(context); }
+
+        @JavascriptInterface
+        public String homeMode() { return homeMode; }
+
+        @JavascriptInterface
+        public String consoleHint() { return HdmiInputs.consoleHint(context); }
 
         @JavascriptInterface
         public String localAddress() {

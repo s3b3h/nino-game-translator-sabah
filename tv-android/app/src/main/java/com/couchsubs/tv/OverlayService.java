@@ -5,19 +5,16 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.graphics.PixelFormat;
-import android.media.tv.TvContract;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.provider.Settings;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 /**
  * Katman modu: HDMI'yı TV kendi giriş ekranında gösterir, altyazı onun üstündeki şeffaf bir pencerede durur.
@@ -33,8 +30,6 @@ public class OverlayService extends Service implements TvPage.Host {
     private static final String EXTRA_PARAMS = "params";
     private static final String CHANNEL = "overlay";
     private static final int NOTIFICATION_ID = 1;
-    /** Sayfa açılışta önce kayıtlı girişi, hemen ardından bulduğu konsolu ister; TV iki kez giriş değiştirmesin. */
-    private static final long INPUT_SETTLE_MS = 500;
 
     /** Servis çalışıyor mu; MainActivity yeniden açıldığında katmanı kapatmak için bakar. */
     static volatile boolean running;
@@ -42,11 +37,6 @@ public class OverlayService extends Service implements TvPage.Host {
     private final Handler ui = new Handler(Looper.getMainLooper());
     private WindowManager windows;
     private TvPage page;
-    /** TV'nin en son geçirildiği giriş (0: henüz geçilmedi). */
-    /** -1: henüz hiçbir girişe geçilmedi. 0: TV'nin son girişi (bkz. showHdmi). */
-    private int tunedPort = -1;
-    private int pendingPort;
-    private final Runnable switchInput = () -> switchInput(pendingPort);
 
     static void start(Context context, String params) {
         Intent intent = new Intent(context, OverlayService.class).putExtra(EXTRA_PARAMS, params == null ? "" : params);
@@ -71,8 +61,7 @@ public class OverlayService extends Service implements TvPage.Host {
             }
             running = true;
         } else if (params != null && !params.isEmpty()) {
-            // CouchSubs yeni adresle yeniden başlatıldı; TV başka bir uygulamaya geçmiş olabilir, giriş yeniden açılır.
-            tunedPort = -1;
+            // Bilgisayar yeni adresle yeniden başlattı: adres sayfaya iletilir (giriş değişmez).
             page.relaunch(params);
         }
         return START_NOT_STICKY;
@@ -106,51 +95,13 @@ public class OverlayService extends Service implements TvPage.Host {
         return true;
     }
 
-    /** TV'yi kendi HDMI giriş ekranına geçirir; altyazı penceresi üstte kalır. */
+    /**
+     * Nino: katman girişi hiçbir zaman değiştirmez. Kullanıcı kumandayla PS5'in girişine geçer; altyazı o zaman
+     * görüntünün üstünde görünür. (Eskiden burada TV PS5 girişine zorlanıyordu; başka HDMI'ye geçilemiyordu.)
+     */
     @Override
     public void showHdmi(int port) {
-        if (page == null) return;
-        if (port == tunedPort) {
-            page.status("ready");
-            return;
-        }
-        pendingPort = port;
-        ui.removeCallbacks(switchInput);
-        ui.postDelayed(switchInput, INPUT_SETTLE_MS);
-    }
-
-    private void switchInput(int port) {
-        if (page == null) return;
-        // Nino: hangi girişin PS5 olduğu bilinmiyorsa (port 0) HDMI 1'e zorlanmaz; TV'nin kendi canlı yayın uygulaması
-        // açılır ve TV en son hangi girişteyse ona döner. Eskiden kumandadan açınca hep HDMI 1 (ör. soundbar) geliyordu.
-        if (port == 0) {
-            Intent live = new Intent("com.android.tv.action.FORCE_LAUNCH_ON_BOOT").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            try {
-                startActivity(live);
-                tunedPort = 0;
-                page.status("ready");
-                return;
-            } catch (ActivityNotFoundException | SecurityException e) {
-                port = 1;
-            }
-        }
-        String id = HdmiInputs.idForPort(this, port);
-        if (id == null) {
-            page.status("sourceError");
-            return;
-        }
-        Intent view = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(id))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            startActivity(view);
-            tunedPort = port;
-            page.status("ready");
-        } catch (ActivityNotFoundException | SecurityException e) {
-            // TV bu yolla girişe geçemiyor: kullanıcı girişi kumandadan seçer, altyazı yine üstte görünür.
-            tunedPort = port;
-            page.status("sourceError");
-            Toast.makeText(this, getString(R.string.overlay_choose_input, port), Toast.LENGTH_LONG).show();
-        }
+        if (page != null) page.status("ready");
     }
 
     @Override
