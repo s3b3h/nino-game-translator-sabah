@@ -28,7 +28,10 @@ PS5 ──HDMI──▶ TV  ◀── Türkçe altyazı (TV'deki Nino uygulamas�
 Oyunu her zamanki gibi TV'de, kendi kolunuzla oynarsınız. Bilgisayardaki (ya da telefondaki) Nino aynı görüntüyü Remote Play ile izler,
 altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizcenin tam üstüne, tam opak bir kutuyla koyar.
 
-<p align="center"><img src="docs/nino/mac-ana.png" width="720" alt="Nino Mac uygulaması"></p>
+<p align="center">
+  <img src="docs/nino/mac-salon.png" width="440" alt="Nino Mac: Salon ana ekranı, fiş takılı, TV'de Türkçe altyazı">&nbsp;
+  <img src="docs/nino/mac-cam-dugme.png" width="440" alt="Nino Mac: Cam düğme ana ekranı, Türkçe açık">
+</p>
 
 ## Neler yapar
 
@@ -59,6 +62,12 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 | **LG** (webOS) | 🧪 Deneysel |
 | **Samsung** (Tizen) | 🧪 Deneysel |
 | TV uygulaması kurmadan | ✅ Altyazı bilgisayar ya da telefon ekranında da gösterilebilir |
+
+<p align="center">
+  <img src="docs/nino/android-salon.png" width="200" alt="Android telefon: Salon">&nbsp;
+  <img src="docs/nino/android-cam-dugme.png" width="200" alt="Android telefon: Cam düğme">&nbsp;
+  <img src="docs/nino/android-ayarlar.png" width="200" alt="Android telefon: Arayüz ve Sistem sağlığı ayarları">
+</p>
 
 <p align="center">
   <img src="docs/nino/app-store/2-ana-ekran.png" width="200" alt="iPhone ana ekran">&nbsp;
