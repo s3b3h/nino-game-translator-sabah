@@ -26,10 +26,16 @@
 	<string>AGPL-3.0. Based on CouchSubs by Sinan Yorulmaz. Uses chiaki-ng (AGPL-3.0).</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Nino finds your PS5 and TV on the local network to send translated subtitles.</string>
+	<key>SUAllowsAutomaticUpdates</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
 	<key>SUEnableAutomaticChecks</key>
-	<false/>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>GRsdOlnDQSm2yPnUTF/VoD/0202u2J0GPmJ8CCzVdfc=</string>
+	<string>6cKlWabXU8zDCWKxq0PyPS0Hzk26EdCJoAN9JzXYcXE=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>3600</integer>
 </dict>

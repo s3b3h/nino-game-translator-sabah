@@ -535,7 +535,7 @@ private struct UpdatesCard: View {
                     Button("What's new") { updates.openNotes() }.buttonStyle(.secondary)
                     Button("Download") { updates.open() }.buttonStyle(CSButtonStyle(kind: .primary))
                 }
-                HintText(text: "Open the downloaded zip and drag Nino into Applications, replacing the old one. Your settings stay.")
+                HintText(text: "Nino downloads the update, installs it and opens again. Your settings stay.")
             } else {
                 switch updates.state {
                 case .upToDate: DoneLabel(text: String(localized: "You have the latest version."))
@@ -543,7 +543,7 @@ private struct UpdatesCard: View {
                 case .idle, .checking: EmptyView()
                 }
             }
-            HintText(text: "Nino also checks for a new version by itself when it opens and tells you on the main screen.")
+            HintText(text: "Nino checks for new versions by itself and installs them in the background; the new version opens the next time you start Nino.")
         }
     }
 }

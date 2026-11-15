@@ -1,10 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Nino: güncelleme denetimi. Açılışta GitHub'daki son sürüme bakılır; daha yenisi varsa ana ekranda bildirilir ve tek
-// tıkla indirilir. (CouchSubs'ın Sparkle güncelleyicisi Nino'da kapalı; sürümler GitHub Releases'tan dağıtılır.)
+// Nino: güncelleme denetimi. Açılışta GitHub'daki son sürüme bakılır; daha yenisi varsa ana ekranda bildirilir.
+// GitHub sürümünde (App Store dışı) asıl işi Sparkle yapar: yeni sürüm arka planda iner ve uygulama kapanınca kendiliğinden
+// kurulur; "İndir" düğmesi de Sparkle'ın kurulumunu hemen başlatır. App Store sürümünde güncellemeyi App Store yapar.
 
 import AppKit
 import CouchSubsCore
 import Foundation
+#if !APP_STORE
+import Sparkle
+
+/// Nino'nun tek Sparkle güncelleyicisi (bkz. project.yml: SUFeedURL, SUPublicEDKey, SUAutomaticallyUpdate).
+@MainActor
+enum AppUpdater {
+    static let controller = SPUStandardUpdaterController(
+        // Testlerde başlamaz (test sürecinde güncelleme penceresi açılmasın).
+        startingUpdater: ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+        updaterDelegate: nil, userDriverDelegate: nil)
+}
+#endif
 
 @MainActor
 final class NinoUpdates: ObservableObject {
@@ -54,7 +67,12 @@ final class NinoUpdates: ObservableObject {
 
     func open() {
         guard let available else { return }
+        #if !APP_STORE
+        // Sparkle indirir, imzayı doğrular, kurar ve uygulamayı yeniden açar.
+        AppUpdater.controller.checkForUpdates(nil)
+        #else
         NSWorkspace.shared.open(available.download ?? available.page)
+        #endif
     }
 
     /// Sürüm notları (GitHub'daki sayfa).

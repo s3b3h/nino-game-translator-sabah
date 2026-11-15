@@ -137,40 +137,40 @@ if [[ -n "$DEVELOPER_ID" && -n "$NOTARY_PROFILE" ]]; then
   xcrun stapler staple "$DMG"
   echo "Hazır: $DMG"
 
-  # Sparkle appcast'i: güncelleme bu sürümün etiketindeki CouchSubs-macos.zip'i indirir, imzayı doğrular.
-  SPARKLE_KEY="${SPARKLE_KEY:-$HOME/Library/Application Support/CouchSubs-release/sparkle-ed25519.pem}"
-  OPENSSL=/opt/homebrew/opt/openssl@3/bin/openssl
-  if [[ -f "$SPARKLE_KEY" && -x "$OPENSSL" ]]; then
-    # İmza Info.plist'teki açık anahtarla doğrulanır; yanlış anahtarla imzalanmış appcast güncellemeyi kırar.
+  # Nino: Sparkle appcast'i. Güncelleme Nino'nun GitHub sürümündeki Nino-Mac.zip'i indirir ve imzayı uygulamadaki açık
+  # anahtarla doğrular. Zip, Anahtar Zinciri'ndeki "nino-game-translator" hesabındaki özel anahtarla Sparkle'ın
+  # sign_update aracıyla imzalanır (anahtar: generate_keys --account nino-game-translator). appcast.xml sürümle birlikte
+  # GitHub'a yüklenir; uygulama .../releases/latest/download/appcast.xml'e bakar.
+  SIGN_UPDATE="${SIGN_UPDATE:-$(find build -path '*sparkle/Sparkle/bin/sign_update' -type f 2>/dev/null | head -1)}"
+  if [[ -x "$SIGN_UPDATE" ]]; then
     PUBLIC=$(/usr/libexec/PlistBuddy -c "Print SUPublicEDKey" "$APP/Contents/Info.plist")
-    [[ "$("$OPENSSL" pkey -in "$SPARKLE_KEY" -pubout -outform DER | tail -c 32 | base64)" == "$PUBLIC" ]] \
+    [[ "$("${SIGN_UPDATE:h}/generate_keys" --account nino-game-translator -p 2>/dev/null | tail -1)" == "$PUBLIC" ]] \
       || { echo "Sparkle anahtarı uygulamadaki açık anahtarla eşleşmiyor."; exit 1; }
-    SIGNATURE=$("$OPENSSL" pkeyutl -sign -inkey "$SPARKLE_KEY" -rawin -in "$ZIP" | base64)
-    LENGTH=$(stat -f %z "$ZIP")
+    ENCLOSURE_ATTRS=$("$SIGN_UPDATE" --account nino-game-translator "$ZIP")
     PUBDATE=$(LC_ALL=C date -u "+%a, %d %b %Y %H:%M:%S +0000")
-    PAGE="https://github.com/yorulmazsinan/couchsubs/releases/tag/v$APP_VERSION"
+    PAGE="https://github.com/yunusdemirbag/nino-game-translator/releases/tag/v$APP_VERSION"
     {
       echo '<?xml version="1.0" encoding="utf-8"?>'
       echo '<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">'
       echo '  <channel>'
-      echo '    <title>CouchSubs</title>'
+      echo '    <title>Nino</title>'
       echo '    <item>'
-      echo "      <title>CouchSubs $APP_VERSION</title>"
+      echo "      <title>Nino $APP_VERSION</title>"
       echo "      <pubDate>$PUBDATE</pubDate>"
       echo "      <sparkle:version>$BUILD_NUMBER</sparkle:version>"
       echo "      <sparkle:shortVersionString>$APP_VERSION</sparkle:shortVersionString>"
       echo "      <sparkle:minimumSystemVersion>$MIN_MACOS</sparkle:minimumSystemVersion>"
       echo "      <link>$PAGE</link>"
       echo "      <sparkle:fullReleaseNotesLink>$PAGE</sparkle:fullReleaseNotesLink>"
-      echo "      <enclosure url=\"https://github.com/yorulmazsinan/couchsubs/releases/download/v$APP_VERSION/CouchSubs-macos.zip\""
-      echo "                 length=\"$LENGTH\" type=\"application/octet-stream\" sparkle:edSignature=\"$SIGNATURE\" />"
+      echo "      <enclosure url=\"https://github.com/yunusdemirbag/nino-game-translator/releases/download/v$APP_VERSION/Nino-Mac.zip\""
+      echo "                 type=\"application/octet-stream\" $ENCLOSURE_ATTRS />"
       echo '    </item>'
       echo '  </channel>'
       echo '</rss>'
     } > dist/appcast.xml
-    echo "Hazır: dist/appcast.xml (sürüm $APP_VERSION, yapı $BUILD_NUMBER)"
+    echo "Hazır: dist/appcast.xml (sürüm $APP_VERSION, yapı $BUILD_NUMBER) — Nino-Mac.zip olarak yüklenmeli: $ZIP"
   else
-    echo "Uyarı: Sparkle anahtarı yok, appcast üretilmedi ($SPARKLE_KEY)."
+    echo "Uyarı: Sparkle'ın sign_update aracı bulunamadı, appcast üretilmedi."
   fi
 elif [[ -n "$DEVELOPER_ID" ]]; then
   echo "Uyarı: imzalı ama Apple onaysız. İlk açılışta Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç gerekir."

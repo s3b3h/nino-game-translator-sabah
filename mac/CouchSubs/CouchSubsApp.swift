@@ -14,10 +14,9 @@ struct CouchSubsApp: App {
     @State private var overlay = SubtitleOverlayController()
     #if !APP_STORE
     /// Sparkle: her açılışta ve uygulama açıkken saatte bir GitHub'daki son sürüme bakar; testlerde başlamaz.
-    private let updater = SPUStandardUpdaterController(
-        // Nino'nun henüz kendi güncelleme sunucusu yok; CouchSubs'ın güncellemesi Nino'nun yerine geçmesin diye kapalı.
-        startingUpdater: false,
-        updaterDelegate: nil, userDriverDelegate: nil)
+    /// Nino: Nino'nun kendi appcast'i ve anahtarıyla (bkz. project.yml SUFeedURL, SUPublicEDKey). Yeni sürüm arka planda
+    /// iner ve uygulama kapanınca kendiliğinden kurulur; Ayarlar › Güncellemeler'deki düğme de bunu kullanır.
+    private let updater = AppUpdater.controller
     #endif
 
     /// Testler uygulamanın içinde çalışır. Gerçek Anahtarlığa dokunmazlar: imza farklı olunca macOS parola sorar ve test takılır.
