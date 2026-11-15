@@ -99,6 +99,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         tv = store.Load<LgTv>(StoreKeys.Tv);
         var loaded = settingsStore.Load();
         settings = loaded.WithCuratedModels();
+        // Nino: eski "yalnız TV" seçimi artık yok; TV'si olanlarda altyazı ikisinde de görünür (Mac ile aynı).
+        if (settings.Output == SubtitleOutput.Tv) settings = settings with { Output = SubtitleOutput.Both };
         // Listede olmayan model varsayılana döndüyse ayar hemen kaydedilir.
         if (settings != loaded) settingsStore.Save(settings);
         var paired = tv is not null && store.Load<string>(StoreKeys.TvKey) is not null;
@@ -442,7 +444,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         store.Save(StoreKeys.TvKey, SamsungTokenHolder.KeptToken(savedKey, pairing.Key));
         tvAppMissing = !pairing.Launched;
         // Daha önce "TV'm yok" seçildiyse TV bağlanınca altyazı TV'ye gider.
-        if (settings.Output == SubtitleOutput.Computer) Settings = settings with { Output = SubtitleOutput.Tv };
+        if (settings.Output == SubtitleOutput.Computer) Settings = settings with { Output = SubtitleOutput.Both };
         Changed(nameof(Tv), nameof(CanAdvance), nameof(CanInstallTvApp), nameof(HasTv), nameof(NeedsTv), nameof(CanStart),
             nameof(TvStatusText), nameof(TvTone));
         if (target.Brand == TvBrand.Lg) await RefreshTvAppAsync();
@@ -969,6 +971,24 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         Changed(nameof(HasAccount), nameof(Console), nameof(Tv), nameof(HasTv), nameof(NeedsTv), nameof(CanStart));
     }
 
+    /// <summary>
+    /// Nino: "TV'den itibaren yeniden kur" (Mac ile aynı). PS5 hesabı ve PS5 eşleşmesi korunur; yalnız TV bağlantısı ve TV
+    /// uygulamasının kaydı silinir, sihirbaz TV adımından devam eder.
+    /// </summary>
+    public void ResetFromTv()
+    {
+        Stop();
+        foreach (var key in new[] { StoreKeys.Tv, StoreKeys.TvKey, StoreKeys.TvDevKey, StoreKeys.TvAppVersion, StoreKeys.SetupComplete })
+            store.Remove(key);
+        tv = null;
+        tvAppMissing = false;
+        TvApp = TvAppState.Unknown;
+        // "TV'm yok" seçilmişse de TV adımı yeniden sorulur.
+        if (settings.Output == SubtitleOutput.Computer) Settings = settings with { Output = SubtitleOutput.Both };
+        Step = OnboardingStep.Tv;
+        Changed(nameof(Tv), nameof(HasTv), nameof(NeedsTv), nameof(CanStart));
+    }
+
     // --- Çeviri ---
 
     public async Task StartAsync()
@@ -988,7 +1008,9 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
             MakePipeline();
             if (settings.Dubbing.Enabled && DubbingInstalled) MakeDubber()?.Prepare();
             SubtitleLog.Write($"oturum başladı: {settings.SourceLanguage}→{settings.TargetLanguage}, "
-                + $"motor: {(OnlineTranslationActive ? settings.OnlineEngine.ToString() : "ücretsiz")}, paketler: {(settings.GamePacks ? "açık" : "kapalı")}");
+                + $"motor: {(OnlineTranslationActive ? settings.OnlineEngine.ToString() : "ücretsiz")}, paketler: {(settings.GamePacks ? "açık" : "kapalı")}"
+                + $", ağ: {NetworkKinds.Detect().ToString().ToLowerInvariant()}");
+            HealthRecorder.Shared.SessionStarted();
 
             RemotePlayLog.Note($"Çeviri başladı; PS5'e bağlanılıyor: {console.Name} {console.Host}");
             var stream = services.MakeStream(console, accountId);
@@ -1087,7 +1109,13 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         keeper?.Stop();
         keeper = null;
         pipeline?.Reset();
-        if (pipeline is not null) SubtitleLog.Write("oturum bitti");
+        if (pipeline is not null)
+        {
+            // Nino: oturumun sağlık özeti günlüğe de yazılır (kayıtları gönderenin ekranını görmeden okunur).
+            HealthRecorder.Shared.SessionEnded();
+            SubtitleLog.Write("sağlık: " + HealthReport.Summary(HealthRecorder.Shared.Snapshot(), NetworkKinds.Detect()).Replace("\n", " · "));
+            SubtitleLog.Write("oturum bitti");
+        }
         pipeline = null;
         // Yeni "Başlat" eski oturumdan kalan (belki takılmış) okumayı beklemeden temiz başlar.
         frameGate.Reset();
@@ -1217,7 +1245,11 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         OcrMissing = reader is null || !services.HasOcrLanguage(settings.SourceLanguage);
         if (reader is null) return;
         var built = new SubtitlePipeline(reader, MakeTranslator(), server, new ReadScheduler());
-        built.MetricsReady += metrics => post(() => MetricsText = metrics.Summary(text));
+        built.MetricsReady += metrics =>
+        {
+            HealthRecorder.Shared.Line(metrics.TranslationMs);
+            post(() => MetricsText = metrics.Summary(text));
+        };
         built.PairShown += (source, translation) =>
         {
             var box = built.LastBox;
@@ -1443,12 +1475,24 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     {
         // Altyazı günlüğünde yalnız durumun türü (adres ve ayrıntı remoteplay.log'da).
         if (state.Phase != SessionState.Phase)
+        {
             SubtitleLog.Write(state.Phase switch
             {
                 SessionPhase.Connecting => "PS5: bağlanıyor",
                 SessionPhase.Streaming => "PS5: bağlandı",
                 _ => "PS5: bağlantı yok",
             });
+            switch (state.Phase)
+            {
+                case SessionPhase.Connecting: HealthRecorder.Shared.Connecting(); break;
+                case SessionPhase.Streaming: HealthRecorder.Shared.Streaming(); break;
+                default:
+                    // Kullanıcının durdurması kopma sayılmaz.
+                    var kind = state.Reason?.Kind ?? DisconnectKind.Stopped;
+                    HealthRecorder.Shared.Disconnected(kind == DisconnectKind.Stopped ? null : kind.ToString());
+                    break;
+            }
+        }
         SessionState = state;
         UpdateTroubleClocks();
         // Bağlantı koptuysa TV'de eski altyazı kalmasın.

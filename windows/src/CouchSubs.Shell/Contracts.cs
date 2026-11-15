@@ -39,9 +39,16 @@ public static class SubtitleOutputs
     public static bool ShowsOnComputer(this SubtitleOutput output) => output != SubtitleOutput.Tv;
 }
 
-/// <summary>Uygulama pencerelerinin görünümü (Mac'teki AppAppearance ile aynı). Onaylı tasarım koyudur; varsayılan da odur.</summary>
+/// <summary>Uygulama pencerelerinin görünümü (Mac'teki AppAppearance ile aynı). Nino: varsayılan sistemle aynıdır.</summary>
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<AppAppearance>))]
 public enum AppAppearance { Dark, Light, System }
+
+/// <summary>
+/// Nino: ana ekranın arayüzü (Mac'teki HomeStyle ile aynı). 1. Salon (varsayılan): TV, sehpa, konsol ve priz; fiş prize
+/// takılınca çeviri başlar, çekilince durur. 2. Cam düğme: ortada cam anahtar, açılınca üstte canlı TV.
+/// </summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<HomeStyle>))]
+public enum HomeStyle { LivingRoom, Toggle }
 
 /// <summary>Bilgisayar ekranındaki altyazı penceresinin yeri ve genişliği (WPF birimiyle; tüm ekranları kapsayan düzlemde).</summary>
 public sealed record OverlayBounds(double Left, double Top, double Width);
@@ -178,8 +185,11 @@ public sealed record UserSettings
     /// </summary>
     public string LocalAiBaseUrl { get; init; } = LocalAiServer.OllamaUrl;
     public string LocalAiModel { get; init; } = LocalAiServer.DefaultModel;
-    /// <summary>Altyazı TV'de mi, bilgisayar ekranındaki pencerede mi, ikisinde de mi. Eski kayıtlar TV ile açılır.</summary>
-    public SubtitleOutput Output { get; init; } = SubtitleOutput.Tv;
+    /// <summary>
+    /// Altyazı TV'de mi, bilgisayar ekranındaki pencerede mi, ikisinde de mi. Nino: kullanıcı seçmez (Ayarlar'dan kaldırıldı);
+    /// TV'si olan herkeste ikisinde de görünür. Yalnız "TV'm yok" seçildiyse içeride Computer kalır.
+    /// </summary>
+    public SubtitleOutput Output { get; init; } = SubtitleOutput.Both;
     /// <summary>Bilgisayar ekranındaki altyazı penceresi tıklamaları alttaki pencereye (oyun, PS Remote Play) geçirir.</summary>
     public bool OverlayClickThrough { get; init; }
     /// <summary>Altyazı penceresinin son yeri; null ise ana ekranın altında ortada açılır.</summary>
@@ -188,8 +198,10 @@ public sealed record UserSettings
     public bool GamePacks { get; init; } = true;
     /// <summary>Pakette bulunmayan İngilizce satırlar ortak havuza gönderilir (anonim; bkz. <see cref="LinePool"/>).</summary>
     public bool SharePool { get; init; } = LinePool.EnabledByDefault;
-    /// <summary>Koyu, açık ya da sistemle aynı. Eski ayar dosyalarında yoktur; onlar da koyu açılır.</summary>
-    public AppAppearance Appearance { get; init; } = AppAppearance.Dark;
+    /// <summary>Koyu, açık ya da sistemle aynı. Eski ayar dosyalarında yoktur; onlar sistemle aynı açılır.</summary>
+    public AppAppearance Appearance { get; init; } = AppAppearance.System;
+    /// <summary>Nino: ana ekranın arayüzü. Eski ayar dosyalarında yoktur; salon sahnesiyle açılır.</summary>
+    public HomeStyle HomeStyle { get; init; } = HomeStyle.LivingRoom;
 
     /// <summary>Ayarlarda seçili motor: çevrimiçi çeviri kapalıysa ücretsiz olan.</summary>
     [System.Text.Json.Serialization.JsonIgnore]

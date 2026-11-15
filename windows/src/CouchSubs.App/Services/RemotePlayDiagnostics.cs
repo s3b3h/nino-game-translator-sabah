@@ -28,6 +28,7 @@ internal static class RemotePlayDiagnostics
         var stalls = new VideoStallTracker();
         RemotePlayLog.MessageLogged += line =>
         {
+            HealthRecorder.Shared.RemotePlayLine(line);
             if (stalls.Note(line) is { } note) SubtitleLog.Write(note);
         };
     }

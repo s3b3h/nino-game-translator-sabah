@@ -26,10 +26,11 @@ public class ComputerScreenTests
         AppControllerTests.Make(services, store ?? StoreWithoutTv(), settings);
 
     [Fact]
-    public void ExistingSettingsDefaultToTv()
+    public void ExistingSettingsShowOnBoth()
     {
+        // Nino: altyazının yeri seçilmez; TV'si olanlarda ikisinde de görünür (eski "yalnız TV" kaydı da açılışta Both olur).
         var old = JsonSerializer.Deserialize<UserSettings>("""{"SourceLanguage":"en","Style":{"FontSize":58}}""")!;
-        Assert.Equal(SubtitleOutput.Tv, old.Output);
+        Assert.Equal(SubtitleOutput.Both, old.Output);
         Assert.False(old.OverlayClickThrough);
         Assert.Null(old.Overlay);
         Assert.Equal(58, old.Style.FontSize);
@@ -86,6 +87,20 @@ public class ComputerScreenTests
         controller.Step = OnboardingStep.Done;
         controller.ResetSetup();
         Assert.Equal(OnboardingStep.Welcome, Make(store: store).Step);
+    }
+
+    /// <summary>Nino: "TV'den itibaren yeniden kur" PS5 hesabını ve eşleşmesini korur, sihirbaz TV adımından sürer.</summary>
+    [Fact]
+    public void SetupAgainFromTvKeepsPs5AndStartsAtTv()
+    {
+        var store = StoreWithoutTv();
+        var controller = Make(store: store);
+        controller.Step = OnboardingStep.Done;
+        controller.ResetFromTv();
+        Assert.Equal(OnboardingStep.Tv, controller.Step);
+        Assert.True(controller.HasAccount);
+        Assert.NotNull(controller.Console);
+        Assert.Equal(OnboardingStep.Tv, Make(store: store).Step);
     }
 
     [Fact]
@@ -173,6 +188,8 @@ public class ComputerScreenTests
     {
         var services = new FakeServices();
         var controller = Make(services);
+        // İçeride "yalnız TV" durumu hâlâ desteklenir (eski kayıtlar açılışta Both'a döner).
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Tv };
         Assert.False(controller.CanStart);
         Assert.True(controller.NeedsTv);
         Assert.Equal("Not set up", controller.TvStatusText);
@@ -205,7 +222,8 @@ public class ComputerScreenTests
         var controller = Make();
         controller.Settings = controller.Settings with { Output = SubtitleOutput.Computer };
         await controller.PairAsync(new LgTv("LG TV", "192.168.1.153"));
-        Assert.Equal(SubtitleOutput.Tv, controller.Settings.Output);
+        // Nino: TV bağlanınca altyazı TV'ye de gider (ikisinde de).
+        Assert.Equal(SubtitleOutput.Both, controller.Settings.Output);
         controller.Dispose();
     }
 
@@ -227,6 +245,7 @@ public class ComputerScreenTests
     public void TvOnlyKeepsComputerWindowEmpty()
     {
         var controller = Make();
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Tv };
         var received = new List<SubtitleEvent>();
         controller.OverlayEvent += received.Add;
         controller.SendTestSubtitle();
