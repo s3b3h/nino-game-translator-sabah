@@ -167,7 +167,8 @@ public struct SubtitleStack: Equatable, Sendable {
         return x == y || x.contains(y) || y.contains(x)
     }
 
-    private static let punctuation = Set(" \t\n\r.,!?;:…\"'“”‘’«»()[]-–—")
+    // Nino: Arapça virgül, soru işareti ve noktalı virgül de (، ؟ ؛).
+    private static let punctuation = Set(" \t\n\r.,!?;:…\"'“”‘’«»()[]-–—،؟؛")
 
     private static func plain(_ text: String) -> String {
         String(text.lowercased().filter { !punctuation.contains($0) && !$0.isWhitespace })

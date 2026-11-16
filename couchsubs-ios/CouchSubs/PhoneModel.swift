@@ -32,11 +32,13 @@ final class PhoneModel: ObservableObject {
             server.sendStyle(settings.style)
             if settings.output != oldValue.output { outputChanged() }
             if settings.gamePacks != oldValue.gamePacks, let pipeline { connectPacks(to: pipeline) }
+            if settings.targetLanguage != oldValue.targetLanguage { targetLanguageChanged() }
             if settings.sharePool != oldValue.sharePool {
                 let (pool, enabled) = (pool, settings.sharePool)
                 Task { await pool.setEnabled(enabled) }
             }
             let translationChanged = settings.onlineTranslation != oldValue.onlineTranslation
+                || settings.targetLanguage != oldValue.targetLanguage
                 || settings.onlineEngine != oldValue.onlineEngine || settings.geminiModel != oldValue.geminiModel
                 || settings.openAIModel != oldValue.openAIModel || settings.claudeModel != oldValue.claudeModel
             if translationChanged {
@@ -49,6 +51,11 @@ final class PhoneModel: ObservableObject {
     // Çalışma durumu
     @Published private(set) var isRunning = false
     @Published private(set) var isStarting = false
+    /// Nino: PS5'siz önizleme ("PS5'siz Deneyin"): örnek altyazılar akar; ağa ve PS5'e dokunmaz (App İnceleme ve meraklılar için).
+    @Published private(set) var isDemo = false
+    /// Demo oturumunda şu an gösterilen örnek satır (İngilizcesi ve çevirisi).
+    @Published private(set) var demoLine: DemoSamples.Line?
+    private var demoTask: Task<Void, Never>?
     @Published private(set) var sessionState: SessionState = .disconnected(.stopped)
     @Published private(set) var tvClients = 0
     @Published private(set) var lastSource = ""
@@ -115,7 +122,7 @@ final class PhoneModel: ObservableObject {
 
     /// Oyun paketleri: uygulamayla gelenler ve sunucudan indirilen güncel sürümleri (ücretsiz, herkese).
     let packs: GamePackLibrary
-    private let pool: LinePool
+    private let pool: NinoPool
 
     init(services: PhoneServices = LivePhoneServices(), store: AppStore = KeychainStore(), defaults: UserDefaults = .standard,
          packs: GamePackLibrary = GamePackLibrary(bundled: nil, user: nil)) {
@@ -132,7 +139,9 @@ final class PhoneModel: ObservableObject {
         self.tv = tv
         self.tvKeySaved = tvKeySaved
         let loaded = defaults.data(forKey: StoreKey.settings).flatMap { try? JSONDecoder().decode(UserSettings.self, from: $0) }
-        let curated = (loaded ?? UserSettings()).withCuratedModels()
+        // Nino: ilk açılışta (kayıtlı ayar yok) telefonun dili Arapçaysa çeviri dili Arapça seçilir; değilse Türkçe.
+        let curated = (loaded ?? { var first = UserSettings(); first.targetLanguage = TargetLanguage.preferred(); return first }())
+            .withCuratedModels()
         settings = curated
         let done = accountId != nil && console != nil && store.load(Bool.self, for: StoreKey.setupComplete) == true
         step = done ? .done : .welcome
@@ -143,7 +152,9 @@ final class PhoneModel: ObservableObject {
         }
         let poolFile = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent(AppIdentity.name, isDirectory: true).appendingPathComponent("pool.json")
-        pool = LinePool(file: poolFile, app: AppIdentity.version, platform: "ios", enabled: curated.sharePool && !testing)
+        // Nino'nun kendi havuzu; CouchSubs'tan kalan pool.json kuyruğu bir kez ona aktarılır.
+        pool = NinoPool(directory: poolFile.deletingLastPathComponent().appendingPathComponent("pool", isDirectory: true),
+                        app: AppIdentity.version, platform: "ios", enabled: curated.sharePool && !testing, legacyFile: poolFile)
         savedKeys = Set(TranslationEngine.allCases.filter { engine in
             engine.storeKey.flatMap { store.load(String.self, for: $0) }?.isEmpty == false
         })
@@ -267,6 +278,7 @@ final class PhoneModel: ObservableObject {
     var canStart: Bool { console != nil && accountId != nil && (settings.output.showsOnComputer || hasTV) }
 
     func start() async {
+        stopDemo()
         guard !isRunning, !isStarting, canStart, let console, let accountId else { return }
         isStarting = true
         defer { isStarting = false }
@@ -295,6 +307,38 @@ final class PhoneModel: ObservableObject {
         sessionPackLines = 0
         keepScreenAwake(true)
         onAnalytics(.sessionStart(output: settings.output.rawValue))
+    }
+
+    /// Demo oturumunu başlatır: birkaç saniyede bir örnek satır gösterir. Gerçek oturum açıksa bir şey yapmaz.
+    func startDemo() {
+        guard !isRunning, !isStarting, !isDemo else { return }
+        isDemo = true
+        demoLine = nil
+        keepScreenAwake(true)
+        let target = settings.targetLanguage
+        demoTask = Task { [weak self] in
+            var index = 0
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            while !Task.isCancelled {
+                let line = DemoSamples.line(index, target: target)
+                self?.demoLine = line
+                index += 1
+                try? await Task.sleep(nanoseconds: 2_800_000_000)
+                if Task.isCancelled { break }
+                self?.demoLine = nil
+                try? await Task.sleep(nanoseconds: 600_000_000)
+            }
+        }
+    }
+
+    /// Demo biter; ekran eski haline döner.
+    func stopDemo() {
+        demoTask?.cancel()
+        demoTask = nil
+        guard isDemo else { return }
+        isDemo = false
+        demoLine = nil
+        keepScreenAwake(false)
     }
 
     func stop() {
@@ -484,12 +528,13 @@ final class PhoneModel: ObservableObject {
         }
         pipeline.onPackMiss = { text in
             guard active || packs.match(text) == nil else { return }
-            Task { await pool.offer(text) }
+            let game = packs.searchScope
+            Task { await pool.offer(text, game: game) }
         }
     }
 
     /// Havuz kuyruğu: uygulama arka plana geçerken gönderilir (iOS sonra uygulamayı askıya alabilir).
-    func flushPool() async { await pool.flush() }
+    func flushPool() async { await pool.flush(force: true) }
 
     func refreshTranslatorStatus() async {
         if onlineTranslationActive {
@@ -509,10 +554,12 @@ final class PhoneModel: ObservableObject {
         if let provider = engine.aiProvider {
             let model = provider.model(settings.model(for: provider)).id
             online = AITranslator(provider: provider, key: key, model: model, fallback: local,
-                                  cache: Self.translationCache(engine: provider.engineID(model: model), source: source, target: target))
+                                  cache: Self.translationCache(engine: provider.engineID(model: model), source: source, target: target),
+                                  target: target)
         } else {
             online = DeepLTranslator(key: key, fallback: local,
-                                     cache: Self.translationCache(engine: DeepLTranslator.engineID, source: source, target: target))
+                                     cache: Self.translationCache(engine: DeepLTranslator.engineID, source: source, target: target),
+                                     target: target)
         }
         online.onFailureChanged = { [weak self] state in Task { @MainActor in self?.onlineIssue = state } }
         return online
@@ -527,7 +574,9 @@ final class PhoneModel: ObservableObject {
     // MARK: - Çevrimiçi çeviri anahtarları (Anahtarlık)
 
     var onlineTranslationActive: Bool {
-        settings.onlineTranslation && settings.sourceLanguage == "en" && settings.targetLanguage == "tr" && hasKey(settings.onlineEngine)
+        // Nino: çevrimiçi motorlar Türkçeye ve Arapçaya çevirir (istemler hedef dile göre).
+        settings.onlineTranslation && settings.sourceLanguage == "en" && ["tr", "ar"].contains(settings.targetLanguage)
+            && hasKey(settings.onlineEngine)
     }
 
     func hasKey(_ engine: TranslationEngine) -> Bool { savedKeys.contains(engine) }
@@ -601,6 +650,15 @@ final class PhoneModel: ObservableObject {
         stackTimer?.cancel()
         stackTimer = nil
         if !phoneLines.isEmpty { phoneLines = [] }
+    }
+
+    /// Nino: çeviri dili değişti. Eski dildeki satırlar ekrandan ve son satırlar listesinden kalkar.
+    private func targetLanguageChanged() {
+        phoneHide()
+        recentLines = []
+        lastSource = ""
+        lastTranslation = ""
+        if isRunning { server.clear() }
     }
 
     /// Deneme altyazısı: TV'de ya da telefon ekranında yazının nasıl göründüğü.

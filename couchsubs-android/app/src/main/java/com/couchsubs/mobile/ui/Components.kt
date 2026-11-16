@@ -3,6 +3,7 @@
 // seçim, kod haneleri, satır listesi. Simgeler kutusuzdur; renkli kare ve tonlu hap yoktur.
 package com.couchsubs.mobile.ui
 
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -73,10 +74,11 @@ fun ProfileAction(onClick: () -> Unit) = IconAction(Icons.Filled.Person, stringR
 /** Ekran başlığı (display) ve altında açıklama; üstte isteğe bağlı "Kurulum · Adım 1/3" (ikincil renk). */
 @Composable
 fun Heading(title: String, body: String? = null, step: String? = null) {
-    Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.hair)) {
-        step?.let { Text(it, style = Tokens.Type.caption, color = Tokens.Color.secondary) }
-        Text(title, style = Tokens.Type.display, color = Tokens.Color.text)
-        body?.let { Text(it, style = Tokens.Type.body, color = Tokens.Color.secondary) }
+    // Nino: ana ekranla aynı kimlik: küçük vurgulu adım satırı, büyük sıkı başlık, yumuşak açıklama.
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        step?.let { Text(it, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Tokens.Color.accentText, letterSpacing = 0.2.sp) }
+        Text(title, fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp, color = Tokens.Color.text)
+        body?.let { Text(it, fontSize = 16.sp, lineHeight = 23.sp, color = Tokens.Color.secondary) }
     }
 }
 

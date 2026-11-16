@@ -9,6 +9,7 @@ import UIKit
 /// ve Meta kitaplıkları kaldırıldı).
 @main
 struct CouchSubsApp: App {
+    @UIApplicationDelegateAdaptor(NinoAppDelegate.self) private var appDelegate
     @StateObject private var model: PhoneModel
     @StateObject private var app: AppModel
     @Environment(\.scenePhase) private var scenePhase
@@ -32,6 +33,9 @@ struct CouchSubsApp: App {
         let app = AppModel(analytics: analytics, packStore: store, library: library)
         model.onAnalytics = { [analytics] event in analytics.log(event) }
         app.onPacksChanged = { [weak model] in model?.packsChanged() }
+        // Nino: arayüz yalnız Türkçe ya da Arapçadır (çeviri dili; ilk açılışta telefon Arapçaysa Arapça, değilse Türkçe).
+        // Uygulama dili açılışta, metinler okunmadan önce ayarlanır; telefon İngilizce olsa da İngilizce görünmez.
+        if !testing { UILanguage.remember(target: model.settings.targetLanguage) }
         _model = StateObject(wrappedValue: model)
         _app = StateObject(wrappedValue: app)
     }
@@ -93,6 +97,11 @@ struct RootView: View {
         }
         .preferredColorScheme(.light)
         .tint(Mobile.Palette.accent)
+        // Nino: arayüz dili çeviri dilini izler (Arapça → Arapça, sağdan sola), anında.
+        .environment(\.locale, UILanguage.locale(for: model.settings.targetLanguage))
+        .environment(\.layoutDirection, UILanguage.direction(for: model.settings.targetLanguage))
+        .onAppear { UILanguage.remember(target: model.settings.targetLanguage) }
+        .onChange(of: model.settings.targetLanguage) { UILanguage.remember(target: $0) }
     }
 
     private func finishWelcome() {
@@ -118,7 +127,7 @@ struct RootView: View {
     private var home: some View {
         NavigationStack(path: $path) {
             Group {
-                if model.isRunning { RunningScreen(path: $path) } else { HomeScreen(path: $path) }
+                HomeScreen(path: $path)
             }
             .navigationDestination(for: Route.self) { route in
                 switch route {

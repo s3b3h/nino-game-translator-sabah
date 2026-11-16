@@ -3,7 +3,7 @@
 import CouchSubsCore
 import RemotePlay
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 final class MemoryStore: AppStore {
     var values: [String: Data] = [:]

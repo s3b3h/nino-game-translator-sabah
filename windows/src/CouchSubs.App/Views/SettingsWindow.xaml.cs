@@ -46,7 +46,10 @@ public partial class SettingsWindow : Window
         // Yalnız çeviri modeli olan diller listelenir; tek dil varsa seçim gösterilmez.
         foreach (var (code, name) in Languages.Where(l => controller.SupportsLanguage(l.Code)))
             GameLanguage.Items.Add(new ComboBoxItem { Content = Localizer.Current[name], Tag = code, IsSelected = code == settings.SourceLanguage });
-        LanguageCard.Visibility = GameLanguage.Items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        GameLanguageRow.Visibility = GameLanguage.Items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        foreach (var (code, name) in TargetLanguage.Choices)
+            TranslationLanguage.Items.Add(new ComboBoxItem { Content = name, Tag = code, IsSelected = code == settings.TargetLanguage });
+        ShowTranslationLanguage();
         (settings.FreeAreaTarget switch { ResultTarget.Pc => FreePc, ResultTarget.Both => FreeBoth, _ => FreeTv }).IsChecked = true;
         Region.Frame = controller.LastFrame;
         ObsAddress.Text = $"http://localhost:{controller.ServerPort}/obs";
@@ -55,6 +58,7 @@ public partial class SettingsWindow : Window
         controller.SnapshotRequested += OnSnapshot;
         Closed += (_, _) => controller.SnapshotRequested -= OnSnapshot;
         Dubbing.Attach(controller);
+        OutputCard.Attach(controller);
         HealthHost.Content = new SystemHealthPage(controller);
         ShowStyleTitle();
         controller.PropertyChanged += OnControllerChanged;
@@ -113,6 +117,13 @@ public partial class SettingsWindow : Window
     {
         var text = Localizer.Current;
         PackList.Items.Clear();
+        // Nino: paketler Türkçe; Arapça çeviride kullanılmaz.
+        if (!TargetLanguage.IsTurkish(controller.Settings.TargetLanguage))
+            PackList.Items.Add(new TextBlock
+            {
+                Text = text["Packs are not used while the translation language is Arabic."], Style = (Style)FindResource("HintText"),
+                TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8),
+            });
         var packs = controller.InstalledPacks;
         PacksPill.Visibility = packs.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         PacksPillText.Text = text.Format("Free · %lld games", packs.Count);
@@ -493,6 +504,19 @@ public partial class SettingsWindow : Window
     private void OnLanguage(object sender, SelectionChangedEventArgs e)
     {
         if (GameLanguage.SelectedItem is ComboBoxItem { Tag: string code }) Update(s => s with { SourceLanguage = code });
+    }
+
+    /// <summary>Nino: çeviri dili değişti (Türkçe / Arapça).</summary>
+    private void OnTranslationLanguage(object sender, SelectionChangedEventArgs e)
+    {
+        if (TranslationLanguage.SelectedItem is ComboBoxItem { Tag: string code }) Update(s => s with { TargetLanguage = code });
+        ShowTranslationLanguage();
+    }
+
+    private void ShowTranslationLanguage()
+    {
+        TranslationLanguageHint.Visibility = TargetLanguage.IsTurkish(controller.Settings.TargetLanguage) ? Visibility.Collapsed : Visibility.Visible;
+        if (!loading) ShowPacks();
     }
 
     /// <summary>

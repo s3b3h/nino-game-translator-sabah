@@ -256,6 +256,15 @@ JNIEXPORT jobjectArray JNICALL JNI_FCN(discover)(JNIEnv *env, jclass cls, jobjec
 	return result;
 }
 
+extern volatile bool couchsubs_prefer_software_decoder;
+
+/* Nino: bir sonraki oturumda yazılım video çözücüsü kullanılsın mı. */
+JNIEXPORT void JNICALL JNI_FCN(setPreferSoftwareDecoder)(JNIEnv *env, jclass cls, jboolean prefer)
+{
+	(void)env; (void)cls;
+	couchsubs_prefer_software_decoder = prefer ? true : false;
+}
+
 JNIEXPORT jint JNICALL JNI_FCN(wake)(JNIEnv *env, jclass cls, jstring host_string, jlong credential)
 {
 	(void)cls;

@@ -31,6 +31,16 @@ public class LocalizerTests
         Assert.Contains("İngilizce", tr.Format("The %@–%@ language pack is not downloaded yet.", "İngilizce", "Türkçe"));
     }
 
+    /// Nino: yalnız Windows'a ait metinler ayrı bir katalogdan gelir ve ortak katalogla birleşir.
+    [Fact]
+    public void WindowsOnlyTextIsTranslated()
+    {
+        const string key = "Plug the card into a USB 3 port on this computer. If you use a hub, try a port on the computer itself.";
+        Assert.StartsWith("Capture Card'ı bu bilgisayardaki", Localizer.ForLanguage("tr")[key]);
+        Assert.NotEqual(key, Localizer.ForLanguage("ar")[key]);
+        Assert.Equal(key, Localizer.ForLanguage("en")[key]);
+    }
+
     [Fact]
     public void EveryEntryHasTurkish()
     {

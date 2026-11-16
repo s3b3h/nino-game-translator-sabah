@@ -29,6 +29,8 @@ data class LiveStatus(
     /** Bu oturumda gösterilen satır ve paketten gelenler. */
     val shownLines: Int = 0,
     val packLines: Int = 0,
+    /** Nino: PS5'siz demo oturumu (örnek altyazılar; ağ ve PS5 kullanılmaz). */
+    val demo: Boolean = false,
 )
 
 object LiveState {

@@ -4,7 +4,7 @@ import CoreGraphics
 import CouchSubsCore
 import ImageIO
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 private final class FakeReader: TextReader, @unchecked Sendable {
     var texts: [String]

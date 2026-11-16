@@ -86,6 +86,11 @@ public partial class DubbingCard : UserControl
             .Replace("%lld", ((int)(controller.DubbingProgress * 100)).ToString()).Replace("%%", "%");
         (settings.Output == DubbingOutput.Tv ? OnTv : OnComputer).IsChecked = true;
         Error.Text = controller.DubbingError ?? "";
+        // Nino: Arapça çeviride dublaj yok; yalnız uyarı görünür.
+        var turkish = TargetLanguage.IsTurkish(controller.Settings.TargetLanguage);
+        TurkishOnly.Visibility = turkish ? Visibility.Collapsed : Visibility.Visible;
+        Enabled.Visibility = SetupHint.Visibility = turkish ? Visibility.Visible : Visibility.Collapsed;
+        if (!turkish) Options.Visibility = Visibility.Collapsed;
         Error.Visibility = controller.DubbingError is null ? Visibility.Collapsed : Visibility.Visible;
         BuildVoices(settings.Cast);
         loading = false;

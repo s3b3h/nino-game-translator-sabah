@@ -2,6 +2,7 @@
 package com.couchsubs.mobile.translation
 
 import com.couchsubs.mobile.core.SubtitleSegmenter
+import com.couchsubs.mobile.core.TargetLanguage
 import com.couchsubs.mobile.core.TextTranslator
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.common.model.DownloadConditions
@@ -14,12 +15,14 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 /**
- * Ücretsiz, cihaz üstü çeviri: Google ML Kit EN→TR (model yaklaşık 30 MB, ilk kullanımda bir kez iner; sonra internetsiz
- * çalışır). Masaüstündeki yerel modeldeki gibi cümle cümle çevrilir, konuşmacı etiketi ve tireler olduğu gibi kalır.
+ * Ücretsiz, cihaz üstü çeviri: Google ML Kit EN→TR ya da EN→AR (model yaklaşık 30 MB, ilk kullanımda bir kez iner; sonra
+ * internetsiz çalışır). Masaüstündeki yerel modeldeki gibi cümle cümle çevrilir, konuşmacı etiketi ve tireler olduğu gibi kalır.
+ * [target]: çeviri dili ("tr" ya da "ar"); her dilin modeli ve önbelleği ayrıdır.
  */
-class MlKitTranslator : TextTranslator, AutoCloseable {
+class MlKitTranslator(target: String = "tr") : TextTranslator, AutoCloseable {
     private val translator = Translation.getClient(
-        TranslatorOptions.Builder().setSourceLanguage(TranslateLanguage.ENGLISH).setTargetLanguage(TranslateLanguage.TURKISH).build()
+        TranslatorOptions.Builder().setSourceLanguage(TranslateLanguage.ENGLISH)
+            .setTargetLanguage(if (TargetLanguage.code(target) == "ar") TranslateLanguage.ARABIC else TranslateLanguage.TURKISH).build()
     )
     private val cache = TranslationCache()
 

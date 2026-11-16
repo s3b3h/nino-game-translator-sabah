@@ -17,6 +17,11 @@ struct PacksScreen: View {
             Text("The pack is chosen by itself when the game opens. Lines not in the pack are translated with the engine you chose.")
                 .font(Mobile.TypeScale.body).foregroundStyle(Mobile.Palette.secondary)
             Tile {
+                if !TargetLanguage.isTurkish(model.settings.targetLanguage) {
+                    // Nino: paketler yalnız Türkçe.
+                    Text("Packs are not used while the translation language is Arabic.")
+                        .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
+                }
                 Toggle(isOn: $model.settings.gamePacks) {
                     VStack(alignment: .leading, spacing: Mobile.Space.hair) {
                         Text("Use the ready Turkish translations of game packs").font(Mobile.TypeScale.headline)

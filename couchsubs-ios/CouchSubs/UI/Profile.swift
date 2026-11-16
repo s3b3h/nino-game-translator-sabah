@@ -102,10 +102,22 @@ struct SettingsScreen: View {
     private enum Choice: Hashable { case free, deepL, gemini, other }
     private static let choices: KeyValuePairs<Choice, LocalizedStringKey> = [.free: "Free", .deepL: "DeepL", .gemini: "Gemini", .other: "Other"]
 
+    /// Görünüm önizlemesindeki örnek satır, çeviri diline göre.
+    private var sample: String { TargetLanguage.isTurkish(model.settings.targetLanguage) ? "Dinliyor musun beni?" : "هل تستمع إليّ؟" }
+
     var body: some View {
         MobileScreen {
             BackHeader(title: "Settings")
         } content: {
+            // Nino: çeviri dili (Türkçe varsayılan; telefon Arapçaysa ilk açılışta Arapça).
+            Tile {
+                Text("Translation language").font(Mobile.TypeScale.headline)
+                LanguageFlags(selection: $model.settings.targetLanguage, showsNames: true)
+                if !TargetLanguage.isTurkish(model.settings.targetLanguage) {
+                    Text("Game packs, the term list and dubbing work only for Turkish. Arabic subtitles come from the translation engine you chose (Apple's free translation, Gemini, ChatGPT, Claude, DeepL or a local model).")
+                        .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
+                }
+            }
             Tile {
                 Text("Translation engine").font(Mobile.TypeScale.headline)
                 SegmentedTabs(options: Self.choices,
@@ -155,7 +167,7 @@ struct SettingsScreen: View {
                 }
                 Slider(value: Binding(get: { Double(percent) }, set: { setPercent(Int($0)) }), in: 80...160, step: 10)
                     .tint(Mobile.Palette.accent)
-                Text(verbatim: "Dinliyor musun beni?")
+                Text(verbatim: TargetLanguage.displayText(sample))
                     .font(Mobile.TypeScale.subtitle(landscape: false, scale: Double(percent) / 100))
                     .foregroundStyle(model.settings.style.textColor == .yellow ? Mobile.Palette.subtitleYellow : Mobile.Palette.subtitleWhite)
                     .padding(.horizontal, Mobile.Space.gap).padding(.vertical, Mobile.Space.inline)

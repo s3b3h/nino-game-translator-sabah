@@ -32,8 +32,11 @@
             </DockPanel>
         </c:Card>
 
+        <!-- Nino: "Capture Card'ım var": PS5 adımlarının yerine kart rehberi (kendi düğmeleriyle). -->
+        <ContentControl x:Name="GuideHost" Grid.Column="1" Focusable="False" Visibility="Collapsed" />
+
         <!-- Sağ: adım ve alttaki düğmeler -->
-        <DockPanel Grid.Column="1">
+        <DockPanel x:Name="StepPanel" Grid.Column="1">
             <Grid DockPanel.Dock="Bottom" Margin="0,16,0,0">
                 <Button x:Name="BackButton" Content="{t:T 'Back'}" MinWidth="160" MinHeight="{DynamicResource size.buttonLarge}" Click="OnBack" />
                 <Button x:Name="ContinueButton" Content="{t:T 'Continue'}" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right"

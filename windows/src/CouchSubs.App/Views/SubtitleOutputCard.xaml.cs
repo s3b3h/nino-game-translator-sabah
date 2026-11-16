@@ -3,6 +3,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using CouchSubs.Core;
 using CouchSubs.Shell;
 
 namespace CouchSubs.App.Views;
@@ -45,7 +46,7 @@ public partial class SubtitleOutputCard : UserControl
 
     private void OnChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(AppController.Settings) or nameof(AppController.OverlayAdjusting)) Refresh();
+        if (e.PropertyName is nameof(AppController.Settings) or nameof(AppController.OverlayAdjusting) or nameof(AppController.IsRunning)) Refresh();
     }
 
     private void Refresh()
@@ -54,12 +55,59 @@ public partial class SubtitleOutputCard : UserControl
         loading = true;
         var settings = controller.Settings;
         (settings.Output switch { SubtitleOutput.Computer => OutputComputer, SubtitleOutput.Both => OutputBoth, _ => OutputTv }).IsChecked = true;
+        (controller.UsesGameWindow ? SourceWindow : controller.UsesCaptureCard ? SourceCard : SourcePs5).IsChecked = true;
+        var ps5 = controller.Settings.VideoSource == VideoSource.Ps5;
+        SourceHint.Text = Localizer.Current[controller.UsesCaptureCard
+            ? "Connect the PS5 to the capture card and the card to this computer. No second account needed. Turn off Settings › System › HDMI › Enable HDCP on the PS5."
+            : ps5 ? "Subtitles show on your TV, in the Nino TV app."
+            : "Play in PS Remote Play or chiaki-ng on this computer. Nino reads that window and shows the translation on top of the game. No second account needed."];
+        SourceHint.Visibility = Detailed || controller.UsesGameWindow || ps5 ? Visibility.Visible : Visibility.Collapsed;
+        ShowCard();
+        // Oyun bu bilgisayardaysa altyazı her zaman pencerenin üstündedir; TV seçimi gösterilmez.
+        // Nino: PS5 yolunda altyazı her zaman TV uygulamasındadır; yer seçimi yalnız Capture Card'da gösterilir.
+        OutputCaption.Visibility = OutputGroup.Visibility = controller.UsesCaptureCard ? Visibility.Visible : Visibility.Collapsed;
         ComputerPanel.Visibility = controller.ShowsOnComputer ? Visibility.Visible : Visibility.Collapsed;
         WindowHint.Visibility = Detailed ? Visibility.Visible : Visibility.Collapsed;
         ClickThrough.IsChecked = settings.OverlayClickThrough;
         ClickThroughHint.Visibility = Detailed || settings.OverlayClickThrough ? Visibility.Visible : Visibility.Collapsed;
         Adjust.IsEnabled = !controller.OverlayAdjusting;
         loading = false;
+    }
+
+    /// <summary>Nino: Capture Card seçiliyse düzenin tek satırlık açıklaması, ayarlarda canlı önizleme ve bağlantı rehberi.</summary>
+    private void ShowCard()
+    {
+        var card = controller!.UsesCaptureCard;
+        CardPanel.Visibility = card ? Visibility.Visible : Visibility.Collapsed;
+        if (!card)
+        {
+            CardPreview.Content = null;
+            return;
+        }
+        CardLayoutHint.Text = Localizer.Current[controller.ShowsOnTv
+            ? "TV: the PS5 picture goes to the TV through the card's HDMI out. Nino reads the card and sends the translation to the TV app."
+            : "Computer: Nino shows the game full screen with its sound and the translation on top. Connect this computer to your TV or monitor."];
+        // Kart tek okuyucuya açılır: çeviri sürerken önizleme açılmaz (önizleme bunu kendisi de bilir).
+        var preview = Detailed && !controller.IsRunning;
+        if (preview && CardPreview.Content is null) CardPreview.Content = new CaptureCardCheck(controller, previewHeight: 170);
+        else if (!preview) CardPreview.Content = null;
+        CardPreview.Visibility = preview ? Visibility.Visible : Visibility.Collapsed;
+        CardGuide.IsEnabled = !controller.IsRunning;
+    }
+
+    private void OnCardGuide(object sender, RoutedEventArgs e)
+    {
+        if (controller is null) return;
+        // Rehberin önizlemesi kartı açar; bu kartın önizlemesi o sırada bırakılır.
+        CardPreview.Content = null;
+        CaptureCardGuideWindow.Open(Window.GetWindow(this), controller);
+        Refresh();
+    }
+
+    private void OnSource(object sender, RoutedEventArgs e)
+    {
+        if (loading || controller is null || sender is not RadioButton { Tag: string tag }) return;
+        controller.Settings = controller.Settings with { VideoSource = Enum.Parse<VideoSource>(tag) };
     }
 
     private void OnOutput(object sender, RoutedEventArgs e)

@@ -15,10 +15,12 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
     public static readonly string[] RequiredFiles =
         [ModelStore.EncoderFile, ModelStore.DecoderFile, ModelStore.SourceSpmFile, ModelStore.VocabFile];
 
-    /// <summary>tc-big en-tr tek hedef dilli; dil belirteci gerekmez, kod çözme &lt;pad&gt; ile başlar.</summary>
-    private const int DecoderStartId = MarianTokenizer.PadId;
-    private const int HeadCount = 16;
-    private const int HeadSize = 64;
+    // tc-big en-tr tek hedef dilli; kod çözme <pad> ile başlar. Nino: en-ar (opus-mt-en-ar) çok hedeflidir; girdinin
+    // başına ">>ara<<" konur (MarianTokenizer.TargetPrefixId), kod çözme yine <pad> ile başlar. Dikkat başı sayısı ve
+    // boyutu modelden okunur (tc-big: 16×64, base: 8×64).
+    private readonly int _decoderStartId;
+    private readonly int _headCount = 16;
+    private readonly int _headSize = 64;
     /// <summary>Çok uzun girdi kesilir; altyazı cümlesi bunun çok altında kalır.</summary>
     private const int MaxInputTokens = 256;
     /// <summary>
@@ -48,12 +50,14 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
     /// <summary>Her present çıktısının hangi past girdisine döndüğü; kodlayıcı kısımları yalnızca ilk adımda alınır.</summary>
     private readonly bool[] _isSelfAttention;
 
-    public OnnxMarianEngine(string modelDirectory, int maxOutputTokens, int beams = DefaultBeams)
+    /// <param name="targetPrefix">Çok hedefli modelde hedef dil belirteci (ör. "&gt;&gt;ara&lt;&lt;"); tek hedefli modelde null.</param>
+    public OnnxMarianEngine(string modelDirectory, int maxOutputTokens, int beams = DefaultBeams, string? targetPrefix = null)
     {
         _maxOutputTokens = maxOutputTokens;
         _beams = Math.Max(1, beams);
         _tokenizer = MarianTokenizer.Load(
-            Path.Combine(modelDirectory, ModelStore.SourceSpmFile), Path.Combine(modelDirectory, ModelStore.VocabFile));
+            Path.Combine(modelDirectory, ModelStore.SourceSpmFile), Path.Combine(modelDirectory, ModelStore.VocabFile), targetPrefix);
+        _decoderStartId = _tokenizer.Pad;
 
         using var options = new SessionOptions
         {
@@ -78,6 +82,12 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
         _pastNames = _decoder.InputNames.Where(n => n.StartsWith("past_key_values.", StringComparison.Ordinal)).ToArray();
         _decoderInputNames = ["input_ids", "encoder_attention_mask", "encoder_hidden_states", "use_cache_branch", .. _pastNames];
         _decoderOutputNames = ["logits", .. _pastNames.Select(n => "present." + n["past_key_values.".Length..])];
+        // Önbellek girdisinin biçimi [ışın, baş sayısı, uzunluk, baş boyutu]; sabit boyutlar modelden alınır.
+        if (_pastNames.Length > 0 && _decoder.InputMetadata[_pastNames[0]].Dimensions is { Length: 4 } dims)
+        {
+            if (dims[1] > 0) _headCount = dims[1];
+            if (dims[3] > 0) _headSize = dims[3];
+        }
         _isSelfAttention = _pastNames.Select(n => n.EndsWith(".decoder.key", StringComparison.Ordinal) ||
                                                   n.EndsWith(".decoder.value", StringComparison.Ordinal)).ToArray();
     }
@@ -88,7 +98,7 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
         if (ids.Length > MaxInputTokens)
         {
             ids = ids[..MaxInputTokens];
-            ids[^1] = MarianTokenizer.EosId;
+            ids[^1] = _tokenizer.Eos;
         }
         var output = Generate(ids, cancellationToken);
         return _tokenizer.Decode(output);
@@ -118,7 +128,7 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
         var past = new OrtValue[_pastNames.Length];
         for (var i = 0; i < past.Length; i++)
             past[i] = OrtValue.CreateAllocatedTensorValue(OrtAllocator.DefaultInstance, TensorElementType.Float,
-                [beams, HeadCount, 0, HeadSize]);
+                [beams, _headCount, 0, _headSize]);
 
         var running = new List<int>[beams];
         var scores = new float[beams];
@@ -129,7 +139,7 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
             scores[b] = b == 0 ? 0 : float.NegativeInfinity;
         }
         var finished = new List<(List<int> Tokens, float Score)>();
-        var tokens = Enumerable.Repeat((long)DecoderStartId, beams).ToArray();
+        var tokens = Enumerable.Repeat((long)_decoderStartId, beams).ToArray();
         var useCache = new bool[1];
         // Türkçe çıktı İngilizce girdiden biraz uzun olur; sınır döngüye giren çözmeyi keser.
         var limit = Math.Min(_maxOutputTokens, 2 * length + 16);
@@ -146,7 +156,7 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
                 var outputs = _decoder.Run(runOptions, _decoderInputNames, inputs, _decoderOutputNames);
                 List<(int Beam, int Token, float Score)> candidates;
                 using (var logits = outputs[0])
-                    candidates = Candidates(logits.GetTensorDataAsSpan<float>(), scores, 2 * beams);
+                    candidates = Candidates(logits.GetTensorDataAsSpan<float>(), scores, 2 * beams, _tokenizer.Pad);
 
                 var sources = new int[beams];
                 var nextRunning = new List<int>[beams];
@@ -155,7 +165,7 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
                 {
                     var (beam, token, score) = candidates[rank];
                     if (float.IsNegativeInfinity(score)) break;
-                    if (token == MarianTokenizer.EosId)
+                    if (token == _tokenizer.Eos)
                     {
                         // Yalnız ilk ışın sayısı kadar sıradaki biten aday sayılır (Hugging Face ile aynı kural).
                         if (rank < beams) AddFinished(finished, running[beam], score, beams);
@@ -221,7 +231,7 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
     /// Her ışının log-olasılıklarına puanı eklenir, bütün ışınlardan en iyi <paramref name="take"/> aday döner.
     /// &lt;pad&gt; hiçbir zaman üretilmez (modelin bad_words_ids ayarı).
     /// </summary>
-    private static List<(int Beam, int Token, float Score)> Candidates(ReadOnlySpan<float> logits, float[] scores, int take)
+    private static List<(int Beam, int Token, float Score)> Candidates(ReadOnlySpan<float> logits, float[] scores, int take, int pad)
     {
         var vocab = logits.Length / scores.Length;
         var best = new List<(int Beam, int Token, float Score)>(take + 1);
@@ -231,14 +241,14 @@ internal sealed class OnnxMarianEngine : ISentenceEngine
             var row = logits.Slice(b * vocab, vocab);
             var max = float.NegativeInfinity;
             for (var i = 0; i < row.Length; i++)
-                if (i != MarianTokenizer.PadId && row[i] > max) max = row[i];
+                if (i != pad && row[i] > max) max = row[i];
             double sum = 0;
             for (var i = 0; i < row.Length; i++)
-                if (i != MarianTokenizer.PadId) sum += Math.Exp(row[i] - max);
+                if (i != pad) sum += Math.Exp(row[i] - max);
             var offset = scores[b] - max - (float)Math.Log(sum);
             for (var i = 0; i < row.Length; i++)
             {
-                if (i == MarianTokenizer.PadId) continue;
+                if (i == pad) continue;
                 var score = row[i] + offset;
                 if (best.Count == take && score <= best[^1].Score) continue;
                 var index = best.FindIndex(c => c.Score < score);

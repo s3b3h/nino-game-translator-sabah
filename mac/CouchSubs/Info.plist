@@ -22,10 +22,14 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Nino reads the game picture from your HDMI capture card to translate its subtitles.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>AGPL-3.0. Based on CouchSubs by Sinan Yorulmaz. Uses chiaki-ng (AGPL-3.0).</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Nino finds your PS5 and TV on the local network to send translated subtitles.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Nino plays the game sound from your HDMI capture card.</string>
 	<key>SUAllowsAutomaticUpdates</key>
 	<true/>
 	<key>SUAutomaticallyUpdate</key>

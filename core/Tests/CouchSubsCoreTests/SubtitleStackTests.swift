@@ -118,5 +118,7 @@ final class SubtitleStackTests: XCTestCase {
         XCTAssertTrue(SubtitleStack.sameLine("Kapıyı aç!", "kapıyı aç."))
         XCTAssertTrue(SubtitleStack.sameLine("Kapı", "Kapı daha fazla…"))
         XCTAssertFalse(SubtitleStack.sameLine("Evet", "Hayır"))
+        XCTAssertTrue(SubtitleStack.sameLine("أين المخيم؟", "أين المخيم"))
+        XCTAssertTrue(SubtitleStack.sameLine("آرثر، انتظر", "آرثر انتظر"))
     }
 }

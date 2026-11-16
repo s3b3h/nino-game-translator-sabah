@@ -61,9 +61,10 @@ private struct HistoryRow: View {
             Text(verbatim: "\(entry.date.formatted(date: .omitted, time: .standard)) · \(origin)")
                 .font(Mobile.TypeScale.caption.monospacedDigit())
                 .foregroundStyle(entry.origin == .pack ? Mobile.Palette.pro : Mobile.Palette.tertiary)
-            Text(verbatim: entry.translation)
+            Text(verbatim: TargetLanguage.displayText(entry.translation))
                 .font(Mobile.TypeScale.body)
                 .fixedSize(horizontal: false, vertical: true)
+                .subtitleDirection(entry.translation, fill: true)
             Text(verbatim: entry.source)
                 .font(Mobile.TypeScale.caption)
                 .foregroundStyle(Mobile.Palette.secondary)
@@ -128,5 +129,7 @@ private struct PhoneRegionPreview: View {
 
     var body: some View {
         RegionPreview(region: settings.region, frame: preview.image) { settings.setCustomRegion($0) }
+            // Nino: PS5 görüntüsü ve çerçeve Arapça arayüzde de aynalanmaz.
+            .fixedLeftToRight()
     }
 }

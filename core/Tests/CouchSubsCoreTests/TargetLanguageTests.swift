@@ -29,6 +29,24 @@ final class TargetLanguageTests: XCTestCase {
     func testOtherTargetsUseOnlyTheRecognizer() {
         XCTAssertFalse(TargetLanguage.isAlready("We never saw her again.", in: "de"))
     }
+
+    func testArabicTarget() {
+        XCTAssertTrue(TargetLanguage.isAlready("الإعدادات", in: "ar"))
+        XCTAssertTrue(TargetLanguage.hasLine("STUDIO I\nالألعاب والتطبيقات", in: "ar"))
+        XCTAssertFalse(TargetLanguage.isAlready("We never saw her again.", in: "ar"))
+        // Türkçe hedefte Arapça yazı "zaten Türkçe" sayılmaz.
+        XCTAssertFalse(TargetLanguage.isAlready("الإعدادات", in: "tr"))
+        XCTAssertTrue(TargetLanguage.isTurkish("tr"))
+        XCTAssertFalse(TargetLanguage.isTurkish("ar"))
+        XCTAssertTrue(TargetLanguage.isRightToLeft("ar"))
+        XCTAssertFalse(TargetLanguage.isRightToLeft("tr"))
+    }
+
+    func testArabicDisplayTextStartsEveryParagraphRightToLeft() {
+        XCTAssertEqual(TargetLanguage.displayText("ATREUS: أين أبي؟\nآرثر، انتظر"), "\u{200F}ATREUS: أين أبي؟\n\u{200F}آرثر، انتظر")
+        XCTAssertEqual(TargetLanguage.displayText("Bu iş bitmedi."), "Bu iş bitmedi.")
+        XCTAssertEqual(TargetLanguage.displayText(TargetLanguage.displayText("مرحبا")), "\u{200F}مرحبا")
+    }
 }
 
 /// Nino: yan yana okunan aynı simge tek simgedir (RDR2: "Hold ✕ to maintain the horse's canter").

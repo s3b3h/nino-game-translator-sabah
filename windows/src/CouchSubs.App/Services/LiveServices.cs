@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
@@ -19,21 +20,24 @@ public sealed class LiveServices : IAppServices
     public ITranslationModel Translation { get; } = new MarianModel();
 
     // DeepL yalnız İngilizce→Türkçe için açılır; önceki oturumların çevirileri kotadan yemeden yeniden kullanılır.
-    public ITextTranslator? MakeOnlineTranslator(string key, ITextTranslator? fallback) =>
-        new DeepLTranslator(key, fallback, cache: TranslationCache.Shared(AppPaths.Translations, DeepLTranslator.EngineId, "en", "tr"));
+    // Nino: önbellek dosyası hedef dile göre ayrıdır (en-tr / en-ar); Türkçe çeviri Arapçaya karışmaz.
+    public ITextTranslator? MakeOnlineTranslator(string key, ITextTranslator? fallback, string target = "tr") =>
+        new DeepLTranslator(key, fallback, cache: TranslationCache.Shared(AppPaths.Translations, DeepLTranslator.EngineId, "en", target),
+                            target: target);
 
     public Task<OnlineKeyCheck> CheckOnlineKeyAsync(string key) => DeepLTranslator.CheckAsync(key);
 
     // Her model kendi önbelleğini kullanır ("gemini:gemini-3.5-flash-lite"); model değişince eski çeviriler karışmaz.
-    public ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback) =>
-        new AiTranslator(provider, key, model, fallback, cache: TranslationCache.Shared(AppPaths.Translations, provider.EngineId(model), "en", "tr"));
+    public ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback, string target = "tr") =>
+        new AiTranslator(provider, key, model, fallback, cache: TranslationCache.Shared(AppPaths.Translations, provider.EngineId(model), "en", target),
+                         target: target);
 
     public Task<AiTestResult> TestAiKeyAsync(AiProvider provider, string key, string model) => AiTranslator.TestAsync(provider, key, model);
 
     // Yerel model: önbellekte sunucu ve model ayrı tutulur ("local:localhost:11434/qwen2.5:7b").
-    public ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback) =>
-        new AiTranslator(AiProvider.Local, key, server.Model, fallback, cache: TranslationCache.Shared(AppPaths.Translations, server.EngineId, "en", "tr"),
-                         server: server);
+    public ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback, string target = "tr") =>
+        new AiTranslator(AiProvider.Local, key, server.Model, fallback, cache: TranslationCache.Shared(AppPaths.Translations, server.EngineId, "en", target),
+                         server: server, target: target);
 
     public Task<AiTestResult> TestLocalAiAsync(LocalAiServer server, string key) =>
         AiTranslator.TestAsync(AiProvider.Local, key, server.Model, server: server);
@@ -45,8 +49,10 @@ public sealed class LiveServices : IAppServices
     // Oyun paketleri: uygulamaya gömülü olanlar ve %LOCALAPPDATA%\CouchSubs\packs klasöründekiler.
     public GamePackLibrary? GamePacks { get; } = new(GamePackLibrary.EmbeddedPacks, GamePackLibrary.UserDirectory);
     public PackMatch? FindInPacks(string text) => GamePacks is { } packs ? PackLookup.Match(packs, text) : null;
-    public LinePool? Pool { get; } = new(Path.Combine(AppPaths.Data, "pool.json"),
-        AppVersion.Current(System.Reflection.Assembly.GetEntryAssembly() ?? typeof(LiveServices).Assembly));
+    // Nino'nun kendi havuzu (%LOCALAPPDATA%\CouchSubs\pool); CouchSubs'tan kalan pool.json kuyruğu bir kez ona aktarılır.
+    public NinoPool? Pool { get; } = new(Path.Combine(AppPaths.Data, "pool"),
+        AppVersion.Current(System.Reflection.Assembly.GetEntryAssembly() ?? typeof(LiveServices).Assembly),
+        legacyFile: Path.Combine(AppPaths.Data, "pool.json"));
     public string? HistoryFile { get; } = Path.Combine(AppPaths.Data, "history.json");
 
     public async Task<IReadOnlyList<ConsoleInfo>> DiscoverConsolesAsync()
@@ -95,6 +101,10 @@ public sealed class LiveServices : IAppServices
     }
 
     public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId) => new StreamSession(console, accountId);
+
+    public IGameWindowStream? MakeWindowStream() => new GameWindowCapture();
+
+    public ICaptureCardStream? MakeCardStream(bool showsPlayer, string? preferredId) => new CaptureCardStream(showsPlayer, preferredId);
 
     public IKeeper MakeKeeper(LgTv tv, string? key, IReadOnlyDictionary<string, string> parameters, Func<bool> appConnected, Action<LgTv> onMoved,
                               Action<string> onKey)
@@ -339,8 +349,15 @@ public sealed class LiveServices : IAppServices
     /// <summary>OPUS-MT modelleri; şimdilik yalnız İngilizce→Türkçe.</summary>
     private sealed class MarianModel : ITranslationModel
     {
-        private readonly ModelStore englishTurkish = new(Path.Combine(AppPaths.Models, "en-tr"));
-        private MarianTranslator? translator;
+        // Nino: her hedef dilin kendi modeli ve klasörü (en-tr, en-ar).
+        private readonly Dictionary<string, ModelStore> stores = new()
+        {
+            ["tr"] = new(Path.Combine(AppPaths.Models, "en-tr"), ModelStore.EnglishTurkish),
+            ["ar"] = new(Path.Combine(AppPaths.Models, "en-ar"), ModelStore.EnglishArabic),
+        };
+        private readonly Dictionary<string, MarianTranslator> translators = new();
+
+        private ModelStore? StoreFor(string target) => stores.GetValueOrDefault(TargetLanguage.Code(target));
         private int failed;
 
         public event Action? EngineFailure;
@@ -358,23 +375,26 @@ public sealed class LiveServices : IAppServices
             EngineFailure?.Invoke();
         }
 
-        public bool IsSupported(string source, string target) => source == "en" && target == "tr";
+        public bool IsSupported(string source, string target) => source == "en" && StoreFor(target) is not null;
 
-        public bool IsInstalled(string source, string target) => IsSupported(source, target) && englishTurkish.IsInstalled;
+        public bool IsInstalled(string source, string target) => IsSupported(source, target) && StoreFor(target)!.IsInstalled;
 
         public Task DownloadAsync(string source, string target, IProgress<double> progress, CancellationToken cancellationToken) =>
-            englishTurkish.DownloadAsync(progress, cancellationToken);
+            StoreFor(target) is { } store ? store.DownloadAsync(progress, cancellationToken)
+                : Task.FromException(new NotSupportedException($"en→{target} is not supported"));
 
         // Model belleğe bir kez yüklenir; dil değişse de aynı çevirmen kullanılır. Yükleme 1–3 sn sürdüğü
         // için hemen arka planda başlar; ilk altyazı beklemez.
         public ITextTranslator Create(string source, string target)
         {
-            if (translator is not null) return translator;
+            var code = TargetLanguage.Code(target);
+            if (translators.TryGetValue(code, out var existing)) return existing;
+            var store = StoreFor(code) ?? throw new NotSupportedException($"en→{target} is not supported");
             MarianTranslator created;
             try
             {
-                created = new MarianTranslator(englishTurkish.InstallDirectory,
-                    cache: TranslationCache.Shared(AppPaths.Translations, MarianTranslator.EngineId, "en", "tr"));
+                created = new MarianTranslator(store.InstallDirectory,
+                    cache: TranslationCache.Shared(AppPaths.Translations, MarianTranslator.EngineId, "en", code), target: code);
             }
             catch (Exception error)
             {
@@ -383,7 +403,7 @@ public sealed class LiveServices : IAppServices
                 throw;
             }
             created.EngineFailed += Fail;
-            translator = created;
+            translators[code] = created;
             // WarmUpAsync hata fırlatmaz; motor açılamazsa EngineFailed ile bildirir.
             _ = created.WarmUpAsync();
             return created;
@@ -406,6 +426,9 @@ public sealed class FileSettingsStore : ISettingsStore
 
     public UserSettings Load()
     {
+        // Nino: ilk açılışta (ayar dosyası yok) Windows'un dili Arapçaysa çeviri dili Arapça; eski kayıtlar Türkçe açılır.
+        if (!File.Exists(FilePath))
+            return new UserSettings { TargetLanguage = TargetLanguage.Preferred(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName) };
         try { return JsonSerializer.Deserialize<UserSettings>(File.ReadAllText(FilePath)) ?? new UserSettings(); }
         catch (Exception error) when (error is IOException or JsonException or UnauthorizedAccessException) { return new UserSettings(); }
     }

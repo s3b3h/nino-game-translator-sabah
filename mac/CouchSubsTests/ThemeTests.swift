@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 /// Tasarım değerleri design/tokens.json'dan gelir (Windows sürümü de aynı dosyayı kullanır).
 /// Bu testler yazıların her iki görünümde de rahat okunmasını güvenceye alır.

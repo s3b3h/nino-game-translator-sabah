@@ -25,6 +25,9 @@ class SubtitleReader : AutoCloseable {
     companion object {
         /** YUV_420_888 karenin bölgesini NV21 gri görüntüye kopyalar (en ve boy çift sayıya yuvarlanır). */
         fun copyRegion(image: Image, region: CropRegion): RegionPixels? {
+            if (image.format == android.graphics.ImageFormat.PRIVATE) {
+                return if (android.os.Build.VERSION.SDK_INT >= 29) copyRegionGpu(image, region) else null
+            }
             val crop = image.cropRect
             val frameWidth = crop.width()
             val frameHeight = crop.height()
@@ -76,4 +79,55 @@ class SubtitleReader : AutoCloseable {
     }
 
     override fun close() = recognizer.close()
+}
+
+/** Nino: GPU ile kare okuma bu cihazda reddedildiyse true (uygulama açık kaldığı sürece). */
+object GpuFrames {
+    @Volatile var failed = false
+}
+
+/**
+ * Nino: bazı çözücüler (ör. MediaTek c2.mtk.avc.decoder) kareyi kendine özel, sıkıştırılmış bir düzende verir ve
+ * işlemciyle okunan Y düzlemi parazit olur. Bu yolda kare GPU'ya bırakılır: HardwareBuffer → donanım Bitmap → yazılım
+ * kopyası; bölge parlaklığa (gri NV21) çevrilir. Reddedilirse [GpuFrames.failed] açılır, sonraki oturum eski yolu kullanır.
+ */
+@androidx.annotation.RequiresApi(29)
+private fun copyRegionGpu(image: Image, region: CropRegion): RegionPixels? {
+    val buffer = image.hardwareBuffer ?: return null
+    try {
+        val hardware = android.graphics.Bitmap.wrapHardwareBuffer(buffer, null) ?: throw IllegalStateException("wrapHardwareBuffer null")
+        val soft = hardware.copy(android.graphics.Bitmap.Config.ARGB_8888, false) ?: throw IllegalStateException("copy null")
+        hardware.recycle()
+        try {
+            val frameWidth = soft.width
+            val frameHeight = soft.height
+            val left = (region.left * frameWidth).toInt() and 1.inv()
+            val top = (region.top * frameHeight).toInt() and 1.inv()
+            val width = ((region.right - region.left) * frameWidth).toInt().coerceAtMost(frameWidth - left) and 1.inv()
+            val height = ((region.bottom - region.top) * frameHeight).toInt().coerceAtMost(frameHeight - top) and 1.inv()
+            if (width < 16 || height < 16) return null
+            val argb = IntArray(width * height)
+            soft.getPixels(argb, 0, width, left, top, width, height)
+            val out = ByteArray(width * height * 3 / 2)
+            var signature = 1125899906842597L
+            for (y in 0 until height) {
+                val base = y * width
+                for (x in 0 until width) {
+                    val c = argb[base + x]
+                    out[base + x] = ((((c shr 16) and 0xff) * 77 + ((c shr 8) and 0xff) * 150 + (c and 0xff) * 29) shr 8).toByte()
+                }
+                if (y % 8 == 0) for (x in 0 until width step 8) signature = 31 * signature + (out[base + x].toInt() and 0xf0)
+            }
+            java.util.Arrays.fill(out, width * height, out.size, 128.toByte())
+            return RegionPixels(out, width, height, signature)
+        } finally {
+            soft.recycle()
+        }
+    } catch (error: RuntimeException) {
+        if (!GpuFrames.failed) android.util.Log.w("CouchSubsReader", "GPU kare okuma reddedildi; sonraki oturum YUV kullanır", error)
+        GpuFrames.failed = true
+        return null
+    } finally {
+        buffer.close()
+    }
 }

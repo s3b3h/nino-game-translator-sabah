@@ -3,7 +3,7 @@
 import AppKit
 import CouchSubsCore
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 /// Ayarlardaki görünüm uygulamanın tüm pencerelerine (NSApp.appearance) uygulanır; varsayılan koyu.
 @MainActor

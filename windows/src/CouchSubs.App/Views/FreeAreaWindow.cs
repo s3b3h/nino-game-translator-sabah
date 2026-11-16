@@ -9,6 +9,7 @@ using System.Windows.Shapes;
 using CouchSubs.Core;
 using CouchSubs.Shell;
 using Frame = CouchSubs.Core.Frame;
+using CouchSubs.App.Theme;
 
 namespace CouchSubs.App.Views;
 
@@ -49,6 +50,8 @@ public sealed class FreeAreaWindow : Window
     private FreeAreaWindow(AppController controller, Frame frame)
     {
         this.controller = controller;
+        // Nino: ekran koordinatlarıyla çalışır; Arapça arayüzde aynalanmaz.
+        RightToLeft.KeepLeftToRight(this);
         this.frame = frame;
         Title = "CouchSubs";
         WindowStyle = WindowStyle.None;

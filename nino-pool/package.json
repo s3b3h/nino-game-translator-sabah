@@ -1,0 +1,19 @@
+{
+  "name": "nino-pool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nino ortak altyazı havuzu (Cloudflare Workers + D1)",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/",
+    "db:local": "wrangler d1 migrations apply nino-pool --local",
+    "dev": "wrangler dev --local"
+  },
+  "devDependencies": {
+    "wrangler": "^4.162.0"
+  },
+  "allowScripts": {
+    "workerd@1.20261113.1": true
+  }
+}

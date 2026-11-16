@@ -67,6 +67,9 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.utilities
         NSLocalNetworkUsageDescription: Nino finds your PS5 and TV on the local network to send translated subtitles.
+        # Nino: HDMI yakalama kartları macOS'ta kamera ve mikrofon gibi görünür (görüntü ve oyunun sesi karttan okunur).
+        NSCameraUsageDescription: Nino reads the game picture from your HDMI capture card to translate its subtitles.
+        NSMicrophoneUsageDescription: Nino plays the game sound from your HDMI capture card.
         NSHumanReadableCopyright: AGPL-3.0. Based on CouchSubs by Sinan Yorulmaz. Uses chiaki-ng (AGPL-3.0).
         # Nino: güncellemeler Nino'nun GitHub'ındaki son sürümün appcast.xml'inden okunur ve Nino'nun kendi anahtarıyla
         # imzalanmış olmalı (özel anahtar depoda değil, yayın Mac'inin Anahtar Zinciri'nde "nino-game-translator"
@@ -82,6 +85,9 @@ targets:
       path: CouchSubs/CouchSubs.entitlements
       properties:
         com.apple.security.app-sandbox: false
+        # Nino: yakalama kartı (hardened runtime'da kamera ve ses girişi ayrıca izin ister).
+        com.apple.security.device.camera: true
+        com.apple.security.device.audio-input: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ninotranslator.mac
@@ -144,6 +150,8 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.utilities
         NSLocalNetworkUsageDescription: CouchSubs finds your PS5 and TV on the local network to send translated subtitles.
+        NSCameraUsageDescription: CouchSubs reads the game picture from your HDMI capture card to translate its subtitles.
+        NSMicrophoneUsageDescription: CouchSubs plays the game sound from your HDMI capture card.
         NSHumanReadableCopyright: AGPL-3.0. Uses chiaki-ng (AGPL-3.0).
     entitlements:
       path: AppStore/CouchSubs.entitlements
@@ -153,6 +161,9 @@ targets:
         com.apple.security.network.client: true
         # Altyazı sunucusu (8787: TV uygulaması ve OBS), Remote Play'in UDP portları, Samsung girişinin dönüşü.
         com.apple.security.network.server: true
+        # Nino: yakalama kartı (görüntü ve oyunun sesi).
+        com.apple.security.device.camera: true
+        com.apple.security.device.audio-input: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.couchsubs.ios
@@ -180,7 +191,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.couchsubs.mac.tests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/CouchSubs.app/Contents/MacOS/CouchSubs"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Nino.app/Contents/MacOS/Nino"
         BUNDLE_LOADER: "$(TEST_HOST)"
   # Mac App Store sürümünün sandbox'ta neyin çalışıp neyin çalışmadığını sınar (uygulamanın içinde, sandbox'lı).
   CouchSubsAppStoreTests:

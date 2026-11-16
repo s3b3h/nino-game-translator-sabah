@@ -43,6 +43,8 @@ targets:
       - path: ../mac/CouchSubs/UI/LoginWebView.swift
       # Altyazı bölgesinin canlı önizlemesi (sürüklenen çerçeve).
       - path: ../mac/CouchSubs/UI/RegionPreview.swift
+      # Nino: Arapça çeviri sağdan sola (Mac'le ortak).
+      - path: ../mac/CouchSubs/UI/RightToLeft.swift
       # Ekran metinleri Mac uygulamasıyla aynı katalogda (Türkçe).
       - path: ../mac/CouchSubs/Resources/Localizable.xcstrings
         buildPhase: resources
@@ -60,7 +62,7 @@ targets:
         CFBundleDisplayName: Nino Game Translator
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        CFBundleLocalizations: [en, tr]
+        CFBundleLocalizations: [en, tr, ar]
         LSApplicationCategoryType: public.app-category.utilities
         # Yalnız standart şifreleme (TLS, Remote Play'in standart AES'i): ihracat beyanı her yüklemede sorulmasın.
         ITSAppUsesNonExemptEncryption: false

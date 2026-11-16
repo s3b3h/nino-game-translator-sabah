@@ -9,6 +9,7 @@ import android.util.Base64
 import com.couchsubs.mobile.core.SubtitlePlacement
 import com.couchsubs.mobile.core.SubtitleStyle
 import com.couchsubs.mobile.core.SubtitleTextColor
+import com.couchsubs.mobile.core.TargetLanguage
 import com.couchsubs.mobile.remoteplay.RegisteredConsole
 import org.json.JSONObject
 import java.security.KeyStore
@@ -19,6 +20,9 @@ import javax.crypto.spec.GCMParameterSpec
 
 /** Altyazının gösterileceği yer. */
 enum class SubtitleTarget { TV, PHONE }
+
+/** Nino: oyun görüntüsünün kaynağı: PS5 Remote Play (ikinci PSN hesabı) ya da USB-C ile takılı HDMI yakalama kartı. */
+enum class VideoSource { REMOTE_PLAY, CAPTURE_CARD }
 
 /** Nino: ana ekran arayüzü (Mac ile aynı): Salon (fişi prize takın) ya da Cam düğme. */
 enum class HomeStyle { LIVING_ROOM, TOGGLE }
@@ -82,9 +86,9 @@ class SecretStore(context: Context) {
 }
 
 /** Uygulama ayarları; gizli olanlar [SecretStore]'da. */
-class AppSettings(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-    val secrets = SecretStore(context)
+class AppSettings(private val appContext: Context) {
+    private val prefs: SharedPreferences = appContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    val secrets = SecretStore(appContext)
 
     var onboarded: Boolean
         get() = prefs.getBoolean("onboarded", false)
@@ -95,9 +99,47 @@ class AppSettings(context: Context) {
         get() = prefs.getBoolean("setupSkipped", false)
         set(value) = prefs.edit().putBoolean("setupSkipped", value).apply()
 
+    /** Nino: görüntü kaynağı; yakalama kartında PSN hesabı ve PS5 eşlemesi gerekmez. */
+    var videoSource: VideoSource
+        get() = enumOr(prefs.getString("videoSource", null), VideoSource.REMOTE_PLAY)
+        set(value) = prefs.edit().putString("videoSource", value.name).apply()
+
+    val usesCaptureCard: Boolean get() = videoSource == VideoSource.CAPTURE_CARD
+
     var target: SubtitleTarget
         get() = enumOr(prefs.getString("target", null), SubtitleTarget.TV)
         set(value) = prefs.edit().putString("target", value.name).apply()
+
+    /**
+     * Nino: çeviri dili ("tr" ya da "ar"). Kayıt yoksa: kurulumu bitmiş eski kurulumlar Türkçe açılır; yeni kurulumda
+     * telefonun dili Arapçaysa Arapça, değilse Türkçe seçilir (ilk okumada kaydedilir).
+     */
+    var targetLanguage: String
+        get() {
+            prefs.getString("targetLanguage", null)?.let { return it }
+            val first = if (onboarded) "tr" else TargetLanguage.preferred(java.util.Locale.getDefault().language)
+            prefs.edit().putString("targetLanguage", first).apply()
+            return first
+        }
+        set(value) {
+            prefs.edit().putString("targetLanguage", TargetLanguage.code(value)).apply()
+            applyInterfaceLanguage(value)
+        }
+
+    /**
+     * Nino: arayüz dili çeviri dilini izler (Arapça seçilince menüler de Arapça; Türkçe seçilince Türkçe). Android 13+
+     * uygulama dili olarak ayarlanır; açık ekranlar kendiliğinden yeniden çizilir.
+     */
+    fun applyInterfaceLanguage(code: String = targetLanguage) {
+        if (android.os.Build.VERSION.SDK_INT < 33) return
+        try {
+            val manager = appContext.getSystemService(android.app.LocaleManager::class.java) ?: return
+            val wanted = android.os.LocaleList.forLanguageTags(TargetLanguage.code(code))
+            if (manager.applicationLocales != wanted) manager.applicationLocales = wanted
+        } catch (error: Exception) {
+            android.util.Log.w("CouchSubsSettings", "arayüz dili", error)
+        }
+    }
 
     var engine: EngineChoice
         get() = enumOr(prefs.getString("engine", null), EngineChoice.FREE)
@@ -196,7 +238,8 @@ class AppSettings(context: Context) {
 
     /** Nino: ana ekran arayüzü; varsayılan Salon (Mac'teki gibi). */
     var homeStyle: HomeStyle
-        get() = enumOr(prefs.getString("homeStyle", null), HomeStyle.LIVING_ROOM)
+        // Nino: telefonda varsayılan cam düğme (küçük ekranda fişi prize takmak zor); salon Ayarlar › Arayüz'de seçilir.
+        get() = enumOr(prefs.getString("homeStyle", null), HomeStyle.TOGGLE)
         set(value) = prefs.edit().putString("homeStyle", value.name).apply()
 
     /** Bildirim tercihleri: bağlantı koptuğunda ve yeni paket geldiğinde. */

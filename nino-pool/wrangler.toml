@@ -1,0 +1,22 @@
+# Nino ortak altyazı havuzu. Canlıya alma adımları README.md'de.
+name = "nino-pool"
+main = "src/worker.js"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nino-pool"
+# Canlı veritabanı (Cloudflare D1, EEUR).
+database_id = "2d7c0031-0899-4f72-ad6a-802580e34369"
+migrations_dir = "migrations"
+
+[vars]
+# Ücretsiz katmanın günlük yazma sınırı (100 000 satır yazımı) aşılmasın diye günde kabul edilen en çok satır.
+# Aşılınca sunucu 429 ile ertesi güne kadar beklemesini söyler; satırlar cihazlarda kuyrukta bekler, kaybolmaz.
+DAILY_LINE_BUDGET = "15000"
+# Bir kurulumun saatte gönderebileceği en çok parça.
+INSTALL_HOURLY_BATCHES = "60"
+
+# Eski parça kimliklerini (tekrar sayılmasın diye tutulur) her gün temizler.
+[triggers]
+crons = ["17 3 * * *"]

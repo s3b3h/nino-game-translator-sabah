@@ -49,6 +49,8 @@ public final class DeepLTranslator: TextTranslator, OnlineTranslating {
     private let names = SpeakerNames()
     /// Çevrilmeyecek adlar ve terimler (ücretsiz çeviriyle aynı sözlük); DeepL'e etiketle korunarak gider.
     private let glossaryStore: GlossaryStore
+    /// Nino: DeepL'in hedef dili ("TR", "AR"). Sözlük Türkçe olduğu için yalnız Türkçede kullanılır.
+    private let target: String
     /// Son gösterilen satırlar, eskiden yeniye.
     private var recent: [String] = []
     private var pausedUntil = Date.distantPast
@@ -58,8 +60,9 @@ public final class DeepLTranslator: TextTranslator, OnlineTranslating {
     /// `cache`: kalıcı önbellek; verilmezse yalnız bellekte tutulur.
     public init(key: String, fallback: TextTranslator, session: URLSession = DeepLTranslator.makeSession(),
          cache: TranslationCache = TranslationCache(),
-         glossary: GlossaryStore = GlossaryStore(directory: GlossaryStore.userDirectory)) {
+         glossary: GlossaryStore = GlossaryStore(directory: GlossaryStore.userDirectory), target: String = "tr") {
         self.key = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.target = String(target.prefix(2)).uppercased()
         self.fallback = fallback
         self.session = session
         self.cache = cache
@@ -82,7 +85,7 @@ public final class DeepLTranslator: TextTranslator, OnlineTranslating {
         // Bağlam, bu satırdan önce gösterilenlerdir; satırın kendisi bağlama girmez.
         let context = recent.isEmpty ? nil : recent.joined(separator: "\n")
         shown(text)
-        let glossary = glossaryStore.glossary
+        let glossary = target == "TR" ? glossaryStore.glossary : .empty
         if let cached = cache.value(for: DeepLMarkup.cacheKey(text, glossary: glossary)) { return cached }
         guard Date() >= pausedUntil else { return try await fallback.translate(text) }
         let pieces = SubtitleSegmenter.split(text)
@@ -141,10 +144,10 @@ public final class DeepLTranslator: TextTranslator, OnlineTranslating {
 
     private func request(_ sentences: [String], context: String?, tagged: Bool) async throws -> [String] {
         var body: [String: Any] = [
-            "text": sentences, "source_lang": "EN", "target_lang": "TR",
-            // Oyun konuşması: "siz" değil "sen" (DeepL Türkçede desteklemiyorsa yok sayar).
-            "formality": "prefer_less", "preserve_formatting": true,
+            "text": sentences, "source_lang": "EN", "target_lang": target, "preserve_formatting": true,
         ]
+        // Oyun konuşması: "siz" değil "sen" (DeepL desteklemediği dilde yok sayar).
+        if target == "TR" { body["formality"] = "prefer_less" }
         if let context { body["context"] = context }
         if tagged {
             body["tag_handling"] = "xml"

@@ -5,7 +5,7 @@ import CouchSubsCore
 import RemotePlay
 import SwiftUI
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 /// Ana ekranın sol sütunu hiçbir durumda kendi genişliğinden taşmaz (taşınca karolar sağ sütuna dayanıyor,
 /// kenarları kesiliyordu).
@@ -34,7 +34,7 @@ final class MainLayoutTests: XCTestCase {
     func testControlsFitTheNarrowestColumn() {
         for (output, running, click) in states {
             let model = model(output: output, running: running, clickThrough: click)
-            for width in [MainView.controlsColumnMin, Theme.size("mainColumn")] {
+            for width in [CGFloat(320), Theme.size("mainColumn")] {
                 let host = NSHostingController(rootView: MainControls().environmentObject(model).appSurface())
                 let size = host.sizeThatFits(in: CGSize(width: width, height: 10_000))
                 XCTAssertLessThanOrEqual(size.width, width, "\(output) çalışıyor=\(running) tıklama=\(click) sütun=\(width)")
@@ -49,7 +49,7 @@ final class MainLayoutTests: XCTestCase {
     func testOutputCardControlsStayInsideTheColumn() {
         for output in SubtitleOutput.allCases {
             let model = model(output: output, running: false, clickThrough: false)
-            for width in [MainView.controlsColumnMin, Theme.size("mainColumn")] {
+            for width in [CGFloat(320), Theme.size("mainColumn")] {
                 let host = NSHostingView(rootView: SubtitleOutputCard().environmentObject(model).appSurface().frame(width: width))
                 let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: 400), styleMask: [.borderless],
                                       backing: .buffered, defer: false)

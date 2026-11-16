@@ -8,14 +8,38 @@
              xmlns:t="clr-namespace:CouchSubs.App.Theme">
     <c:Card>
         <StackPanel>
-            <TextBlock Text="{t:T 'Show subtitles on'}" Style="{StaticResource CaptionText}" Margin="0,0,0,8" />
-            <Border Style="{StaticResource SegmentGroup}" HorizontalAlignment="Stretch">
+            <!-- Nino: oyun TV'de mi (PS5'e ikinci hesapla bağlanılır), bu bilgisayardaki Remote Play penceresinde mi. -->
+            <TextBlock Text="{t:T 'Game picture from'}" Style="{StaticResource CaptionText}" Margin="0,0,0,8" />
+            <Border Style="{StaticResource SegmentGroup}" HorizontalAlignment="Stretch" Margin="0,0,0,12">
+                <UniformGrid Rows="1">
+                    <RadioButton x:Name="SourcePs5" Content="PS5" GroupName="videoSource" Style="{StaticResource SegmentButton}" Checked="OnSource" Tag="Ps5" />
+                    <RadioButton x:Name="SourceWindow" Content="{t:T 'Remote Play window'}" GroupName="videoSource" Style="{StaticResource SegmentButton}" Checked="OnSource" Tag="Window" />
+                    <RadioButton x:Name="SourceCard" Content="{t:T 'Capture card'}" GroupName="videoSource" Style="{StaticResource SegmentButton}" Checked="OnSource" Tag="Card" />
+                </UniformGrid>
+            </Border>
+            <TextBlock x:Name="SourceHint" Style="{StaticResource HintText}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       Text="{t:T 'Play in PS Remote Play or chiaki-ng on this computer. Nino reads that window and shows the translation on top of the game. No second account needed.'}" />
+            <TextBlock x:Name="OutputCaption" Text="{t:T 'Show subtitles on'}" Style="{StaticResource CaptionText}" Margin="0,0,0,8" />
+            <Border x:Name="OutputGroup" Style="{StaticResource SegmentGroup}" HorizontalAlignment="Stretch">
                 <UniformGrid Rows="1">
                     <RadioButton x:Name="OutputTv" Content="TV" GroupName="subtitleOutput" Style="{StaticResource SegmentButton}" Checked="OnOutput" Tag="Tv" />
                     <RadioButton x:Name="OutputComputer" Content="{t:T 'Computer screen'}" GroupName="subtitleOutput" Style="{StaticResource SegmentButton}" Checked="OnOutput" Tag="Computer" />
                     <RadioButton x:Name="OutputBoth" Content="{t:T 'Both'}" GroupName="subtitleOutput" Style="{StaticResource SegmentButton}" Checked="OnOutput" Tag="Both" />
                 </UniformGrid>
             </Border>
+            <!-- Nino: Capture Card ile iki düzen var: geçişli kartla oyun TV'de (altyazı TV uygulamasında) ya da oyun bu
+                 bilgisayarda tam ekran (altyazı üstünde; akıllı olmayan TV ve monitörler için). -->
+            <StackPanel x:Name="CardPanel" Margin="0,12,0,0">
+                <TextBlock x:Name="CardLayoutHint" Style="{StaticResource HintText}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                <ContentControl x:Name="CardPreview" Focusable="False" Margin="0,0,0,12" />
+                <Button x:Name="CardGuide" Padding="16,0" Click="OnCardGuide"
+                        ToolTip="{t:T 'How to connect the PS5, the card and your screen, and how to turn off HDCP.'}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE8FD;" Style="{StaticResource GlyphText}" FontSize="16" Margin="0,0,8,0" />
+                        <TextBlock Text="{t:T 'Connection guide'}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
             <StackPanel x:Name="ComputerPanel" Margin="0,12,0,0">
                 <TextBlock x:Name="WindowHint" Style="{StaticResource HintText}" TextWrapping="Wrap" Margin="0,0,0,12"
                            Text="{t:T 'Subtitles appear in a window on this computer, over the game or PS Remote Play.'}" />

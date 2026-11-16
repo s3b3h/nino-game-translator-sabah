@@ -93,7 +93,8 @@ struct LivingRoomScene: View {
                 Color.black
                 Text("NO SIGNAL")
                     .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    .tracking(3)
+                    // Nino: harf aralığı Arapça harflerin birleşmesini bozar.
+                    .tracking(TargetLanguage.containsArabic(String(localized: "NO SIGNAL")) ? 0 : 3)
                     .foregroundStyle(Color.white.opacity(0.28))
             }
         } else if !splashDone {
@@ -116,7 +117,7 @@ struct LivingRoomScene: View {
         let streaming: Bool = { if case .streaming = model.sessionState { return true }; return false }()
         let failed = !DebugPreview.isActive && !streaming
         let connecting = DebugPreview.state == "connecting"
-        let translation = DebugPreview.isActive ? (DebugPreview.state == "live" ? DebugPreview.sample : "") : model.lastTranslation
+        let translation = DebugPreview.isActive ? (DebugPreview.state == "live" ? DebugPreview.sample(for: model.settings.targetLanguage) : "") : model.lastTranslation
         return ZStack {
             LinearGradient(colors: [Color(red: 0.09, green: 0.12, blue: 0.24), Color(red: 0.15, green: 0.09, blue: 0.18)],
                            startPoint: .topLeading, endPoint: .bottomTrailing)

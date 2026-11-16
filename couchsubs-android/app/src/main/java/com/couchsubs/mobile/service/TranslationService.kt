@@ -18,10 +18,13 @@ import com.couchsubs.mobile.BuildConfig
 import com.couchsubs.mobile.R
 import com.couchsubs.mobile.Services
 import com.couchsubs.mobile.account.Telemetry
+import com.couchsubs.mobile.capture.CaptureCards
 import com.couchsubs.mobile.core.CropRegion
 import com.couchsubs.mobile.core.GamePackLibrary
-import com.couchsubs.mobile.core.LinePool
+import com.couchsubs.mobile.core.NinoPool
 import com.couchsubs.mobile.core.PackLookup
+import com.couchsubs.mobile.core.TargetAwareTranslator
+import com.couchsubs.mobile.core.TargetLanguage
 import com.couchsubs.mobile.core.SubtitleEvent
 import com.couchsubs.mobile.core.SubtitleLayout
 import com.couchsubs.mobile.core.SubtitlePipeline
@@ -56,8 +59,26 @@ import java.util.concurrent.atomic.AtomicBoolean
  * SSE sunucusu (TV) ve telefon ekranı. Ekran kapansa ya da uygulama arka plana geçse de okuma sürer.
  */
 class TranslationService : Service() {
+    /** Nino: telefon altyazı ekranındaki satır süresi dolunca kalkar (bkz. [PhoneLine]). */
+    private val lineHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val lineExpiry = Any()
+
+    private fun showOnPhone(event: SubtitleEvent) {
+        lineHandler.removeCallbacksAndMessages(lineExpiry)
+        if (event is SubtitleEvent.Subtitle) {
+            LiveState.update { it.copy(current = event.text) }
+            val wait = com.couchsubs.mobile.core.PhoneLine.visibleMs(event.text, event.durationMs)
+            lineHandler.postAtTime({ LiveState.update { it.copy(current = "") } }, lineExpiry,
+                android.os.SystemClock.uptimeMillis() + wait)
+        } else {
+            LiveState.update { it.copy(current = "") }
+        }
+    }
+
     companion object {
         private const val TAG = "CouchSubsService"
+        /** Ücretsiz modelin indirilmesi kaç kez denenir (aralar 10, 20, 30… sn). */
+        private const val MODEL_ATTEMPTS = 6
         private const val CHANNEL = "translation"
         private const val NOTIFICATION_ID = 1
         private const val ACTION_STOP = "com.couchsubs.mobile.STOP"
@@ -78,7 +99,8 @@ class TranslationService : Service() {
     @Volatile private var server: SubtitleServer? = null
     @Volatile private var pipeline: SubtitlePipeline? = null
     @Volatile private var reader: SubtitleReader? = null
-    @Volatile private var pool: LinePool? = null
+    @Volatile private var pool: NinoPool? = null
+    private var poolNetwork: android.net.ConnectivityManager.NetworkCallback? = null
     @Volatile private var freeTranslator: MlKitTranslator? = null
     @Volatile private var packs: GamePackLibrary? = null
     private val ocr = Executors.newSingleThreadExecutor { Thread(it, "CouchSubs OCR").apply { isDaemon = true } }
@@ -93,6 +115,11 @@ class TranslationService : Service() {
     private val lifecycle = Any()
     @Volatile private var destroyed = false
     private var begun = false
+    /**
+     * Nino: bu oturumda görüntü yakalama kartından gelir (Ayarlar › Görüntü Kaynağı). Debug yapısının demo klibi
+     * kuruluysa o önceliklidir. Oturum başında bir kez belirlenir.
+     */
+    private var captureCard = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -106,6 +133,7 @@ class TranslationService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        if (!begun) captureCard = settings.usesCaptureCard && FrameSources.replacement == null
         startInForeground()
         if (!begun) {
             begun = true
@@ -122,13 +150,19 @@ class TranslationService : Service() {
         val notification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.notification_title))
-            .setContentText(getString(R.string.notification_text))
+            .setContentText(getString(if (captureCard) R.string.capture_notification_text else R.string.notification_text))
             .setContentIntent(open)
             .setOngoing(true)
             .addAction(Notification.Action.Builder(null, getString(R.string.stop), stop).build())
             .build()
         // Android 14+: ağdaki cihazlarla (PS5, TV) sürekli konuşan hizmet "connectedDevice" türündedir.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+        // Nino: yakalama kartında kamera da kullanılır ("camera" türü). Tür yalnız izin verilmişse eklenir; izin yokken
+        // Android 14+ hizmeti başlatmaz (SecurityException) ve PS5 yolu da etkilenmesin.
+        val cameraType = captureCard && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            checkSelfPermission(android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (cameraType)
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA)
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
         else startForeground(NOTIFICATION_ID, notification)
     }
@@ -136,13 +170,14 @@ class TranslationService : Service() {
     private fun begin() {
         val console = settings.console
         val accountId = settings.accountId
-        if (console == null || accountId == null) {
+        // Yerine geçen kaynak: debug yapısında kayıtlı klip (Play görüntüleri için) ya da Nino'da yakalama kartı.
+        // İkisinde de PSN hesabı, PS5 eşlemesi ve PS5 kitaplığı gerekmez.
+        val replacement = FrameSources.replacement ?: if (captureCard) CaptureCards.factory else null
+        if (replacement == null && (console == null || accountId == null)) {
             LiveState.update { it.copy(running = false, error = getString(R.string.error_not_paired)) }
             stopSelf()
             return
         }
-        // Yerine geçen kaynak yalnız debug yapısında kurulur (Play görüntüleri için kayıtlı klip); PS5 kitaplığı gerekmez.
-        val replacement = FrameSources.replacement
         if (replacement == null && !NativeBridge.available) {
             LiveState.update { it.copy(running = false, error = getString(R.string.error_native)) }
             stopSelf()
@@ -153,7 +188,7 @@ class TranslationService : Service() {
         LiveState.update { LiveStatus(running = true, phase = getString(R.string.phase_preparing), startedAt = startedAt, engineLabel = engineLabel()) }
         LiveState.health.sessionStarted()
         Telemetry.event(Telemetry.SESSION_START, "target" to settings.target.name.lowercase(), "engine" to settings.engine.name.lowercase(),
-            "packs" to settings.packsEnabled)
+            "packs" to settings.packsEnabled, "source" to if (captureCard) "capture_card" else "remote_play")
         // Paketlerin açılması, çeviri modeli ve sunucu kurulumu ana iş parçacığında yapılırsa zayıf telefonda
         // "CouchSubs yanıt vermiyor" uyarısı çıkar; kurulum kendi iş parçacığında yapılır.
         Thread({
@@ -171,12 +206,15 @@ class TranslationService : Service() {
         }, "CouchSubs start").start()
     }
 
-    private fun setup(console: RegisteredConsole, accountId: ByteArray, replacement: FrameSourceFactory?) {
+    private fun setup(console: RegisteredConsole?, accountId: ByteArray?, replacement: FrameSourceFactory?) {
         // Paketler ücretsiz: uygulamayla gelenler ve sunucudan inmiş güncel sürümler. Ayardan kapatılırsa aranmaz.
         val library = Services.packLibrary(this)
         packs = library
-        val free = MlKitTranslator().also { freeTranslator = it }
-        val translator = onlineTranslator(free) ?: free
+        // Nino: çeviri dili (Türkçe ya da Arapça). Zaten hedef dilde olan yazı (ör. Arapça menüler) çevirmene gitmez.
+        val target = settings.targetLanguage
+        val turkish = TargetLanguage.isTurkish(target)
+        val free = MlKitTranslator(target).also { freeTranslator = it }
+        val translator = TargetAwareTranslator(onlineTranslator(free, target) ?: free, target)
         val subtitleServer = SubtitleServer().also { server = it }
         subtitleServer.sendsToTv = settings.target == SubtitleTarget.TV
         subtitleServer.onClientsChanged = { count ->
@@ -184,9 +222,7 @@ class TranslationService : Service() {
             LiveState.update { it.copy(connectedTvs = count) }
             if (before == 0 && count > 0) Telemetry.event(Telemetry.TV_CONNECTED, "count" to count)
         }
-        subtitleServer.onEvent = { event ->
-            LiveState.update { it.copy(current = if (event is SubtitleEvent.Subtitle) event.text else "") }
-        }
+        subtitleServer.onEvent = { event -> lineHandler.post { showOnPhone(event) } }
         try {
             subtitleServer.start()
             subtitleServer.sendStyle(settings.style)
@@ -195,9 +231,11 @@ class TranslationService : Service() {
             LiveState.update { it.copy(error = getString(R.string.error_port)) }
         }
 
-        // Klipten okunan satırlar ortak havuza gönderilmez (oyun yazısı değildir).
-        val linePool = LinePool(File(filesDir, "line-pool.json"), "CouchSubs Android ${BuildConfig.VERSION_NAME}",
-            enabled = settings.sharePool && replacement == null)
+        // Klipten okunan satırlar ortak havuza gönderilmez (oyun yazısı değildir). Yakalama kartı gerçek oyundur: gönderilir.
+        // Nino'nun kendi havuzu: satırlar telefonda kuyrukta bekler, sunucu onaylayınca silinir. CouchSubs'tan kalan
+        // line-pool.json kuyruğu bir kez aktarılır.
+        val linePool = NinoPool(File(filesDir, "pool"), BuildConfig.VERSION_NAME,
+            enabled = settings.sharePool && FrameSources.replacement == null, legacyFile = File(filesDir, "line-pool.json"))
         pool = linePool
         val packTitles = library.infos.associate { it.id to it.title }
         reader = SubtitleReader()
@@ -206,8 +244,9 @@ class TranslationService : Service() {
         var game = "genel"
         pipeline = SubtitlePipeline(translator, subtitleServer).apply {
             hudTop = layout.hudTop(game)
-            packLookup = { text -> if (settings.packsEnabled) PackLookup.match(library, text) else null }
-            onPackMissed = { text -> linePool.offer(text) }
+            // Oyun paketleri Türkçedir: yalnız Türkçe çeviride kullanılır.
+            packLookup = { text -> if (turkish && settings.packsEnabled) PackLookup.match(library, text) else null }
+            onPackMissed = { text -> linePool.offer(text, game.takeIf { it != "genel" }) }
             onPairShown = { pair ->
                 pair.packId?.let { game = it }
                 pair.box?.let { box ->
@@ -223,19 +262,37 @@ class TranslationService : Service() {
                 LiveState.update { it.copy(error = error?.let { getString(R.string.error_translation) }) }
             }
         }
-        background.scheduleWithFixedDelay({ linePool.flush() }, LinePool.FLUSH_INTERVAL_MS, LinePool.FLUSH_INTERVAL_MS, TimeUnit.MILLISECONDS)
+        background.scheduleWithFixedDelay({ linePool.flush() }, 5_000L, NinoPool.TICK_INTERVAL_MS, TimeUnit.MILLISECONDS)
+        // Ağ gelince bekleyen parçalar hemen denenir.
+        poolNetwork = object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: android.net.Network) {
+                try { background.execute { linePool.networkAvailable() } } catch (error: java.util.concurrent.RejectedExecutionException) { }
+            }
+        }.also { callback ->
+            try { getSystemService(android.net.ConnectivityManager::class.java)?.registerDefaultNetworkCallback(callback) }
+            catch (error: Exception) { Log.w(TAG, "havuz ağ izleme", error) }
+        }
         // Ücretsiz modelin ilk indirilmesi (yaklaşık 30 MB); oyun paketleri beklemeden çalışır.
-        background.execute {
+        // Nino: ilk deneme ağ henüz hazır değilken düşebilir; birkaç kez yeniden denenir, inince uyarı kalkar.
+        val modelError = getString(R.string.error_model)
+        fun prepareModel(attempt: Int) {
+            if (freeTranslator !== free) return
             try {
                 free.prepare()
+                LiveState.update { if (it.error == modelError) it.copy(error = null) else it }
             } catch (error: Exception) {
-                Log.w(TAG, "ML Kit model", error)
-                LiveState.update { it.copy(error = getString(R.string.error_model)) }
+                Log.w(TAG, "ML Kit model (deneme $attempt)", error)
+                if (attempt >= 2) LiveState.update { it.copy(error = modelError) }
+                if (attempt < MODEL_ATTEMPTS) try {
+                    background.schedule({ prepareModel(attempt + 1) }, attempt * 10L, java.util.concurrent.TimeUnit.SECONDS)
+                } catch (stopped: java.util.concurrent.RejectedExecutionException) { }
             }
         }
+        background.execute { prepareModel(1) }
 
         val onFrame: (android.media.Image) -> Unit = { image ->
             val now = System.currentTimeMillis()
+            if (BuildConfig.DEBUG && image.format != android.graphics.ImageFormat.PRIVATE) debugRawFrame(image, now)
             if (!reading.get() && now - lastRead >= 1000 / MAX_READS_PER_SECOND) {
                 SubtitleReader.copyRegion(image, region)?.let { pixels ->
                     lastRead = now
@@ -250,10 +307,17 @@ class TranslationService : Service() {
                 SessionState.Streaming -> LiveState.health.streaming()
                 is SessionState.Disconnected -> LiveState.health.disconnected(if (state.kind == DisconnectKind.STOPPED) null else state.kind.name)
             }
-            LiveState.update { it.copy(phase = describe(state), streaming = state == SessionState.Streaming) }
+            // Nino: yakalama kartının sorunları (kart yok, izin yok, görüntü siyah) ana ekranda uyarı olarak da görünür;
+            // görüntü gelince uyarı kalkar.
+            val cardProblem = (state as? SessionState.Disconnected)?.kind in CARD_PROBLEMS
+            val phase = describe(state)
+            LiveState.update {
+                it.copy(phase = phase, streaming = state == SessionState.Streaming,
+                    error = if (cardProblem) phase else if (it.error in cardMessages) null else it.error)
+            }
         }
         val source = replacement?.create(this, onFrame, onState)
-            ?: StreamSession(console, accountId, onFrame, onState, onConsoleMoved = { moved -> settings.console = moved })
+            ?: StreamSession(console!!, accountId!!, onFrame, onState, onConsoleMoved = { moved -> settings.console = moved })
         synchronized(lifecycle) {
             // Kurulum sürerken durdurulduysa (onDestroy çalıştı) açılan bağlantı başlatılmaz.
             if (destroyed) {
@@ -278,6 +342,7 @@ class TranslationService : Service() {
             // silme saate bağlıdır, Windows'taki ReadScheduler gibi).
             val current = pipeline ?: return
             val result = if (pixels.signature == lastSignature) lastReading else reader?.read(pixels) ?: return
+            if (BuildConfig.DEBUG) debugDump(pixels, result)
             lastSignature = pixels.signature
             lastReading = result
             current.process(result, region.box)
@@ -288,13 +353,50 @@ class TranslationService : Service() {
         }
     }
 
+    private var lastDump = 0L
+    private var lastRawDump = 0L
+
+    /** Yalnız geliştirme sürümü: ham Y düzlemini ve biçim bilgisini cache/frame-y.bin, frame-meta.txt olarak saklar. */
+    private fun debugRawFrame(image: android.media.Image, now: Long) {
+        if (now - lastRawDump < 5000) return
+        lastRawDump = now
+        try {
+            val planes = image.planes
+            val y = planes[0].buffer.duplicate().apply { rewind() }
+            val bytes = ByteArray(y.remaining()).also { y.get(it) }
+            File(cacheDir, "frame-y.bin").writeBytes(bytes)
+            val meta = buildString {
+                append("format=${image.format} size=${image.width}x${image.height} crop=${image.cropRect}\n")
+                planes.forEachIndexed { i, plane -> append("plane$i rowStride=${plane.rowStride} pixelStride=${plane.pixelStride} bytes=${plane.buffer.capacity()}\n") }
+            }
+            File(cacheDir, "frame-meta.txt").writeText(meta)
+            Log.d(TAG, "raw frame: " + meta.replace('\n', ' '))
+        } catch (error: Exception) {
+            Log.w(TAG, "raw dump", error)
+        }
+    }
+
+    /** Yalnız geliştirme sürümü: okunan bölgeyi birkaç saniyede bir cache/last-region.jpg olarak saklar, okunanı yazar. */
+    private fun debugDump(pixels: RegionPixels, result: com.couchsubs.mobile.core.Reading) {
+        val now = System.currentTimeMillis()
+        if (now - lastDump < 3000) return
+        lastDump = now
+        try {
+            val image = android.graphics.YuvImage(pixels.nv21, android.graphics.ImageFormat.NV21, pixels.width, pixels.height, null)
+            File(cacheDir, "last-region.jpg").outputStream().use { image.compressToJpeg(android.graphics.Rect(0, 0, pixels.width, pixels.height), 80, it) }
+            Log.d(TAG, "OCR ${pixels.width}x${pixels.height}: " + result.lines.joinToString(" | ") { it.text })
+        } catch (error: Exception) {
+            Log.w(TAG, "debug dump", error)
+        }
+    }
+
     /** Çevrimiçi motor seçilip anahtarı girildiyse o, hatada yerel motor; yoksa null. */
-    private fun onlineTranslator(free: TextTranslator): TextTranslator? {
+    private fun onlineTranslator(free: TextTranslator, target: String): TextTranslator? {
         val engine = settings.engine
         val key = settings.apiKey(engine)?.takeIf { it.isNotBlank() } ?: return null
         return when (engine) {
             EngineChoice.FREE -> null
-            EngineChoice.DEEPL -> DeepLTranslator(key, free)
+            EngineChoice.DEEPL -> DeepLTranslator(key, free, target = target)
             else -> {
                 val provider = when (engine) {
                     EngineChoice.GEMINI -> AiProvider.GEMINI
@@ -303,7 +405,7 @@ class TranslationService : Service() {
                 }
                 val models = aiModels()[provider.id].orEmpty()
                 val model = models.firstOrNull { it.id == settings.aiModel } ?: models.firstOrNull() ?: return null
-                AiTranslator(provider, key, model, free)
+                AiTranslator(provider, key, model, free, target = target)
             }
         }
     }
@@ -314,10 +416,18 @@ class TranslationService : Service() {
         emptyMap()
     }
 
+    private val CARD_PROBLEMS = setOf(DisconnectKind.NO_CAPTURE_CARD, DisconnectKind.NO_CAMERA_PERMISSION, DisconnectKind.BLACK_PICTURE)
+    private val cardMessages by lazy {
+        setOf(getString(R.string.capture_not_found), getString(R.string.capture_no_permission), getString(R.string.capture_black))
+    }
+
     private fun describe(state: SessionState): String = when (state) {
-        SessionState.Connecting -> getString(R.string.phase_connecting)
+        SessionState.Connecting -> getString(if (captureCard) R.string.capture_phase_opening else R.string.phase_connecting)
         SessionState.Streaming -> getString(R.string.phase_streaming)
         is SessionState.Disconnected -> when (state.kind) {
+            DisconnectKind.NO_CAPTURE_CARD -> getString(R.string.capture_not_found)
+            DisconnectKind.NO_CAMERA_PERMISSION -> getString(R.string.capture_no_permission)
+            DisconnectKind.BLACK_PICTURE -> getString(R.string.capture_black)
             DisconnectKind.IN_USE -> getString(R.string.phase_in_use)
             DisconnectKind.NOT_FOUND -> getString(R.string.phase_not_found)
             DisconnectKind.CONSOLE_ASLEEP -> getString(R.string.phase_asleep)
@@ -360,6 +470,11 @@ class TranslationService : Service() {
         reader = null
         freeTranslator?.close()
         freeTranslator = null
+        poolNetwork?.let { callback ->
+            try { getSystemService(android.net.ConnectivityManager::class.java)?.unregisterNetworkCallback(callback) } catch (error: Exception) { }
+        }
+        poolNetwork = null
+        // Satırlar zaten diskte; burada yalnız gönderme zamanı gelmiş olanlar denenir.
         pool?.let { linePool -> Thread { linePool.flush() }.start() }
         pool = null
     }
@@ -375,7 +490,10 @@ class TranslationService : Service() {
         ocr.shutdownNow()
         wakeLock?.takeIf { it.isHeld }?.release()
         wifiLock?.takeIf { it.isHeld }?.release()
-        LiveState.update { it.copy(running = false, phase = "", current = "", streaming = false) }
+        lineHandler.removeCallbacksAndMessages(lineExpiry)
+        // Nino: yakalama kartı uyarısı oturumla birlikte kalkar (kaynak değişince eski uyarı kalmasın).
+        LiveState.update { it.copy(running = false, phase = "", current = "", streaming = false,
+            error = if (it.error in cardMessages) null else it.error) }
         super.onDestroy()
     }
 }

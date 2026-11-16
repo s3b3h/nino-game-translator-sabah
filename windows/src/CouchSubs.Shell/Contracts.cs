@@ -15,6 +15,8 @@ public static class StoreKeys
     public const string TvDevKey = "tvDevKey";
     /// <summary>Samsung ve Android TV'ye CouchSubs'ın kurduğu sürüm (LG'de sürüm TV'den okunur).</summary>
     public const string TvAppVersion = "tvAppVersion";
+    /// <summary>Nino: kullanıcının seçtiği yakalama kartı (aygıt kimliği). Bu bilgisayara özgüdür; ayarlarla taşınmaz.</summary>
+    public const string CaptureCardId = "captureCardId";
     /// <summary>LG geliştirici modu süresinin son uzatıldığı an.</summary>
     public const string DevSessionRenewed = "devSessionRenewed";
     /// <summary>Kullanıcının DeepL anahtarı (isteğe bağlı çevrimiçi çeviri).</summary>
@@ -192,6 +194,8 @@ public sealed record UserSettings
     public SubtitleOutput Output { get; init; } = SubtitleOutput.Tv;
     /// <summary>Bilgisayar ekranındaki altyazı penceresi tıklamaları alttaki pencereye (oyun, PS Remote Play) geçirir.</summary>
     public bool OverlayClickThrough { get; init; }
+    /// <summary>Nino: oyun görüntüsünün kaynağı (PS5 ya da bu bilgisayardaki Remote Play penceresi). Eski kayıtlarda PS5.</summary>
+    public VideoSource VideoSource { get; init; } = VideoSource.Ps5;
     /// <summary>Altyazı penceresinin son yeri; null ise ana ekranın altında ortada açılır.</summary>
     public OverlayBounds? Overlay { get; init; }
     /// <summary>Oyun paketlerindeki hazır Türkçe çeviriler kullanılır (yalnız İngilizce→Türkçe).</summary>
@@ -326,6 +330,12 @@ public interface IAppServices
     /// <summary>TV ile eşleşir ve TV uygulamasını sunucu adresiyle başlatmayı dener.</summary>
     Task<TvPairing> PairTvAsync(LgTv tv, string? key, string server);
     IStreamSession MakeStream(RegisteredConsole console, byte[] accountId);
+    /// <summary>Nino: bu bilgisayardaki PS Remote Play ya da chiaki-ng penceresinden okuyan kaynak; bu derlemede yoksa null.</summary>
+    IGameWindowStream? MakeWindowStream() => null;
+    /// <summary>Nino: bu bilgisayara takılı HDMI yakalama kartından okuyan kaynak; bu derlemede yoksa null.</summary>
+    /// <param name="showsPlayer">Oyun bu bilgisayarda tam ekran gösterilir, sesi çalınır (altyazı bilgisayar ekranındaysa).</param>
+    /// <param name="preferredId">Kullanıcının seçtiği aygıt; null ise kendiliğinden seçilir.</param>
+    ICaptureCardStream? MakeCardStream(bool showsPlayer, string? preferredId) => null;
     /// <param name="appConnected">TV uygulaması bilgisayara bağlı mı (Samsung'da bağlıyken TV'ye dokunulmaz).</param>
     /// <param name="onMoved">TV ağda yeni bir adreste bulununca çağrılır.</param>
     /// <param name="onKey">TV bağlantıda yeni jeton verdi (Samsung); saklanır.</param>
@@ -358,14 +368,14 @@ public interface IAppServices
     bool HasOcrLanguage(string language) => true;
     ITranslationModel Translation { get; }
     /// <summary>DeepL çevirmeni; <paramref name="fallback"/> DeepL'e ulaşılamayan satırları çevirir. Bu derlemede yoksa null.</summary>
-    ITextTranslator? MakeOnlineTranslator(string key, ITextTranslator? fallback) => null;
+    ITextTranslator? MakeOnlineTranslator(string key, ITextTranslator? fallback, string target = "tr") => null;
     Task<OnlineKeyCheck> CheckOnlineKeyAsync(string key) => Task.FromResult(new OnlineKeyCheck(OnlineKeyState.Unreachable));
     /// <summary>Yapay zekâ çevirmeni; <paramref name="fallback"/> hizmete ulaşılamayan satırları çevirir. Bu derlemede yoksa null.</summary>
-    ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback) => null;
+    ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback, string target = "tr") => null;
     /// <summary>Yapay zekâ anahtarını örnek bir satırı çevirerek dener.</summary>
     Task<AiTestResult> TestAiKeyAsync(AiProvider provider, string key, string model) => Task.FromResult(new AiTestResult(OnlineKeyState.Unreachable));
     /// <summary>Yerel model (Ollama, LM Studio) çevirmeni; anahtar boş olabilir. Bu derlemede yoksa null.</summary>
-    ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback) => null;
+    ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback, string target = "tr") => null;
     /// <summary>Yerel model sunucusunu örnek bir satırı çevirerek dener ("Bağlantıyı dene").</summary>
     Task<AiTestResult> TestLocalAiAsync(LocalAiServer server, string key) => Task.FromResult(new AiTestResult(OnlineKeyState.Unreachable));
     /// <summary>Türkçe dublaj modeli; bu derlemede yoksa null.</summary>
@@ -383,7 +393,7 @@ public interface IAppServices
     /// <summary>Satırın paketteki Türkçesi: konuşmacı etiketi, satır ve cümle parçalarıyla (CouchSubs.Translation.PackLookup).</summary>
     PackMatch? FindInPacks(string text) => null;
     /// <summary>Ortak havuz; testlerde null (hiçbir şey gönderilmez).</summary>
-    LinePool? Pool => null;
+    NinoPool? Pool => null;
     /// <summary>Altyazı geçmişinin dosyası (%LOCALAPPDATA%\CouchSubs\history.json); testlerde null (diske yazılmaz).</summary>
     string? HistoryFile => null;
 }

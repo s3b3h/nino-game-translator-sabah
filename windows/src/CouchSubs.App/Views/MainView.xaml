@@ -57,7 +57,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <Ellipse x:Name="Ps5Dot" Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,7,0" />
-                    <TextBlock VerticalAlignment="Center"><Run Text="PS5" FontWeight="SemiBold" /> <Run x:Name="Ps5Value" Foreground="{DynamicResource textSecondaryBrush}" /></TextBlock>
+                    <TextBlock VerticalAlignment="Center"><Run x:Name="Ps5Label" Text="PS5" FontWeight="SemiBold" /> <Run x:Name="Ps5Value" Foreground="{DynamicResource textSecondaryBrush}" /></TextBlock>
                     <Ellipse x:Name="TvDot" Width="7" Height="7" VerticalAlignment="Center" Margin="22,0,7,0" />
                     <TextBlock x:Name="TvText" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonUp="OnTvClick"><Run Text="TV" FontWeight="SemiBold" /> <Run x:Name="TvValue" Foreground="{DynamicResource textSecondaryBrush}" /></TextBlock>
                 </StackPanel>

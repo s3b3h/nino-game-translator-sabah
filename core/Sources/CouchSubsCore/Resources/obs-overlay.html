@@ -58,6 +58,9 @@
   function show(text, duration, box) {
     clearTimeout(timer);
     line.textContent = text;
+    // Nino: Arapça çeviri sağdan sola (satır Latin harfli konuşmacı adıyla başlasa da).
+    if (/[\u0620-\u064A\u066E-\u06D3\u06FA-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(String(text))) line.setAttribute('dir', 'rtl');
+    else line.removeAttribute('dir');
     var cover = box && placement === 'cover' && !fixed.bottom;
     if (cover) {
       line.style.left = ((box.left + box.right) / 2 * 100) + '%';

@@ -3,7 +3,7 @@
 import CoreGraphics
 import CouchSubsCore
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 final class RegionCropperTests: XCTestCase {
     private func blankImage(width: Int, height: Int) -> CGImage {

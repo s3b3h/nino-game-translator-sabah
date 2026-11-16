@@ -2,6 +2,7 @@
 package com.couchsubs.mobile.translation
 
 import com.couchsubs.mobile.core.SubtitleSegmenter
+import com.couchsubs.mobile.core.TargetLanguage
 import com.couchsubs.mobile.core.TextTranslator
 import org.json.JSONArray
 import org.json.JSONException
@@ -161,6 +162,8 @@ class DeepLTranslator(
     key: String,
     fallback: TextTranslator?,
     private val http: Http = Http.Default,
+    /** Nino: çeviri dili ("tr" ya da "ar"). */
+    private val target: String = "tr",
 ) : SentenceTranslator<String>(fallback) {
     private val key = key.trim()
     private val recent = ArrayDeque<String>()
@@ -169,13 +172,13 @@ class DeepLTranslator(
         /** Ücretsiz anahtarlar ":fx" ile biter ve ayrı adrese gider. */
         fun baseUrl(key: String) = if (key.trim().endsWith(":fx")) "https://api-free.deepl.com/v2/" else "https://api.deepl.com/v2/"
 
-        fun body(sentences: List<String>, context: String?): String = JSONObject()
+        fun body(sentences: List<String>, context: String?, target: String = "tr"): String = JSONObject()
             .put("text", JSONArray(sentences))
             .put("source_lang", "EN")
-            .put("target_lang", "TR")
+            .put("target_lang", TargetLanguage.code(target).uppercase(Locale.ROOT))
             .apply { if (!context.isNullOrEmpty()) put("context", context) }
-            // Oyun konuşması: "siz" değil "sen".
-            .put("formality", "prefer_less")
+            // Oyun konuşması: "siz" değil "sen" (yalnız Türkçede).
+            .apply { if (TargetLanguage.isTurkish(target)) put("formality", "prefer_less") }
             .put("preserve_formatting", true)
             .toString()
 
@@ -198,7 +201,7 @@ class DeepLTranslator(
     override fun request(sentences: List<String>, context: String): List<String> {
         val (status, response) = http.send(
             "POST", baseUrl(key) + "translate",
-            mapOf("Authorization" to "DeepL-Auth-Key $key", "Content-Type" to "application/json"), body(sentences, context), 4000,
+            mapOf("Authorization" to "DeepL-Auth-Key $key", "Content-Type" to "application/json"), body(sentences, context, target), 4000,
         )
         if (status !in 200..299) throw OnlineException(failure(status))
         val list = JSONObject(response).optJSONArray("translations") ?: throw OnlineException(OnlineKeyState.UNREACHABLE)
@@ -220,29 +223,43 @@ object AiRequest {
             "Keep line breaks. Keep the meaning and tone; do not add or leave out anything. " +
             "Reply with only the translation, no explanations, notes or quotes."
 
-    /** Bağlam satırı: daha önce gösterilmiş İngilizce ve (biliniyorsa) Türkçesi. */
+    /** Nino: Arapça hedefin yönergesi (Mac: AIRequest.arabicSystemPrompt ile aynı). */
+    const val ARABIC_SYSTEM_PROMPT =
+        "You translate English video game subtitles into clear, natural Modern Standard Arabic, the way good Arabic " +
+            "game subtitles read. Keep it short and easy to read on screen; use a natural spoken tone for dialogue. " +
+            "Keep character names, place names and speaker labels such as \"ATREUS:\" exactly as they are, in Latin letters. " +
+            "Keep line breaks. Keep the meaning and tone; do not add or leave out anything. " +
+            "Use Arabic punctuation (، ؟ ؛) and Western digits. Keep controller button symbols (✕ ○ △ □, L1, R2) unchanged. " +
+            "Reply with only the translation, no explanations, notes or quotes."
+
+    fun systemPrompt(target: String): String = if (TargetLanguage.isTurkish(target)) SYSTEM_PROMPT else ARABIC_SYSTEM_PROMPT
+
+    /** Bağlam satırı: daha önce gösterilmiş İngilizce ve (biliniyorsa) çevirisi. */
     data class ContextLine(val source: String, val translation: String? = null)
 
-    fun userMessage(sentences: List<String>, context: List<ContextLine>, game: String? = null): String {
+    fun userMessage(sentences: List<String>, context: List<ContextLine>, game: String? = null, target: String = "tr"): String {
+        val language = TargetLanguage.englishName(target)
         val parts = mutableListOf<String>()
         if (!game.isNullOrEmpty()) parts.add("Game: $game")
         if (context.isNotEmpty()) {
             val lines = mutableListOf("Previous subtitles, for context only (do not translate them again):")
             for (line in context) {
                 lines.add("English: ${line.source}")
-                line.translation?.let { lines.add("Turkish: $it") }
+                line.translation?.let { lines.add("$language: $it") }
             }
             parts.add(lines.joinToString("\n"))
         }
         val list = JSONArray(sentences).toString()
-        parts.add("Translate each string in this JSON array into Turkish. Reply with only a JSON array of ${sentences.size} " +
-            "Turkish strings in the same order.\n$list")
+        parts.add("Translate each string in this JSON array into $language. Reply with only a JSON array of ${sentences.size} " +
+            "$language strings in the same order.\n$list")
         return parts.joinToString("\n\n")
     }
 
-    fun build(provider: AiProvider, key: String, model: AiModel, sentences: List<String>, context: List<ContextLine>): AiHttpRequest {
+    fun build(provider: AiProvider, key: String, model: AiModel, sentences: List<String>, context: List<ContextLine>,
+              target: String = "tr"): AiHttpRequest {
         val trimmed = key.trim()
-        val user = userMessage(sentences, context)
+        val user = userMessage(sentences, context, target = target)
+        val SYSTEM_PROMPT = systemPrompt(target)
         return when (provider) {
             AiProvider.GEMINI -> {
                 val config = JSONObject().put("maxOutputTokens", MAX_OUTPUT_TOKENS)
@@ -343,6 +360,8 @@ class AiTranslator(
     private val model: AiModel,
     fallback: TextTranslator?,
     private val http: Http = Http.Default,
+    /** Nino: çeviri dili ("tr" ya da "ar"); istem buna göre yazılır. */
+    private val target: String = "tr",
 ) : SentenceTranslator<List<AiRequest.ContextLine>>(fallback) {
     private val key = key.trim()
     private val recent = ArrayDeque<AiRequest.ContextLine>()
@@ -365,7 +384,7 @@ class AiTranslator(
     }
 
     override fun request(sentences: List<String>, context: List<AiRequest.ContextLine>): List<String> {
-        val request = AiRequest.build(provider, key, model, sentences, context)
+        val request = AiRequest.build(provider, key, model, sentences, context, target)
         val (status, body) = http.send("POST", request.url, request.headers, request.body, 5000)
         if (status !in 200..299) throw OnlineException(AiRequest.failure(status, body))
         return AiRequest.translations(AiRequest.text(provider, body), sentences.size)

@@ -16,6 +16,11 @@ struct OnboardingView: View {
             .padding(.horizontal, Theme.space("xl"))
             .padding(.top, Theme.space("m"))
 
+            if model.cardSetupActive {
+                // Nino: "Yakalama kartım var": PS5 adımlarının yerine kart rehberi.
+                CaptureCardSetupView()
+                    .transition(.opacity)
+            } else {
             ScrollViewReader { proxy in
                 ScrollView {
                     Group {
@@ -52,7 +57,9 @@ struct OnboardingView: View {
                 .frame(maxWidth: 700)
                 .padding(.horizontal, Theme.space("xxl"))
                 .padding(.vertical, Theme.space("xl"))
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: model.cardSetupActive)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

@@ -207,8 +207,8 @@ struct LiveTVScreen: View {
     @EnvironmentObject private var model: AppModel
     static let width: CGFloat = 580
 
-    private var translation: String { DebugPreview.live ? "Bu iş daha bitmedi." : model.lastTranslation }
-    private var source: String { DebugPreview.live ? "This isn't over." : model.lastSource }
+    private var translation: String { DebugPreview.live ? DebugPreview.sample(for: model.settings.targetLanguage) : model.lastTranslation }
+    private var source: String { DebugPreview.live ? DebugPreview.sampleSource(for: model.settings.targetLanguage) : model.lastSource }
 
     var body: some View {
         let height = Self.width * 9 / 16
@@ -289,6 +289,13 @@ enum DebugPreview {
     static let home: HomeStyle? = environment["NINO_PREVIEW_HOME"].flatMap(HomeStyle.init(rawValue:))
     /// Önizlemedeki örnek Türkçe satır.
     static let sample = "Bu iş daha bitmedi."
+    /// Nino: önizlemedeki örnek satır çeviri diline göre (Arapçada sağdan sola görünüşü denemek için).
+    static func sample(for target: String) -> String {
+        target == "ar" ? "ARTHUR: أين المخيم؟ يجب أن نذهب، Dutch ينتظرنا." : sample
+    }
+    static func sampleSource(for target: String) -> String {
+        target == "ar" ? "ARTHUR: Where is the camp? We have to go, Dutch is waiting." : "This isn't over."
+    }
 }
 
 /// Nino: pencerenin en altındaki ince şerit: solda PS5 ve TV durumu (renkli nokta + kısa yazı), sağda Tema · Çıkış ·
@@ -301,8 +308,8 @@ struct MainBottomBar: View {
         VStack(spacing: 0) {
             Rectangle().fill(Color.ninoGlassEdge).frame(height: 1)
             HStack(spacing: 22) {
-                status(title: "PS5", value: ps5Status, tone: AppModel.ps5Tone(model.sessionState, running: model.isRunning))
-                if model.settings.output.showsOnTV {
+                status(title: model.usesGameWindow ? String(localized: "Game window") : model.usesCaptureCard ? String(localized: "Capture card") : "PS5", value: ps5Status, tone: AppModel.ps5Tone(model.sessionState, running: model.isRunning))
+                if model.showsOnTV {
                     if model.hasTV {
                         status(title: "TV",
                                value: model.tvClients > 0 ? String(localized: "Connected") : String(localized: "Waiting for the TV app"),
@@ -325,7 +332,7 @@ struct MainBottomBar: View {
     }
 
     private var ps5Status: String {
-        if !model.isRunning, let console = model.console {
+        if !model.usesGameWindow, !model.usesCaptureCard, !model.isRunning, let console = model.console {
             return String(format: String(localized: "%@ · ready"), console.name.isEmpty ? "PS5" : console.name)
         }
         return model.ps5StatusText

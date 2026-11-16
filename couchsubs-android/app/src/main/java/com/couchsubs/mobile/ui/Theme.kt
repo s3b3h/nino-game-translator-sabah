@@ -209,12 +209,14 @@ fun TileLabel(text: String, color: Color = Tokens.Color.secondary) = Text(text, 
 fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val shape = RoundedCornerShape(Tokens.Radius.control)
+    // Nino: ana ekrandaki kaydırma çubuğuyla aynı koyu lacivert hap; üstte ince ışık.
+    val shape = RoundedCornerShape(50)
+    val ink = androidx.compose.ui.graphics.Color(0xFF0A1430)
     Box(
-        modifier.fillMaxWidth().height(Tokens.Control.button).scale(if (pressed) 0.97f else 1f)
-            .let { if (enabled) it.shadow(16.dp, shape, ambientColor = Tokens.Color.accent, spotColor = Tokens.Color.accent) else it }
-            .background(if (enabled) NinoGradient else Brush.verticalGradient(listOf(Tokens.Color.surface2, Tokens.Color.surface2)), shape)
-            .border(1.dp, if (enabled) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.35f) else Tokens.Color.borderStrong, shape)
+        modifier.fillMaxWidth().height(58.dp).scale(if (pressed) 0.97f else 1f)
+            .let { if (enabled) it.shadow(18.dp, shape, ambientColor = ink.copy(alpha = 0.5f), spotColor = ink.copy(alpha = 0.6f)) else it }
+            .background(if (enabled) Brush.verticalGradient(listOf(androidx.compose.ui.graphics.Color(0xFF1B2747), ink)) else Brush.verticalGradient(listOf(Tokens.Color.surface2, Tokens.Color.surface2)), shape)
+            .border(1.dp, if (enabled) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.14f) else Tokens.Color.borderStrong, shape)
             .clickable(enabled = enabled, interactionSource = interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { Text(text, style = Tokens.Type.headline, color = if (enabled) Tokens.Color.onAccent else Tokens.Color.secondary) }
@@ -222,9 +224,9 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean 
 
 @Composable
 fun SecondaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    Button(onClick, enabled = enabled, shape = RoundedCornerShape(Tokens.Radius.control), border = BorderStroke(1.dp, Tokens.Color.borderStrong),
+    Button(onClick, enabled = enabled, shape = RoundedCornerShape(50), border = BorderStroke(1.dp, Tokens.Color.borderStrong),
         colors = ButtonDefaults.buttonColors(containerColor = Tokens.Color.raised, contentColor = Tokens.Color.text), elevation = null,
-        modifier = modifier.fillMaxWidth().height(Tokens.Control.button)) { Text(text, style = Tokens.Type.headline) }
+        modifier = modifier.fillMaxWidth().height(58.dp)) { Text(text, style = Tokens.Type.headline) }
 }
 
 @Composable

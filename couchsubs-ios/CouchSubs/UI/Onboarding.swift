@@ -9,102 +9,137 @@ import SwiftUI
 // MARK: - 1–2 Karşılama (3 sayfa)
 
 struct WelcomeFlow: View {
+    @EnvironmentObject private var model: PhoneModel
+    @Environment(\.locale) private var locale
     let onFinish: () -> Void
-    @State private var page = 0
+    @State private var page = Self.initialPage
+
+    private var t: L10n { L10n(locale: locale) }
+
+    /// Hata ayıklama: COUCHSUBS_WELCOME_PAGE=0…2 ile karşılamanın o sayfası açılır (ekran görüntüsü için).
+    private static var initialPage: Int {
+        #if DEBUG
+        return Int(ProcessInfo.processInfo.environment["COUCHSUBS_WELCOME_PAGE"] ?? "").map { min(max($0, 0), 2) } ?? 0
+        #else
+        return 0
+        #endif
+    }
 
     var body: some View {
         MobileScreen {
-            HStack {
+            // Nino: üstte logo, çeviri dili bayrakları ve Atla.
+            HStack(spacing: 10) {
+                LogoView(size: 36)
                 Spacer()
-                Button("Skip", action: onFinish).buttonStyle(.mobileGhost)
+                LanguageFlags(selection: $model.settings.targetLanguage)
+                Button(t("ob.skip"), action: onFinish).buttonStyle(.mobileGhost)
             }
+            .environment(\.layoutDirection, .leftToRight)
             .frame(height: Mobile.Control.icon)
         } content: {
             TabView(selection: $page) {
-                pageOne.tag(0)
-                pageTwo.tag(1)
-                pageThree.tag(2)
+                pageView(stage: AnyView(SubtitleDemoStage(target: model.settings.targetLanguage, locale: locale)),
+                         title: t("ob.p1.title"), message: t("ob.p1.body")).tag(0)
+                pageView(stage: AnyView(packsStage), title: t("ob.p2.title"), message: t("ob.p2.body")).tag(1)
+                pageView(stage: AnyView(screensStage), title: t("ob.p3.title"), message: t("ob.p3.body")).tag(2)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(minHeight: 560)
+            .frame(minHeight: 610)
         } bottom: {
             PageDots(count: 3, current: page)
-            Button(page == 2 ? "Let's start" : "Continue") {
+            Button(page == 2 ? t("ob.start") : t("ob.continue")) {
                 if page == 2 { onFinish() } else { withAnimation { page += 1 } }
             }
             .buttonStyle(.mobilePrimary)
         }
     }
 
-    private var pageOne: some View {
-        VStack(alignment: .leading, spacing: Mobile.Space.gap) {
+    private func pageView(stage: AnyView, title: String, message: String) -> some View {
+        VStack(alignment: .leading, spacing: 22) {
+            NinoStage(height: 380) { stage }
+            NinoTitle(title: title, message: message)
             Spacer(minLength: 0)
-            // Nino: Mac'teki karşılamadaki gibi logo ve iki satırlı ad.
-            VStack(spacing: Mobile.Space.inline) {
-                LogoView(size: 132)
-                    .shadow(color: Mobile.Palette.accent.opacity(0.35), radius: 24, y: 10)
-                Text(verbatim: "Nino").font(.system(size: 40, weight: .bold, design: .rounded))
-                Text(verbatim: "GAME TRANSLATOR").font(Mobile.TypeScale.caption.weight(.semibold)).tracking(4)
-                    .foregroundStyle(Mobile.Palette.accent)
-            }
-            .frame(maxWidth: .infinity)
-            Spacer(minLength: 0)
-            Tile {
-                Text(verbatim: "Are you listening to me?").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                Text("Are you listening to me?").font(Mobile.TypeScale.headline)
-                HStack(spacing: Mobile.Space.inline) {
-                    MobilePill(text: String(localized: "PS5 connected"), dot: true)
-                    MobilePill(text: String(localized: "Ready translation"), kind: .pro)
+        }
+        .padding(.top, 4)
+    }
+
+    /// 2. sayfa: hazır paketler (camsı satırlar, satır sayısı ve "Ücretsiz").
+    private var packsStage: some View {
+        VStack(spacing: 10) {
+            ForEach([("Grand Theft Auto V", "190"), ("Red Dead Redemption 2", "195"), ("Mafia", "18")], id: \.0) { game in
+                GlassRow(symbol: "gamecontroller.fill", title: game.0, detail: String(format: t("ob.p2.lines"), game.1)) {
+                    FreeTag(text: t("ob.free"))
                 }
             }
-            ScreenTitle(title: "Turkish subtitles for PS5 games",
-                        message: "Your phone reads the English subtitles in the game, translates them and shows them on the TV or on its own screen. You keep playing without putting the controller down.")
         }
+        .padding(18)
     }
 
-    private var pageTwo: some View {
-        VStack(alignment: .leading, spacing: Mobile.Space.gap) {
+    /// 3. sayfa: TV'de ya da telefonda; altında "Aynı Wi-Fi yeterli".
+    private var screensStage: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                option(symbol: "tv", title: t("ob.p3.tv"), detail: t("ob.p3.tv.detail"))
+                option(symbol: "iphone", title: t("ob.p3.phone"), detail: t("ob.p3.phone.detail"))
+            }
+            GlassRow(symbol: "wifi", title: t("ob.p3.wifi"), detail: t("ob.p3.wifi.detail"))
+        }
+        .padding(18)
+    }
+
+    private func option(symbol: String, title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: symbol).font(.system(size: 22, weight: .semibold)).foregroundStyle(.white)
+                .frame(width: 48, height: 48).background(Color.white.opacity(0.10), in: Circle())
             Spacer(minLength: 0)
-            BentoGrid {
-                Tile {
-                    HStack(spacing: Mobile.Space.gap) {
-                        GameMonogram(code: "GTA")
-                        VStack(alignment: .leading, spacing: Mobile.Space.hair) {
-                            Text(verbatim: "Grand Theft Auto V").font(Mobile.TypeScale.headline)
-                            Text("190 thousand lines ready").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                        }
-                    }
+            Text(verbatim: title).font(.system(size: 22, weight: .bold)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
+            Text(verbatim: detail).font(.system(size: 13)).foregroundStyle(.white.opacity(0.6)).lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, minHeight: 170, alignment: .leading)
+        .padding(16)
+        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
+    }
+}
+
+/// 1. sayfa sahnesi: "ÖRNEK" rozeti ve birkaç saniyede bir değişen İngilizce → Türkçe/Arapça örnek satır.
+private struct SubtitleDemoStage: View {
+    let target: String
+    let locale: Locale
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 2.8)) { context in
+            let index = Int(context.date.timeIntervalSinceReferenceDate / 2.8) % DemoSamples.count
+            let line = DemoSamples.line(index, target: target)
+            ZStack(alignment: .topLeading) {
+                Color.clear
+                Text(verbatim: UILanguage.text("ob.sample", locale)).font(.system(size: 12, weight: .bold)).tracking(1.2)
+                    .foregroundStyle(.white.opacity(0.85))
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .background(Color.white.opacity(0.10), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
+                    .padding(16)
+                VStack(spacing: 14) {
+                    Spacer()
+                    Text(verbatim: line.source).font(.system(size: 15)).foregroundStyle(.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                    Image(systemName: "arrow.down").font(.system(size: 14, weight: .semibold)).foregroundStyle(.white.opacity(0.35))
+                    Text(verbatim: TargetLanguage.displayText(line.translation))
+                        .font(.system(size: 26, weight: .bold)).foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 18).padding(.vertical, 12)
+                        .background(Color.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .subtitleDirection(line.translation)
+                    Spacer()
                 }
-                .bentoWide()
-                gameTile("RDR", "Red Dead 2", lines: 195)
-                gameTile("MAF", "Mafia", lines: 18)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 20)
+                .id(index)
+                .transition(.opacity)
             }
-            ScreenTitle(title: "Instantly with ready packs",
-                        message: "The whole text of popular games is already translated. Subtitles come without waiting, even offline. In other games the free translation works.")
+            .animation(.easeInOut(duration: 0.35), value: index)
         }
-    }
-
-    private var pageThree: some View {
-        VStack(alignment: .leading, spacing: Mobile.Space.gap) {
-            Spacer(minLength: 0)
-            BentoGrid {
-                InfoTile(symbol: "tv", title: "On the TV", caption: "Over the game")
-                InfoTile(symbol: "iphone", title: "On the phone", caption: "Next to the TV")
-                InfoTile(symbol: "wifi", title: "The same Wi-Fi is enough", caption: "Keep the PS5, TV and phone on the same network")
-                    .bentoWide()
-            }
-            ScreenTitle(title: "On the screen you want",
-                        message: "Show the subtitles on the TV over the game, or in large text on your phone. Setup takes a few minutes.")
-        }
-    }
-
-    private func gameTile(_ code: String, _ title: String, lines: Int) -> some View {
-        Tile {
-            GameMonogram(code: code)
-            Spacer(minLength: Mobile.Space.inline)
-            Text(verbatim: title).font(Mobile.TypeScale.headline)
-            Text(PacksScreen.linesText(lines * 1000)).font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-        }
+        .environment(\.layoutDirection, .leftToRight)
     }
 }
 
@@ -132,6 +167,9 @@ struct SetupHeader: View {
 
 struct PSNScreen: View {
     @EnvironmentObject private var model: PhoneModel
+    @Environment(\.locale) private var locale
+    @State private var showDemo = false
+    private var t: L10n { L10n(locale: locale) }
     var onBack: (() -> Void)?
     var onDone: () -> Void
     @State private var showLogin = false
@@ -144,28 +182,34 @@ struct PSNScreen: View {
         MobileScreen {
             SetupHeader(step: 1, onBack: onBack)
         } content: {
-            ScreenTitle(caption: "Setup · Step 1/3", title: "Second PSN account",
-                        message: "The phone connects to the PS5 with Remote Play. Sign in with a free second PSN account, separate from the one you play with.")
-            BentoGrid {
-                InfoTile(symbol: "person.badge.plus", title: "Free account", caption: "No PS Plus needed")
-                InfoTile(symbol: "gamecontroller", title: "You play", caption: "With your own account, on the TV")
-                InfoTile(symbol: "lock.shield", title: "We don't keep your password", caption: "You sign in on Sony's page")
-                    .bentoWide()
+            NinoTitle(step: String(format: t("setup.step"), 1), title: t("psn.title"), message: t("psn.body"))
+            NinoStage {
+                VStack(spacing: 10) {
+                    GlassRow(symbol: "person.badge.plus", title: t("psn.free"), detail: t("psn.free.detail"))
+                    GlassRow(symbol: "gamecontroller.fill", title: t("psn.play"), detail: t("psn.play.detail"))
+                    GlassRow(symbol: "lock.shield.fill", title: t("psn.password"), detail: t("psn.password.detail"))
+                }
+                .padding(16)
             }
-            if model.accountId != nil { MobilePill(text: String(localized: "Signed in"), dot: true) }
+            .padding(.top, 6)
+            if model.accountId != nil { MobilePill(text: t("psn.signedIn"), dot: true) }
             if working { ProgressView().tint(Mobile.Palette.accent) }
             if let error { MobileNote(text: error) }
         } bottom: {
-            Button("Why a second account?") { showWhy = true }.buttonStyle(.mobileGhost)
+            HStack {
+                Button { showWhy = true } label: { Text(verbatim: t("psn.why")).lineLimit(1).minimumScaleFactor(0.75) }.buttonStyle(.mobileGhost)
+                Spacer()
+                TryWithoutPS5Button(title: t("demo.try")) { showDemo = true }
+            }
             if model.accountId != nil {
-                Button("Sign in again") {
+                Button(t("psn.again")) {
                     redirected = false
                     showLogin = true
                 }
                 .buttonStyle(.mobileSecondary)
-                Button("Continue", action: onDone).buttonStyle(.mobilePrimary)
+                Button(t("ob.continue"), action: onDone).buttonStyle(.mobilePrimary)
             } else {
-                Button("Sign in with Sony") {
+                Button(t("psn.signIn")) {
                     redirected = false
                     showLogin = true
                 }
@@ -186,14 +230,14 @@ struct PSNScreen: View {
         }
         .sheet(isPresented: $showWhy) {
             VStack(alignment: .leading, spacing: Mobile.Space.gap) {
-                ScreenTitle(title: "Why a second account?",
-                            message: "Remote Play with your own account would take over your controller and stop your game. With a second, free account the PS5 lets the phone watch the picture while you keep playing on the TV. Create it on the PS5 (Add User) or at playstation.com.")
+                NinoTitle(title: t("psn.why"), message: t("psn.whyBody"))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Mobile.Space.screen)
             .fittedSheet()
             .sheetBackground(Mobile.Palette.surface)
         }
+        .fullScreenCover(isPresented: $showDemo) { DemoPreviewScreen() }
     }
 
     private func received(_ url: URL) {
@@ -215,6 +259,9 @@ struct PSNScreen: View {
 
 struct PS5PairScreen: View {
     @EnvironmentObject private var model: PhoneModel
+    @Environment(\.locale) private var locale
+    @State private var showDemo = false
+    private var t: L10n { L10n(locale: locale) }
     var onBack: (() -> Void)?
     var onDone: () -> Void
     @State private var consoles: [ConsoleInfo] = []
@@ -235,33 +282,20 @@ struct PS5PairScreen: View {
         MobileScreen {
             SetupHeader(step: 2, onBack: onBack)
         } content: {
-            ScreenTitle(caption: "Setup · Step 2/3", title: "Pair the PS5",
-                        message: "On the PS5, with the second account, choose Settings › System › Remote Play › Pair Device and type the code on the screen.")
-            Tile {
-                HStack(spacing: Mobile.Space.gap) {
-                    MobileTileIcon(symbol: "gamecontroller.fill")
-                    VStack(alignment: .leading, spacing: Mobile.Space.hair) {
-                        if let found = consoles.first, manualHost.isEmpty {
-                            Text(String(format: String(localized: "%@ found"), found.name)).font(Mobile.TypeScale.headline)
-                            Text(String(format: String(localized: "%@ · same Wi-Fi"), found.host)).font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                        } else if !manualHost.isEmpty {
-                            Text(verbatim: "PS5").font(Mobile.TypeScale.headline)
-                            Text(verbatim: manualHost).font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                        } else {
-                            Text(searching ? "Looking for the PS5…" : "No PS5 found").font(Mobile.TypeScale.headline)
-                            Text("Turn on the PS5 and keep it on the same Wi-Fi").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                        }
-                    }
-                    Spacer()
+            NinoTitle(step: String(format: t("setup.step"), 2), title: t("pair.title"), message: t("pair.body"))
+            NinoStage {
+                GlassRow(symbol: "gamecontroller.fill", title: consoleTitle, detail: consoleDetail) {
                     if !host.isEmpty && !searching {
-                        MobileLiveDot(pulses: false)
+                        Circle().fill(Color(hex: 0x30C578)).frame(width: 10, height: 10)
                     } else {
                         SearchAgainButton(searching: searching) { Task { await search() } }
                     }
                 }
+                .padding(14)
             }
+            .padding(.top, 6)
             Tile {
-                Text("Pairing code").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
+                Text(verbatim: t("pair.code")).font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
                 ZStack {
                     TextField("", text: $pin)
                         .keyboardType(.numberPad)
@@ -288,23 +322,36 @@ struct PS5PairScreen: View {
                 if let error {
                     MobileNote(text: error)
                 } else {
-                    Text("The code is valid for 5 minutes. If something goes wrong, the reason is shown here.")
+                    Text(verbatim: t("pair.code.note"))
                         .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
                 }
             }
             if working {
                 HStack(spacing: Mobile.Space.inline) {
                     ProgressView().tint(Mobile.Palette.accent)
-                    Text("Connecting to the PS5… This can take up to 30 seconds.").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
+                    Text(verbatim: t("pair.connecting")).font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
                 }
             }
         } bottom: {
-            Button("Can't find the PS5?") { showManual = true }.buttonStyle(.mobileGhost)
-            Button("Pair") { Task { await register() } }
+            HStack {
+                Button { showManual = true } label: { Text(verbatim: t("pair.notFound")).lineLimit(1).minimumScaleFactor(0.75) }.buttonStyle(.mobileGhost)
+                Spacer()
+                TryWithoutPS5Button(title: t("demo.try")) { showDemo = true }
+            }
+            Button(t("pair.button")) { Task { await register() } }
                 .buttonStyle(.mobilePrimary)
                 .disabled(working || pin.count != 8 || host.isEmpty)
         }
-        .task { await search() }
+        // Nino: arama ekran açık kaldıkça yinelenir; PS5 sonradan açılır ya da dinlenme modundan uyanırsa kendiliğinden
+        // bulunur (bulunamazken 2 sn, bulununca 6 sn arayla; bulunduktan sonraki aramalar ekranı oynatmaz).
+        .task {
+            await search()
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: (consoles.isEmpty ? 2 : 6) * 1_000_000_000)
+                if Task.isCancelled { break }
+                if consoles.isEmpty { await search() } else { await refreshQuietly() }
+            }
+        }
         .sheet(isPresented: $showManual) {
             VStack(alignment: .leading, spacing: Mobile.Space.gap) {
                 ScreenTitle(title: "Can't find the PS5?",
@@ -320,6 +367,19 @@ struct PS5PairScreen: View {
             .fittedSheet()
             .sheetBackground(Mobile.Palette.surface)
         }
+        .fullScreenCover(isPresented: $showDemo) { DemoPreviewScreen() }
+    }
+
+    private var consoleTitle: String {
+        if let found = consoles.first, manualHost.isEmpty { return String(format: t("pair.found"), found.name) }
+        if !manualHost.isEmpty { return "PS5" }
+        return t("pair.searching")
+    }
+
+    private var consoleDetail: String {
+        if let found = consoles.first, manualHost.isEmpty { return String(format: t("pair.sameWifi"), found.host) }
+        if !manualHost.isEmpty { return manualHost }
+        return t("pair.searching.detail")
     }
 
     private func search() async {
@@ -327,6 +387,13 @@ struct PS5PairScreen: View {
         searching = true
         consoles = await model.discoverConsoles()
         searching = false
+    }
+
+    /// PS5 zaten bulunmuşken arka planda tazeler (adresi değiştiyse günceller; bulunamazsa eskisini tutar).
+    private func refreshQuietly() async {
+        guard !searching, !working else { return }
+        let found = await model.discoverConsoles()
+        if !found.isEmpty { consoles = found }
     }
 
     private func register() async {
@@ -346,6 +413,8 @@ struct PS5PairScreen: View {
 /// Altyazının yeri: ağdaki TV'ler (TV uygulaması kurulu) ya da bu telefon. Ayarlar › Altyazı hedefi de burayı açar.
 struct TargetScreen: View {
     @EnvironmentObject private var model: PhoneModel
+    @Environment(\.locale) private var locale
+    private var t: L10n { L10n(locale: locale) }
     var setup = true
     var onBack: (() -> Void)?
     var onDone: () -> Void
@@ -362,8 +431,7 @@ struct TargetScreen: View {
         MobileScreen {
             if setup { SetupHeader(step: 3, onBack: onBack) } else { BackHeader(title: "Subtitle target") }
         } content: {
-            ScreenTitle(caption: setup ? "Setup · Step 3/3" : nil, title: "Where are the subtitles?",
-                        message: "You can change this later on the home screen.")
+            NinoTitle(step: setup ? String(format: t("setup.step"), 3) : nil, title: t("target.title"), message: t("target.body"))
             Tile(emphasis: model.settings.output.showsOnTV && model.hasTV ? .selected : .none) {
                 HStack(spacing: Mobile.Space.gap) {
                     MobileTileIcon(symbol: "tv")
@@ -402,7 +470,7 @@ struct TargetScreen: View {
             }
             if let error { MobileNote(text: error) }
         } bottom: {
-            Button(setup ? "Continue" : "Done", action: onDone)
+            Button(setup ? t("ob.continue") : t("common.done"), action: onDone)
                 .buttonStyle(.mobilePrimary)
                 .disabled(!(model.hasTV || model.settings.output == .computer))
         }

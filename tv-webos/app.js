@@ -185,7 +185,7 @@
     currentBox = validBox(box);
     setRich($('subtitle-text'), text);
     $('subtitle-text').style.whiteSpace = paragraphs ? 'pre-line' : '';
-    $('subtitle-text').style.textAlign = paragraphs ? 'left' : '';
+    $('subtitle-text').style.textAlign = paragraphs ? 'start' : '';
     $('subtitle').className = '';
     layout();
     setStatus('st-last', text.length > 60 ? text.slice(0, 60) + '…' : text);
@@ -252,6 +252,7 @@
     clearTimeout(timers[0]);
     clearTimeout(timers[1]);
     $(id + '-text').textContent = text;
+    setDirection($(id + '-text'), text);
     $(id).className = '';
     timers[0] = setTimeout(function () {
       $(id).className = 'fading';
@@ -280,7 +281,7 @@
   }
 
   function plainText(text) {
-    return String(text).toLowerCase().replace(/[\s.,!?;:…"'“”‘’«»()\[\]\-–—]+/g, '');
+    return String(text).toLowerCase().replace(/[\s.,!?;:…"'“”‘’«»()\[\]\-–—،؟؛]+/g, '');
   }
 
   // --- Ekranı çevir ---
@@ -290,8 +291,16 @@
 
   // Nino: çevirideki düğme simgeleri (✕ ○ △ □ ●, L1–R3) oyundaki gibi yuvarlak rozet olarak çizilir.
   var ICON_RE = /(✕|○|△|□|●|↑|↓|←|→|✜|▦|◆|[\u24B6-\u24CF]|\b[LR][123]\b|\bOPTIONS\b|\bTOUCHPAD\b)/;
+  // Nino: Arapça çeviri sağdan sola dizilir. Yön Arap harfinden seçilir ("auto" değil): satır Latin harfli
+  // konuşmacı adıyla başlasa da ("ATREUS: …") sağdan başlar.
+  var ARABIC_RE = /[\u0620-\u064A\u066E-\u06D3\u06FA-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  function setDirection(el, text) {
+    if (ARABIC_RE.test(String(text))) el.setAttribute('dir', 'rtl'); else el.removeAttribute('dir');
+  }
+
   function setRich(el, text) {
     el.textContent = '';
+    setDirection(el, text);
     var parts = String(text).split(ICON_RE);
     for (var i = 0; i < parts.length; i++) {
       if (!parts[i]) continue;

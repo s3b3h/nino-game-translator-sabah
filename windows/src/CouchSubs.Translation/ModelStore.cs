@@ -43,6 +43,35 @@ public sealed class ModelStore
             "01ef522455d2bf22b0716416ee34688cc2b3f5fa257f742665d21b6acc450ac1"),
     ];
 
+    // Nino: İngilizce→Arapça. Helsinki-NLP opus-mt-en-ar (CC BY 4.0), Xenova'nın int8 ONNX dönüşümü (transformers.js);
+    // dosya adları Türkçe modelinkiyle aynı. Özetler Hugging Face'in LFS kayıtlarından (onnx) ve dosyaların kendisinden
+    // (source.spm, vocab.json) alındı; depo sürüme sabitlenir.
+    private const string ArabicRevision = "034a684356c19021a187cda4d7f823298b913921";
+    private static readonly string ArabicBaseUrl = $"https://huggingface.co/Xenova/opus-mt-en-ar/resolve/{ArabicRevision}/";
+
+    /// <summary>opus-mt-en-ar çok hedeflidir: girdinin başına bu hedef dil belirteci konur.</summary>
+    public const string ArabicTargetPrefix = ">>ara<<";
+
+    public static IReadOnlyList<ModelFile> EnglishArabic { get; } =
+    [
+        new(EncoderFile, new Uri(ArabicBaseUrl + "onnx/" + EncoderFile), 51_600_664,
+            "045dce89bd4b5bd5d8f546b9e3f9b506a9dbae70c551e8744eac67564050ddfd"),
+        new(DecoderFile, new Uri(ArabicBaseUrl + "onnx/" + DecoderFile), 58_878_333,
+            "f2cd3894f105e5859d60cd66ad5f83356a3343e68f60c1997627a6e2d156f549"),
+        new(SourceSpmFile, new Uri(ArabicBaseUrl + SourceSpmFile), 801_074,
+            "81ac8f4d4ee271f4109eac67560a31f9c2d555463ba5eb95c32c6deee8ae819d"),
+        new(VocabFile, new Uri(ArabicBaseUrl + VocabFile), 2_243_581,
+            "8b74af9e4c1ec122b8d06362db6c38795e10ca2b0156b2110cf08d4716744b76"),
+    ];
+
+    /// <summary>Hedef dile göre model dosyaları (Türkçe ya da Arapça).</summary>
+    public static IReadOnlyList<ModelFile> FilesFor(string target) =>
+        target.StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? EnglishArabic : EnglishTurkish;
+
+    /// <summary>Hedef dile göre girdinin başına konacak belirteç (yalnız Arapça modelde).</summary>
+    public static string? TargetPrefixFor(string target) =>
+        target.StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? ArabicTargetPrefix : null;
+
     private static readonly Lazy<HttpClient> SharedClient = new(() =>
         // Büyük dosyada toplam süre sınırı anlamsız; takılmayı StallTimeout yakalar.
         new HttpClient { Timeout = Timeout.InfiniteTimeSpan });

@@ -39,18 +39,21 @@ public sealed class DeepLTranslator : ITextTranslator, IOnlineTranslator
     private readonly List<string> _recent = [];
     /// <summary>Çevrilmeyecek adlar ve terimler (ücretsiz çeviriyle aynı sözlük); DeepL'e etiketle korunarak gider.</summary>
     private readonly GlossaryStore _glossary;
+    /// <summary>Nino: DeepL'in hedef dili ("TR", "AR"). Sözlük Türkçe olduğu için yalnız Türkçede kullanılır.</summary>
+    private readonly string _target;
     private DateTimeOffset _pausedUntil = DateTimeOffset.MinValue;
 
     /// <param name="cache">Kalıcı önbellek; verilmezse yalnız bellekte tutulur.</param>
     /// <param name="glossary">Verilmezse kullanıcının sözlük klasörü (ücretsiz çeviriyle aynı).</param>
     public DeepLTranslator(string key, ITextTranslator? fallback, HttpClient? http = null, TranslationCache? cache = null,
-        GlossaryStore? glossary = null)
+        GlossaryStore? glossary = null, string target = "tr")
     {
         _key = key.Trim();
         _fallback = fallback;
         _http = http ?? SharedClient.Value;
         _cache = cache ?? new TranslationCache();
         _glossary = glossary ?? new GlossaryStore(GlossaryStore.UserDirectory);
+        _target = TargetLanguage.Code(target).ToUpperInvariant();
     }
 
     /// <summary>Son DeepL hatası; çeviri düzgün gidiyorsa null.</summary>
@@ -75,7 +78,7 @@ public sealed class DeepLTranslator : ITextTranslator, IOnlineTranslator
         // Bağlam, bu satırdan önce gösterilenlerdir; satırın kendisi bağlama girmez.
         var context = Context();
         Shown(text);
-        var glossary = _glossary.Current;
+        var glossary = _target == "TR" ? _glossary.Current : Glossary.Empty;
         if (_cache.TryGet(DeepLMarkup.CacheKey(text, glossary), out var cached)) return cached;
         if (DateTimeOffset.UtcNow < _pausedUntil) return await FallbackAsync(text, cancellationToken).ConfigureAwait(false);
 
@@ -151,8 +154,8 @@ public sealed class DeepLTranslator : ITextTranslator, IOnlineTranslator
 
     private async Task<string[]> RequestAsync(List<string> sentences, string? context, bool tagged, CancellationToken cancellationToken)
     {
-        // Oyun konuşması: "siz" değil "sen" (DeepL Türkçede desteklemiyorsa yok sayar).
-        var body = new TranslateRequest(sentences, "EN", "TR", context, "prefer_less", true,
+        // Oyun konuşması: "siz" değil "sen" (DeepL Türkçede desteklemiyorsa yok sayar). Arapçada resmiyet ayarı gönderilmez.
+        var body = new TranslateRequest(sentences, "EN", _target, context, _target == "TR" ? "prefer_less" : null, true,
             tagged ? "xml" : null, tagged ? [DeepLMarkup.Tag] : null);
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(BaseUri(_key), "translate"))
         {
@@ -211,7 +214,7 @@ internal sealed record TranslateRequest(
     [property: JsonPropertyName("source_lang")] string SourceLang,
     [property: JsonPropertyName("target_lang")] string TargetLang,
     [property: JsonPropertyName("context"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Context,
-    [property: JsonPropertyName("formality")] string Formality,
+    [property: JsonPropertyName("formality"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Formality,
     [property: JsonPropertyName("preserve_formatting")] bool PreserveFormatting,
     [property: JsonPropertyName("tag_handling"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? TagHandling = null,
     [property: JsonPropertyName("ignore_tags"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<string>? IgnoreTags = null);

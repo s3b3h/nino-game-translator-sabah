@@ -77,6 +77,14 @@ public enum SubtitleOutput: String, Codable, CaseIterable {
     public var showsOnComputer: Bool { self != .tv }
 }
 
+/// Nino: oyun görüntüsünün nereden okunduğu. `ps5`: PS5'e ikinci hesapla bağlanılır (görüntü TV'de, altyazı TV'de).
+/// `window`: oyun bu bilgisayarda PS Remote Play ya da chiaki-ng penceresinde oynanır; görüntü o pencereden okunur,
+/// altyazı pencerenin üstünde gösterilir. PS5 eşleştirmesi ve ikinci hesap gerekmez (monitörde oynayanlar için).
+public enum VideoSource: String, Codable, CaseIterable {
+    /// Nino: `card`: görüntü bu bilgisayara takılı HDMI yakalama kartından okunur (PS5 eşleştirmesi gerekmez).
+    case ps5, window, card
+}
+
 /// Uygulama pencerelerinin görünümü (Windows'taki `AppAppearance` ile aynı). Nino: varsayılan sistemle aynıdır (açık ya da koyu).
 public enum AppAppearance: String, Codable, CaseIterable {
     case dark, light, system
@@ -115,6 +123,8 @@ public struct UserSettings: Codable, Equatable {
     public var output = SubtitleOutput.tv
     /// Bilgisayar ekranındaki altyazı penceresi tıklamaları alttaki pencereye (oyun, PS Remote Play) geçirir.
     public var overlayClickThrough = false
+    /// Nino: oyun görüntüsünün kaynağı. Eski kayıtlarda yoktur; PS5 ile açılır.
+    public var videoSource = VideoSource.ps5
     /// Oyun paketlerindeki hazır Türkçe çeviriler kullanılır (yalnız İngilizce→Türkçe).
     public var gamePacks = true
     /// Pakette bulunmayan İngilizce satırlar ortak havuza gönderilir (anonim; bkz. `LinePool`).
@@ -155,6 +165,7 @@ public struct UserSettings: Codable, Equatable {
         // içindeki canlı ekranda görünür). Önceki sürümün "ikisi de" varsayılanı TV'ye döner.
         if output == .both { output = .tv }
         overlayClickThrough = try values.decodeIfPresent(Bool.self, forKey: .overlayClickThrough) ?? defaults.overlayClickThrough
+        videoSource = (try? values.decodeIfPresent(VideoSource.self, forKey: .videoSource)) ?? defaults.videoSource
         gamePacks = try values.decodeIfPresent(Bool.self, forKey: .gamePacks) ?? defaults.gamePacks
         sharePool = try values.decodeIfPresent(Bool.self, forKey: .sharePool) ?? defaults.sharePool
         translateCorners = (try? values.decodeIfPresent(Bool.self, forKey: .translateCorners)) ?? defaults.translateCorners

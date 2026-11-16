@@ -24,11 +24,25 @@ public partial class OnboardingView : UserControl
         controller.PropertyChanged += OnChanged;
         Unloaded += (_, _) => controller.PropertyChanged -= OnChanged;
         ShowStep();
+        ShowGuide();
+    }
+
+    /// <summary>Nino: kart rehberi açıksa adım karosunun ve Geri / Devam düğmelerinin yerini alır (yumuşak geçişle).</summary>
+    private void ShowGuide()
+    {
+        var active = controller.CardSetupActive;
+        if (active == (GuideHost.Visibility == Visibility.Visible)) return;
+        GuideHost.Content = active ? new CaptureCardGuide(controller) : null;
+        GuideHost.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
+        StepPanel.Visibility = active ? Visibility.Collapsed : Visibility.Visible;
+        var shown = active ? (UIElement)GuideHost : StepPanel;
+        shown.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250)));
     }
 
     private void OnChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(AppController.Step)) ShowStep();
+        else if (e.PropertyName == nameof(AppController.CardSetupActive)) ShowGuide();
         else if (e.PropertyName == nameof(AppController.UsesFreeGemini)) ShowContinue();
     }
 

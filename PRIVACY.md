@@ -31,10 +31,14 @@ Android telefon uygulamalarının kimliğe bağlanmayan kullanım istatistikleri
   ses ve hesap bilgisi gönderilmez. DeepL'in kendi gizlilik koşulları geçerlidir. Anahtar Mac'te Anahtar
   Zinciri'nde, Windows'ta DPAPI ile şifreli dosyada saklanır. Açmazsanız DeepL'e hiçbir şey gönderilmez.
 - **Ortak havuz (Ayarlar › Çeviri'den kapatılabilir):** hiçbir oyun paketinde bulunmayan, okunan İngilizce altyazı
-  satırları herkes için daha iyi Türkçe çeviriler hazırlamak üzere `couchsubs-pool.enmera.workers.dev` adresine
-  gönderilir. Giden yalnız satırın metni, ondan üretilen anahtar, ilk görüldüğü an, uygulama sürümü, işletim sistemi
-  (mac/windows/ios/android) ve kuruluma özgü rastgele bir kimliktir. Görüntü, ses, kullanıcı adı, PSN ya da hesap bilgisi gönderilmez.
-  Kapatınca gönderim hemen durur ve bekleyen satırlar silinir.
+  satırları yeni Türkçe oyun paketleri hazırlamak için Nino'nun kendi havuz sunucusuna gönderilir. Giden yalnız
+  şunlardır: satırın metni, biliniyorsa hangi oyunun paketine yakın olduğu (ör. "gta-v"), kaç kez ve ne zaman
+  görüldüğü, uygulamanın her açılışta yeniden ürettiği rastgele bir oturum kimliği, kuruluma özgü rastgele bir kimlik,
+  uygulama sürümü ve işletim sistemi (mac/windows/ios/android). Görüntü, ses, kullanıcı adı, PSN ya da hesap bilgisi
+  gönderilmez. PS5'in kendi bildirim yazıları (ör. "… oturum açtı") ve Türkçe satırlar daha cihazdayken elenir.
+  Sunucu IP adresini kaydetmez; kurulum kimliğini de açık hâliyle değil, geri çevrilemeyen bir özet olarak saklar.
+  Sunucuya ulaşılamazsa satırlar cihazda bekler ve sonra gönderilir. Kapatınca gönderim hemen durur ve bekleyen
+  satırlar silinir.
 - **Ev ağı:** PS5 ve LG TV'yi bulmak ve onlarla eşleşmek için yalnız yerel ağ kullanılır.
 
 TV uygulaması altyazıları yalnız ev ağındaki CouchSubs bilgisayarından alır ve internete bağlanmaz.
@@ -115,10 +119,13 @@ terms apply. The key is stored in the Keychain on Mac and in the DPAPI-encrypted
 sent to DeepL unless you turn this on. PS5 and TV discovery and pairing use your local network only.
 
 **Shared pool (can be turned off in Settings › Translation):** English subtitle lines that were read and are not
-in any game pack are sent to `couchsubs-pool.enmera.workers.dev` to make better Turkish translations for
-everyone. Only the line's text, a key derived from it, when it was first seen, the app version, the operating
-system (mac/windows/ios/android) and a random ID made for this installation are sent; no picture, audio, user name, PSN or
-account data. Turning it off stops sending at once and deletes lines waiting to be sent.
+in any game pack are sent to Nino's own pool server to build new Turkish game packs. Only this is sent: the line's
+text, the game pack it is closest to if known (e.g. "gta-v"), how many times and when it was seen, a random session ID
+the app makes anew each time it starts, a random ID made for this installation, the app version and the operating
+system (mac/windows/ios/android). No picture, audio, user name, PSN or account data is sent. The PS5's own notification
+texts (e.g. "… signed in") and Turkish lines are filtered out on the device. The server does not record IP addresses
+and stores the installation ID only as a one-way hash. If the server can't be reached, lines wait on the device and
+are sent later. Turning it off stops sending at once and deletes lines waiting to be sent.
 
 The TV app receives subtitles only from the CouchSubs computer on your home network and does not connect
 to the internet.

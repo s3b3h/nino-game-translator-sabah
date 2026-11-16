@@ -190,12 +190,12 @@ private struct HealthChecksCard: View {
     }
 
     private var tvLevel: HealthLevel {
-        guard model.isRunning, model.settings.output.showsOnTV else { return .unknown }
+        guard model.isRunning, model.showsOnTV else { return .unknown }
         return model.tvClients > 0 ? .good : .problem
     }
 
     private var tvText: String {
-        if !model.settings.output.showsOnTV { return String(localized: "Subtitles are not sent to a TV") }
+        if !model.showsOnTV { return String(localized: "Subtitles are not sent to a TV") }
         if !model.isRunning { return String(localized: "Not started") }
         return model.tvClients > 0 ? String(localized: "Connected") : String(localized: "Not connected")
     }

@@ -3,6 +3,9 @@
 // Based on CouchSubs by Sinan Yorulmaz (https://github.com/yorulmazsinan/couchsubs), modified on 2026-11-15.
 package com.couchsubs.mobile.ui
 
+import com.couchsubs.mobile.Services
+import androidx.compose.ui.res.stringResource
+import com.couchsubs.mobile.core.TargetLanguage
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloatAsState
@@ -34,6 +37,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -48,6 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
@@ -81,13 +87,21 @@ import kotlinx.coroutines.launch
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
-private val FlagRed = Color(0xFFE30A17)
+internal val FlagRed = Color(0xFFE30A17)
 private val FlagDeep = Color(0xFFA80514)
+/** Nino: Arapça hedefte cam düğmenin açık rengi (yeşil); ay yıldız yerine "ع" harfi çizilir. */
+private val ArabicGreen = Color(0xFF0B8A4A)
+private val ArabicDeep = Color(0xFF056236)
+
+internal fun targetIsArabic(): Boolean = TargetLanguage.code(Services.settings.targetLanguage) == "ar"
+
+/** Açık hâlin rengi (iz ve küre), çeviri diline göre. */
+internal fun onColors(): Pair<Color, Color> = if (targetIsArabic()) ArabicGreen to ArabicDeep else FlagRed to FlagDeep
 private val LedBlue = Color(0xFF1F5CFF)
 private val LedLight = Color(0xFF738CFF)
 
-/** Telefonda ekranda gösterilecek Türkçe satır: şu an görünen, yoksa son çeviri. */
-private fun LiveStatus.liveText(): String = current.ifEmpty { recent.firstOrNull()?.translation.orEmpty() }
+/** Telefonda ekranda gösterilecek çeviri satırı: şu an görünen, yoksa son çeviri (Arapça sağdan sola). */
+private fun LiveStatus.liveText(): String = TargetLanguage.displayText(current.ifEmpty { recent.firstOrNull()?.translation.orEmpty() })
 
 /**
  * Salon (Mac'teki birinci arayüz). Saydam salon görseli sabit durur; üstüne TV ekranının içi, sehpanın ucundan
@@ -103,6 +117,7 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val drag = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+    val slide = remember { Animatable(0f) }
     var splashDone by remember { mutableStateOf(status.running) }
     LaunchedEffect(plugged) { if (plugged && !status.streaming) splashDone = false }
     val leds by animateFloatAsState(if (plugged) 1f else 0f, tween(if (reduced) 0 else 800), label = "leds")
@@ -116,12 +131,27 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
         val heightDp = with(density) { (CANVAS_H * scale).toDp() } + 8.dp
         fun dp(value: Float) = with(density) { (value * scale).toDp() }
         val base = if (plugged) SOCKET else HANGING
-        val plugAt = Offset(base.x + drag.value.x / scale, base.y + drag.value.y / scale)
-        val dragging = drag.value != Offset.Zero
+        // Nino: sehpanın önündeki ray. Telefonda küçük fişi prize sürüklemek zor; rayda kaydırdıkça fiş prize doğru
+        // yükselir, sona varınca takılır (geri kaydırınca çıkar).
+        val railX = RAIL_START * scale
+        val railWidthPx = (RAIL_END - RAIL_START) * scale
+        val railHeight = maxOf(dp(RAIL_H), 30.dp)
+        val railKnob = railHeight + 10.dp
+        val railKnobPx = with(density) { railKnob.toPx() }
+        val railTravel = (railWidthPx - railKnobPx).coerceAtLeast(1f)
+        val railBase = if (plugged) railTravel else 0f
+        val railPos = (railBase + slide.value).coerceIn(0f, railTravel)
+        val railProgress = railPos / railTravel
+        val sliding = slide.value != 0f
+        val plugAt = if (sliding) Offset(HANGING.x + (SOCKET.x - HANGING.x) * railProgress, HANGING.y + (SOCKET.y - HANGING.y) * railProgress)
+            else Offset(base.x + drag.value.x / scale, base.y + drag.value.y / scale)
+        val dragging = drag.value != Offset.Zero || sliding
 
+        val unplugText = stringResource(R.string.nino_unplug_to_stop)
+        val plugText = stringResource(R.string.nino_plug_to_start, targetLanguageName())
         Box(Modifier.fillMaxWidth().height(heightDp).semantics {
             role = Role.Button
-            contentDescription = if (plugged) "Fişi çekin, çeviri dursun" else "Fişi takın, Türkçe altyazı açılsın"
+            contentDescription = if (plugged) unplugText else plugText
             onClick { toggle(); true }
         }) {
             // Mavi LED'ler: görselin arkasında, saydam kenarlarından taşar (bulanıklık yerine katmanlı ışık; Android 8'de de çalışır).
@@ -137,8 +167,9 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
                 Box(Modifier.requiredSize(virtualW.dp, virtualH.dp).graphicsLayer { scaleX = factor; scaleY = factor }) {
                     when {
                         !plugged -> Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-                            Text("NO SIGNAL", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Monospace,
-                                letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.28f))
+                            val noSignal = stringResource(R.string.nino_no_signal)
+                            Text(noSignal, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Monospace,
+                                letterSpacing = if (TargetLanguage.containsArabic(noSignal)) 0.sp else 3.sp, color = Color.White.copy(alpha = 0.28f))
                         }
                         !splashDone -> TvSplash(onFinish = { splashDone = true })
                         else -> LiveTvScreen(status)
@@ -188,18 +219,59 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
                     }
                 }
                 .pointerInput(plugged, paired) { detectTapGestures { toggle() } })
+            // Ray: sehpanın ön yüzünde buzlu oluk; her yerinden kaydırılabilir, dokunmak da fişi takar/çıkarır.
+            val railTouch = maxOf(railKnob, 56.dp)
+            val railTouchPx = with(density) { railTouch.toPx() }
+            val railY = RAIL_Y * scale
+            val railHeightPx = with(density) { railHeight.toPx() }
+            val railWidthDp = with(density) { railWidthPx.toDp() }
+            Box(Modifier.offset { IntOffset(railX.roundToInt(), (railY - railHeightPx / 2).roundToInt()) }
+                .size(railWidthDp, railHeight)
+                .background(Color.Black.copy(alpha = 0.38f + 0.2f * railProgress), RoundedCornerShape(50))
+                .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(50)), contentAlignment = Alignment.Center) {
+                Text(if (plugged) stringResource(R.string.nino_slide_to_unplug) else stringResource(R.string.nino_slide_to_plug) + "  ›",
+                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.85f), maxLines = 1,
+                    modifier = Modifier.alpha(if (plugged) railProgress else 1f - railProgress)
+                        .padding(start = if (plugged) 0.dp else railKnob, end = if (plugged) railKnob else 0.dp))
+            }
+            Box(Modifier.offset { IntOffset(railX.roundToInt(), (railY - railTouchPx / 2).roundToInt()) }
+                .size(railWidthDp, railTouch)
+                .pointerInput(plugged, paired) {
+                    detectHorizontalDragGestures(onDragEnd = {
+                        val end = (railBase + slide.value) / railTravel
+                        scope.launch { slide.animateTo(0f, spring(dampingRatio = 0.8f)) }
+                        if (!plugged && end > 0.8f) toggle() else if (plugged && end < 0.2f) toggle()
+                    }, onDragCancel = { scope.launch { slide.animateTo(0f) } }) { change, amount ->
+                        change.consume()
+                        scope.launch { slide.snapTo(slide.value + amount) }
+                    }
+                }
+                .pointerInput(plugged, paired) { detectTapGestures { toggle() } })
+            // Rayın küresi: içinde fiş simgesi; takılıyken mavi yanar.
+            Box(Modifier.offset { IntOffset((railX + railPos).roundToInt(), (railY - railKnobPx / 2).roundToInt()) }
+                .size(railKnob).shadow(8.dp, CircleShape)
+                .background(Color.White, CircleShape)
+                .background(LedLight.copy(alpha = railProgress), CircleShape)
+                .border(1.5.dp, Color.White.copy(alpha = 0.9f), CircleShape), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Power, null, tint = if (railProgress > 0.5f) Color.White else Color(0xFF1B2440), modifier = Modifier.size(railKnob * 0.55f))
+            }
         }
     }
 }
+
+/** Nino: seçili çeviri dilinin arayüz dilindeki adı ("Türkçe", "Arapça" / "التركية", "العربية"). */
+@Composable
+fun targetLanguageName(): String = stringResource(
+    if (TargetLanguage.code(Services.settings.targetLanguage) == "ar") R.string.nino_lang_ar else R.string.nino_lang_tr)
 
 /** Sahnenin altındaki tek satırlık ipucu. */
 @Composable
 fun LivingRoomHint(running: Boolean, paired: Boolean) {
     Text(
         when {
-            running -> "Fişi çekin, çeviri dursun"
-            paired -> "Fişi prize takın, Türkçe altyazı açılsın"
-            else -> "Önce PS5'inizi eşleyin"
+            running -> stringResource(R.string.nino_unplug_to_stop)
+            paired -> stringResource(R.string.nino_plug_to_start, targetLanguageName())
+            else -> stringResource(R.string.nino_pair_first)
         },
         style = Tokens.Type.caption, color = Tokens.Color.secondary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
     )
@@ -224,14 +296,16 @@ fun LiveTvScreen(status: LiveStatus, modifier: Modifier = Modifier) {
         Row(Modifier.align(Alignment.TopStart).background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Box(Modifier.size(8.dp).background(FlagRed, CircleShape))
-            Text("CANLI", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp, color = Color.White)
+            val liveLabel = stringResource(R.string.nino_live)
+            Text(liveLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                letterSpacing = if (TargetLanguage.containsArabic(liveLabel)) 0.sp else 1.2.sp, color = Color.White)
         }
         Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)) {
             when {
                 // PS5 görüntüsü gelmiyorsa altyazı yerine bağlantının durumu yazılır.
-                !status.streaming -> Text(status.phase.ifEmpty { "PS5'e bağlanılıyor…" }, fontSize = 15.sp, fontWeight = FontWeight.Medium,
+                !status.streaming -> Text(status.phase.ifEmpty { stringResource(R.string.nino_connecting_ps5) }, fontSize = 15.sp, fontWeight = FontWeight.Medium,
                     color = Color.White.copy(alpha = 0.7f), textAlign = TextAlign.Center)
-                text.isEmpty() -> Text("Sıradaki altyazı bekleniyor…", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.55f))
+                text.isEmpty() -> Text(stringResource(R.string.nino_waiting_next), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.55f))
                 else -> Text(text, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = Color.White, textAlign = TextAlign.Center,
                     modifier = Modifier.background(Color.Black.copy(alpha = 0.72f), RoundedCornerShape(10.dp)).padding(horizontal = 16.dp, vertical = 8.dp))
             }
@@ -288,6 +362,11 @@ private const val SCREEN_H = 595f
 private val SOCKET = Offset(1564f, 378f)
 private val CABLE_START = Offset(1550f, 734f)
 private val HANGING = Offset(1600f, 885f)
+/** Sehpanın ön yüzündeki kaydırma rayı (görsel pikseli). */
+private const val RAIL_START = 230f
+private const val RAIL_END = 1300f
+private const val RAIL_Y = 792f
+private const val RAIL_H = 64f
 
 /**
  * Cam düğme (Mac'teki ikinci arayüz): hap biçimli iz ve üstünde kayan cam küre. Kapalıyken küre solda, iz mavi-gri;
@@ -295,7 +374,10 @@ private val HANGING = Offset(1600f, 885f)
  */
 @Composable
 fun GlassTranslateToggle(running: Boolean, starting: Boolean, paired: Boolean, modifier: Modifier = Modifier,
+                         mirrored: Boolean = false,
                          onStart: () -> Unit, onStop: () -> Unit, onLocked: () -> Unit) {
+    // Nino: Arapça arayüzde (mirrored) küre sağda başlar, sola kaydırılınca açılır; yazılar da yer değiştirir.
+    val (onRed, onDeep) = onColors()
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val drag = remember { Animatable(0f) }
@@ -309,56 +391,70 @@ fun GlassTranslateToggle(running: Boolean, starting: Boolean, paired: Boolean, m
         val animated by animateFloatAsState(base, spring(dampingRatio = 0.8f, stiffness = 300f), label = "knob")
         val x = (animated + drag.value).coerceIn(0f, travel)
         val progress = if (travel > 0) x / travel else 0f
+        val shownX = if (mirrored) travel - x else x
+        val dir = if (mirrored) -1f else 1f
+        val stopText = stringResource(R.string.nino_stop_translation)
+        val startText = stringResource(R.string.nino_start_translation)
         Box(Modifier.size(width, knob).semantics {
             role = Role.Switch
-            contentDescription = if (running) "Çeviriyi durdur" else "Çeviriyi başlat"
+            contentDescription = if (running) stopText else startText
             onClick { toggle(); true }
         }.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { toggle() },
             contentAlignment = Alignment.CenterStart) {
             // İz
             val shape = RoundedCornerShape(50)
             Box(Modifier.size(width, height)
-                .shadow(18.dp, shape, ambientColor = if (progress > 0.5f) FlagRed else Color(0xFF4D5C85), spotColor = if (progress > 0.5f) FlagRed else Color(0xFF4D5C85))
+                .shadow(18.dp, shape, ambientColor = if (progress > 0.5f) onRed else Color(0xFF4D5C85), spotColor = if (progress > 0.5f) onRed else Color(0xFF4D5C85))
                 .background(Brush.verticalGradient(listOf(Color(0xFF788CB3), Color(0xFF4D5C85))), shape)
-                .background(Brush.verticalGradient(listOf(FlagRed.copy(alpha = progress), FlagDeep.copy(alpha = progress))), shape)
+                .background(Brush.verticalGradient(listOf(onRed.copy(alpha = progress), onDeep.copy(alpha = progress))), shape)
                 .background(Brush.verticalGradient(0f to Color.White.copy(alpha = 0.35f), 0.5f to Color.Transparent), shape)
                 .border(1.dp, Color.White.copy(alpha = 0.45f), shape))
             // Yazılar
             Box(Modifier.size(width, height)) {
-                Column(Modifier.align(Alignment.CenterEnd).padding(end = 26.dp).alpha(1 - progress), horizontalAlignment = Alignment.End) {
-                    Text(if (starting) "Bağlanıyor…" else if (paired) "Açın" else "PS5'i eşleyin", fontSize = 21.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                    Text(if (paired) "Türkçe altyazı" else "Kuruluma başlamak için dokunun", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                Column(Modifier.align(if (mirrored) Alignment.CenterStart else Alignment.CenterEnd)
+                    .padding(start = if (mirrored) 26.dp else 0.dp, end = if (mirrored) 0.dp else 26.dp).alpha(1 - progress),
+                    horizontalAlignment = if (mirrored) Alignment.Start else Alignment.End) {
+                    // Nino: "Türkçe altyazı / Başlatmak için kaydırın" (eskiden "Açın").
+                    Text(if (starting) stringResource(R.string.nino_toggle_connecting) else if (paired) stringResource(R.string.nino_subtitles_in, targetLanguageName())
+                        else stringResource(R.string.nino_toggle_pair), fontSize = 21.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(stringResource(if (paired) R.string.nino_slide_to_start else R.string.nino_tap_to_setup), fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                 }
-                Column(Modifier.align(Alignment.CenterStart).padding(start = 28.dp).alpha(progress)) {
-                    Text("Türkçe", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text("Altyazılar açık", fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
+                Column(Modifier.align(if (mirrored) Alignment.CenterEnd else Alignment.CenterStart)
+                    .padding(start = if (mirrored) 0.dp else 28.dp, end = if (mirrored) 28.dp else 0.dp).alpha(progress),
+                    horizontalAlignment = if (mirrored) Alignment.End else Alignment.Start) {
+                    Text(targetLanguageName(), fontSize = 25.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(stringResource(R.string.nino_subtitles_on), fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
                 }
             }
             // Küre: izden büyük, iki uçta dışarı taşar.
-            val knobShift = with(density) { (x - (knob - height).toPx() / 2).roundToInt() }
+            val knobShift = with(density) { (shownX - (knob - height).toPx() / 2).roundToInt() }
             Box(Modifier.offset { IntOffset(knobShift, 0) }.size(knob)
                 .pointerInput(running, paired) {
                     detectHorizontalDragGestures(onDragEnd = {
                         val end = base + drag.value
                         scope.launch { drag.animateTo(0f, spring(dampingRatio = 0.78f)) }
                         if (!running && end > travel * 0.6f) toggle() else if (running && end < travel * 0.4f) toggle()
-                    }) { change, amount -> change.consume(); scope.launch { drag.snapTo(drag.value + amount) } }
+                    }) { change, amount -> change.consume(); scope.launch { drag.snapTo(drag.value + amount * dir) } }
                 }, contentAlignment = Alignment.Center) {
-                GlassKnob(progress, starting)
+                GlassKnob(progress, starting, onRed)
             }
         }
     }
 }
 
 @Composable
-private fun GlassKnob(progress: Float, starting: Boolean) {
+private fun GlassKnob(progress: Float, starting: Boolean, onColor: Color) {
     Box(Modifier.fillMaxSize().shadow(14.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.3f)), contentAlignment = Alignment.Center) {
         // Kürenin arkasındaki renkli disk (iz rengini taşır).
-        Box(Modifier.fillMaxSize(0.62f).background(Color(0xFF5C6E99), CircleShape).background(FlagRed.copy(alpha = progress), CircleShape))
+        Box(Modifier.fillMaxSize(0.62f).background(Color(0xFF5C6E99), CircleShape).background(onColor.copy(alpha = progress), CircleShape))
         if (starting) CircularProgressIndicator(Modifier.size(26.dp), color = Color.White, strokeWidth = 3.dp)
         else {
             Icon(Icons.Filled.PowerSettingsNew, null, tint = Color.White, modifier = Modifier.size(26.dp).alpha(1 - progress))
-            Canvas(Modifier.size(42.dp).alpha(progress).scale(0.7f + 0.3f * progress)) { drawCrescentStar(FlagRed) }
+            // Nino: Arapça hedefte kürenin içinde Suudi bayrağı (emoji, daireyi dolduracak kadar büyük, kırpılır).
+            if (targetIsArabic()) Box(Modifier.fillMaxSize(0.62f).clip(CircleShape).alpha(progress), contentAlignment = Alignment.Center) {
+                Text("\uD83C\uDDF8\uD83C\uDDE6", fontSize = 64.sp, modifier = Modifier.wrapContentSize(unbounded = true))
+            }
+            else Canvas(Modifier.size(42.dp).alpha(progress).scale(0.7f + 0.3f * progress)) { drawCrescentStar(FlagRed) }
         }
         // Cam: buzlu dolgu, kenar ışığı ve sol üstte parlama.
         Canvas(Modifier.fillMaxSize()) {
@@ -373,7 +469,7 @@ private fun GlassKnob(progress: Float, starting: Boolean) {
 }
 
 /** Bayraktaki ay yıldız: beyaz ay (iç daire zemin rengiyle oyulur) ve ucu aya bakan beş köşeli yıldız. */
-private fun DrawScope.drawCrescentStar(background: Color) {
+internal fun DrawScope.drawCrescentStar(background: Color) {
     val s = size.minDimension
     val r = s * 0.42f
     drawCircle(Color.White, r, Offset(s * 0.42f, s / 2))
@@ -403,13 +499,16 @@ fun LivingRoomThumbnail(modifier: Modifier = Modifier) {
 fun GlassToggleThumbnail(modifier: Modifier = Modifier) {
     Box(modifier, contentAlignment = Alignment.Center) {
         Box(Modifier.widthIn(max = 130.dp).fillMaxWidth().height(34.dp)
-            .background(Brush.verticalGradient(listOf(FlagRed, FlagDeep)), RoundedCornerShape(50))
+            .background(Brush.verticalGradient(onColors().toList()), RoundedCornerShape(50))
             .border(1.dp, Color.White.copy(alpha = 0.45f), RoundedCornerShape(50)), contentAlignment = Alignment.CenterEnd) {
-            Text("Türkçe", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White,
+            Text(targetLanguageName(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White,
                 modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp))
             Box(Modifier.padding(end = 2.dp).size(30.dp).background(Color.White.copy(alpha = 0.3f), CircleShape)
                 .border(1.5.dp, Color.White.copy(alpha = 0.9f), CircleShape), contentAlignment = Alignment.Center) {
-                Canvas(Modifier.size(16.dp)) { drawCrescentStar(FlagRed) }
+                if (targetIsArabic()) Box(Modifier.size(26.dp).clip(CircleShape), contentAlignment = Alignment.Center) {
+                    Text("\uD83C\uDDF8\uD83C\uDDE6", fontSize = 30.sp, modifier = Modifier.wrapContentSize(unbounded = true))
+                }
+                else Canvas(Modifier.size(16.dp)) { drawCrescentStar(FlagRed) }
             }
         }
     }

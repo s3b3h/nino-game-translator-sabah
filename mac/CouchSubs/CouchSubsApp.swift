@@ -52,7 +52,16 @@ struct CouchSubsApp: App {
         }
         // Altyazı bilgisayar ekranındayken menü çubuğundan pencereye ulaşılır ("Tıklamalar geçsin" açıkken geri dönüş yolu).
         MenuBarExtra("Nino", systemImage: "captions.bubble",
-                     isInserted: Binding(get: { model.step == .done && model.settings.output.showsOnComputer }, set: { _ in })) {
+                     isInserted: Binding(get: { model.step == .done && model.showsOnComputer }, set: { _ in })) {
+            // Nino: yakalama kartıyla oyun bu Mac'te gösteriliyorsa durum ve tam ekran.
+            if model.usesCaptureCard {
+                Text(verbatim: model.cardStatusText)
+                if model.showsCardPlayer {
+                    Button("Game Full Screen") { model.toggleCardFullScreen() }
+                        .keyboardShortcut("f", modifiers: [.control, .command])
+                }
+                Divider()
+            }
             Toggle("Clicks pass through", isOn: Binding(get: { model.settings.overlayClickThrough },
                                                         set: { model.settings.overlayClickThrough = $0 }))
             Button("Adjust the subtitle window") { model.overlayAdjusting = true }

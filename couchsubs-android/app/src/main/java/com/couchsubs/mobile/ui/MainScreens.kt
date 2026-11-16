@@ -2,6 +2,10 @@
 // Ana ekran (tuval: Telefon-Ana, -Calisiyor, -Tur) ve oyun paketleri (-Paketler). Uygulama ve paketler ücretsiz.
 package com.couchsubs.mobile.ui
 
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
+import com.couchsubs.mobile.core.TargetLanguage
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -107,12 +111,46 @@ fun MainScreen(
     onPacks: () -> Unit,
     onProfile: () -> Unit,
     onSettings: () -> Unit,
+    onSource: () -> Unit = onSettings,
 ) {
     val context = LocalContext.current
     val settings = Services.settings
     val bounds = remember { mutableStateMapOf<TourStep, Rect>() }
     var tour by remember { mutableStateOf(if (settings.tourShown) null else TourStep.START) }
-    val paired = settings.console != null
+    // Nino: yakalama kartıyla PS5 eşlemesi gerekmez; kart modu "hazır" sayılır, PS5 kısa yolu kaynak ekranını açar.
+    val captureCard = settings.usesCaptureCard
+    val paired = captureCard || settings.console != null
+    val sourceName = if (captureCard) stringResource(R.string.capture_card) else settings.console?.name
+    val onSourceTap = if (captureCard) onSource else onPairing
+    // Nino: ana ekran hep dikeydir (manifest); yalnız tam ekran altyazı yataydır. Çeviri açıkken telefon yan çevrilince
+    // (yön algılayıcısı, ekran dönmeden) tam ekran açılır. Tam ekrandan dönünce, telefon önce dikeye gelmeden yeniden açılmaz;
+    // masadaki telefonun titremesi için yan durum en az 0,7 sn sürmelidir.
+    val phoneOutput = settings.target != SubtitleTarget.TV || status.demo
+    val armed = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
+    val openPhoneView = {
+        armed.set(false)
+        onPhoneView()
+    }
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    val sensorContext = LocalContext.current
+    androidx.compose.runtime.DisposableEffect(status.running, phoneOutput) {
+        if (!status.running || !phoneOutput) return@DisposableEffect onDispose { }
+        var sidewaysSince = 0L
+        val listener = object : android.view.OrientationEventListener(sensorContext) {
+            override fun onOrientationChanged(degrees: Int) {
+                if (degrees == ORIENTATION_UNKNOWN) return
+                val upright = degrees <= 25 || degrees >= 335
+                val sideways = degrees in 65..115 || degrees in 245..295
+                if (upright) { armed.set(true); sidewaysSince = 0L; return }
+                if (!sideways || !armed.get() || !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) { sidewaysSince = 0L; return }
+                val now = android.os.SystemClock.uptimeMillis()
+                if (sidewaysSince == 0L) sidewaysSince = now
+                else if (now - sidewaysSince >= 700) { sidewaysSince = 0L; openPhoneView() }
+            }
+        }
+        if (listener.canDetectOrientation()) listener.enable()
+        onDispose { listener.disable() }
+    }
     fun mark(step: TourStep) = Modifier.onGloballyPositioned { bounds[step] = it.boundsInRoot() }
     val topBar: @Composable () -> Unit = {
         TopBar {
@@ -127,29 +165,28 @@ fun MainScreen(
             val onTv = settings.target == SubtitleTarget.TV
             if (settings.homeStyle == HomeStyle.LIVING_ROOM) {
                 Spacer(Modifier.height(8.dp))
-                LivingRoomScene(status, paired, mark(TourStep.START), onStart = onStart, onStop = onStop, onLocked = onPairing)
+                // Nino: sahne ve cam düğme Arapça arayüzde aynalanmaz (sürükleme ve görsel soldan sağa).
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    LivingRoomScene(status, paired, mark(TourStep.START), onStart = onStart, onStop = onStop, onLocked = onSourceTap)
+                }
                 LivingRoomHint(status.running, paired)
             } else {
-                androidx.compose.animation.AnimatedVisibility(status.running,
-                    enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
-                    exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()) {
-                    Box(Modifier.fillMaxWidth().height(200.dp).background(Color.Black, RoundedCornerShape(Tokens.Radius.tile))
-                        .clip(RoundedCornerShape(Tokens.Radius.tile))) { LiveTvScreen(status) }
-                }
-                Spacer(Modifier.height(if (status.running) 8.dp else 60.dp))
-                GlassTranslateToggle(status.running, starting = false, paired = paired, modifier = mark(TourStep.START),
-                    onStart = onStart, onStop = onStop, onLocked = onPairing)
-                Spacer(Modifier.height(12.dp))
+                // Nino: telefonun sade ana ekranı (durum, başlık, sahne, kaydırma, üç kısa yol).
+                PremiumHome(status, paired, sourceName, onTv, settings.packsEnabled,
+                    startMarker = mark(TourStep.START), targetMarker = mark(TourStep.TARGET), packsMarker = mark(TourStep.PACKS),
+                    onStart = onStart, onStop = onStop, onPairing = onSourceTap, onTarget = onTarget, onPacks = onPacks,
+                    onFullScreen = openPhoneView, onDemo = { com.couchsubs.mobile.service.DemoSession.start() })
             }
-            androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            if (settings.homeStyle == HomeStyle.LIVING_ROOM) androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickLink(Icons.Filled.SportsEsports, "PS5", settings.console?.name ?: stringResource(R.string.profile_not_paired), onClick = onPairing)
-                QuickLink(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, "Çıkış",
-                    if (onTv) (if (status.connectedTvs > 0) "TV · Bağlı" else "TV") else "Telefon", mark(TourStep.TARGET), onClick = onTarget)
-                QuickLink(Icons.Filled.Inventory2, "Paketler", if (settings.packsEnabled) stringResource(R.string.packs_free) else null, mark(TourStep.PACKS), onClick = onPacks)
-                QuickLink(Icons.Filled.Translate, "Çeviri", status.engineLabel.ifEmpty { engineName(context) }, onClick = onSettings)
+                QuickLink(Icons.Filled.SportsEsports, "PS5", sourceName ?: stringResource(R.string.profile_not_paired), onClick = onSourceTap)
+                QuickLink(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, stringResource(R.string.nino_output),
+                    if (onTv) (if (status.connectedTvs > 0) stringResource(R.string.nino_tv_connected) else "TV") else stringResource(R.string.nino_phone), mark(TourStep.TARGET), onClick = onTarget)
+                QuickLink(Icons.Filled.Inventory2, stringResource(R.string.nino_packs), if (settings.packsEnabled) stringResource(R.string.packs_free) else null, mark(TourStep.PACKS), onClick = onPacks)
+                QuickLink(Icons.Filled.Translate, stringResource(R.string.nino_translation), status.engineLabel.ifEmpty { engineName(context) }, onClick = onSettings)
             }
-            if (status.running && !onTv) SecondaryButton(stringResource(R.string.main_phone_view), onClick = onPhoneView)
+            // Nino: cam arayüzde tam ekran sahne kartının üstündedir; salonda ayrı düğme kalır.
+            if (status.running && !onTv && settings.homeStyle != HomeStyle.TOGGLE) SecondaryButton(stringResource(R.string.main_phone_view), onClick = onPhoneView)
             status.error?.let { NoteTile(it) }
         }
         tour?.let { step ->
@@ -200,7 +237,9 @@ private fun RunningScreen(status: LiveStatus, topBar: @Composable () -> Unit, on
         Tile(Modifier.fillMaxWidth()) {
             TileLabel(stringResource(R.string.running_now))
             // Son çeviri altyazı sarısında (içerik), altında özgün metin.
-            Text(current?.translation ?: stringResource(R.string.running_waiting), style = Tokens.Type.subtitleCurrent,
+            // Nino: Arapça çeviri sağdan sola, satırın sağına yaslı.
+            Text(current?.translation?.let(TargetLanguage::displayText) ?: stringResource(R.string.running_waiting),
+                style = Tokens.Type.subtitleCurrent, modifier = Modifier.fillMaxWidth(),
                 color = if (current != null) Tokens.Color.accentText else Tokens.Color.secondary)
             current?.let {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
@@ -215,7 +254,8 @@ private fun RunningScreen(status: LiveStatus, topBar: @Composable () -> Unit, on
                 Row(Modifier.padding(vertical = Tokens.Space.inline), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Tokens.Space.hair)) {
-                        Text(pair.translation, style = Tokens.Type.line, color = Tokens.Color.secondary)
+                        Text(TargetLanguage.displayText(pair.translation), style = Tokens.Type.line, color = Tokens.Color.secondary,
+                            modifier = Modifier.fillMaxWidth())
                         Text(pair.source, style = Tokens.Type.caption, color = Tokens.Color.secondary)
                     }
                     if (pair.origin == "paket") Text(stringResource(R.string.running_ready), style = Tokens.Type.caption, color = Tokens.Color.pro)

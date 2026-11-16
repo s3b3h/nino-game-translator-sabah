@@ -23,6 +23,8 @@ class CouchSubsApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Services.init(this)
+        // Nino: arayüz yalnız Türkçe ya da Arapçadır ve çeviri dilini izler (telefon İngilizce olsa da).
+        Services.settings.applyInterfaceLanguage()
     }
 }
 
@@ -93,4 +95,19 @@ object Services {
         }
         return GamePackLibrary(bundled, packStore.files().firstOrNull()?.parentFile).also { it.setDisabled(settings.disabledPacks) }
     }
+}
+
+/**
+ * Nino: Android 12 ve öncesinde uygulama dili sistem ayarıyla verilemez; etkinliklerin bağlamı çeviri dilinin
+ * yereliyle sarılır (Android 13+ LocaleManager kullanılır, bu sargı gerekmez).
+ */
+fun android.content.Context.withInterfaceLanguage(): android.content.Context {
+    if (android.os.Build.VERSION.SDK_INT >= 33) return this
+    val code = getSharedPreferences("settings", android.content.Context.MODE_PRIVATE).getString("targetLanguage", null)
+        ?: com.couchsubs.mobile.core.TargetLanguage.preferred(java.util.Locale.getDefault().language)
+    val locale = java.util.Locale(com.couchsubs.mobile.core.TargetLanguage.code(code))
+    val config = android.content.res.Configuration(resources.configuration)
+    config.setLocale(locale)
+    config.setLayoutDirection(locale)
+    return createConfigurationContext(config)
 }

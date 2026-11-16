@@ -19,8 +19,9 @@ public final class AITranslator: TextTranslator, OnlineTranslating {
 
     /// `server`: yerel modelin (Ollama, LM Studio) sunucusu. `session` verilmezse hizmete uygun zaman aşımıyla kurulur.
     public init(provider: AIProvider, key: String, model: String?, server: LocalAIServer? = nil, fallback: TextTranslator,
-                session: URLSession? = nil, cache: TranslationCache = TranslationCache()) {
-        core = AITranslationCore(provider: provider, key: key, model: model, server: server, session: session, cache: cache)
+                session: URLSession? = nil, cache: TranslationCache = TranslationCache(), target: String = "tr") {
+        core = AITranslationCore(provider: provider, key: key, model: model, server: server, session: session, cache: cache,
+                                 target: target)
         self.fallback = fallback
     }
 

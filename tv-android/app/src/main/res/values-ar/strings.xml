@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+<!-- Nino: Android tarafının Arapça metinleri (bkz. values/strings.xml). -->
+<resources>
+    <string name="overlay_running">تُعرض الترجمة فوق صورة HDMI على التلفاز</string>
+    <string name="overlay_stopped">توقفت ترجمة Nino. افتح Nino مرة أخرى لإعادة تشغيلها.</string>
+    <string name="overlay_selected">وضع الطبقة: تظهر الترجمة فوق صورة HDMI الخاصة بالتلفاز.</string>
+    <string name="overlay_fallback">لا تظهر الصورة داخل Nino. جارٍ التبديل إلى وضع الطبقة: تظهر الترجمة فوق صورة HDMI الخاصة بالتلفاز.</string>
+    <string name="overlay_choose_input">بدّل التلفاز إلى مدخل PS5 (HDMI %1$d) باستخدام جهاز التحكم عن بُعد. ستظهر الترجمة فوق الصورة.</string>
+    <string name="overlay_permission_needed">يحتاج وضع الطبقة إلى إذن «الظهور فوق التطبيقات الأخرى».</string>
+    <string name="overlay_fallback_needs_permission">لا تصل صورة PS5 إلى Nino. في بعض أجهزة التلفاز تبقى الشاشة سوداء هنا؛ ويحلّ وضع الطبقة هذه المشكلة، لكنه يحتاج إلى إذن «الظهور فوق التطبيقات الأخرى».</string>
+    <string name="overlay_unavailable">لا تصل صورة PS5 إلى Nino. في بعض أجهزة التلفاز تبقى الشاشة سوداء هنا. ويحلّ وضع الطبقة هذه المشكلة، لكنه متوفر فقط في تطبيق التلفاز الذي يثبّته Nino من الكمبيوتر: أزل هذه النسخة، وفعّل تصحيح أخطاء USB على التلفاز، وابدأ الترجمة من الكمبيوتر.</string>
+    <string name="overlay_permission_how">يمنحه Nino على الكمبيوتر عند تثبيت تطبيق التلفاز: ابدأ الترجمة من هناك مع تفعيل تصحيح أخطاء USB. أو افتح على التلفاز الإعدادات › التطبيقات › الوصول الخاص إلى التطبيقات › الظهور فوق التطبيقات الأخرى وفعّل Nino.</string>
+    <string name="overlay_active">يعمل Nino الآن. ستظهر الترجمة فوق صورة PS5؛ ابدأ الترجمة من Nino على الكمبيوتر أو الهاتف.</string>
+    <string name="press_input_again">اضغط زر المدخل مرة أخرى لاختيار مدخل PS5.</string>
+</resources>

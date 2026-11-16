@@ -3,7 +3,7 @@
 import CouchSubsCore
 import RemotePlay
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 /// Altyazının bilgisayar ekranında gösterilmesi: ayar, TV'siz kurulum ve pencerenin aldığı satırlar.
 @MainActor

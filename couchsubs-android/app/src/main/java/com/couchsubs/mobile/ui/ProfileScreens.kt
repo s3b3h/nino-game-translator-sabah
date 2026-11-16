@@ -2,6 +2,7 @@
 // Profil (cihazlar ve tercihler; hesap yok) ve ayarlar (tuval: Telefon-Profil, -Ayarlar).
 package com.couchsubs.mobile.ui
 
+import com.couchsubs.mobile.core.TargetLanguage
 import com.couchsubs.mobile.settings.HomeStyle
 
 import androidx.compose.foundation.layout.height
@@ -105,7 +106,7 @@ fun ProfileScreen(onBack: () -> Unit, onSettings: () -> Unit, onPairing: () -> U
 
 /** Ayarlar (tuval Telefon-Ayarlar): motor ve anahtar, altyazı görünümü, paketler, hedef, PS5, hakkında. */
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit, onPairing: () -> Unit, onHealth: () -> Unit = {}) {
+fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit, onPairing: () -> Unit, onHealth: () -> Unit = {}, onSource: () -> Unit = {}) {
     val context = LocalContext.current
     val settings = Services.settings
     var engine by remember { mutableStateOf(settings.engine) }
@@ -114,6 +115,7 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
     var color by remember { mutableStateOf(settings.textColor) }
     var screenOn by remember { mutableStateOf(settings.keepScreenOn) }
     var homeStyle by remember { mutableStateOf(settings.homeStyle) }
+    var targetLanguage by remember { mutableStateOf(settings.targetLanguage) }
     // Tuvaldeki dört seçenek: Ücretsiz, DeepL, Gemini, Diğer (OpenAI / Claude).
     val segment = when (engine) {
         EngineChoice.FREE -> 0
@@ -126,11 +128,13 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
         settings.engine = choice
     }
     ScreenScaffold(top = { TopBar(stringResource(R.string.settings), onBack = onBack) }) {
+        // Nino: görüntü kaynağı en üstte (Mac'teki "Bağlantı" gibi): PS5 (Remote Play) ya da Yakalama Kartı.
+        RowList(listOf({ RowItem(stringResource(R.string.settings_video_source), videoSourceName(), onClick = onSource) }))
         // Nino: Arayüz (Mac ile aynı iki ana ekran).
         Tile(Modifier.fillMaxWidth()) {
-            TileLabel("Arayüz")
+            TileLabel(stringResource(R.string.nino_interface))
             Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
-                listOf(HomeStyle.LIVING_ROOM to "Salon", HomeStyle.TOGGLE to "Cam düğme").forEach { (style, name) ->
+                listOf(HomeStyle.LIVING_ROOM to stringResource(R.string.nino_home_living_room), HomeStyle.TOGGLE to stringResource(R.string.nino_home_toggle)).forEach { (style, name) ->
                     val selected = homeStyle == style
                     Column(Modifier.weight(1f).border(if (selected) 2.dp else 1.dp, if (selected) Tokens.Color.accent else Tokens.Color.borderStrong,
                         RoundedCornerShape(Tokens.Radius.control)).clickable { homeStyle = style; settings.homeStyle = style }.padding(10.dp),
@@ -142,10 +146,20 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
                     }
                 }
             }
-            Text(if (homeStyle == HomeStyle.LIVING_ROOM) "Fişi prize takın; TV'de Nino açılsın, altyazı aksın." else "Düğmeyi sağa kaydırın; canlı TV yukarıdan insin.",
+            Text(stringResource(if (homeStyle == HomeStyle.LIVING_ROOM) R.string.nino_home_living_room_hint else R.string.nino_home_toggle_hint),
                 style = Tokens.Type.caption, color = Tokens.Color.secondary)
         }
-        RowList(listOf({ RowItem("Sistem sağlığı", "Ağ, PS5 bağlantısı, görüntü ve çeviri hızı", onClick = onHealth) }))
+        // Nino: çeviri dili (Türkçe ya da Arapça); bir sonraki çeviri oturumunda kullanılır.
+        Tile(Modifier.fillMaxWidth()) {
+            TileLabel(stringResource(R.string.nino_translation_language))
+            Segmented(TargetLanguage.choices.map { "${TargetLanguage.flags[it.first]} ${it.second}" },
+                TargetLanguage.choices.indexOfFirst { it.first == targetLanguage }.coerceAtLeast(0)) { index ->
+                targetLanguage = TargetLanguage.choices[index].first
+                settings.targetLanguage = targetLanguage
+            }
+            Text(stringResource(R.string.nino_translation_language_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
+        }
+        RowList(listOf({ RowItem(stringResource(R.string.nino_system_health), stringResource(R.string.nino_system_health_detail), onClick = onHealth) }))
         Tile(Modifier.fillMaxWidth()) {
             TileLabel(stringResource(R.string.settings_engine))
             Segmented(listOf(stringResource(R.string.engine_free_short), "DeepL", "Gemini", stringResource(R.string.engine_other)), segment) { index ->

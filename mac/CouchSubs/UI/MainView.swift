@@ -26,6 +26,7 @@ struct MainView: View {
                             // Nino: ikinci arayüz, salon sahnesi (fişi prize tak → çeviri başlar).
                             VStack(spacing: 14) {
                                 LivingRoomScene(available: CGSize(width: geo.size.width - 64, height: geo.size.height - 70))
+                                    .fixedLeftToRight()
                                 LivingRoomHint()
                             }
                             .frame(maxWidth: .infinity)
@@ -34,9 +35,11 @@ struct MainView: View {
                             // Çeviri açılınca TV yukarıdan iner, altındakiler aşağı kayar.
                             if model.isRunning || DebugPreview.live {
                                 LiveTVScreen()
+                                    .fixedLeftToRight()
                                     .transition(.move(edge: .top).combined(with: .opacity).combined(with: .scale(scale: 0.94)))
                             }
                             GlassTranslateToggle()
+                                .fixedLeftToRight()
                             LiveLine()
                         }
                         .padding(.vertical, model.isRunning || DebugPreview.live ? 12 : 40)
@@ -44,7 +47,7 @@ struct MainView: View {
                         .animation(.spring(response: 0.6, dampingFraction: 0.86), value: model.isRunning)
                         .background(PowerHalo())
                         }
-                        if model.settings.output.showsOnComputer {
+                        if model.showsOnComputer {
                             Button("Adjust the subtitle window") { model.overlayAdjusting = true }
                                 .buttonStyle(.ghost)
                                 .disabled(model.overlayAdjusting)
@@ -168,10 +171,10 @@ struct MainControls: View {
                 TestSubtitleButton()
             }
             HStack(alignment: .top, spacing: Theme.space("gap")) {
-                StatusTile(symbol: "gamecontroller", title: "PS5", value: model.ps5StatusText,
+                StatusTile(symbol: "gamecontroller", title: model.usesGameWindow ? "Game window" : model.usesCaptureCard ? "Capture card" : "PS5", value: model.ps5StatusText,
                            tone: AppModel.ps5Tone(model.sessionState, running: model.isRunning))
                 // Altyazı yalnız bilgisayar ekranındaysa TV durumu gösterilmez.
-                if model.settings.output.showsOnTV { TVStatusTile() }
+                if model.showsOnTV { TVStatusTile() }
             }
             .fixedSize(horizontal: false, vertical: true)
             HStack(alignment: .top, spacing: Theme.space("gap")) {
@@ -210,7 +213,7 @@ private struct TestSubtitleButton: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        let onTV = model.settings.output.showsOnTV
+        let onTV = model.showsOnTV
         Button {
             Task { await model.testSubtitle() }
         } label: {
@@ -218,7 +221,7 @@ private struct TestSubtitleButton: View {
         }
         .buttonStyle(CSButtonStyle(kind: .secondary, height: "primaryActionHeight"))
         .fixedSize()
-        .disabled(onTV && !model.hasTV && !model.settings.output.showsOnComputer)
+        .disabled(onTV && !model.hasTV && !model.showsOnComputer)
         .help(Text(onTV ? "Sends a sample subtitle to the TV." : "Shows a sample subtitle on this computer's screen."))
     }
 }
@@ -365,10 +368,12 @@ private struct CurrentLine: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space("hair")) {
-            Text(verbatim: translation)
+            Text(verbatim: TargetLanguage.displayText(translation))
                 .font(.system(size: 28, weight: .semibold))
                 .foregroundStyle(Color.csAccentText)
+                .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
+                .subtitleDirection(translation, fill: true)
             Text(verbatim: source)
                 .font(.csCaption)
                 .foregroundStyle(Color.csSecondary)

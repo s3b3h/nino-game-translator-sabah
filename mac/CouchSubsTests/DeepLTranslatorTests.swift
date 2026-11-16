@@ -2,7 +2,7 @@
 
 import CouchSubsCore
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 /// DeepL yerine geçen sahte sunucu: istek gövdelerini saklar, her cümleyi "[tr] cümle" diye çevirir.
 private final class FakeDeepL: URLProtocol {

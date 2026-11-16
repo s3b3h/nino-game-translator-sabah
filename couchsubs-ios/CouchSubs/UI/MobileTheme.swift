@@ -94,17 +94,20 @@ struct MobileButtonStyle: ButtonStyle {
             .font(Mobile.TypeScale.headline)
             .labelStyle(.titleAndIcon)
             .foregroundStyle(foreground)
-            .frame(maxWidth: kind == .ghost ? nil : .infinity, minHeight: kind == .ghost ? Mobile.Control.buttonSmall : Mobile.Control.button)
+            .frame(maxWidth: kind == .ghost ? nil : .infinity, minHeight: kind == .ghost ? Mobile.Control.buttonSmall : 58)
             .padding(.horizontal, kind == .ghost ? Mobile.Space.gap : Mobile.Space.screen)
             .background { background(pressed: pressed) }
             .overlay {
+                // Nino: yeni kimlik: bütün düğmeler tam hap; birincil koyu lacivert, ince beyaz kenar.
                 if kind == .secondary {
-                    RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous).strokeBorder(Mobile.Palette.borderStrong)
+                    Capsule().strokeBorder(Mobile.Palette.borderStrong)
+                } else if kind == .primary {
+                    Capsule().strokeBorder(Color.white.opacity(0.14))
                 }
             }
             .scaleEffect(pressed ? 0.97 : 1)
             .opacity(isEnabled ? 1 : 0.4)
-            .contentShape(RoundedRectangle(cornerRadius: Mobile.Radius.control))
+            .contentShape(Capsule())
             .animation(.easeOut(duration: 0.12), value: pressed)
     }
 
@@ -112,18 +115,19 @@ struct MobileButtonStyle: ButtonStyle {
         switch kind {
         case .primary: Mobile.Palette.onAccent
         case .secondary: Mobile.Palette.text
-        case .ghost: Mobile.Palette.accent
+        case .ghost: Color(hex: 0x0058A8)
         case .destructive: Mobile.Palette.danger
         }
     }
 
     /// Nino: birincil düğme mavi-lacivert degrade ve mavi gölge; ikincil beyaz cam.
     @ViewBuilder private func background(pressed: Bool) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Mobile.Radius.control, style: .continuous)
+        let shape = Capsule()
         switch kind {
         case .primary:
-            shape.fill(Mobile.Palette.gradient).opacity(pressed ? 0.85 : 1)
-                .shadow(color: Mobile.Palette.accent.opacity(0.35), radius: 12, y: 6)
+            shape.fill(LinearGradient(colors: [Color(hex: 0x1B2747), Color(hex: 0x0A1430)], startPoint: .top, endPoint: .bottom))
+                .opacity(pressed ? 0.85 : 1)
+                .shadow(color: Color(hex: 0x0A1430).opacity(0.28), radius: 14, y: 8)
         case .secondary: shape.fill(Color.white.opacity(0.9))
         case .ghost: Color.clear
         case .destructive: shape.fill(Mobile.Palette.dangerSoft)
@@ -356,8 +360,8 @@ struct PageDots: View {
         HStack(spacing: Mobile.Space.inline) {
             ForEach(0..<count, id: \.self) { index in
                 Capsule()
-                    .fill(index == current ? Mobile.Palette.accent : Mobile.Palette.secondary.opacity(0.25))
-                    .frame(width: index == current ? 24 : 8, height: 8)
+                    .fill(index == current ? Color(hex: 0x0A1430) : Color(hex: 0x0A1430).opacity(0.18))
+                    .frame(width: index == current ? 22 : 8, height: 8)
             }
         }
         .animation(.easeOut(duration: 0.2), value: current)
@@ -501,10 +505,13 @@ struct ScreenTitle: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Mobile.Space.hair) {
-            if let caption { Text(caption).font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary) }
-            Text(title).font(Mobile.TypeScale.display).fixedSize(horizontal: false, vertical: true)
+            // Nino: yeni kimlik: adım satırı vurgu mavisi, başlık 32pt kalın ve sıkı, açıklama 16pt.
+            if let caption { Text(caption).font(.system(size: 13, weight: .semibold)).foregroundStyle(Mobile.Palette.accent) }
+            Text(title).font(.system(size: 32, weight: .bold)).tracking(-0.5).foregroundStyle(Color(hex: 0x0A1430))
+                .fixedSize(horizontal: false, vertical: true)
             if let message {
-                Text(message).font(Mobile.TypeScale.body).foregroundStyle(Mobile.Palette.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(message).font(.system(size: 16)).foregroundStyle(Mobile.Palette.secondary).fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 2)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

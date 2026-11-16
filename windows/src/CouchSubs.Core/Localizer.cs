@@ -17,12 +17,20 @@ public sealed class Localizer
 
     private Localizer(string language) => this.language = language;
 
-    public static Localizer ForLanguage(string language) => new(language.ToLowerInvariant().StartsWith("tr") ? "tr" : "en");
+    /// <summary>Türkçe, Arapça (Nino), değilse İngilizce.</summary>
+    public static Localizer ForLanguage(string language)
+    {
+        var code = language.ToLowerInvariant();
+        return new(code.StartsWith("tr") ? "tr" : code.StartsWith("ar") ? "ar" : "en");
+    }
 
-    /// <summary>Windows'un arayüz diline göre: Türkçe değilse İngilizce.</summary>
+    /// <summary>Windows'un arayüz diline göre: Türkçe, Arapça, değilse İngilizce.</summary>
     public static Localizer Current { get; } = ForLanguage(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
     public string Language => language;
+
+    /// <summary>Arayüz sağdan sola mı (Arapça).</summary>
+    public bool IsRightToLeft => language == "ar";
 
     public string this[string key] =>
         Catalog.Value.TryGetValue(key, out var values) && values.TryGetValue(language, out var value) ? value : key;
@@ -63,10 +71,19 @@ public sealed class Localizer
 
     private static Dictionary<string, Dictionary<string, string>> LoadCatalog()
     {
-        using var stream = typeof(Localizer).Assembly.GetManifestResourceStream("Localizable.xcstrings")
-            ?? throw new InvalidOperationException("Localizable.xcstrings uygulamaya gömülmemiş");
-        using var document = JsonDocument.Parse(stream);
         var catalog = new Dictionary<string, Dictionary<string, string>>();
+        using (var stream = typeof(Localizer).Assembly.GetManifestResourceStream("Localizable.xcstrings")
+            ?? throw new InvalidOperationException("Localizable.xcstrings uygulamaya gömülmemiş"))
+            Read(stream, catalog);
+        // Nino: yalnız Windows'a ait metinler (aynı biçim); aynı anahtar varsa Windows'unki geçerlidir.
+        using (var windows = typeof(Localizer).Assembly.GetManifestResourceStream("Windows.xcstrings"))
+            if (windows is not null) Read(windows, catalog);
+        return catalog;
+    }
+
+    private static void Read(Stream stream, Dictionary<string, Dictionary<string, string>> catalog)
+    {
+        using var document = JsonDocument.Parse(stream);
         foreach (var entry in document.RootElement.GetProperty("strings").EnumerateObject())
         {
             var values = new Dictionary<string, string>();
@@ -76,6 +93,5 @@ public sealed class Localizer
                         values[localization.Name] = value.GetString() ?? entry.Name;
             catalog[entry.Name] = values;
         }
-        return catalog;
     }
 }

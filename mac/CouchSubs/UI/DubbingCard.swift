@@ -9,6 +9,10 @@ struct DubbingCard: View {
 
     var body: some View {
         Card(title: "Turkish dubbing") {
+          if !TargetLanguage.isTurkish(model.settings.targetLanguage) {
+            // Nino: sesler ve metin hazırlığı Türkçe için; başka çeviri dilinde dublaj kapalıdır.
+            HintText(text: "Dubbing works only when the translation language is Turkish.")
+          } else {
             Toggle("Voice the translation in Turkish", isOn: $model.settings.dubbing.enabled)
             HintText(text: "In the game's audio settings, turn the dialogue (voice) volume down, but not off: Nino listens to it to tell who is speaking, man or woman, and gives every character its own voice. Keep music and effects.")
 
@@ -47,6 +51,7 @@ struct DubbingCard: View {
                     Text(error).font(.csCallout).foregroundStyle(Color.csDanger)
                 }
             }
+          }
         }
     }
 

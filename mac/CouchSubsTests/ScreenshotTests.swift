@@ -5,7 +5,7 @@ import CouchSubsCore
 import RemotePlay
 import SwiftUI
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 /// Geliştirme aracı: README'deki ekran görüntüleri (docs/screenshots/mac). Yalnız `COUCHSUBS_SCREENSHOTS` ortam
 /// değişkeni (klasör) verilince çalışır; `scripts/mac-screenshots.sh` başlatır. Uygulamanın ekranları koyu görünümde,
@@ -27,6 +27,17 @@ final class ScreenshotTests: XCTestCase {
         setup.accountId = Data(repeating: 1, count: 8)
         setup.step = .console
 
+        // Nino: ilk açılış (karşılama) Türkçe seçiliyken, Arapça bayrağına basılınca ve sonraki adım.
+        func firstRun(_ language: String, step: AppModel.Step) -> AppModel {
+            let model = AppModel(services: FakeServices(), store: MemoryStore(), defaults: .isolated())
+            model.settings.targetLanguage = language
+            model.step = step
+            return model
+        }
+        let welcomeTR = firstRun("tr", step: .welcome)
+        let welcomeAR = firstRun("ar", step: .welcome)
+        let nextAR = firstRun("ar", step: .secondAccount)
+
         let width = Theme.size("windowWidth"), height = Theme.size("windowHeight")
         let settingsSize = CGSize(width: width - 2 * Theme.space("screen"), height: height - 2 * Theme.space("screen"))
         let screens: [(String, AnyView, CGSize)] = [
@@ -34,6 +45,9 @@ final class ScreenshotTests: XCTestCase {
             ("ayarlar-ceviri", AnyView(SettingsView(section: .translation).environmentObject(main)), settingsSize),
             ("ayarlar-paketler", AnyView(SettingsView(section: .packs).environmentObject(main)), settingsSize),
             ("kurulum", AnyView(OnboardingView().environmentObject(setup)), CGSize(width: width, height: height)),
+            ("ilk-acilis-turkce-secili", AnyView(OnboardingView().environmentObject(welcomeTR)), CGSize(width: width, height: height)),
+            ("ilk-acilis-arapca-secili", AnyView(OnboardingView().environmentObject(welcomeAR)), CGSize(width: width, height: height)),
+            ("arapca-sonraki-ekran", AnyView(OnboardingView().environmentObject(nextAR)), CGSize(width: width, height: height)),
         ]
         let shown = screens.enumerated().map { index, screen in
             (screen.0, show(screen.1, size: screen.2, offset: CGFloat(index) * 40))

@@ -3,129 +3,123 @@
 <h1 align="center">Nino Game Translator</h1>
 
 <p align="center"><b>Türkçe desteği olmayan PS5 oyunlarını Türkçe oynayın.</b><br>
-Oyundaki İngilizce altyazıyı anlık olarak Türkçeye çevirir ve TV'de, oyunun tam üstünde gösterir.<br>
+Oyundaki İngilizce altyazıyı anlık olarak Türkçeye (ya da Arapçaya) çevirir; TV'de oyunun üstünde ya da telefonunuzda gösterir.<br>
 Tamamen ücretsiz · açık kaynak · reklamsız · abonelik yok · hesap yok</p>
 
 <p align="center">
+  <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk"><b>⬇️ Android telefon</b></a> &nbsp;·&nbsp;
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip"><b>⬇️ Mac</b></a> &nbsp;·&nbsp;
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe"><b>⬇️ Windows</b></a> &nbsp;·&nbsp;
-  <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk"><b>⬇️ Android telefon</b></a> &nbsp;·&nbsp;
-  <b>📱 iPhone: çok yakında App Store'da</b><br>
-  <b>📺 TV için: Downloader'a ya da TV'nin tarayıcısına <code>is.gd/ninoapk</code> yazın</b>
+  <b>📱 iPhone: App Store incelemesinde</b><br>
+  <b>📺 TV için: Downloader'a ya da TV'nin tarayıcısına <code>is.gd/ninoapk</code> yazın</b> &nbsp;·&nbsp;
+  <a href="docs/KURULUM.md"><b>📘 Kurulum Rehberi</b></a>
+</p>
+
+<p align="center">
+  <img src="docs/nino/tanitim/tr1.jpg" width="200" alt="PS5 oyunlarına anında Türkçe altyazı">&nbsp;
+  <img src="docs/nino/tanitim/tr2.jpg" width="200" alt="Kaydırın, altyazılar aksın">&nbsp;
+  <img src="docs/nino/tanitim/tr3.jpg" width="200" alt="Hazır paketlerle beklemeden">&nbsp;
+  <img src="docs/nino/tanitim/tr4.jpg" width="200" alt="TV'de ya da telefonunuzda">
 </p>
 
 ---
+
+## 0.1.7'de yenilikler
+
+- **Yeni telefon tasarımı (Android ve iPhone):** Sade, tek odaklı ana ekran. Durum satırı, büyük başlık, canlı altyazıların aktığı koyu sahne kartı ve **"Başlatmak İçin Kaydırın"** çubuğu. Kaydırınca çubuk bayrak rengine döner, tutamaç camlı bir **ay yıldız** (Arapça'da 🇸🇦) küresine dönüşür.
+- **Yan çevirin, tam ekran açılsın:** Çeviri açıkken telefonu yan çevirince altyazı tam ekran açılır. Ana ekran hep dikey kalır.
+- **Yenilenen kurulum ekranları:** Karşılama, PSN girişi, PS5 eşleme ve altyazı yeri seçimi aynı premium görünümde.
+- **PS5'siz demo:** "PS5'siz Deneyin" ile örnek altyazılarla uygulamayı PS5 olmadan gezebilirsiniz.
+- **Tam Arapça desteği:** Çeviri dili Arapça seçilince menüler de Arapçaya döner ve her şey sağdan sola dizilir. Uygulama yalnız Türkçe ve Arapça açılır.
+- **PS5 kendiliğinden bulunur:** Eşleme ekranı PS5'i sürekli arar; PS5'i sonradan açsanız da IP yazmanıza gerek kalmaz.
+- **Daha çok Android telefonda çalışır:** Bazı MediaTek işlemcili telefonlarda görüntünün okunamaması düzeltildi.
+- **HDMI yakalama kartı (Mac ve Windows):** PS5 görüntüsünü yakalama kartından alma. Remote Play ve ikinci PSN hesabı gerekmez.
+- **Sony giriş sayfası** Android'de artık boş gelmiyor; ücretsiz çeviri modeli inmezse kendiliğinden yeniden deneniyor.
 
 ## Nasıl çalışır
 
 ```
 PS5 ──HDMI──▶ TV  ◀── Türkçe altyazı (TV'deki Nino uygulaması, oyunun üstünde)
  │                         ▲
- └─ Remote Play ──▶ Nino (Mac, Windows ya da Android telefon): okur → çevirir ─┘
+ └─ Remote Play ──▶ Nino (telefon, Mac ya da Windows): okur → çevirir ─┘
     (ikinci, ücretsiz PSN hesabıyla)
 ```
 
-Oyunu her zamanki gibi TV'de, kendi kolunuzla oynarsınız. Bilgisayardaki (ya da telefondaki) Nino aynı görüntüyü Remote Play ile izler,
-altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizcenin tam üstüne, tam opak bir kutuyla koyar.
+Oyunu her zamanki gibi kendi kolunuzla oynarsınız. Telefondaki (ya da bilgisayardaki) Nino aynı görüntüyü Remote Play ile alır, altyazıyı okur, çevirir ve TV'ye gönderir ya da kendi ekranında gösterir. PS5'iniz sıradan bir monitöre bağlıysa telefonu ekranın yanına koymanız yeterli.
+
+## Ekran görüntüleri
 
 <p align="center">
-  <img src="docs/nino/mac-salon.png" width="440" alt="Nino Mac: Salon ana ekranı, fiş takılı, TV'de Türkçe altyazı">&nbsp;
-  <img src="docs/nino/mac-cam-dugme.png" width="440" alt="Nino Mac: Cam düğme ana ekranı, Türkçe açık">
+  <img src="docs/nino/v017/android-karsilama-1.jpg" width="190" alt="Karşılama">&nbsp;
+  <img src="docs/nino/v017/android-psn.jpg" width="190" alt="İkinci PSN hesabı">&nbsp;
+  <img src="docs/nino/v017/android-cikis.jpg" width="190" alt="Altyazılar nerede görünsün">&nbsp;
+  <img src="docs/nino/v017/android-ana-ekran.jpg" width="190" alt="Ana ekran">&nbsp;
+  <img src="docs/nino/v017/android-canli.jpg" width="190" alt="Canlı çeviri">
 </p>
 
-## Neler yapar
+<p align="center">
+  <img src="docs/nino/mac-salon.png" width="440" alt="Nino Mac: Salon ana ekranı">&nbsp;
+  <img src="docs/nino/mac-cam-dugme.png" width="440" alt="Nino Mac: Cam düğme ana ekranı">
+</p>
 
-- **Anlık Türkçe altyazı:** Konuşmalar, oyunun altyazısının üstüne aynı boyda ve aynı yerde yazılır.
-- **Oyuna göre ayarlanır:** Her oyunun altyazısının ekranda nerede durduğunu kendisi öğrenir; alttaki görev ve öğretici yazılarını altyazıyla karıştırmaz.
-- **Görev ve ipuçları da Türkçe:** Ekranın altındaki görev satırları ("Kampa dön") ve sol üstteki ipucu kutuları çevrilir.
-- **Kumanda simgeleri yerinde:** "Hold ✕ to…" gibi satırlarda ✕ ○ △ □, L1–R3, yön tuşları tanınır ve Türkçe çeviride aynı yerde gösterilir.
-- **Oyun paketleri:** Red Dead Redemption 2 gibi oyunların hazır Türkçe çevirileri anında gelir.
-- **Türkçe dublaj (deneysel):** Çeviriyi Türkçe seslendirir. Oyunun kendi sesinden kimin konuştuğunu ve nasıl konuştuğunu (bağırma, fısıltı, soru) anlar; her karaktere kendi sesini verir.
-- **Altyazı temaları:** Klasik, Sinema, Cam ve daha fazlası; ayarlar ekranında canlı önizleme.
-- **İki ana ekran:** *Salon*: fişi prize takın, TV'de Nino açılsın, mavi LED'ler yansın ve altyazı aksın. *Cam düğme*: sağa kaydırın, canlı TV yukarıdan insin. Ayarlar › Arayüz'den seçilir.
-- **Sistem sağlığı:** Mac'in ağı (kablo/Wi-Fi), PS5 bağlantısı, görüntü kaybı ve çeviri hızı tek bakışta; sorun varsa ne yapılacağını söyler, kayıtları tek tıkla kaydeder.
-- **TV'nin girişine dokunmaz:** Nino HDMI'yi kendisi değiştirmez; TV'de "PS5'iniz HDMI 2'de" gibi yol gösterir, kumandanın kaynak tuşu hep çalışır.
-- **Kendi kendini günceller:** 0.1.5'ten itibaren Mac uygulaması yeni sürümü arka planda indirip kendisi kurar (0.1.4 ve öncesinden bir kez elle geçilir).
+## العربية · Arapça
+
+<p align="center">
+  <img src="docs/nino/tanitim/ar1.jpg" width="200" alt="ترجمة عربية فورية لألعاب PS5">&nbsp;
+  <img src="docs/nino/tanitim/ar2.jpg" width="200" alt="اسحب لتبدأ الترجمة">&nbsp;
+  <img src="docs/nino/v017/android-arapca-canli.jpg" width="200" alt="الواجهة العربية">
+</p>
+
+<p dir="rtl" align="right"><b>نينو</b> يقرأ الترجمة الإنجليزية في ألعاب PS5 ويعرضها مترجمة إلى العربية فورًا، على التلفاز فوق اللعبة أو على هاتفك. اختر العلم السعودي في شاشة الترحيب لتتحول الواجهة بالكامل إلى العربية. مجاني بالكامل، مفتوح المصدر، بلا إعلانات ولا اشتراكات.</p>
 
 ## Kimler kullanabilir
 
 | Nino'yu çalıştıran cihaz | Durum |
 |---|---|
-| **Mac** (Apple Silicon: M1 ve sonrası) | ✅ Hazır, en çok denenen |
+| **Android telefon** (Android 8 ve üzeri) | ✅ Hazır, yeni tasarım |
+| **Mac** (Apple Silicon: M1 ve sonrası) | ✅ Hazır |
 | **Windows 10/11** bilgisayar | ✅ Hazır |
-| **Android telefon** (Android 8 ve üzeri) | ✅ Hazır |
-| **iPhone** | 🔜 Çok yakında App Store'da |
+| **iPhone** | 🔜 App Store incelemesinde |
 
-| Altyazının çıktığı TV | Durum |
+| Altyazının çıktığı yer | Durum |
 |---|---|
 | **Android TV / Google TV** (TCL, Sony, Philips, Xiaomi, Hisense ve diğerleri) | ✅ Hazır, denendi |
-| **LG** (webOS) | 🧪 Deneysel |
-| **Samsung** (Tizen) | 🧪 Deneysel |
-| TV uygulaması kurmadan | ✅ Altyazı bilgisayar ya da telefon ekranında da gösterilebilir |
-
-<p align="center">
-  <img src="docs/nino/android-salon.png" width="200" alt="Android telefon: Salon">&nbsp;
-  <img src="docs/nino/android-cam-dugme.png" width="200" alt="Android telefon: Cam düğme">&nbsp;
-  <img src="docs/nino/android-ayarlar.png" width="200" alt="Android telefon: Arayüz ve Sistem sağlığı ayarları">
-</p>
-
-<p align="center">
-  <img src="docs/nino/app-store/2-ana-ekran.png" width="200" alt="iPhone ana ekran">&nbsp;
-  <img src="docs/nino/app-store/3-ayarlar.png" width="200" alt="iPhone ayarlar">&nbsp;
-  <img src="docs/nino/app-store/1-karsilama.png" width="200" alt="iPhone karşılama">
-</p>
+| **Telefon ekranı** (TV uygulaması olmadan, monitörde oynayanlar için) | ✅ Hazır |
+| **LG** (webOS) · **Samsung** (Tizen) | 🧪 Deneysel |
 
 ## Gerekenler
 
 | | |
 |---|---|
 | **Konsol** | PS5 (Remote Play açık) |
-| **PSN** | İkinci, ücretsiz bir PSN hesabı (Remote Play için; oyun sizin hesabınızda oynanır) |
-| **Bilgisayar ya da telefon** | Apple Silicon (M1 ve sonrası) Mac, macOS 13 veya üzeri (en çok denenen) · Windows 10/11 (64 bit) · Android 8 ve üzeri telefon |
-| **TV** | Android TV / Google TV (test edildi). LG webOS ve Samsung Tizen: deneysel, henüz gerçek TV'de denenmedi |
-| **Çeviri** | Ücretsiz çeviri bilgisayarda, internetsiz çalışır. Daha iyi çeviri için ücretsiz bir **Gemini** anahtarı önerilir |
+| **PSN** | İkinci, ücretsiz bir PSN hesabı (Remote Play için; oyun sizin hesabınızda oynanır). Yakalama kartıyla gerekmez. |
+| **Telefon ya da bilgisayar** | Android 8+ telefon · Apple Silicon Mac (macOS 13+) · Windows 10/11 (64 bit) |
+| **Ağ** | PS5, telefon/bilgisayar ve TV aynı Wi-Fi'de |
 
 ## Kurulum
 
-### Mac
-1. [Son sürümden](https://github.com/yunusdemirbag/nino-game-translator/releases/latest) `Nino-Mac.zip` dosyasını indirin, açın ve **Nino**'yu **Uygulamalar** klasörüne sürükleyin.
-2. İlk açılışta Mac "doğrulanamadı" diyebilir: **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**.
-3. Nino adım adım yol gösterir: ikinci PSN hesabıyla giriş, PS5'i 8 haneli kodla eşleme, TV'yi seçme, deneme altyazısı.
+Adım adım, görselli anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)**
 
-### Windows
-1. [Son sürümden](https://github.com/yunusdemirbag/nino-game-translator/releases/latest) `Nino-Windows-Setup.exe` dosyasını indirip çalıştırın. Yönetici izni istemez; kurulunca kendini günceller.
-2. Windows "bilgisayarınızı korudu" derse **Ek bilgi › Yine de çalıştır**'a basın (uygulama imzasız olduğu için).
-3. Nino adım adım yol gösterir (PSN girişi, PS5 eşleme, TV).
+**Kısaca (Android telefon):**
+1. [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)'yı telefonda indirip kurun ("Bu kaynaktan yüklemeye izin ver").
+2. Nino'yu açın, ikinci PSN hesabınızla **Sony İle Giriş Yapın**.
+3. PS5'te **Ayarlar › Sistem › Uzaktan Oynatma › Cihazı Eşle**'deki 8 haneli kodu yazın.
+4. Altyazının nerede görüneceğini seçin (TV ya da telefon), oyunu açın ve **kaydırın**.
 
-> 0.1.6'dan itibaren Windows'ta da Mac'teki ana ekranlar (Salon, Cam düğme), Arayüz seçimi ve Sistem sağlığı var. Kumanda simgeleri, oyuna göre altyazı yeri ve konuşanı tanıyan dublaj henüz yalnız Mac'te.
-
-### Android telefon (bilgisayar yerine)
-1. Telefonda [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk) dosyasını indirin ve açın.
-2. Telefon izin isterse **Bu kaynaktan yüklemeye izin ver**'i açıp kurun.
-3. Telefon PS5'e Remote Play ile bağlanır, altyazıyı okur ve TV'ye gönderir. Telefon şarja takılı ve aynı Wi-Fi'de kalmalı.
-
-### iPhone
-Çok yakında App Store'da. iPhone uygulaması hazır; Apple'ın incelemesinden geçince buraya bağlantısı eklenecek.
-
-### TV (Android TV / Google TV)
-- **En kolayı:** TV'de USB hata ayıklama açıksa Mac'teki Nino TV uygulamasını kendisi kurar ve günceller.
-- **Elle:**
-  1. TV'de Google Play'den ücretsiz **Downloader** uygulamasını kurun.
-  2. Downloader'a **Bilinmeyen kaynaklardan yükleme** izni verin.
-  3. Downloader'da (ya da TV'de tarayıcı varsa onun adres çubuğunda) **`is.gd/ninoapk`** yazıp **Git**'e basın, inen dosyayı kurun. Bu adres her zaman en yeni sürümü indirir.
-  4. Bazı TV'lerde (TCL gibi) **Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster › Nino** iznini açın.
-
-TV'de Nino'yu açınca TV, PS5'in bağlı olduğu HDMI girişine geçer ve Nino görünmez bir katman olarak altyazıyı oyunun üstüne yazar. Kumandadaki **OK** tuşu bilgi panelini açar.
+**Mac:** [`Nino-Mac.zip`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)'i indirip Nino'yu Uygulamalar'a sürükleyin; Nino adım adım yol gösterir ve kendini günceller.
+**Windows:** [`Nino-Windows-Setup.exe`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)'yi çalıştırın.
+**TV (Android TV / Google TV):** Downloader'a `is.gd/ninoapk` yazın ya da Mac'teki Nino'nun kurmasına izin verin.
 
 ## Gizlilik
 
-- Altyazı okuma (yazı tanıma) tamamen bilgisayarınızda yapılır.
-- Ücretsiz çeviri bilgisayarınızda, internetsiz çalışır.
-- Gemini gibi bir çeviri hizmeti seçerseniz yalnızca oyunun altyazı metni, **sizin anahtarınızla** o hizmete gider.
-- **Ortak havuz:** Hazır yamada bulunmayan İngilizce altyazı satırları (yalnız oyunun metni, adsız) CouchSubs'ın ortak havuzuna gönderilir; yeni oyun yamaları bu satırlardan hazırlanır. İstemezseniz Ayarlar'dan kapatabilirsiniz.
-- Nino hesap açtırmaz, reklam göstermez, sizi izlemez.
+- Altyazı okuma (yazı tanıma) ve ücretsiz çeviri cihazınızda yapılır.
+- Gemini, DeepL gibi bir çeviri hizmeti seçerseniz yalnızca altyazı metni, **sizin anahtarınızla** o hizmete gider.
+- **Ortak havuz:** Hazır pakette bulunmayan İngilizce altyazı satırları (yalnız metin, adsız) yeni oyun paketleri hazırlamak için Nino'nun kendi havuzuna gönderilir. Ayarlar'dan kapatabilirsiniz; kapatınca bekleyen satırlar da silinir.
+- Nino hesap açtırmaz, reklam göstermez, sizi izlemez. Ayrıntılar: [PRIVACY.md](PRIVACY.md).
 
 ## Sık sorulanlar
+
+**PS5'im yok, önce görmek istiyorum.** Telefonda ana ekrandaki **"PS5'siz Deneyin"**e dokunun; örnek altyazılarla uygulamayı gezebilirsiniz.
 
 **Neden ikinci bir PSN hesabı gerekiyor?** Remote Play, PS5'e bağlanmak için bir hesap ister. Kendi hesabınızla oyun oynarken aynı anda o hesapla Remote Play açılamaz; ikinci (ücretsiz) hesap bunu çözer.
 
@@ -137,7 +131,7 @@ TV'de Nino'yu açınca TV, PS5'in bağlı olduğu HDMI girişine geçer ve Nino 
 
 ## Kaynak koddan derleme
 
-Mac uygulaması Swift/SwiftUI ile yazılmıştır; Remote Play bağlantısı için [chiaki-ng](https://github.com/streetpea/chiaki-ng)'nin kütüphanesi kullanılır.
+Mac ve iPhone uygulamaları Swift/SwiftUI, Android uygulaması Kotlin/Jetpack Compose ile yazılmıştır; Remote Play bağlantısı için [chiaki-ng](https://github.com/streetpea/chiaki-ng)'nin kütüphanesi kullanılır.
 
 ```bash
 git submodule update --init --recursive
@@ -152,7 +146,7 @@ Windows uygulaması: `windows` (.NET/WPF). Android telefon uygulaması: `couchsu
 
 Nino, **GNU AGPL-3.0** lisansıyla yayımlanan ücretsiz ve açık kaynak bir yazılımdır. Ayrıntılar: [LICENSE](LICENSE), [NOTICE](NOTICE).
 
-**Nino © 2026 Yunus Demirbağ.** Based on [CouchSubs](https://github.com/yorulmazsinan/couchsubs) by Sinan Yorulmaz, modified by Yunus Demirbağ on 2026-11-15.
+**Nino © 2026 Yunus Demirbağ.** Based on [CouchSubs](https://github.com/yorulmazsinan/couchsubs) by Sinan Yorulmaz, modified by Yunus Demirbağ on 2026-11-16.
 
 Nino şu projelerin üzerine kuruludur:
 1. **[Chiaki](https://git.sr.ht/~thestr4ng3r/chiaki)** — Florian Märkl ve katkıda bulunanlar: açık kaynak PlayStation Remote Play istemcisi.
@@ -175,4 +169,4 @@ Geliştiren: **Yunus Demirbağ** · Destekleyenler: **M. Akif Demirbağ**
 
 ### English
 
-**Nino** translates the English subtitles of PS5 games into Turkish in real time and shows them on your TV, right on top of the game. A Mac (or a Windows PC, or an Android phone) watches the game through Remote Play (with a second, free PSN account), reads the subtitles, translates them and sends them to the Nino app on the TV. Free, open source (AGPL-3.0), no ads, no subscriptions. Based on CouchSubs by Sinan Yorulmaz.
+**Nino** translates the English subtitles of PS5 games into Turkish (or Arabic) in real time and shows them on your TV, right on top of the game, or on your phone. An Android phone (or a Mac, a Windows PC, or an iPhone) watches the game through Remote Play (with a second, free PSN account), reads the subtitles, translates them and sends them to the Nino app on the TV. Free, open source (AGPL-3.0), no ads, no subscriptions. Based on CouchSubs by Sinan Yorulmaz.

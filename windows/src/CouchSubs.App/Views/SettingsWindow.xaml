@@ -57,6 +57,14 @@
                     </c:Card>
                 </StackPanel>
             </TabItem>
+            <!-- Nino: oyun görüntüsünün kaynağı (PS5, Remote Play penceresi, Capture Card) ve altyazının yeri; Capture Card'da
+                 canlı önizleme ve bağlantı rehberi. -->
+            <TabItem Header="{t:T 'Connection'}">
+                <StackPanel>
+                    <TextBlock Text="{t:T 'Connection'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
+                    <local:SubtitleOutputCard x:Name="OutputCard" Detailed="True" />
+                </StackPanel>
+            </TabItem>
             <TabItem Header="{t:T 'Subtitle appearance'}">
                 <StackPanel>
                     <TextBlock Text="{t:T 'Subtitle appearance'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
@@ -313,9 +321,18 @@
                 <StackPanel>
                     <TextBlock Text="{t:T 'Language'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
                     <c:Card x:Name="LanguageCard">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{t:T 'Game language'}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                            <ComboBox x:Name="GameLanguage" SelectionChanged="OnLanguage" />
+                        <StackPanel>
+                            <StackPanel x:Name="GameLanguageRow" Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="{t:T 'Game language'}" VerticalAlignment="Center" Margin="0,0,16,0" />
+                                <ComboBox x:Name="GameLanguage" SelectionChanged="OnLanguage" />
+                            </StackPanel>
+                            <!-- Nino: çeviri dili (Türkçe varsayılan, Arapça). -->
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{t:T 'Translation language'}" VerticalAlignment="Center" Margin="0,0,16,0" />
+                                <ComboBox x:Name="TranslationLanguage" SelectionChanged="OnTranslationLanguage" />
+                            </StackPanel>
+                            <TextBlock x:Name="TranslationLanguageHint" Style="{StaticResource HintText}" TextWrapping="Wrap" Margin="0,12,0,0"
+                                       Text="{t:T 'Game packs, the term list and dubbing work only for Turkish. Arabic subtitles come from the translation engine you chose (the free translation, Gemini, ChatGPT, Claude, DeepL or a local model).'}" />
                         </StackPanel>
                     </c:Card>
                 </StackPanel>

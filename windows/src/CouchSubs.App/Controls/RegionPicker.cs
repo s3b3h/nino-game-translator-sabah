@@ -8,6 +8,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using CouchSubs.Core;
 using Frame = CouchSubs.Core.Frame;
+using CouchSubs.App.Theme;
 
 namespace CouchSubs.App.Controls;
 
@@ -48,6 +49,8 @@ public sealed class RegionPicker : UserControl
 
     public RegionPicker()
     {
+        // Nino: PS5 görüntüsü ve çerçevesi Arapça arayüzde aynalanmaz.
+        RightToLeft.KeepLeftToRight(this);
         frameBox.SetResourceReference(Shape.StrokeProperty, "accentBrush");
         frameBox.Fill = new SolidColorBrush(Color.FromArgb(36, 245, 184, 61));
         foreach (var handle in handles) handle.SetResourceReference(Shape.FillProperty, "accentBrush");

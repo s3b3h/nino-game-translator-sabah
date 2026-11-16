@@ -76,6 +76,9 @@ private const val BLANK_CHECK_MS = 8_000L
 
 private enum class PsnMode { INTRO, WEB, BROWSER }
 
+/** Sony giriş sayfasının koyu zemini (sayfadaki düğmelerin zemin rengi, #121314). */
+private const val SONY_PAGE_BACKGROUND = 0xFF121314.toInt()
+
 @Composable
 fun PsnLoginScreen(onBack: (() -> Unit)? = null, onSkip: (() -> Unit)? = null, onDone: () -> Unit) {
     var mode by remember { mutableStateOf(PsnMode.INTRO) }
@@ -114,18 +117,11 @@ fun PsnLoginScreen(onBack: (() -> Unit)? = null, onSkip: (() -> Unit)? = null, o
                 }
             }) {
                 Heading(stringResource(R.string.psn_title), stringResource(R.string.psn_body), stringResource(R.string.setup_step, 1))
-                TwoColumns(
-                    { StatusTile(Icons.Filled.Person, stringResource(R.string.psn_free_note), stringResource(R.string.psn_free), it) },
-                    { StatusTile(Icons.Filled.PlayArrow, stringResource(R.string.psn_you_play_note), stringResource(R.string.psn_you_play), it) },
-                )
-                Tile(Modifier.fillMaxWidth()) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
-                        TileIcon(Icons.Filled.Lock)
-                        Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.hair)) {
-                            Text(stringResource(R.string.psn_password_safe), style = Tokens.Type.headline, color = Tokens.Color.text)
-                            Text(stringResource(R.string.psn_password_safe_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
-                        }
-                    }
+                // Nino: güvenceler koyu sahne kartında camsı satırlar olarak (ana ekranla aynı kimlik).
+                OnboardingStage(height = androidx.compose.ui.unit.Dp(270f)) {
+                    GlassIconRow(Icons.Filled.Person, stringResource(R.string.psn_free), stringResource(R.string.psn_free_note))
+                    GlassIconRow(Icons.Filled.PlayArrow, stringResource(R.string.psn_you_play), stringResource(R.string.psn_you_play_note))
+                    GlassIconRow(Icons.Filled.Lock, stringResource(R.string.psn_password_safe), stringResource(R.string.psn_password_safe_note))
                 }
                 problem?.let {
                     NoteTile(stringResource(R.string.psn_failed, it))
@@ -166,7 +162,9 @@ private fun PsnWebLogin(onRedirect: (String) -> Unit, onClose: () -> Unit, onBro
     var failure by remember { mutableStateOf<Pair<PsnPageProblem, String?>?>(null) }
     var cookiesReady by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val background = Tokens.Color.bg.toArgb()
+    // Sony'nin giriş sayfası (popup düzeni) yazıları beyaz çizer ve zemini saydam bırakır; zemin uygulamanın açık rengi
+    // olursa sayfa bembeyaz görünür. Sony'nin kendi koyu zemini kullanılır.
+    val background = SONY_PAGE_BACKGROUND
     val failures = pageProblems()
 
     fun retry() {
@@ -208,6 +206,10 @@ private fun PsnWebLogin(onRedirect: (String) -> Unit, onClose: () -> Unit, onBro
                                 failure = PsnPageProblem.CRASHED to error.javaClass.simpleName
                                 null
                             }?.apply {
+                                // AndroidView görünümü "içeriğe göre" (WRAP_CONTENT) kurar; WebView'da 100vh o zaman 0 olur ve
+                                // Sony'nin sayfası (boyunu 100vh'den alır) sıfır yükseklikte kalıp bembeyaz görünür.
+                                layoutParams = android.view.ViewGroup.LayoutParams(
+                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
                                 setBackgroundColor(background)
                                 settings.javaScriptEnabled = true
                                 settings.domStorageEnabled = true

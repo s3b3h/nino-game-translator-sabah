@@ -5,12 +5,13 @@ import SwiftUI
 
 /// Ayarların bölümleri; solda kenar çubuğunda listelenir, sağda seçili olan gösterilir.
 enum SettingsSection: CaseIterable, Identifiable {
-    case interface, appearance, dubbing, translation, packs, language, area, obs, health, updates, about
+    case connection, interface, appearance, dubbing, translation, packs, language, area, obs, health, updates, about
 
     var id: Self { self }
 
     var title: LocalizedStringKey {
         switch self {
+        case .connection: "Connection"
         case .interface: "Interface"
         case .appearance: "Subtitle appearance"
         case .dubbing: "Turkish dubbing"
@@ -27,6 +28,7 @@ enum SettingsSection: CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
+        case .connection: "cable.connector"
         case .interface: "macwindow"
         case .appearance: "captions.bubble"
         case .dubbing: "waveform"
@@ -46,6 +48,7 @@ extension SettingsSection {
     /// Sistem Ayarları'ndaki gibi her bölümün kendi renkli simge kutusu.
     var tint: Color {
         switch self {
+        case .connection: Color(red: 0.10, green: 0.45, blue: 0.95)
         case .interface: Color(red: 0.36, green: 0.30, blue: 0.95)
         case .appearance: Color(red: 0.0, green: 0.44, blue: 0.82)
         case .dubbing: Color(red: 0.55, green: 0.33, blue: 0.95)
@@ -118,6 +121,8 @@ private struct SettingsList: View {
     @Binding var section: SettingsSection?
 
     private let groups: [[SettingsSection]] = [
+        // Nino: "Bağlantı": oyun görüntüsünün nereden geldiği (PS5, Remote Play penceresi, Capture Card) ve altyazının yeri.
+        [.connection],
         [.interface, .appearance, .translation, .language],
         [.packs, .dubbing, .area, .obs],
         [.health, .updates, .about],
@@ -277,6 +282,7 @@ private struct SettingsPage: View {
             case .health: SystemHealthPage()
             case .updates: UpdatesCard()
             case .interface: InterfacePage()
+            case .connection: SubtitleOutputCard(detailed: true)
             case .about:
                 AboutCard()
             }
@@ -308,7 +314,7 @@ private struct AppearanceCard: View {
             .disabled(model.settings.style.autoSize)
             // Yer ayarları TV içindir; bilgisayar ekranındaki altyazı penceresi sürüklenerek taşınır (Genzo, 2026-11-13:
             // "ekrandaki konum ayarı işlemiyor").
-            if model.settings.output.showsOnTV {
+            if model.showsOnTV {
                 Picker("Placement", selection: $model.settings.style.placement) {
                     Text("Over the English subtitle").tag(SubtitlePlacement.cover)
                     Text("Above the English subtitle").tag(SubtitlePlacement.above)
@@ -332,7 +338,7 @@ private struct AppearanceCard: View {
                     HintText(text: "The translation follows where the game shows its own subtitle.")
                 }
             }
-            if model.settings.output.showsOnComputer {
+            if model.showsOnComputer {
                 HintText(text: "On the computer screen, move the subtitle by dragging its window: press Adjust the subtitle window.")
                 Button("Adjust the subtitle window") { model.overlayAdjusting = true }.buttonStyle(.secondary)
             }
@@ -351,7 +357,7 @@ private struct AppearanceCard: View {
                 Text("White").tag(SubtitleTextColor.white)
                 Text("Yellow").tag(SubtitleTextColor.yellow)
             }
-            if model.settings.output.showsOnTV, model.tv?.brand == .androidTV {
+            if model.showsOnTV, model.tv?.brand == .androidTV {
                 AndroidDisplayModePicker(mode: $model.settings.style.displayMode)
             }
         }
@@ -370,6 +376,13 @@ private struct LanguageCard: View {
                 Text("French").tag("fr")
                 Text("Spanish").tag("es")
             }
+            // Nino: çeviri dili. Kayıtlı ayarı olmayan (eski) kurulumlar Türkçe açılır.
+            Picker("Translation language", selection: $model.settings.targetLanguage) {
+                ForEach(TargetLanguage.choices, id: \.code) { choice in Text(verbatim: choice.name).tag(choice.code) }
+            }
+            if !TargetLanguage.isTurkish(model.settings.targetLanguage) {
+                HintText(text: "Game packs, the term list and dubbing work only for Turkish. Arabic subtitles come from the translation engine you chose (Apple's free translation, Gemini, ChatGPT, Claude, DeepL or a local model).")
+            }
         }
     }
 }
@@ -381,6 +394,7 @@ private struct LiveRegionPreview: View {
 
     var body: some View {
         RegionPreview(region: settings.region, frame: preview.image) { settings.setCustomRegion($0) }
+            .fixedLeftToRight()
     }
 }
 
@@ -596,6 +610,9 @@ private struct GamePacksPage: View {
             .font(.csBody)
             .foregroundStyle(Color.csSecondary)
             .fixedSize(horizontal: false, vertical: true)
+        if !TargetLanguage.isTurkish(model.settings.targetLanguage) {
+            Card { HintText(text: "Packs are not used while the translation language is Arabic.") }
+        }
         if model.installedPacks.isEmpty {
             Card { HintText(text: "No game pack is installed.") }
         } else {
@@ -1293,11 +1310,12 @@ struct ThemedSubtitle: View {
     private var color: Color { style.textColor == .yellow ? Color(red: 1.0, green: 0.88, blue: 0.21) : .white }
 
     var body: some View {
-        let label = Text(verbatim: text)
+        let label = Text(verbatim: TargetLanguage.displayText(text))
             .font(.system(size: fontSize, weight: weight))
             .foregroundStyle(color)
             .lineLimit(maxLines)
             .multilineTextAlignment(.center)
+            .subtitleDirection(text)
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
         switch style.theme {
         case .classic:

@@ -2,7 +2,7 @@
 
 import CouchSubsCore
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 /// Her isteği 429 ile geri çeviren sahte hizmet; gerçek hizmete gidilmez.
 private final class QuotaAI: URLProtocol {

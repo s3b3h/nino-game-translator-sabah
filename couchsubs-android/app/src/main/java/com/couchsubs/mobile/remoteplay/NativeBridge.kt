@@ -46,6 +46,8 @@ object NativeBridge {
 
     @JvmStatic private external fun init(): Int
     @JvmStatic external fun discover(targets: Array<String>, timeoutMs: Int): Array<String>?
+    /** Nino: bir sonraki oturumda yazılım video çözücüsü (donanımınki okunamayan kare verirse). */
+    @JvmStatic external fun setPreferSoftwareDecoder(prefer: Boolean)
     @JvmStatic external fun wake(host: String, credential: Long): Int
     @JvmStatic external fun register(host: String, accountId: ByteArray, pin: Int, outcome: NativeOutcome)
     @JvmStatic external fun sessionStart(

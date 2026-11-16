@@ -3,6 +3,9 @@
 // Based on CouchSubs by Sinan Yorulmaz (https://github.com/yorulmazsinan/couchsubs), modified on 2026-11-14.
 package com.couchsubs.mobile.ui
 
+import com.couchsubs.mobile.core.TargetLanguage
+import com.couchsubs.mobile.Services
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -124,7 +127,7 @@ fun NinoSplash(onFinish: () -> Unit) {
             ) {
                 Text("Nino", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Tokens.Color.text)
                 Spacer(Modifier.height(6.dp))
-                Text("Oyunlarınız artık Türkçe.", style = Tokens.Type.body, color = Tokens.Color.secondary)
+                Text(stringResource(R.string.nino_games_now_in, targetLanguageName()), style = Tokens.Type.body, color = Tokens.Color.secondary)
             }
         }
     }
@@ -221,10 +224,18 @@ fun DemoScene(
     height: androidx.compose.ui.unit.Dp = 210.dp,
     live: String? = null,
     chips: @Composable (() -> Unit)? = null,
-    badge: String = "ÖRNEK",
+    badge: String = stringResource(R.string.nino_sample),
 ) {
-    val lines = remember {
-        listOf(
+    // Nino: örnek çeviriler seçili çeviri dilinde (Türkçe ya da Arapça).
+    val arabic = TargetLanguage.code(Services.settings.targetLanguage) == "ar"
+    val lines = remember(arabic) {
+        if (arabic) listOf(
+            "This city needs someone to watch over it." to "هذه المدينة تحتاج إلى من يحرسها.",
+            "They're coming. Stay out of sight." to "إنهم قادمون. ابقَ بعيدًا عن الأنظار.",
+            "Who's there?" to "من هناك؟",
+            "The rain hides everything." to "المطر يخفي كل شيء.",
+            "Get to the rooftop. Now!" to "اصعد إلى السطح. الآن!",
+        ) else listOf(
             "This city needs someone to watch over it." to "Bu şehrin onu kollayacak birine ihtiyacı var.",
             "They're coming. Stay out of sight." to "Geliyorlar. Gözden uzak dur.",
             "Who's there?" to "Kim var orada?",
@@ -248,19 +259,21 @@ fun DemoScene(
         }
     }
     val (en, tr) = lines[index.intValue]
-    val shape = RoundedCornerShape(Tokens.Radius.tile)
+    // Nino: ana ekrandaki sahne kartıyla aynı: lacivert→siyah, ince ışıklı kenar, yumuşak gölge.
+    val shape = RoundedCornerShape(28.dp)
+    val ink = Color(0xFF0A1430)
     Box(
         modifier.fillMaxWidth().height(height)
-            .shadow(18.dp, shape, ambientColor = Tokens.Color.pro, spotColor = Tokens.Color.pro)
-            .background(Brush.linearGradient(listOf(Color(0xFF1A2447), Color(0xFF3D2238), Color(0xFF0F1424))), shape)
-            .border(1.dp, Color.White.copy(alpha = 0.25f), shape),
+            .shadow(28.dp, shape, ambientColor = ink.copy(alpha = 0.5f), spotColor = ink.copy(alpha = 0.5f))
+            .background(Brush.verticalGradient(listOf(Color(0xFF151E36), Color(0xFF06080F))), shape)
+            .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.03f))), shape),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            drawCircle(Brush.radialGradient(listOf(Color(0xFFFF9A4A).copy(alpha = 0.45f), Color.Transparent),
+            drawCircle(Brush.radialGradient(listOf(Color(0xFFFF9A4A).copy(alpha = 0.16f), Color.Transparent),
                 center = androidx.compose.ui.geometry.Offset(size.width * 0.75f, size.height * 0.3f), radius = size.width * 0.35f),
                 radius = size.width * 0.35f, center = androidx.compose.ui.geometry.Offset(size.width * 0.75f, size.height * 0.3f))
-            drawCircle(Brush.radialGradient(listOf(Tokens.Color.accent.copy(alpha = 0.45f), Color.Transparent),
+            drawCircle(Brush.radialGradient(listOf(Tokens.Color.accent.copy(alpha = 0.22f), Color.Transparent),
                 center = androidx.compose.ui.geometry.Offset(size.width * 0.2f, size.height * 0.45f), radius = size.width * 0.4f),
                 radius = size.width * 0.4f, center = androidx.compose.ui.geometry.Offset(size.width * 0.2f, size.height * 0.45f))
         }
@@ -268,17 +281,19 @@ fun DemoScene(
             horizontalArrangement = Arrangement.spacedBy(6.dp)) { chips() }
         Box(Modifier.align(if (chips != null) Alignment.TopEnd else Alignment.TopStart).offset(if (chips != null) (-12).dp else 12.dp, 12.dp)
             .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(50)).border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(50))) {
-            Text(badge, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 1.5.sp,
+            // Harf aralığı Arapça harflerin birleşmesini bozar.
+            Text(badge, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                letterSpacing = if (TargetLanguage.containsArabic(badge)) 0.sp else 1.5.sp,
                 modifier = Modifier.padding8())
         }
         if (live != null) {
-            if (live.isNotEmpty()) Text(live, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color.White, textAlign = TextAlign.Center,
+            if (live.isNotEmpty()) Text(TargetLanguage.displayText(live), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color.White, textAlign = TextAlign.Center,
                 modifier = Modifier.offset(y = (-20).dp).padding(horizontal = 16.dp)
                     .background(Color.Black.copy(alpha = 0.72f), RoundedCornerShape(10.dp)).padding14x6())
         } else Box(Modifier.offset(y = (-20).dp), contentAlignment = Alignment.Center) {
             Text(en, fontSize = 15.sp, color = Color(0xFFF4F1E8), textAlign = TextAlign.Center,
                 modifier = Modifier.alpha(english.value * (1f - turkish.value)))
-            Text(tr, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color.White, textAlign = TextAlign.Center,
+            Text(TargetLanguage.displayText(tr), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color.White, textAlign = TextAlign.Center,
                 modifier = Modifier.alpha(turkish.value).scale(0.96f + turkish.value * 0.04f)
                     .background(Color.Black.copy(alpha = 0.72f), RoundedCornerShape(10.dp)).padding14x6())
         }

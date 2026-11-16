@@ -90,7 +90,8 @@ public partial class MainView : UserControl
         var settings = controller.Settings;
         EngineValue.Text = settings.Engine == TranslationEngine.Free ? text["Free"] : settings.Engine.DisplayName();
         // Çeviri kapalıyken eşleşmiş PS5 için kısa yazı (uzun durum yazısı şeride sığmıyordu).
-        Ps5Value.Text = !controller.IsRunning && controller.Console is { } console
+        Ps5Label.Text = controller.UsesGameWindow ? text["Game window"] : controller.UsesCaptureCard ? text["Capture card"] : "PS5";
+        Ps5Value.Text = controller.Settings.VideoSource == VideoSource.Ps5 && !controller.IsRunning && controller.Console is { } console
             ? text["%@ · ready"].Replace("%@", string.IsNullOrEmpty(console.Name) ? "PS5" : console.Name)
             : controller.Ps5StatusText;
         Ps5Dot.Fill = ToneBrush(controller.Ps5Tone);

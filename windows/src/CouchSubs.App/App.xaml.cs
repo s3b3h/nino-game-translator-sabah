@@ -43,6 +43,8 @@ public partial class App : Application
             return;
         }
         RemotePlayDiagnostics.Start();
+        // Nino: Arapça arayüzde pencereler sağdan sola açılır (ilk pencereden önce).
+        RightToLeft.ApplyInterfaceDirection();
         var controller = new AppController(new LiveServices(), new DpapiAppStore(), new FileSettingsStore(), new WindowsSleepGuard(),
             Localizer.Current, action => Dispatcher.BeginInvoke(action))
         {

@@ -51,13 +51,17 @@ struct HomeHeader: View {
 
 /// Apple çevirisinin dil paketi henüz indirilmedi: "İndir" sistemin indirme penceresini açar.
 @available(iOS 26, *)
-private struct LanguagePackTile: View {
+struct LanguagePackTile: View {
     @EnvironmentObject private var model: PhoneModel
     @State private var download: TranslationSession.Configuration?
 
     var body: some View {
         Tile {
-            Text("The English–Turkish language pack is not downloaded yet.").font(Mobile.TypeScale.headline)
+            if TargetLanguage.isTurkish(model.settings.targetLanguage) {
+                Text("The English–Turkish language pack is not downloaded yet.").font(Mobile.TypeScale.headline)
+            } else {
+                Text("The English–Arabic language pack is not downloaded yet.").font(Mobile.TypeScale.headline)
+            }
             Button("Download") {
                 download = TranslationSession.Configuration(source: Locale.Language(identifier: model.settings.sourceLanguage),
                                                             target: Locale.Language(identifier: model.settings.targetLanguage))
@@ -71,212 +75,13 @@ private struct LanguagePackTile: View {
     }
 }
 
-struct HomeScreen: View {
-    @EnvironmentObject private var model: PhoneModel
-    @EnvironmentObject private var app: AppModel
-    @Binding var path: [Route]
-
-    var body: some View {
-        MobileScreen {
-            HomeHeader(path: $path)
-        } content: {
-            ScreenTitle(title: model.canStart ? "Ready" : "Almost ready",
-                        message: model.canStart ? "Open the game on the PS5, then start." : "Finish the setup to start translating.")
-            BentoGrid {
-                StatTile(symbol: "gamecontroller.fill", tint: .ok, label: "PS5",
-                         value: model.console.map { $0.name.isEmpty ? "PS5" : $0.name } ?? String(localized: "Not set up"), live: model.console != nil)
-                Button { path.append(.target) } label: {
-                    StatTile(symbol: model.settings.output == .computer ? "iphone" : "tv", tint: .accent, label: "Subtitles",
-                             value: targetName)
-                }
-                .buttonStyle(.plain)
-                .tourTarget(.target)
-                packsTile
-                    .bentoWide()
-                    .tourTarget(.packs)
-                StatTile(symbol: "globe", label: "Translation", value: engineName)
-                StatTile(symbol: "clock.arrow.circlepath", label: "Last session", value: lastSession)
-            }
-            if model.tvAppMissing { MobileNote(text: String(localized: "To install the TV app for the first time, use Nino on a computer once. After that this phone is enough.")) }
-            // Dil paketi yalnız Apple çevirisinin kullanılabildiği sistemde (iOS 26 ve sonrası) istenir.
-            if model.translatorStatus == .needsDownload, #available(iOS 26, *) {
-                LanguagePackTile()
-            }
-            if model.translatorStatus == .unsupported, !Translator.isAvailable {
-                MobileNote(text: String(localized: "Apple's free translation needs iOS 26 or later. Game packs, DeepL and AI translation work on this device."))
-            }
-        } bottom: {
-            Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                Task { await model.start() }
-            } label: {
-                Label("Start translating", systemImage: "play.fill")
-            }
-            .buttonStyle(.mobilePrimary)
-            .disabled(model.isStarting || !model.canStart)
-            .tourTarget(.start)
-        }
-        .task {
-            app.analytics.screen("home")
-            await model.refreshTranslatorStatus()
-        }
-    }
-
-    /// Oyun paketleri karosu (yalnız paket simgesi mor); herkese ücretsiz.
-    private var packsTile: some View {
-        Button { path.append(.packs) } label: {
-            Tile {
-                HStack(spacing: Mobile.Space.gap) {
-                    MobileTileIcon(symbol: "shippingbox", tint: .pro)
-                    VStack(alignment: .leading, spacing: Mobile.Space.hair) {
-                        Text("Instant subtitles with ready packs").font(Mobile.TypeScale.headline)
-                        Text(model.installedPacks.isEmpty ? String(localized: "GTA V, RDR2, Mafia and 3 more games")
-                             : PacksScreen.summary(model.installedPacks))
-                            .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                    }
-                    Spacer()
-                    MobilePill(text: String(localized: "Free"))
-                    Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Mobile.Palette.tertiary)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var targetName: String {
-        if model.settings.output == .computer { return String(localized: "This phone") }
-        return model.hasTV ? model.tv?.name ?? "TV" : String(localized: "Not set up")
-    }
-
-    private var engineName: String {
-        model.settings.translationEngine == .free ? String(localized: "Free") : model.settings.translationEngine.displayName
-    }
-
-    private var lastSession: String {
-        guard let seconds = model.lastSessionSeconds else { return "—" }
-        return Duration.seconds(seconds).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
-    }
-}
-
-// MARK: - 9 Çeviri sürüyor
-
-struct RunningScreen: View {
-    @EnvironmentObject private var model: PhoneModel
-    @Binding var path: [Route]
-    @State private var showSubtitles = false
-
-    var body: some View {
-        MobileScreen {
-            HomeHeader(path: $path)
-        } content: {
-            HStack(spacing: Mobile.Space.inline) {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    MobilePill(text: String(format: String(localized: "Translating · %@"), elapsed(at: context.date)),
-                         live: model.sessionState == .streaming)
-                }
-                if model.packsActive { MobilePill(text: String(localized: "Ready translation"), kind: .pro) }
-            }
-            if model.sessionState != .streaming {
-                MobileNote(text: model.ps5StatusText, tone: Mobile.Palette.secondary)
-            }
-            Tile {
-                Text("Now").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                if let current = model.recentLines.first {
-                    Text(verbatim: current.translation)
-                        .font(Mobile.TypeScale.subtitle(landscape: false, scale: scale))
-                        .foregroundStyle(Mobile.Palette.accent)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    HStack {
-                        Text(verbatim: current.source).font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.tertiary)
-                        Spacer()
-                        if current.fromPack { Text("ready translation").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.pro) }
-                    }
-                    // Son satırın ölçümleri: küçük, sessiz, sabit genişlikte rakamlar.
-                    if let metrics = model.lastMetrics {
-                        Text(verbatim: metrics.summary)
-                            .font(Mobile.TypeScale.caption.monospacedDigit())
-                            .foregroundStyle(Mobile.Palette.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .accessibilityLabel(Text("Measurements"))
-                            .accessibilityValue(Text(verbatim: metrics.summary))
-                    }
-                } else {
-                    Text("Subtitles will appear here while you play.").font(Mobile.TypeScale.body).foregroundStyle(Mobile.Palette.secondary)
-                }
-            }
-            .animation(.easeOut(duration: 0.18), value: model.recentLines.first?.id)
-            if model.recentLines.count > 1 {
-                Tile(spacing: 0) {
-                    ForEach(Array(model.recentLines.dropFirst().prefix(8).enumerated()), id: \.element.id) { index, line in
-                        if index > 0 { RowDivider() }
-                        HStack(alignment: .top, spacing: Mobile.Space.gap) {
-                            VStack(alignment: .leading, spacing: Mobile.Space.hair) {
-                                Text(verbatim: line.translation).font(Mobile.TypeScale.headline.weight(.regular))
-                                    .foregroundStyle(Mobile.Palette.secondary)
-                                Text(verbatim: line.source).font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.tertiary)
-                            }
-                            Spacer()
-                            // Kaynak işareti: düz yazı ("hazır" mor, motor adı üçüncül), hap değil.
-                            Text(verbatim: line.fromPack ? String(localized: "ready") : engineName)
-                                .font(Mobile.TypeScale.caption)
-                                .foregroundStyle(line.fromPack ? Mobile.Palette.pro : Mobile.Palette.tertiary)
-                        }
-                        .padding(.vertical, Mobile.Space.gap)
-                    }
-                }
-            }
-            BentoGrid {
-                Tile {
-                    Text("From ready translation").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                    Text(verbatim: "\(model.sessionPackLines) / \(model.sessionLines)").font(Mobile.TypeScale.title)
-                }
-                Tile {
-                    Text(model.settings.output.showsOnTV ? "TV" : "Screen").font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-                    Text(verbatim: model.settings.output.showsOnTV ? model.tvStatusText : String(localized: "This phone"))
-                        .font(Mobile.TypeScale.title).lineLimit(1).minimumScaleFactor(0.6)
-                }
-            }
-            Text("Keep Nino open on the screen while you play. iOS stops the connection when the app goes to the background; the screen stays on while translating.")
-                .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
-        } bottom: {
-            if model.settings.output.showsOnComputer {
-                Button { showSubtitles = true } label: { Label("Subtitle screen", systemImage: "rectangle.landscape.rotate") }
-                    .buttonStyle(.mobileSecondary)
-            }
-            if model.settings.output.showsOnTV {
-                Button { model.sendTestSubtitle() } label: { Label("Test on TV", systemImage: "tv") }
-                    .buttonStyle(.mobileSecondary)
-            }
-            Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                model.stop()
-            } label: {
-                Label("Stop translating", systemImage: "stop.fill")
-            }
-            .buttonStyle(.mobileDestructive)
-        }
-        .fullScreenCover(isPresented: $showSubtitles) { SubtitleScreen() }
-        .onAppear { if model.settings.output == .computer { showSubtitles = true } }
-    }
-
-    private var scale: Double { Double(model.settings.style.fontSize) / Double(SubtitleStyle().fontSize) }
-
-    private var engineName: String {
-        model.settings.translationEngine == .free ? String(localized: "Free") : model.settings.translationEngine.displayName
-    }
-
-    private func elapsed(at date: Date) -> String {
-        let seconds = max(0, Int(date.timeIntervalSince(model.runningSince ?? date)))
-        return String(format: "%02d:%02d", seconds / 60, seconds % 60)
-    }
-}
+// Ana ekran (çalışırken de aynı ekran): HomePremium.swift.
 
 // MARK: - 10 Yatay altyazı ekranı
 
 struct SubtitleScreen: View {
     @EnvironmentObject private var model: PhoneModel
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @State private var savedBrightness: CGFloat?
 
@@ -284,14 +89,24 @@ struct SubtitleScreen: View {
         ZStack(alignment: .bottom) {
             Color.black.ignoresSafeArea()
             VStack(spacing: Mobile.Space.inline) {
+                // Nino: PS5'siz demoda örnek satır.
+                if model.isDemo, let demo = model.demoLine {
+                    Text(verbatim: TargetLanguage.displayText(demo.translation))
+                        .font(Mobile.TypeScale.subtitle(landscape: true, scale: scale))
+                        .foregroundStyle(textColor)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.5)
+                        .subtitleDirection(demo.translation)
+                }
                 ForEach(Array(model.phoneLines.enumerated()), id: \.element.id) { index, line in
-                    Text(verbatim: line.text)
+                    Text(verbatim: TargetLanguage.displayText(line.text))
                         .font(Mobile.TypeScale.subtitle(landscape: true, scale: scale))
                         // Önceki satır soldurulmaz, sabit gri olur (#7C7A76).
                         .foregroundStyle(index < model.phoneLines.count - 1 ? Color(hex: 0x7C7A76) : textColor)
                         .opacity(line.fading ? 0.4 : 1)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.5)
+                        .subtitleDirection(line.text)
                 }
             }
             .padding(.horizontal, Mobile.Space.screen)
@@ -302,7 +117,7 @@ struct SubtitleScreen: View {
                 .padding(.bottom, Mobile.Space.inline)
         }
         .overlay(alignment: .topLeading) {
-            MobilePill(text: statusText, live: model.sessionState == .streaming)
+            MobilePill(text: statusText, live: model.sessionState == .streaming || model.isDemo)
                 .padding(Mobile.Space.screen)
         }
         .overlay(alignment: .topTrailing) {
@@ -321,6 +136,7 @@ struct SubtitleScreen: View {
     }
 
     private var statusText: String {
+        if model.isDemo { return UILanguage.text("demo.status", locale) }
         guard model.sessionState == .streaming else { return model.ps5StatusText }
         return model.packsActive ? String(localized: "PS5 connected · ready translation") : String(localized: "PS5 connected")
     }
@@ -350,7 +166,10 @@ struct SubtitleScreen: View {
 enum Orientation {
     @MainActor
     static func request(_ mask: UIInterfaceOrientationMask) {
+        // Nino: ana ekran dikey kilitli; tam ekran altyazı açılınca yalnız yatay izin verilir.
+        NinoAppDelegate.orientations = mask
         guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
+        scene.windows.first?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
         scene.requestGeometryUpdate(.iOS(interfaceOrientations: mask)) { _ in }
     }
 }

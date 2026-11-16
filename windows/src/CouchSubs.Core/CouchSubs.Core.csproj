@@ -16,6 +16,8 @@
     <!-- Oyun çeviri paketleri: Mac ile aynı klasör (ad: "packs/x.json.gz"). -->
     <EmbeddedResource Include="..\..\..\core\Sources\CouchSubsCore\Resources\packs\*.json.gz" LogicalName="packs/%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\..\..\mac\CouchSubs\Resources\Localizable.xcstrings" LogicalName="Localizable.xcstrings" />
+    <!-- Nino: yalnız Windows'a ait metinler ("bu Mac" yerine "bu bilgisayar", Windows ayar yolları); ortak katalogla birleşir. -->
+    <EmbeddedResource Include="Resources\Windows.xcstrings" LogicalName="Windows.xcstrings" />
   </ItemGroup>
 
   <ItemGroup>

@@ -26,6 +26,11 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
     private readonly TranslationCache _cache;
     private readonly GlossaryStore _glossary;
     private readonly RecentLines _recent;
+    /// <summary>
+    /// Nino: hedef Türkçe mi. Sözlük, kısa satır bağlamı ve Türkçe düzeltmeler yalnız Türkçede; Arapçada cümle doğrudan
+    /// modele gider (opus-mt-en-ar).
+    /// </summary>
+    private readonly bool _turkish;
     /// <summary>Konuşmacı etiketlerinden öğrenilen adlar (küçük harfle); cümle içinde de büyük harfle kalırlar.</summary>
     private readonly ConcurrentDictionary<string, byte> _names = new(StringComparer.Ordinal);
     /// <summary>Altyazı → seslendirilecek cümleler (dublaj).</summary>
@@ -45,14 +50,17 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
 
     /// <param name="cache">Kalıcı önbellek; verilmezse yalnız bellekte tutulur.</param>
     /// <param name="glossary">Terim sözlüğü; verilmezse genel sözlük ve %LOCALAPPDATA%\CouchSubs\glossary\*.json.</param>
+    /// <param name="target">Hedef dil ("tr" ya da "ar"); modelin dizini de bu dile ait olmalı (<see cref="ModelStore.FilesFor"/>).</param>
     public MarianTranslator(string modelDirectory, int maxOutputTokens = 128, int beams = OnnxMarianEngine.DefaultBeams,
-        TranslationCache? cache = null, GlossaryStore? glossary = null)
-        : this(() => new OnnxMarianEngine(modelDirectory, maxOutputTokens, beams), () => IsInstalledIn(modelDirectory), cache,
-            glossary ?? new GlossaryStore(GlossaryStore.UserDirectory)) { }
+        TranslationCache? cache = null, GlossaryStore? glossary = null, string target = "tr")
+        : this(() => new OnnxMarianEngine(modelDirectory, maxOutputTokens, beams, ModelStore.TargetPrefixFor(target)),
+            () => IsInstalledIn(modelDirectory), cache, glossary ?? new GlossaryStore(GlossaryStore.UserDirectory),
+            turkish: TargetLanguage.IsTurkish(target)) { }
 
     internal MarianTranslator(Func<ISentenceEngine> engineFactory, Func<bool> isInstalled, TranslationCache? cache = null,
-        GlossaryStore? glossary = null, Func<DateTimeOffset>? clock = null)
+        GlossaryStore? glossary = null, Func<DateTimeOffset>? clock = null, bool turkish = true)
     {
+        _turkish = turkish;
         _engineFactory = engineFactory;
         _isInstalled = isInstalled;
         _cache = cache ?? new TranslationCache();
@@ -105,12 +113,12 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
                 translations.Add(null);
                 continue;
             }
-            var context = FreeTranslation.IsShort(piece.Text) ? previous : null;
+            var context = _turkish && FreeTranslation.IsShort(piece.Text) ? previous : null;
             translations.Add(await TranslateSentenceAsync(piece.Text, context, cancellationToken).ConfigureAwait(false));
             previous = piece.Text;
         }
         // Hitap satırın bütününe bakar ("Sana söyledim. Bekleyin!"); önbellekteki cümle çevirileri değişmez.
-        var final = TurkishPostEdit.Register(translations);
+        var final = _turkish ? TurkishPostEdit.Register(translations) : translations;
         var builder = new StringBuilder();
         for (var i = 0; i < pieces.Count; i++) builder.Append(final[i] ?? pieces[i].Text);
         if (_speech.Count >= 512) _speech.Clear();
@@ -131,7 +139,7 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
 
     private async Task<string> TranslateSentenceAsync(string sentence, string? context, CancellationToken cancellationToken)
     {
-        var glossary = _glossary.Current;
+        var glossary = _turkish ? _glossary.Current : Glossary.Empty;
         var key = FreeTranslation.CacheKey(sentence, context, glossary);
         if (_cache.TryGet(key, out var known)) return known;
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -144,9 +152,13 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
             var names = _names.Keys.ToHashSet(StringComparer.Ordinal);
             names.UnionWith(glossary.CapitalWords);
             // Çıkarım CPU'yu saniyenin onda biri kadar tutar; çağıranın (arayüz) iş parçacığını bloklamasın.
-            var translation = await Task.Run(() => FreeTranslation.Translate(sentence, context, glossary,
-                text => SubtitleSegmenter.NormalizeCase(text, names),
-                input => engine.Translate(input, cancellationToken)), cancellationToken).ConfigureAwait(false);
+            var translation = await Task.Run(() => _turkish
+                ? FreeTranslation.Translate(sentence, context, glossary,
+                    text => SubtitleSegmenter.NormalizeCase(text, names),
+                    input => engine.Translate(input, cancellationToken))
+                // Arapça: Türkçe düzeltmeler ve terim koruma yok; büyük harf düzeni ve oyun deyimleri yine yapılır.
+                : engine.Translate(GameEnglish.Plain(SubtitleSegmenter.NormalizeCase(sentence, names)), cancellationToken),
+                cancellationToken).ConfigureAwait(false);
             // Sıra bırakılmadan önce önbelleğe yazılır; sırada bekleyen aynı cümle yeniden çevrilmez.
             _cache.Store(key, translation);
             return translation;

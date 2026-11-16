@@ -4,8 +4,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:c="clr-namespace:CouchSubs.App.Controls"
              xmlns:t="clr-namespace:CouchSubs.App.Theme">
+    <Grid>
     <c:StepLayout Title="{t:T 'Welcome to Nino'}"
                   Message="{t:T 'CouchSubs reads the English subtitles of your PS5 games and shows a Turkish translation on your TV, on top of the game. You keep playing on the TV with your own controller.'}">
+        <StackPanel>
         <c:Card Title="{t:T 'You will need:'}">
             <StackPanel>
                 <TextBlock Text="{t:T 'A PS5 on the same network as this computer'}" Margin="0,0,0,8" />
@@ -13,5 +15,26 @@
                 <TextBlock Text="{t:T 'A free second PlayStation Network account'}" />
             </StackPanel>
         </c:Card>
+        <!-- Nino: monitörde oynayanlar için kısa yol; PS5 eşleştirmesi, ikinci hesap ve TV gerekmez. -->
+        <StackPanel Margin="0,16,0,0">
+            <WrapPanel>
+                <Button Content="{t:T 'I play on this computer with PS Remote Play'}" Style="{StaticResource SecondaryButton}"
+                        HorizontalAlignment="Left" Padding="16,0" Margin="0,0,12,0" Click="OnGameWindow" />
+                <!-- Nino: Capture Card olanlar için (PS5 → kart → bilgisayar ya da TV): PS5 eşleştirmesi ve ikinci hesap gerekmez. -->
+                <Button Style="{StaticResource GhostButton}" Click="OnCaptureCard"
+                        ToolTip="{t:T 'No second account needed. Nino reads the game from the card and shows it with the translation on top.'}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE703;" Style="{StaticResource GlyphText}" FontSize="16" Margin="0,0,8,0" />
+                        <TextBlock Text="{t:T 'I have a capture card'}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </WrapPanel>
+            <TextBlock Style="{StaticResource HintText}" TextWrapping="Wrap" Margin="0,8,0,0"
+                       Text="{t:T 'No TV or second account needed. Nino reads the Remote Play window and shows the translation on top of the game.'}" />
+        </StackPanel>
+        </StackPanel>
     </c:StepLayout>
+    <!-- Nino: çeviri dili sağ üstte yalnız bayraklarla seçilir (koddan doldurulur). -->
+    <StackPanel x:Name="Flags" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,4,4,0" />
+    </Grid>
 </UserControl>

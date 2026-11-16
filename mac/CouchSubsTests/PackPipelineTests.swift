@@ -3,7 +3,7 @@
 import CoreGraphics
 import CouchSubsCore
 import XCTest
-@testable import CouchSubs
+@testable import Nino
 
 private final class QueueReader: TextReader, @unchecked Sendable {
     var texts: [String]

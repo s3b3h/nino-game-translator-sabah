@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// TV uygulamasının metinleri. Dil TV'nin diline göre seçilir; Türkçe değilse İngilizce.
+// TV uygulamasının metinleri. Dil TV'nin diline göre seçilir: Türkçe, Arapça, değilse İngilizce.
 (function () {
   'use strict';
 
@@ -101,10 +101,61 @@
       sourceSwitchTitle: 'The TV switched to HDMI by itself.',
       sourceSwitchHint: 'Turn off Anynet+ (HDMI-CEC) and Auto Source Switching in Settings › All Settings › Connection › External Device Manager.',
       sourceSwitchClose: 'Press OK or Back to close.'
+    },
+    ar: {
+      waiting: 'افتح Nino على Mac أو كمبيوتر Windows أو هاتف Android.',
+      waitingHint: 'سيعثر التطبيق على هذا التلفاز ويرسل الترجمات إليه.',
+      step1: 'افتح Nino على Mac أو كمبيوتر Windows أو هاتف Android',
+      step2: 'اتصل بشبكة Wi-Fi نفسها',
+      step3: 'يتكفّل Nino بالباقي',
+      waitingStatus: 'بانتظار الاتصال',
+      demoArrow: 'هكذا تظهر الترجمة داخل اللعبة',
+      panelTitle: 'Nino',
+      panelTag: 'مترجم الألعاب · ترجمة فورية للنصوص',
+      heroOk: 'جاهز للترجمة',
+      previewEmpty: 'بانتظار الترجمة',
+      heroWait: 'بانتظار الكمبيوتر',
+      heroBad: 'انقطع الاتصال',
+      previewLabel: 'آخر ترجمة · كما تظهر على التلفاز',
+      rOk: 'فتح / إغلاق هذه اللوحة',
+      rLR: 'تغيير مدخل HDMI',
+      rUD: 'تحريك الترجمة للأعلى / للأسفل',
+      rNum: '1–4 اختيار المدخل · 0 البحث عن PS5',
+      rRed: 'ترجمة تجريبية',
+      rGreen: 'اللوحة',
+      rBlue: 'عرض توضيحي',
+      hdmi: 'HDMI',
+      lastSubtitle: 'آخر ترجمة',
+      diagnostics: 'التشخيص',
+      server: 'التطبيق',
+      connection: 'الاتصال',
+      loading: '(جارٍ التحميل)',
+      videoReady: '(وصلت الصورة)',
+      playing: '(قيد التشغيل)',
+      inputError: '(خطأ: تعذّر فتح المدخل)',
+      sourceError: '(خطأ: المصدر غير مدعوم)',
+      auto: 'تلقائي',
+      consoleNotFound: 'لم يُعثر على جهاز PS5',
+      noEventSource: 'هذا التلفاز غير مدعوم (لا يوجد EventSource)',
+      connecting: 'جارٍ الاتصال…',
+      connected: 'متصل',
+      reconnecting: 'انقطع الاتصال، جارٍ إعادة المحاولة…',
+      none: '—',
+      keys: 'OK: هذه اللوحة · ◀▶: مدخل HDMI (واللوحة مفتوحة) · 1–4: مدخل HDMI · 0: البحث عن PS5 تلقائيًا · ▲▼: تحريك الترجمة للأعلى/للأسفل · الأحمر: ترجمة تجريبية · الأزرق: عرض توضيحي · الأخضر: هذه اللوحة',
+      localTest: 'اختبار: هل يظهر هذا النص فوق اللعبة؟',
+      positionPreview: 'ستظهر الترجمة هنا',
+      demoButton: 'شاهد العرض التوضيحي',
+      demoBadge: 'عرض',
+      demoHint: 'مثال: تظهر هنا ترجمة النصوص الإنجليزية في اللعبة. اضغط «رجوع» للخروج.',
+      sourceSwitchTitle: 'انتقل التلفاز إلى HDMI من تلقاء نفسه.',
+      sourceSwitchHint: 'عطّل Anynet+ (HDMI-CEC) والتبديل التلقائي للمصدر من الإعدادات › كل الإعدادات › الاتصال › إدارة الأجهزة الخارجية.',
+      sourceSwitchClose: 'اضغط OK أو «رجوع» للإغلاق.'
     }
   };
 
-  var lang = (navigator.language || 'en').toLowerCase().indexOf('tr') === 0 ? 'tr' : 'en';
+  var language = (navigator.language || 'en').toLowerCase();
+  // Nino: TV'nin dili Arapçaysa Arapça; Türkçeyse Türkçe; değilse İngilizce.
+  var lang = language.indexOf('tr') === 0 ? 'tr' : (language.indexOf('ar') === 0 ? 'ar' : 'en');
 
   window.t = function (key) {
     return (TEXTS[lang] && TEXTS[lang][key]) || TEXTS.en[key] || key;
@@ -115,6 +166,8 @@
     var nodes = document.querySelectorAll('[data-i18n]');
     for (var i = 0; i < nodes.length; i++) {
       nodes[i].textContent = window.t(nodes[i].getAttribute('data-i18n'));
+      // Arapça metin sağdan sola dizilir (yerleşim değişmez).
+      if (lang === 'ar') nodes[i].setAttribute('dir', 'rtl');
     }
   };
 })();

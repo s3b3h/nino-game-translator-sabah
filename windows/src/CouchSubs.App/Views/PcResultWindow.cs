@@ -5,6 +5,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using CouchSubs.App.Theme;
+using CouchSubs.Core;
 
 namespace CouchSubs.App.Views;
 
@@ -23,6 +25,13 @@ public sealed class PcResultWindow : Window
         current?.Close();
         current = new PcResultWindow(text, milliseconds);
         current.Show();
+    }
+
+    private static TextBlock Subtitle(string text)
+    {
+        var block = new TextBlock { Foreground = Brushes.White, FontSize = 24, TextWrapping = TextWrapping.Wrap };
+        RightToLeft.SetSubtitle(block, text);
+        return block;
     }
 
     private PcResultWindow(string text, int milliseconds)
@@ -44,13 +53,8 @@ public sealed class PcResultWindow : Window
             Background = new SolidColorBrush(Color.FromArgb(0xEE, 0, 0, 0)),
             CornerRadius = new CornerRadius(12),
             Padding = new Thickness(20, 14, 20, 14),
-            Child = new TextBlock
-            {
-                Text = text,
-                Foreground = Brushes.White,
-                FontSize = 24,
-                TextWrapping = TextWrapping.Wrap,
-            },
+            // Nino: Arapça çeviri sağdan sola.
+            Child = Subtitle(text),
         };
 
         // Boyut ölçüldükten sonra altta ortaya yerleştirilir.

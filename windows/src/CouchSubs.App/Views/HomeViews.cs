@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using CouchSubs.Core;
 using CouchSubs.RemotePlay;
 using CouchSubs.Shell;
+using CouchSubs.App.Theme;
 
 namespace CouchSubs.App.Views;
 
@@ -47,7 +48,8 @@ internal static class Home
             }
             if (c.IsRunning) c.Stop();
             else if (c.CanStart) await c.StartAsync();
-            else c.Step = OnboardingStep.Console;
+            // Nino: yakalama kartıyla altyazı TV'ye gidiyorsa eksik olan yalnız TV'dir (PS5 eşleştirmesi gerekmez).
+            else c.Step = c.UsesCaptureCard ? OnboardingStep.Tv : OnboardingStep.Console;
         }
         catch (Exception error)
         {
@@ -120,8 +122,8 @@ internal static class Home
 
     public static void ShowLine(TextBlock line, Border box, (string text, bool subtitle) value)
     {
-        if (line.Text == value.text) return;
-        line.Text = value.text;
+        if (line.Text == TargetLanguage.DisplayText(value.text)) return;
+        RightToLeft.SetSubtitle(line, value.text);
         line.Foreground = value.subtitle ? Brushes.White : new SolidColorBrush(Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF));
         line.FontWeight = value.subtitle ? FontWeights.SemiBold : FontWeights.Normal;
         box.Background = value.subtitle ? new SolidColorBrush(Color.FromArgb(0xB0, 0, 0, 0)) : Brushes.Transparent;
@@ -162,6 +164,8 @@ public sealed class LivingRoomScene : UserControl
     public LivingRoomScene(AppController controller)
     {
         this.controller = controller;
+        // Nino: sahne Arapça arayüzde aynalanmaz.
+        RightToLeft.KeepLeftToRight(this);
         var canvas = new Canvas { Width = 1672 + Shift, Height = 941 };
         var scene = new Canvas { Width = 1672, Height = 941 };
         Canvas.SetLeft(scene, Shift);
@@ -418,6 +422,8 @@ public sealed class GlassToggleView : UserControl
     public GlassToggleView(AppController controller)
     {
         this.controller = controller;
+        // Nino: kayan düğme Arapça arayüzde aynalanmaz.
+        RightToLeft.KeepLeftToRight(this);
         var root = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
 
         // Canlı TV (çeviri açıkken).

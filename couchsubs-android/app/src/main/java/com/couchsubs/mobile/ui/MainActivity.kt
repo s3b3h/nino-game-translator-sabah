@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.couchsubs.mobile.ui
 
+import com.couchsubs.mobile.withInterfaceLanguage
 import android.graphics.Color
 import android.Manifest
 import android.content.Intent
@@ -39,6 +40,7 @@ object Routes {
     const val PROFILE = "profile"
     const val SETTINGS = "settings"
     const val HEALTH = "health"
+    const val SOURCE = "source"
 
     /** Kurulumun eksik ilk adımı; hepsi tamamsa ana ekran. */
     fun next(): String {
@@ -46,8 +48,9 @@ object Routes {
         return when {
             !settings.welcomeSeen -> WELCOME
             // "Şimdilik geç" ile atlandıysa PS5'siz ana ekrana gidilir (ör. Play incelemesi); eşleme Ayarlar'dan.
-            settings.accountId == null && !settings.setupSkipped -> PSN
-            settings.console == null && !settings.setupSkipped -> PAIR
+            // Nino: yakalama kartıyla PSN girişi ve PS5 eşlemesi gerekmez.
+            settings.accountId == null && !settings.setupSkipped && !settings.usesCaptureCard -> PSN
+            settings.console == null && !settings.setupSkipped && !settings.usesCaptureCard -> PAIR
             !settings.onboarded -> TARGET
             else -> MAIN
         }
@@ -55,6 +58,8 @@ object Routes {
 }
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) = super.attachBaseContext(newBase.withInterfaceLanguage())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Uygulama hep koyu; sistem açık temadayken de durum çubuğu simgeleri açık renk kalsın.
         enableEdgeToEdge(SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT), SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT))
@@ -106,10 +111,11 @@ class MainActivity : ComponentActivity() {
                         MainScreen(
                             status = status,
                             onStart = ::startTranslation,
-                            onStop = { TranslationService.stop(this@MainActivity) },
+                            onStop = { if (com.couchsubs.mobile.service.DemoSession.active) com.couchsubs.mobile.service.DemoSession.stop() else TranslationService.stop(this@MainActivity) },
                             onPhoneView = { startActivity(Intent(this@MainActivity, PhoneSubtitleActivity::class.java)) },
                             onTarget = { navigation.navigate(Routes.TARGET) },
                             onPairing = { pairing(navigation) },
+                            onSource = { navigation.navigate(Routes.SOURCE) },
                             onPacks = { navigation.navigate(Routes.PACKS) },
                             onProfile = { navigation.navigate(Routes.PROFILE) },
                             onSettings = { navigation.navigate(Routes.SETTINGS) },
@@ -130,8 +136,9 @@ class MainActivity : ComponentActivity() {
                     composable(Routes.SETTINGS) {
                         SettingsScreen(onBack = { navigation.popBackStack() }, onPacks = { navigation.navigate(Routes.PACKS) },
                             onTarget = { navigation.navigate(Routes.TARGET) }, onPairing = { pairing(navigation) },
-                            onHealth = { navigation.navigate(Routes.HEALTH) })
+                            onHealth = { navigation.navigate(Routes.HEALTH) }, onSource = { navigation.navigate(Routes.SOURCE) })
                     }
+                    composable(Routes.SOURCE) { SourceScreen(onBack = back(navigation)) { navigation.popBackStack() } }
                     composable(Routes.HEALTH) { SystemHealthScreen(onBack = { navigation.popBackStack() }) }
                 }
                 if (showSplash) NinoSplash { showSplash = false }
@@ -169,7 +176,17 @@ class MainActivity : ComponentActivity() {
         navigation.navigate(if (Services.settings.accountId == null) Routes.PSN else Routes.PAIR)
     }
 
+    /** Nino: yakalama kartında çeviri, kamera izni sorulduktan sonra başlar (izin verilmezse sorun ana ekranda yazılır). */
+    private val cameraPermission = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) startTranslation()
+        else LiveState.update { it.copy(error = getString(com.couchsubs.mobile.R.string.capture_no_permission)) }
+    }
+
     private fun startTranslation() {
+        if (Services.settings.usesCaptureCard && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            cameraPermission.launch(Manifest.permission.CAMERA)
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)

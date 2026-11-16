@@ -4,7 +4,7 @@ package com.couchsubs.mobile.remoteplay
 import android.content.Context
 import android.media.Image
 
-/** Okuma hattına kare veren kaynak: gerçekte PS5 Remote Play oturumu ([StreamSession]). */
+/** Okuma hattına kare veren kaynak: PS5 Remote Play oturumu ([StreamSession]) ya da Nino'da yakalama kartı (CaptureCardSource). */
 interface FrameSource {
     fun start()
 
@@ -15,7 +15,7 @@ interface FrameSource {
     val framesReceived: Long
 }
 
-/** PS5 oturumunun yerine kare kaynağı kuran üretici (yalnız geliştirme yapısında kullanılır). */
+/** PS5 oturumunun yerine kare kaynağı kuran üretici (geliştirme yapısının demo klibi ya da yakalama kartı). */
 fun interface FrameSourceFactory {
     fun create(context: Context, onFrame: (Image) -> Unit, onState: (SessionState) -> Unit): FrameSource
 }

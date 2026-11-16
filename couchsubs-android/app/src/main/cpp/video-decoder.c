@@ -59,6 +59,9 @@ void couchsubs_video_decoder_fini(CouchSubsVideoDecoder *decoder)
 	chiaki_mutex_fini(&decoder->codec_mutex);
 }
 
+/* Nino: Kotlin tarafı (GpuFrames/okunamayan kare) açar; bir sonraki oturumda geçerli olur. */
+volatile bool couchsubs_prefer_software_decoder = false;
+
 bool couchsubs_video_decoder_start(CouchSubsVideoDecoder *decoder, JNIEnv *env, jobject surface)
 {
 	if(!surface)
@@ -70,7 +73,18 @@ bool couchsubs_video_decoder_start(CouchSubsVideoDecoder *decoder, JNIEnv *env, 
 		goto beach;
 
 	const char *mime = "video/avc";
-	decoder->codec = AMediaCodec_createDecoderByType(mime);
+	/* Nino: bazı donanım çözücüleri (ör. MediaTek) kareyi işlemcinin okuyamadığı özel bir düzende verir; o zaman
+	 * Android'in yazılım çözücüsü kullanılır (düz YUV verir). */
+	decoder->codec = NULL;
+	if(couchsubs_prefer_software_decoder)
+	{
+		decoder->codec = AMediaCodec_createCodecByName("c2.android.avc.decoder");
+		if(!decoder->codec)
+			decoder->codec = AMediaCodec_createCodecByName("OMX.google.h264.decoder");
+		CHIAKI_LOGI(decoder->log, "Video decoder: software %s", decoder->codec ? "ok" : "unavailable");
+	}
+	if(!decoder->codec)
+		decoder->codec = AMediaCodec_createDecoderByType(mime);
 	if(!decoder->codec)
 	{
 		CHIAKI_LOGE(decoder->log, "Video decoder: no AMediaCodec for %s", mime);

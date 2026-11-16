@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using CouchSubs.Core;
 using CouchSubs.Shell;
+using CouchSubs.App.Theme;
 
 namespace CouchSubs.App.Views;
 
@@ -36,6 +37,17 @@ public sealed partial class SubtitleOverlayWindow : Window
 
     [LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
     private static partial IntPtr SetWindowLongPtr(IntPtr window, int index, IntPtr value);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool SetWindowDisplayAffinity(IntPtr window, uint affinity);
+
+    [LibraryImport("user32.dll")]
+    private static partial uint GetDpiForSystem();
+
+    /// <summary>Nino: oyun penceresinden okunurken altyazı penceresi ekran kopyalarına girmez (kendi çevirisini yeniden
+    /// okumasın). PS5 kaynağında yayın programları (OBS) altyazıyı normalde görür.</summary>
+    private bool hiddenFromCapture;
 
     private readonly AppController controller;
     private readonly SubtitleStack stack = new();
@@ -59,6 +71,8 @@ public sealed partial class SubtitleOverlayWindow : Window
     private SubtitleOverlayWindow(AppController controller)
     {
         this.controller = controller;
+        // Kenar tutamakları ve taşıma soldan sağa kalır (altyazının kendi yönü satırdan seçilir).
+        RightToLeft.KeepLeftToRight(this);
         WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.NoResize;
         AllowsTransparency = true;
@@ -115,6 +129,11 @@ public sealed partial class SubtitleOverlayWindow : Window
 
     private void OnChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(AppController.GameArea))
+        {
+            Guard("oyun alanı", PlaceOverGame);
+            return;
+        }
         if (e.PropertyName is not (nameof(AppController.Settings) or nameof(AppController.OverlayAdjusting))) return;
         Guard("ayar değişikliği", () =>
         {
@@ -122,9 +141,39 @@ public sealed partial class SubtitleOverlayWindow : Window
             if (e.PropertyName == nameof(AppController.Settings)) boxes.Clear();
             ApplyClickThrough();
             FitHeight();
+            PlaceOverGame();
             Refresh();
         });
     }
+
+    /// <summary>
+    /// Nino: oyun penceresinden okunurken (ya da yakalama kartının oyunu bu bilgisayarda gösterilirken) altyazı penceresi oyunun alt kısmına, oyunun %90'ı genişliğinde oturur.
+    /// Kullanıcının kayıtlı yeri değişmez; oyun penceresi kapanınca ya da "ayarla" seçilince kayıtlı yerine döner.
+    /// </summary>
+    private void PlaceOverGame()
+    {
+        if (controller.GameArea is not { } pixels || controller.OverlayAdjusting || !(controller.UsesGameWindow || controller.UsesCaptureCard))
+        {
+            if (placedOverGame)
+            {
+                placedOverGame = false;
+                PlaceFromSettings();
+            }
+            return;
+        }
+        // Ekran pikselleri WPF birimine (uygulama sistem DPI'ına göre çalışır).
+        var dpi = GetDpiForSystem() is var d and > 0 ? d / 96.0 : 1.0;
+        var game = new ScreenArea(pixels.Left / dpi, pixels.Top / dpi, pixels.Width / dpi, pixels.Height / dpi);
+        var height = OverlayPlacement.Height(controller.Settings.Style.FontSize, Scale);
+        var place = GameWindowRules.OverlayOver(game, height);
+        placedOverGame = true;
+        Height = height;
+        Width = place.Width;
+        Left = place.Left;
+        Top = place.Top;
+    }
+
+    private bool placedOverGame;
 
     private void OnEvent(SubtitleEvent e) => Guard("altyazı", () =>
     {
@@ -195,6 +244,14 @@ public sealed partial class SubtitleOverlayWindow : Window
             linesPanel.Children.Add(box);
         }
 
+        // Oyun penceresinden okunurken altyazı penceresi ekran kopyalarına hiç girmez: Nino gerekirse ekranın o alanını
+        // kopyalar ve kendi çevirisini yeniden okumamalıdır (kopyaya geçişte bir an bile).
+        var hide = controller.UsesGameWindow && controller.IsRunning;
+        if (hide != hiddenFromCapture && handle != IntPtr.Zero)
+        {
+            // WDA_EXCLUDEFROMCAPTURE (Windows 10 2004+) / WDA_NONE
+            if (SetWindowDisplayAffinity(handle, hide ? 0x11u : 0u)) hiddenFromCapture = hide;
+        }
         var visible = controller.ShowsOnComputer && lines.Count > 0;
         if (visible && !IsVisible) Show();
         else if (!visible && IsVisible) Hide();
@@ -218,7 +275,6 @@ public sealed partial class SubtitleOverlayWindow : Window
         var alpha = Math.Clamp(style.Background, 0, 100) / 100.0 * (current ? 1 : 0.83);
         var text = new TextBlock
         {
-            Text = line.Text,
             FontSize = size,
             FontWeight = style.Bold ? FontWeights.Bold : FontWeights.SemiBold,
             Foreground = style.TextColor == SubtitleTextColor.Yellow ? new SolidColorBrush(Color.FromRgb(0xFF, 0xE1, 0x35)) : Brushes.White,
@@ -227,6 +283,8 @@ public sealed partial class SubtitleOverlayWindow : Window
             LineHeight = size * 1.3,
             Effect = new DropShadowEffect { Color = Colors.Black, ShadowDepth = 2 * scale, BlurRadius = 4 * scale, Opacity = 1, Direction = 270 },
         };
+        // Nino: Arapça satır sağdan sola.
+        RightToLeft.SetSubtitle(text, line.Text);
         return new Border
         {
             Background = new SolidColorBrush(Color.FromArgb((byte)Math.Round(alpha * 255), 0, 0, 0)),

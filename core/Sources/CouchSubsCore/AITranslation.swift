@@ -257,22 +257,39 @@ public enum AIRequest {
         Reply with only the translation, no explanations, notes or quotes.
         """
 
+    /// Nino: Arapça hedefin yönergesi (Modern Standart Arapça; adlar ve konuşmacı etiketleri olduğu gibi).
+    public static let arabicSystemPrompt = """
+        You translate English video game subtitles into clear, natural Modern Standard Arabic, the way good Arabic \
+        game subtitles read. Keep it short and easy to read on screen; use a natural spoken tone for dialogue. \
+        Keep character names, place names and speaker labels such as "ATREUS:" exactly as they are, in Latin letters. \
+        Keep line breaks. Keep the meaning and tone; do not add or leave out anything. \
+        Use Arabic punctuation (، ؟ ؛) and Western digits. Keep controller button symbols (✕ ○ △ □, L1, R2) unchanged. \
+        Reply with only the translation, no explanations, notes or quotes.
+        """
+
+    /// Hedef dile göre yönerge; Türkçe dışındaki dillerde `systemPrompt` kullanılmaz.
+    public static func systemPrompt(for target: String) -> String {
+        TargetLanguage.isTurkish(target) ? systemPrompt : arabicSystemPrompt
+    }
+
     /// Kullanıcı iletisi: önceki satırlar (yalnız bağlam) ve çevrilecek cümleler.
-    public static func userMessage(sentences: [String], context: [AIContextLine], game: String? = nil) -> String {
+    public static func userMessage(sentences: [String], context: [AIContextLine], game: String? = nil,
+                                   target: String = "tr") -> String {
+        let language = TargetLanguage.englishName(target)
         var parts: [String] = []
         if let game, !game.isEmpty { parts.append("Game: \(game)") }
         if !context.isEmpty {
             var lines = ["Previous subtitles, for context only (do not translate them again):"]
             for line in context {
                 lines.append("English: \(line.source)")
-                if let translation = line.translation { lines.append("Turkish: \(translation)") }
+                if let translation = line.translation { lines.append("\(language): \(translation)") }
             }
             parts.append(lines.joined(separator: "\n"))
         }
         let list = (try? JSONSerialization.data(withJSONObject: sentences, options: [.withoutEscapingSlashes]))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
-        parts.append("Translate each string in this JSON array into Turkish. Reply with only a JSON array of \(sentences.count) "
-            + "Turkish strings in the same order.\n\(list)")
+        parts.append("Translate each string in this JSON array into \(language). Reply with only a JSON array of \(sentences.count) "
+            + "\(language) strings in the same order.\n\(list)")
         return parts.joined(separator: "\n\n")
     }
 
@@ -281,9 +298,11 @@ public enum AIRequest {
 
     /// Hizmete giden HTTP isteği. `server`: yerel modelin sunucusu (verilmezse Ollama'nın varsayılan adresi).
     public static func make(provider: AIProvider, key: String, model: AIModel, sentences: [String],
-                            context: [AIContextLine], game: String? = nil, server: LocalAIServer? = nil) -> URLRequest {
+                            context: [AIContextLine], game: String? = nil, server: LocalAIServer? = nil,
+                            target: String = "tr") -> URLRequest {
         let key = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        let user = userMessage(sentences: sentences, context: context, game: game)
+        let user = userMessage(sentences: sentences, context: context, game: game, target: target)
+        let systemPrompt = systemPrompt(for: target)
         var request: URLRequest
         var body: [String: Any]
         switch provider {
@@ -333,7 +352,7 @@ public enum AIRequest {
             if !key.isEmpty { request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
             body = [
                 "model": model.id,
-                "messages": TranslationModelPrompt.messages(model: model.id, sentences: sentences, context: context)!,
+                "messages": TranslationModelPrompt.messages(model: model.id, sentences: sentences, context: context, target: target)!,
                 "temperature": localTemperature,
                 "max_tokens": maxOutputTokens,
                 "stream": false,
@@ -463,6 +482,8 @@ public final class AITranslationCore: @unchecked Sendable {
 
     public let provider: AIProvider
     public let model: AIModel
+    /// Nino: hedef dil ("tr", "ar"); istemler buna göre yazılır.
+    public let target: String
     /// Yerel modelin sunucusu; bulut hizmetlerinde nil.
     public let server: LocalAIServer?
     private let key: String
@@ -490,8 +511,9 @@ public final class AITranslationCore: @unchecked Sendable {
     /// `server`: yerel modelin sunucusu (yalnız `.local`; verilmezse Ollama'nın varsayılan adresi).
     /// `session`: verilmezse hizmete uygun zaman aşımıyla kurulur (yerel model daha uzun bekler).
     public init(provider: AIProvider, key: String, model: String? = nil, server: LocalAIServer? = nil, session: URLSession? = nil,
-                cache: TranslationCache = TranslationCache(), budget: RequestBudget? = nil) {
+                cache: TranslationCache = TranslationCache(), budget: RequestBudget? = nil, target: String = "tr") {
         self.provider = provider
+        self.target = target
         self.key = key.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolved = provider.model(model)
         self.model = resolved
@@ -606,7 +628,7 @@ public final class AITranslationCore: @unchecked Sendable {
 
     private func request(_ sentences: [String], context: [AIContextLine]) async throws -> [String] {
         try await Self.send(AIRequest.make(provider: provider, key: key, model: model, sentences: sentences, context: context,
-                                           server: server),
+                                           server: server, target: target),
                             provider: provider, count: sentences.count, session: session)
     }
 
@@ -661,10 +683,11 @@ public enum TranslationModelPrompt {
     public static func matches(_ model: String) -> Bool { TranslateGemma.matches(model) || MiLMMT.matches(model) }
 
     /// Modelin kendi kalıbıyla iletiler; genel bir sohbet modeliyse nil (Nino'nun yönergesi kullanılır).
-    public static func messages(model: String, sentences: [String], context: [AIContextLine]) -> [[String: String]]? {
+    public static func messages(model: String, sentences: [String], context: [AIContextLine],
+                                target: String = "tr") -> [[String: String]]? {
         let prompt: (String) -> String
-        if TranslateGemma.matches(model) { prompt = TranslateGemma.prompt }
-        else if MiLMMT.matches(model) { prompt = MiLMMT.prompt }
+        if TranslateGemma.matches(model) { prompt = { TranslateGemma.prompt($0, target: target) } }
+        else if MiLMMT.matches(model) { prompt = { MiLMMT.prompt($0, target: target) } }
         else { return nil }
         var messages: [[String: String]] = []
         for line in context {
@@ -683,8 +706,9 @@ public enum TranslationModelPrompt {
 public enum MiLMMT {
     public static func matches(_ model: String) -> Bool { model.lowercased().contains("milmmt") }
 
-    public static func prompt(_ text: String) -> String {
-        "Translate this from English to Turkish:\nEnglish: \(text)\nTurkish:"
+    public static func prompt(_ text: String, target: String = "tr") -> String {
+        let language = TargetLanguage.englishName(target)
+        return "Translate this from English to \(language):\nEnglish: \(text)\n\(language):"
     }
 }
 
@@ -694,10 +718,11 @@ public enum MiLMMT {
 public enum TranslateGemma {
     public static func matches(_ model: String) -> Bool { model.lowercased().contains("translategemma") }
 
-    public static func prompt(_ text: String) -> String {
-        "You are a professional English (en) to Turkish (tr) translator. Your goal is to accurately convey the meaning "
-            + "and nuances of the original English text while adhering to Turkish grammar, vocabulary, and cultural "
-            + "sensitivities. Produce only the Turkish translation, without any additional explanations or commentary. "
-            + "Please translate the following English text into Turkish:\n\n\n\(text)"
+    public static func prompt(_ text: String, target: String = "tr") -> String {
+        let language = TargetLanguage.englishName(target), code = String(target.prefix(2)).lowercased()
+        return "You are a professional English (en) to \(language) (\(code)) translator. Your goal is to accurately convey the meaning "
+            + "and nuances of the original English text while adhering to \(language) grammar, vocabulary, and cultural "
+            + "sensitivities. Produce only the \(language) translation, without any additional explanations or commentary. "
+            + "Please translate the following English text into \(language):\n\n\n\(text)"
     }
 }

@@ -46,6 +46,55 @@ internal sealed class FakeStream : IStreamSession
     public void Emit(Frame frame) => FrameReceived?.Invoke(frame);
 }
 
+internal sealed class FakeWindowStream : IGameWindowStream
+{
+    public event Action<Frame>? FrameReceived;
+    public event Action<SessionState>? StateChanged;
+    public event Action<RegisteredConsole>? ConsoleMoved { add { } remove { } }
+    public event Action<GameWindowStatus, string?>? WindowStatusChanged;
+    public event Action<ScreenArea?>? GameAreaChanged;
+    public bool Started { get; private set; }
+    public void Start() => Started = true;
+    public void Stop() => Started = false;
+    public void ReconnectNow() { }
+    public void Dispose() { }
+    public void Emit(Frame frame) => FrameReceived?.Invoke(frame);
+    public void Emit(GameWindowStatus status, string? app, ScreenArea? area)
+    {
+        WindowStatusChanged?.Invoke(status, app);
+        StateChanged?.Invoke(GameWindowRules.SessionState(status));
+        GameAreaChanged?.Invoke(area);
+    }
+}
+
+/// <summary>Nino: sahte yakalama kartı kaynağı.</summary>
+internal sealed class FakeCardStream(bool showsPlayer, string? preferredId) : ICaptureCardStream
+{
+    public event Action<Frame>? FrameReceived;
+    public event Action<SessionState>? StateChanged;
+    public event Action<RegisteredConsole>? ConsoleMoved { add { } remove { } }
+    public event Action<CaptureCardStatus>? CardStatusChanged;
+    public event Action<ScreenArea?>? GameAreaChanged;
+    public event Action? PlayerClosed;
+    public bool ShowsPlayer { get; } = showsPlayer;
+    public string? PreferredId { get; } = preferredId;
+    public bool Started { get; private set; }
+    public int FullScreenToggles { get; private set; }
+    public void Start() => Started = true;
+    public void Stop() => Started = false;
+    public void ReconnectNow() { }
+    public void ToggleFullScreen() => FullScreenToggles++;
+    public void Dispose() { }
+    public void Emit(Frame frame) => FrameReceived?.Invoke(frame);
+    public void Emit(CaptureCardStatus status, ScreenArea? area = null)
+    {
+        CardStatusChanged?.Invoke(status);
+        StateChanged?.Invoke(CaptureCardRules.SessionState(status));
+        GameAreaChanged?.Invoke(area);
+    }
+    public void ClosePlayer() => PlayerClosed?.Invoke();
+}
+
 internal sealed class FakeKeeper : IKeeper
 {
     public bool Running { get; private set; }
@@ -126,9 +175,12 @@ internal sealed class FakeServices : IAppServices
         CheckedKeys.Add(key);
         return Task.FromResult(KeyCheck);
     }
-    public ITextTranslator? MakeOnlineTranslator(string key, ITextTranslator? fallback)
+    /// <summary>Çevrimiçi çevirmenlerin istendiği hedef diller (sırayla).</summary>
+    public List<string> OnlineTargets { get; } = [];
+    public ITextTranslator? MakeOnlineTranslator(string key, ITextTranslator? fallback, string target = "tr")
     {
         OnlineTranslators.Add((key, fallback));
+        OnlineTargets.Add(target);
         return fallback ?? Translation.Create("en", "tr");
     }
     public AiTestResult AiTest { get; set; } = new(OnlineKeyState.Valid, "KRATOS: Şimdi gidiyoruz.");
@@ -139,9 +191,10 @@ internal sealed class FakeServices : IAppServices
         AiTests.Add((provider, key, model));
         return Task.FromResult(AiTest);
     }
-    public ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback)
+    public ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback, string target = "tr")
     {
         AiTranslators.Add((provider, key, model));
+        OnlineTargets.Add(target);
         return fallback ?? Translation.Create("en", "tr");
     }
     public List<(LocalAiServer Server, string Key)> LocalTests { get; } = [];
@@ -151,9 +204,10 @@ internal sealed class FakeServices : IAppServices
         LocalTests.Add((server, key));
         return Task.FromResult(AiTest);
     }
-    public ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback)
+    public ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback, string target = "tr")
     {
         LocalTranslators.Add((server, key));
+        OnlineTargets.Add(target);
         return fallback ?? Translation.Create("en", "tr");
     }
 
@@ -189,6 +243,20 @@ internal sealed class FakeServices : IAppServices
     public string PairKey { get; set; } = "tv-key";
     /// <summary>Son bekçiye verilen "yeni jeton" geri çağrısı.</summary>
     public Action<string>? OnKey { get; private set; }
+    public List<FakeCardStream> CardStreams { get; } = [];
+    public ICaptureCardStream? MakeCardStream(bool showsPlayer, string? preferredId)
+    {
+        var stream = new FakeCardStream(showsPlayer, preferredId);
+        CardStreams.Add(stream);
+        return stream;
+    }
+    public List<FakeWindowStream> WindowStreams { get; } = [];
+    public IGameWindowStream? MakeWindowStream()
+    {
+        var stream = new FakeWindowStream();
+        WindowStreams.Add(stream);
+        return stream;
+    }
     public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId)
     {
         if (StreamError is not null) throw StreamError;
@@ -778,7 +846,7 @@ public class AppControllerTests
 
 public class AppControllerRunTests
 {
-    private static (AppController Controller, FakeServices Services, FakeSleep Sleep) Ready(FakeServices? services = null)
+    internal static (AppController Controller, FakeServices Services, FakeSleep Sleep) Ready(FakeServices? services = null)
     {
         services ??= new FakeServices();
         var store = new MemoryStore();

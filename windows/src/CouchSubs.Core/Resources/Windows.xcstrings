@@ -1,0 +1,159 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "Allow camera access in Windows Settings › Privacy & security › Camera, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Windows Ayarları › Gizlilik ve güvenlik › Kamera'da kamera erişimine izin verin, sonra yeniden deneyin."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسمح بالوصول إلى الكاميرا في إعدادات Windows › الخصوصية والأمان › الكاميرا، ثم حاول مرة أخرى."
+          }
+        }
+      }
+    },
+    "Capture cards appear as a camera in Windows. In Settings › Privacy & security › Camera, turn on camera access and Let desktop apps access your camera, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture Card'lar Windows'ta kamera gibi görünür. Ayarlar › Gizlilik ve güvenlik › Kamera'da kamera erişimini ve masaüstü uygulamalarının kameraya erişmesini açın, sonra yeniden deneyin."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تظهر بطاقات الالتقاط في Windows ككاميرا. في الإعدادات › الخصوصية والأمان › الكاميرا، شغّل الوصول إلى الكاميرا والسماح لتطبيقات سطح المكتب بالوصول إليها، ثم حاول مرة أخرى."
+          }
+        }
+      }
+    },
+    "Plug the card into a USB 3 port on this computer. If you use a hub, try a port on the computer itself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture Card'ı bu bilgisayardaki bir USB 3 girişine takın. Çoklayıcı kullanıyorsanız doğrudan bilgisayarın kendi girişini deneyin."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وصّل البطاقة بمنفذ USB 3 في هذا الكمبيوتر. إن كنت تستخدم موزّعًا، جرّب منفذ الكمبيوتر نفسه."
+          }
+        }
+      }
+    },
+    "A capture card takes the PS5 picture over HDMI and gives it to this computer over USB. No second PSN account or Remote Play needed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture Card, PS5 görüntüsünü HDMI'dan alır, USB ile bu bilgisayara verir. İkinci PSN hesabı ya da Remote Play gerekmez."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تأخذ بطاقة الالتقاط صورة PS5 عبر HDMI وتسلّمها لهذا الكمبيوتر عبر USB. لا حاجة إلى حساب PSN ثانٍ أو Remote Play."
+          }
+        }
+      }
+    },
+    "Nino shows the game full screen on this computer with its sound, and the translation on top. Connect the computer to the screen with HDMI.": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino oyunu sesiyle birlikte bu bilgisayarda tam ekran gösterir, çeviri üstünde olur. Bilgisayarı ekrana HDMI ile bağlayın."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعرض Nino اللعبة بملء الشاشة على هذا الكمبيوتر مع صوتها والترجمة فوقها. وصّل الكمبيوتر بالشاشة عبر HDMI."
+          }
+        }
+      }
+    },
+    "Connect PS5 → card HDMI in, card HDMI out → TV, and the card's USB → this computer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 → Capture Card'ın HDMI girişi, HDMI çıkışı → TV, USB'si → bu bilgisayar."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 ← مدخل HDMI في البطاقة، مخرج HDMI في البطاقة ← التلفاز، وUSB البطاقة ← هذا الكمبيوتر."
+          }
+        }
+      }
+    },
+    "Connect PS5 → card HDMI in, and the card's USB → this computer. Then connect this computer to your screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 → Capture Card'ın HDMI girişi, USB'si → bu bilgisayar. Sonra bu bilgisayarı ekranınıza bağlayın."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 ← مدخل HDMI في البطاقة، وUSB البطاقة ← هذا الكمبيوتر. ثم وصّل هذا الكمبيوتر بشاشتك."
+          }
+        }
+      }
+    },
+    "Esc: full screen on or off · Closing this window stops the translation": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: tam ekranı açar ya da kapatır · Bu pencereyi kapatmak çeviriyi durdurur"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: تشغيل ملء الشاشة أو إيقافه · إغلاق هذه النافذة يوقف الترجمة"
+          }
+        }
+      }
+    },
+    "The live preview is off while translating.": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çeviri sürerken canlı önizleme kapalıdır."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المعاينة المباشرة متوقفة أثناء الترجمة."
+          }
+        }
+      }
+    }
+  }
+}

@@ -11,7 +11,11 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /** Bağlantının neden koptuğu; kullanıcıya anlatılabilecek biçimde (Windows: DisconnectKind). */
-enum class DisconnectKind { STOPPED, IN_USE, REFUSED, NETWORK, NOT_FOUND, CONSOLE_ASLEEP, LOGIN_PASSCODE, OTHER }
+enum class DisconnectKind {
+    STOPPED, IN_USE, REFUSED, NETWORK, NOT_FOUND, CONSOLE_ASLEEP, LOGIN_PASSCODE, OTHER,
+    // Nino: yakalama kartı kaynağı (capture/CaptureCardSource): kart takılı değil, kamera izni yok, görüntü simsiyah.
+    NO_CAPTURE_CARD, NO_CAMERA_PERMISSION, BLACK_PICTURE,
+}
 
 sealed class SessionState {
     data object Connecting : SessionState()
@@ -66,6 +70,7 @@ class StreamSession(
     private var native = 0L
     private var nativeGeneration = 0
     private var reader: ImageReader? = null
+    @Volatile private var switchedToSoftware = false
 
     override fun start() {
         val current = bump(true)
@@ -157,7 +162,12 @@ class StreamSession(
 
     private fun openSession(current: Int) {
         if (!isCurrent(current) || native != 0L) return
-        val imageReader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 3)
+        // Nino: GPU okuması reddedildiyse (ör. MediaTek) yazılım çözücü + düz YUV kullanılır.
+        NativeBridge.setPreferSoftwareDecoder(com.couchsubs.mobile.ocr.GpuFrames.failed)
+        // Nino: Android 10+ kareler GPU'dan okunur (bazı çözücülerin YUV'si işlemciye parazit gelir); reddedilirse YUV.
+        val imageReader = if (android.os.Build.VERSION.SDK_INT >= 29 && !com.couchsubs.mobile.ocr.GpuFrames.failed)
+            ImageReader.newInstance(width, height, ImageFormat.PRIVATE, 3, android.hardware.HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE)
+            else ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 3)
         imageReader.setOnImageAvailableListener({ source ->
             val image = try {
                 source.acquireLatestImage()
@@ -165,12 +175,19 @@ class StreamSession(
                 null
             } ?: return@setOnImageAvailableListener
             framesReceived++
+            val gpuFrame = image.format == ImageFormat.PRIVATE
             try {
                 onFrame(image)
             } catch (error: RuntimeException) {
                 Log.e(TAG, "frame handler", error)
             } finally {
                 image.close()
+            }
+            // Nino: GPU okuması bu cihazda reddedildi; oturum hemen yazılım çözücüyle yeniden kurulur.
+            if (gpuFrame && com.couchsubs.mobile.ocr.GpuFrames.failed && !switchedToSoftware) {
+                switchedToSoftware = true
+                Log.i(TAG, "Kareler okunamadı; yazılım çözücüye geçiliyor")
+                reconnectNow()
             }
         }, Handler(imageThread.looper))
         val outcome = NativeOutcome()

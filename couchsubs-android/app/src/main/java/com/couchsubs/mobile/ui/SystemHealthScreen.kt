@@ -3,6 +3,8 @@
 // Based on CouchSubs by Sinan Yorulmaz (https://github.com/yorulmazsinan/couchsubs), modified on 2026-11-15.
 package com.couchsubs.mobile.ui
 
+import com.couchsubs.mobile.R
+import androidx.compose.ui.res.stringResource
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -77,22 +79,22 @@ fun SystemHealthScreen(onBack: () -> Unit) {
             delay(1000)
         }
     }
-    val rows = rows(snapshot, network, status.connectedTvs, status.running)
+    val rows = rows(context, snapshot, network, status.connectedTvs, status.running)
     val worst = rows.maxOf { it.level.ordinal }.let { HealthLevel.entries[it] }
 
-    ScreenScaffold(top = { TopBar("Sistem sağlığı", onBack = onBack) }) {
+    ScreenScaffold(top = { TopBar(stringResource(R.string.nino_system_health), onBack = onBack) }) {
         Tile(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
                 Box(Modifier.size(14.dp).background(worst.color(), CircleShape))
-                Text(when {
-                    snapshot.isEmpty -> "Çeviriyi başlatınca ölçülür"
-                    worst == HealthLevel.PROBLEM -> "Bir sorun var"
-                    worst == HealthLevel.WARNING -> "Dikkat edilecek bir şey var"
-                    worst == HealthLevel.GOOD -> "Her şey yolunda"
-                    else -> "Ölçülüyor…"
-                }, style = Tokens.Type.headline, color = Tokens.Color.text)
+                Text(stringResource(when {
+                    snapshot.isEmpty -> R.string.nino_health_measured_on_start
+                    worst == HealthLevel.PROBLEM -> R.string.nino_health_problem
+                    worst == HealthLevel.WARNING -> R.string.nino_health_warning
+                    worst == HealthLevel.GOOD -> R.string.nino_health_good
+                    else -> R.string.nino_health_measuring
+                }), style = Tokens.Type.headline, color = Tokens.Color.text)
             }
-            Text("Telefonun ağı, PS5 bağlantısı, görüntünün akıcılığı ve çeviri hızı. Sorun olursa ne yapılacağı yazar.",
+            Text(stringResource(R.string.nino_health_intro),
                 style = Tokens.Type.caption, color = Tokens.Color.secondary)
         }
         RowList(rows.map { row ->
@@ -111,63 +113,65 @@ fun SystemHealthScreen(onBack: () -> Unit) {
         })
         Tile(Modifier.fillMaxWidth(), onClick = { details = !details }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Ayrıntılar", style = Tokens.Type.headline, color = Tokens.Color.text, modifier = Modifier.weight(1f))
-                Text(if (details) "Gizle" else "Göster", style = Tokens.Type.caption, color = Tokens.Color.accentText)
+                Text(stringResource(R.string.nino_health_details), style = Tokens.Type.headline, color = Tokens.Color.text, modifier = Modifier.weight(1f))
+                Text(stringResource(if (details) R.string.nino_hide else R.string.nino_show), style = Tokens.Type.caption, color = Tokens.Color.accentText)
             }
-            Text("Sorun yaşarsanız bunu yardım eden kişiye gönderin.", style = Tokens.Type.caption, color = Tokens.Color.secondary)
+            Text(stringResource(R.string.nino_health_send_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
             if (details) {
                 val text = detailsText(snapshot, network, status.connectedTvs)
                 Text(text, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Tokens.Color.text)
-                SecondaryButton("Ayrıntıları paylaş") {
+                val shareTitle = stringResource(R.string.nino_health_share)
+                SecondaryButton(shareTitle) {
                     val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
-                    context.startActivity(Intent.createChooser(send, "Ayrıntıları paylaş").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    context.startActivity(Intent.createChooser(send, shareTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
             }
         }
     }
 }
 
-private fun rows(s: HealthSnapshot, network: NetworkKind, tvs: Int, running: Boolean): List<HealthRow> {
+private fun rows(context: android.content.Context, s: HealthSnapshot, network: NetworkKind, tvs: Int, running: Boolean): List<HealthRow> {
+    fun t(id: Int, vararg args: Any) = context.getString(id, *args)
     val stream = HealthReport.stream(s)
     val net = HealthReport.network(network, stream)
     val list = mutableListOf(
-        HealthRow("Ağ", when (network) {
+        HealthRow(t(R.string.nino_health_network), when (network) {
             NetworkKind.WIFI -> "Wi-Fi"
-            NetworkKind.WIRED -> "Kablo"
-            NetworkKind.CELLULAR -> "Mobil veri"
-            NetworkKind.OFFLINE -> "Bağlı değil"
-            NetworkKind.OTHER -> "Diğer"
+            NetworkKind.WIRED -> t(R.string.nino_net_wired)
+            NetworkKind.CELLULAR -> t(R.string.nino_net_cellular)
+            NetworkKind.OFFLINE -> t(R.string.nino_net_offline)
+            NetworkKind.OTHER -> t(R.string.nino_net_other)
         }, net, when {
-            network == NetworkKind.OFFLINE -> "Telefon internete ya da ev ağına bağlı değil."
-            network == NetworkKind.CELLULAR -> "PS5 ile aynı Wi-Fi ağına bağlanın; mobil veride PS5 bulunamaz."
-            net == HealthLevel.PROBLEM || net == HealthLevel.WARNING -> "Wi-Fi zayıf görünüyor. Modeme yaklaşın, 5 GHz ağı kullanın, PS5'i kabloyla bağlayın."
+            network == NetworkKind.OFFLINE -> t(R.string.nino_net_offline_advice)
+            network == NetworkKind.CELLULAR -> t(R.string.nino_net_cellular_advice)
+            net == HealthLevel.PROBLEM || net == HealthLevel.WARNING -> t(R.string.nino_net_weak_advice)
             else -> null
         }),
     )
     val connection = HealthReport.connection(s)
-    list += HealthRow("PS5 bağlantısı", when {
-        s.everStreamed && s.drops == 0 -> "Bağlı"
-        s.everStreamed -> "${s.drops} kez koptu"
-        s.failedConnects > 0 -> "Bağlanamadı"
+    list += HealthRow(t(R.string.nino_health_ps5), when {
+        s.everStreamed && s.drops == 0 -> t(R.string.nino_connected)
+        s.everStreamed -> t(R.string.nino_dropped_times, s.drops)
+        s.failedConnects > 0 -> t(R.string.nino_could_not_connect)
         else -> "—"
     }, connection, when (connection) {
-        HealthLevel.PROBLEM -> "PS5 açık mı, aynı ağda mı? Dinlenme modundaysa Ayarlar › Güç Tasarrufu'nda \"İnternete bağlı kal\" ve \"Ağdan açmaya izin ver\" açık olmalı."
-        HealthLevel.WARNING -> "Bağlantı sık kopuyor; ağ zayıf olabilir."
+        HealthLevel.PROBLEM -> t(R.string.nino_ps5_problem_advice)
+        HealthLevel.WARNING -> t(R.string.nino_ps5_warning_advice)
         else -> null
     })
-    list += HealthRow("Görüntü", s.framesPerSecond?.let { "%.0f kare/sn".format(it) } ?: "—", stream, when (stream) {
-        HealthLevel.PROBLEM, HealthLevel.WARNING -> "PS5 görüntüsü kesik geliyor; altyazılar geç ya da eksik okunabilir. Çoğu zaman sebep Wi-Fi'dir."
+    list += HealthRow(t(R.string.nino_health_picture), s.framesPerSecond?.let { t(R.string.nino_fps, "%.0f".format(it)) } ?: "—", stream, when (stream) {
+        HealthLevel.PROBLEM, HealthLevel.WARNING -> t(R.string.nino_picture_advice)
         else -> null
     })
     val translation = HealthReport.translation(s)
-    list += HealthRow("Çeviri hızı", s.translationMedianMs?.let { "%.1f sn".format(it / 1000.0) } ?: "—", translation, when (translation) {
-        HealthLevel.PROBLEM, HealthLevel.WARNING -> "Çeviri yavaş. İnternet yavaş olabilir; Ayarlar'dan başka bir çeviri motoru deneyin."
+    list += HealthRow(t(R.string.nino_health_translation), s.translationMedianMs?.let { t(R.string.nino_seconds, "%.1f".format(it / 1000.0)) } ?: "—", translation, when (translation) {
+        HealthLevel.PROBLEM, HealthLevel.WARNING -> t(R.string.nino_translation_advice)
         else -> null
     })
     if (Services.settings.target == SubtitleTarget.TV) {
-        list += HealthRow("TV", if (tvs > 0) "Bağlı" else if (running) "Bekleniyor" else "—",
+        list += HealthRow("TV", if (tvs > 0) t(R.string.nino_connected) else if (running) t(R.string.nino_waiting) else "—",
             if (tvs > 0) HealthLevel.GOOD else if (running && s.everStreamed) HealthLevel.WARNING else HealthLevel.UNKNOWN,
-            if (tvs == 0 && running && s.everStreamed) "TV'de Nino uygulamasını açın; telefonla TV aynı ağda olmalı." else null)
+            if (tvs == 0 && running && s.everStreamed) t(R.string.nino_tv_advice) else null)
     }
     return list
 }

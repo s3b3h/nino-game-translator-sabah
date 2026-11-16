@@ -7,6 +7,9 @@
              Visibility="Collapsed">
     <c:Card Title="{t:T 'Turkish dubbing'}">
         <StackPanel>
+            <!-- Nino: sesler Türkçe; başka çeviri dilinde dublaj kapalı. -->
+            <TextBlock x:Name="TurkishOnly" Text="{t:T 'Dubbing works only when the translation language is Turkish.'}" Style="{StaticResource HintText}"
+                       TextWrapping="Wrap" Visibility="Collapsed" />
             <CheckBox x:Name="Enabled" Content="{t:T 'Voice the translation in Turkish'}" Foreground="{DynamicResource textPrimaryBrush}"
                       Checked="OnEnabled" Unchecked="OnEnabled" />
             <TextBlock x:Name="SetupHint" Style="{StaticResource HintText}" Margin="0,8,0,0" />

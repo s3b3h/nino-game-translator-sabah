@@ -49,6 +49,20 @@ final class PhoneModelTests: XCTestCase {
 
     private func makeModel() -> PhoneModel { PhoneModel(services: services, store: EphemeralStore(), defaults: defaults) }
 
+    /// Nino: Arapça çeviri dili: çevrimiçi motorlar açık kalır, Türkçe paketler kullanılmaz; eski kayıt Türkçe açılır.
+    func testArabicTargetKeepsOnlineEnginesAndOldSettingsOpenInTurkish() {
+        let store = EphemeralStore()
+        store.save("deepl-key", for: TranslationEngine.deepL.storeKey!)
+        let model = PhoneModel(services: services, store: store, defaults: defaults)
+        model.settings.targetLanguage = "tr"
+        model.settings.translationEngine = .deepL
+        XCTAssertTrue(model.onlineTranslationActive)
+        model.settings.targetLanguage = "ar"
+        XCTAssertTrue(model.onlineTranslationActive)
+        let old = #"{"sourceLanguage":"en"}"#.data(using: .utf8)!
+        XCTAssertEqual(try JSONDecoder().decode(UserSettings.self, from: old).targetLanguage, "tr")
+    }
+
     func testSetupFlowNeedsSignInAndPS5() async throws {
         let model = makeModel()
         XCTAssertEqual(model.step, .welcome)

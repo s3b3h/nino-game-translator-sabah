@@ -9,14 +9,14 @@ import Foundation
 extension AppModel {
     /// Pencere görünmeli mi: altyazı bilgisayar ekranında gösteriliyor ve ekranda bir satır var (ya da yeri ayarlanıyor).
     var overlayVisible: Bool {
-        settings.output.showsOnComputer && (overlayAdjusting || !overlayLines.isEmpty)
+        showsOnComputer && (overlayAdjusting || !overlayLines.isEmpty)
     }
 
     /// Pencere tıklamaları geçiriyor mu (ayarlanırken hiçbir zaman).
     var overlayIgnoresMouse: Bool { settings.overlayClickThrough && !overlayAdjusting }
 
     func overlayReceive(_ event: SubtitleEvent) {
-        guard settings.output.showsOnComputer else { return }
+        guard showsOnComputer else { return }
         let now = overlayClock()
         switch event {
         case .subtitle(let text, let durationMs, let paragraphs, let replaces):
@@ -49,7 +49,7 @@ extension AppModel {
         overlayTimer?.cancel()
         overlayTimer = nil
         if !overlayLines.isEmpty { overlayLines = [] }
-        if !settings.output.showsOnComputer { overlayAdjusting = false }
+        if !showsOnComputer { overlayAdjusting = false }
     }
 
     /// ⌥⌘L ve menü çubuğundaki seçenek: tıklamaların geçmesini açar/kapatır.
@@ -59,7 +59,7 @@ extension AppModel {
 
     /// Kısayol yalnız çeviri sürerken ve altyazı bilgisayar ekranındayken tutulur.
     func updateClickThroughHotkey() {
-        let wanted = isRunning && settings.output.showsOnComputer
+        let wanted = isRunning && showsOnComputer
         if wanted, clickThroughHotkey == nil {
             clickThroughHotkey = GlobalHotkey(.clickThrough) { [weak self] in self?.toggleClickThrough() }
         }

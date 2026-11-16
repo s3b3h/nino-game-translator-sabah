@@ -25,6 +25,8 @@ final class SubtitleOverlayController {
         let ignoresMouse: Bool
         let adjusting: Bool
         let fontSize: Int
+        /// Nino: oyun penceresinden okunurken oyun alanı; altyazı penceresi onun altına oturur.
+        let gameArea: CGRect?
     }
 
     static let autosaveName = "CouchSubsSubtitleWindow"
@@ -46,7 +48,8 @@ final class SubtitleOverlayController {
         let visible = model.overlayVisible
         let ignoresMouse = model.overlayIgnoresMouse
         let fontSize = model.settings.style.fontSize
-        let state = Shown(visible: visible, ignoresMouse: ignoresMouse, adjusting: model.overlayAdjusting, fontSize: fontSize)
+        let state = Shown(visible: visible, ignoresMouse: ignoresMouse, adjusting: model.overlayAdjusting, fontSize: fontSize,
+                          gameArea: model.overlayAdjusting ? nil : model.gameArea)
         guard state != shown else { return }
         shown = state
         guard visible else {
@@ -57,6 +60,15 @@ final class SubtitleOverlayController {
         panel.ignoresMouseEvents = ignoresMouse
         panel.adjusting = model.overlayAdjusting
         fit(panel, fontSize: fontSize)
+        if let area = state.gameArea {
+            // Oyuna oturan yer kullanıcının kayıtlı yerinin üstüne yazılmasın.
+            if !panel.frameAutosaveName.isEmpty { panel.setFrameAutosaveName("") }
+            place(panel, over: area, fontSize: fontSize)
+        } else if panel.frameAutosaveName.isEmpty {
+            panel.setFrameUsingName(Self.autosaveName)
+            panel.setFrameAutosaveName(Self.autosaveName)
+            fit(panel, fontSize: fontSize)
+        }
         if !panel.isVisible { panel.orderFrontRegardless() }
     }
 
@@ -77,6 +89,7 @@ final class SubtitleOverlayController {
             move: { [weak self] in self?.move() },
             resize: { [weak self] edge in self?.resize(edge) },
             endMove: { [weak self] in self?.moveStart = nil }))
+            .fixedLeftToRight()
             .environmentObject(model)
         let host = FirstMouseHostingView(rootView: content)
         // Pencerenin boyunu içerik değil kullanıcı (ve yazı boyu) belirler.
@@ -109,6 +122,22 @@ final class SubtitleOverlayController {
         guard abs(frame.height - height) > 0.5 else { return }
         frame.size.height = height
         panel.setFrame(frame, display: true)
+    }
+
+    /// Nino: oyun penceresinden okunurken altyazı penceresi oyunun alt kısmına, oyun alanının %90'ı genişliğinde oturur
+    /// ve yazı oyun alanının boyuna göre ölçeklenir (pencere küçükse yazı da küçülür). Kullanıcının kayıtlı yeri
+    /// değişmez; "Altyazı penceresini ayarla" seçilince eski yerine döner. `area` sol üst başlangıçlı ekran koordinatıdır.
+    private func place(_ panel: NSPanel, over area: CGRect, fontSize: Int) {
+        let primaryHeight = NSScreen.screens.first?.frame.height ?? area.maxY
+        let scale = area.height / 1080
+        if geometry.scale != scale { geometry.scale = scale }
+        let font = CGFloat(fontSize) * scale
+        let height = (font * 8.1 + 140 * scale).rounded()
+        let width = (area.width * 0.9).rounded()
+        // AppKit'te başlangıç sol alttır; oyun alanının alt kenarından %3 yukarıda.
+        let bottom = primaryHeight - area.maxY + area.height * 0.03
+        let frame = NSRect(x: area.midX - width / 2, y: bottom, width: width, height: height)
+        if panel.frame != frame { panel.setFrame(frame, display: true) }
     }
 
     /// Sürüklemenin başındaki fare yeri ve pencere çerçevesi.
@@ -295,11 +324,12 @@ struct SubtitleOverlayView: View {
         let horizontal: CGFloat = (current ? 26 : 20) * scale
         let corner: CGFloat = 10 * scale
         let shown: Double = line.fading ? 0 : opacity
-        let text = Text(verbatim: line.text)
+        let text = Text(verbatim: TargetLanguage.displayText(line.text))
             .font(.system(size: size, weight: weight))
             .foregroundStyle(Self.color(style.textColor))
         return text
             .multilineTextAlignment(alignment)
+            .subtitleDirection(line.text)
             .lineSpacing(size * 0.3)
             .shadow(color: .black, radius: shadowRadius, x: 0, y: shadowRadius)
             .fixedSize(horizontal: false, vertical: true)
