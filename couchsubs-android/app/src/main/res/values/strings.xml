@@ -115,10 +115,10 @@
     <string name="ok">Tamam</string>
     <string name="next_continue">Devam</string>
     <string name="setup_step">Kurulum · Adım %1$d/3</string>
-    <string name="url_privacy" translatable="false">https://couchsubs.enmeraapps.com/gizlilik</string>
-    <string name="url_help" translatable="false">https://github.com/yorulmazsinan/couchsubs/issues</string>
-    <string name="url_source" translatable="false">https://github.com/yorulmazsinan/couchsubs</string>
-    <string name="url_tvs" translatable="false">https://github.com/yorulmazsinan/couchsubs#hangi-tvlerde-çalışır</string>
+    <string name="url_privacy" translatable="false">https://github.com/yunusdemirbag/nino-game-translator#gizlilik</string>
+    <string name="url_help" translatable="false">https://github.com/yunusdemirbag/nino-game-translator/issues</string>
+    <string name="url_source" translatable="false">https://github.com/yunusdemirbag/nino-game-translator</string>
+    <string name="url_tvs" translatable="false">https://github.com/yunusdemirbag/nino-game-translator/blob/main/docs/KURULUM.md#5-tv-uygulaması-android-tv--google-tv</string>
     <string name="engine_free_short">Ücretsiz</string>
     <string name="engine_other">Diğer</string>
     <string name="lines_thousands">%1$d bin satır</string>
