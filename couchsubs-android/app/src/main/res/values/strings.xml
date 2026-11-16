@@ -311,24 +311,24 @@
     <string name="target_tv_short">TV\'de</string>
     <string name="target_tv_over_game">Oyunun üzerinde</string>
     <string name="target_phone_body">Altyazılar bu telefonda büyük yazıyla görünür; telefonu TV\'nin ya da monitörün yanına koymanız yeterli.</string>
-    <!-- Nino: görüntü kaynağı ve yakalama kartı (HDMI Capture Card). -->
-    <string name="capture_card">Yakalama Kartı</string>
+    <!-- Nino: görüntü kaynağı ve Capture Card (HDMI Capture Card). -->
+    <string name="capture_card">Capture Card</string>
     <string name="source_remote_play">PS5 (Remote Play)</string>
     <string name="settings_video_source">Görüntü Kaynağı</string>
     <string name="source_body">Nino oyunun görüntüsünü nereden okusun?</string>
     <string name="source_ps5_detail">Remote Play ile Wi-Fi üzerinden; ikinci PSN hesabı gerekir</string>
     <string name="source_card_detail">USB-C ile takılan HDMI kartı</string>
     <string name="source_ps5_body">PS5 görüntüsü Remote Play ile Wi-Fi\'dan okunur. İkinci bir PSN hesabı ve PS5 eşlemesi gerekir.</string>
-    <string name="source_card_body">PS5\'i yakalama kartının HDMI girişine, kartı da USB-C ile bu telefona bağlayın. PSN hesabı ve PS5 eşlemesi gerekmez; altyazı yine TV\'de ya da bu telefonda görünür.</string>
+    <string name="source_card_body">PS5\'i Capture Card\'ın HDMI girişine, kartı da USB-C ile bu telefona bağlayın. PSN hesabı ve PS5 eşlemesi gerekmez; altyazı yine TV\'de ya da bu telefonda görünür.</string>
     <string name="source_hdcp">PS5\'te Ayarlar › Sistem › HDMI › HDCP\'yi Etkinleştir\'i kapatın; yoksa kart siyah görüntü verir.</string>
-    <string name="capture_found_title">Yakalama Kartı Takılı</string>
+    <string name="capture_found_title">Capture Card Takılı</string>
     <string name="capture_found_detail">Harici kamera · %1$s</string>
-    <string name="capture_missing_title">Yakalama Kartı Bulunamadı</string>
+    <string name="capture_missing_title">Capture Card Bulunamadı</string>
     <string name="capture_missing_detail">Kartı USB-C ile takın</string>
     <string name="capture_ready">Hazır</string>
-    <string name="capture_not_found">Yakalama kartı bulunamadı. Kartı USB-C ile takın; telefonunuz harici kamerayı desteklemiyor olabilir (Android 14+).</string>
-    <string name="capture_no_permission">Kamera izni yok. Yakalama kartı Android\'de kamera gibi görünür; Nino\'ya kamera izni verin.</string>
+    <string name="capture_not_found">Capture Card bulunamadı. Kartı USB-C ile takın; telefonunuz harici kamerayı desteklemiyor olabilir (Android 14+).</string>
+    <string name="capture_no_permission">Kamera izni yok. Capture Card Android\'de kamera gibi görünür; Nino\'ya kamera izni verin.</string>
     <string name="capture_black">Görüntü siyah. PS5\'i açın ya da PS5\'te Ayarlar › Sistem › HDMI › HDCP\'yi Etkinleştir\'i kapatın.</string>
-    <string name="capture_phase_opening">Yakalama kartı açılıyor…</string>
-    <string name="capture_notification_text">Yakalama kartındaki altyazılar okunuyor ve çevriliyor</string>
+    <string name="capture_phase_opening">Capture Card açılıyor…</string>
+    <string name="capture_notification_text">Capture Card\'daki altyazılar okunuyor ve çevriliyor</string>
 </resources>

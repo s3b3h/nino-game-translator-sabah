@@ -13,7 +13,7 @@ yeterlidir. Kurulum yaklaşık **5–10 dakika** sürer.
 |---|---|---|
 | PS5'iniz **akıllı TV'ye** bağlı (Android TV / Google TV) | **Telefon + TV** ya da **Mac + TV** | Android telefon ya da Mac, TV'de Nino uygulaması, ikinci (ücretsiz) PSN hesabı |
 | PS5'iniz **sıradan bir monitöre / eski TV'ye** bağlı | **Telefon ekranında altyazı** | Android telefon (ya da iPhone), ikinci PSN hesabı |
-| Elinizde **HDMI yakalama kartı** (capture card) var | **Mac/Windows + yakalama kartı** | Mac ya da Windows bilgisayar, yakalama kartı (Remote Play ve ikinci hesap gerekmez) |
+| Elinizde **HDMI Capture Card** var | **Mac/Windows + Capture Card** | Mac ya da Windows bilgisayar, Capture Card (Remote Play ve ikinci hesap gerekmez) |
 | Sadece **denemek** istiyorsunuz | **Demo** | Yalnız telefon: "PS5'siz Deneyin" |
 
 Hepsinde PS5, telefon/bilgisayar ve TV **aynı Wi-Fi ağında** olmalıdır.
@@ -64,7 +64,7 @@ ile aynıdır.
    dosyasını indirin, açın ve **Nino**'yu **Uygulamalar** klasörüne sürükleyin.
 2. Nino'yu açın. Mac "doğrulanamadı" derse: **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**.
 3. Nino sizi adım adım yönlendirir: ikinci PSN hesabıyla giriş → PS5'i 8 haneli kodla eşleme → TV seçimi.
-4. **Yakalama kartınız varsa:** İlk açılışta ya da **Ayarlar › Bağlantı**'da görüntü kaynağı olarak **Capture Card**'ı
+4. **Capture Card'ınız varsa:** İlk açılışta ya da **Ayarlar › Bağlantı**'da görüntü kaynağı olarak **Capture Card**'ı
    seçin. Bu yolda Remote Play ve ikinci PSN hesabı gerekmez; kartı PS5 ile TV/monitör arasına bağlayın.
 5. Mac uygulaması yeni sürümleri kendiliğinden indirip kurar.
 

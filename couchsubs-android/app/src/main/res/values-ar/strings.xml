@@ -297,7 +297,7 @@
     <string name="target_tv_over_game">فوق اللعبة</string>
     <string name="target_phone_body">تظهر الترجمة بخط كبير على هذا الهاتف؛ يكفي وضعه بجانب التلفاز أو الشاشة.</string>
     <!-- Nino: görüntü kaynağı ve yakalama kartı (HDMI Capture Card). -->
-    <string name="capture_card">بطاقة الالتقاط</string>
+    <string name="capture_card">بطاقة الالتقاط (Capture Card)</string>
     <string name="source_remote_play">PS5 (Remote Play)</string>
     <string name="settings_video_source">مصدر الصورة</string>
     <string name="source_body">من أين يقرأ Nino صورة اللعبة؟</string>

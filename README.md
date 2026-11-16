@@ -33,7 +33,7 @@ Tamamen ücretsiz · açık kaynak · reklamsız · abonelik yok · hesap yok</p
 - **Tam Arapça desteği:** Çeviri dili Arapça seçilince menüler de Arapçaya döner ve her şey sağdan sola dizilir. Uygulama yalnız Türkçe ve Arapça açılır.
 - **PS5 kendiliğinden bulunur:** Eşleme ekranı PS5'i sürekli arar; PS5'i sonradan açsanız da IP yazmanıza gerek kalmaz.
 - **Daha çok Android telefonda çalışır:** Bazı MediaTek işlemcili telefonlarda görüntünün okunamaması düzeltildi.
-- **HDMI yakalama kartı (Mac ve Windows):** PS5 görüntüsünü yakalama kartından alma. Remote Play ve ikinci PSN hesabı gerekmez.
+- **HDMI Capture Card (Mac ve Windows):** PS5 görüntüsünü Capture Card'dan alma. Remote Play ve ikinci PSN hesabı gerekmez.
 - **Sony giriş sayfası** Android'de artık boş gelmiyor; ücretsiz çeviri modeli inmezse kendiliğinden yeniden deneniyor.
 
 ## Nasıl çalışır
@@ -92,7 +92,7 @@ Oyunu her zamanki gibi kendi kolunuzla oynarsınız. Telefondaki (ya da bilgisay
 | | |
 |---|---|
 | **Konsol** | PS5 (Remote Play açık) |
-| **PSN** | İkinci, ücretsiz bir PSN hesabı (Remote Play için; oyun sizin hesabınızda oynanır). Yakalama kartıyla gerekmez. |
+| **PSN** | İkinci, ücretsiz bir PSN hesabı (Remote Play için; oyun sizin hesabınızda oynanır). Capture Card ile gerekmez. |
 | **Telefon ya da bilgisayar** | Android 8+ telefon · Apple Silicon Mac (macOS 13+) · Windows 10/11 (64 bit) |
 | **Ağ** | PS5, telefon/bilgisayar ve TV aynı Wi-Fi'de |
 
