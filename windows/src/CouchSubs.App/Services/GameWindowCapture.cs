@@ -36,6 +36,10 @@ public sealed partial class GameWindowCapture : IGameWindowStream
     public event Action<ScreenArea?>? GameAreaChanged;
 
     private readonly object gate = new();
+    /// <summary>Nino: aranan pencere (PS5 ya da Xbox).</summary>
+    private readonly GameConsole console;
+
+    public GameWindowCapture(GameConsole console = GameConsole.Ps5) => this.console = console;
     private Thread? thread;
     private volatile bool running;
     private GameWindowStatus status = GameWindowStatus.Stopped;
@@ -135,7 +139,7 @@ public sealed partial class GameWindowCapture : IGameWindowStream
             windows.Add(new GameWindowInfo(handle, ProcessName(pid), WindowTitle(handle), client.Value));
             return true;
         }, IntPtr.Zero);
-        var pick = GameWindowRules.Pick(windows);
+        var pick = GameWindowRules.Pick(windows, console);
         lock (gate)
         {
             if (pick is null)
@@ -154,8 +158,7 @@ public sealed partial class GameWindowCapture : IGameWindowStream
         Report(GameWindowStatus.Capturing, AppName(pick.ProcessName), AreaForOverlay(pick.Handle));
     }
 
-    private static string AppName(string process) =>
-        process.Contains("chiaki", StringComparison.OrdinalIgnoreCase) ? "chiaki-ng" : "PS Remote Play";
+    private static string AppName(string process) => GameWindowRules.AppName(process);
 
     private string ProcessName(uint pid)
     {

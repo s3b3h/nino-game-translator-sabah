@@ -103,7 +103,24 @@ synthetic and are not recordings of real people.
 
 Text recognition (Vision) and translation (Translation framework) are provided by macOS.
 
+## Android app: Xbox home streaming (Nino)
+
+| Component | License | Source |
+|---|---|---|
+| WebRTC (`io.github.webrtc-sdk:android`, Google libwebrtc build, used unmodified) | BSD-3-Clause, Copyright (c) 2011 The WebRTC project authors | https://github.com/webrtc-sdk/webrtc |
+
+Nino's Xbox code (`couchsubs-android/.../xbox/`) is written from scratch. The sign-in flow, the streaming endpoints and
+the data-channel messages were learned from these open-source projects (no code copied; their public protocol notes
+and constants such as the Xbox client ID and channel access key are used):
+
+| Project | License | Source |
+|---|---|---|
+| Greenlight | MIT, Copyright (c) UnknownSKL (Jim Kroon) | https://github.com/unknownskl/greenlight |
+| xbox-xcloud-player | MIT, Copyright (c) UnknownSKL (Jim Kroon) | https://github.com/unknownskl/xbox-xcloud-player |
+| xal-node | MIT, Copyright (c) 2023 UnknownSKL (Jim Kroon) | https://github.com/unknownskl/xal-node |
+
 ## Trademarks
 
 CouchSubs is not affiliated with or endorsed by Sony Interactive Entertainment. "PlayStation" and "PS5"
-are trademarks of Sony Interactive Entertainment Inc. LG and webOS are trademarks of LG Electronics Inc.
+are trademarks of Sony Interactive Entertainment Inc. Nino is not affiliated with or endorsed by Microsoft; "Xbox" is a
+trademark of the Microsoft group of companies. LG and webOS are trademarks of LG Electronics Inc.

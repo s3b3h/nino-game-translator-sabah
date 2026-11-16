@@ -19,7 +19,15 @@ struct GameWindowInfo: Equatable {
     let fillsScreen: Bool
 }
 
-/// Oyunun oynandığı pencereyi seçer: PS Remote Play (Sony) ya da chiaki-ng.
+/// Nino: hangi konsolun yayın penceresi aranır.
+enum GameWindowTarget: Equatable {
+    /// PS Remote Play ya da chiaki-ng.
+    case playStation
+    /// Xbox ev yayını: Greenlight (açık kaynak Xbox istemcisi) ya da tarayıcıda xbox.com/play (başlığında "Xbox").
+    case xbox
+}
+
+/// Oyunun oynandığı pencereyi seçer: PS Remote Play (Sony) ya da chiaki-ng; Xbox'ta Greenlight ya da xbox.com/play.
 enum GameWindowPicker {
     /// Ad ya da paket kimliğinde aranan parçalar (küçük harf). `NinoGameWindowApp` ayarı (yalnız deneme için) başka
     /// bir uygulamayı hedefler: `defaults write <paket> NinoGameWindowApp "Safari"`.
@@ -36,6 +44,25 @@ enum GameWindowPicker {
     /// Küçük pencereler (araç çubuğu, ayar penceresi) oyun sayılmaz.
     static let minimumSize = CGSize(width: 320, height: 180)
 
+    /// Xbox yayınını gösteren uygulamalar (ad ya da paket kimliği, küçük harf).
+    static let xboxApps = ["greenlight"]
+    /// Başlığında "xbox" geçen penceresi okunabilecek tarayıcılar (xbox.com/play sekmesi).
+    static let browsers = ["com.apple.safari", "com.google.chrome", "com.microsoft.edgemac", "company.thebrowser.browser",
+                           "org.mozilla.firefox", "com.brave.browser", "com.operasoftware.opera", "com.vivaldi.vivaldi"]
+
+    static func pick(_ windows: [GameWindowInfo], target: GameWindowTarget) -> GameWindowInfo? {
+        switch target {
+        case .playStation: return pick(windows)
+        case .xbox:
+            return largest(windows.filter { w in
+                let name = (w.appName + " " + w.bundleID).lowercased()
+                let bundle = w.bundleID.lowercased()
+                return xboxApps.contains { name.contains($0) }
+                    || (browsers.contains { bundle.hasPrefix($0) } && w.title.lowercased().contains("xbox"))
+            })
+        }
+    }
+
     static func pick(_ windows: [GameWindowInfo], wanted: [String] = wanted) -> GameWindowInfo? {
         windows
             .filter { w in
@@ -43,7 +70,13 @@ enum GameWindowPicker {
                 return wanted.contains { name.contains($0) }
                     && w.frame.width >= minimumSize.width && w.frame.height >= minimumSize.height
             }
-            // En büyük pencere oyundur (Remote Play'in giriş ya da ayar pencereleri daha küçüktür).
+            .max { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height }
+    }
+
+    /// En büyük pencere oyundur (Remote Play'in giriş ya da ayar pencereleri daha küçüktür).
+    private static func largest(_ windows: [GameWindowInfo]) -> GameWindowInfo? {
+        windows
+            .filter { $0.frame.width >= minimumSize.width && $0.frame.height >= minimumSize.height }
             .max { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height }
     }
 }
@@ -94,6 +127,8 @@ final class GameWindowCapture: NSObject, @unchecked Sendable {
 
     var onFrame: ((CGImage) -> Void)?
     var onStatus: ((Status) -> Void)?
+    /// Nino: aranan pencere (PS5 ya da Xbox); başlamadan önce ayarlanır.
+    var target = GameWindowTarget.playStation
     /// Oyun alanının ekrandaki yeri (sol üst başlangıç); altyazı penceresi bunu izleyebilir.
     var onGameArea: ((CGRect?) -> Void)?
 
@@ -186,7 +221,7 @@ final class GameWindowCapture: NSObject, @unchecked Sendable {
                            bundleID: w.owningApplication?.bundleIdentifier ?? "", title: w.title ?? "", frame: w.frame,
                            fillsScreen: displays.contains { Self.fills($0, w.frame) })
         }
-        guard let pick = GameWindowPicker.pick(infos), let window = windows.first(where: { $0.windowID == pick.id }) else {
+        guard let pick = GameWindowPicker.pick(infos, target: target), let window = windows.first(where: { $0.windowID == pick.id }) else {
             endStream()
             set(.lookingForWindow)
             return

@@ -179,9 +179,14 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// <summary>Eşleşmiş bir TV var.</summary>
     public bool HasTv => tv is not null && store.Load<string>(StoreKeys.TvKey) is not null;
     /// <summary>Ana ekranda TV durumu gösterilir mi (altyazı yalnız bilgisayar ekranındaysa gösterilmez).</summary>
-    public bool ShowsOnTv => !UsesGameWindow && settings.Output.ShowsOnTv();
+    public bool ShowsOnTv => (!UsesGameWindow || UsesXboxWindow) && settings.Output.ShowsOnTv();
     /// <summary>Oyun bu bilgisayardaki Remote Play penceresindeyse altyazı her zaman o pencerenin üstündedir.</summary>
-    public bool ShowsOnComputer => UsesGameWindow || settings.Output.ShowsOnComputer();
+    public bool ShowsOnComputer => (UsesGameWindow && !UsesXboxWindow) || settings.Output.ShowsOnComputer();
+    /// <summary>
+    /// Nino: görüntü bu bilgisayardaki Xbox yayın penceresinden okunuyor. Oyun çoğu zaman TV'de oynanır; pencere yalnız
+    /// görüntünün kaynağıdır, altyazı seçilen yere (TV ya da bu bilgisayar) gider.
+    /// </summary>
+    public bool UsesXboxWindow => UsesGameWindow && settings.GameConsole == GameConsole.Xbox;
     /// <summary>Nino: görüntü bu bilgisayardaki oyun penceresinden okunuyor (PS5 eşleştirmesi gerekmez).</summary>
     public bool UsesGameWindow => settings.VideoSource == VideoSource.Window;
     /// <summary>
@@ -226,12 +231,19 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     public string? WindowApp { get => windowApp; private set => Set(ref windowApp, value, [nameof(Ps5StatusText), nameof(WindowStatusText)]); }
     /// <summary>Oyun alanının ekrandaki yeri (ekran pikseliyle); altyazı penceresi buna oturur.</summary>
     public ScreenArea? GameArea { get => gameArea; private set => Set(ref gameArea, value); }
-    public string WindowStatusText => WindowStatusTextFor(windowStatus, windowApp, isRunning, text);
+    public string WindowStatusText => WindowStatusTextFor(windowStatus, windowApp, isRunning, text, settings.GameConsole);
     private GameWindowStatus windowStatus = GameWindowStatus.Stopped;
     private string? windowApp;
     private ScreenArea? gameArea;
 
-    public static string WindowStatusTextFor(GameWindowStatus status, string? app, bool running, Localizer text) => status switch
+    public static string WindowStatusTextFor(GameWindowStatus status, string? app, bool running, Localizer text,
+                                             GameConsole console = GameConsole.Ps5) => console == GameConsole.Xbox ? status switch
+    {
+        // Nino: Xbox yayın penceresi (Xbox uygulaması, Greenlight ya da xbox.com/play).
+        GameWindowStatus.Capturing => text.Format("Reading %@", app ?? "Xbox"),
+        GameWindowStatus.LookingForWindow => text["Start Remote play in the Xbox app, Greenlight or xbox.com/play"],
+        _ => running ? text["Start Remote play in the Xbox app, Greenlight or xbox.com/play"] : text["Reads the Xbox stream window"],
+    } : status switch
     {
         GameWindowStatus.Capturing => text.Format("Reading %@", app ?? "PS Remote Play"),
         GameWindowStatus.LookingForWindow => text["Open PS Remote Play or chiaki-ng and start playing"],
@@ -240,7 +252,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// <summary>Altyazı TV'ye de gidecek ama TV eşleşmedi: ana ekranda "TV bağla" düğmesi çıkar.</summary>
     public bool NeedsTv => ShowsOnTv && !HasTv;
     /// <summary>Çeviri başlatılabilir mi: PS5 kurulu ve altyazının gideceği bir yer var (TV eşleşmiş ya da bilgisayar ekranı seçili).</summary>
-    public bool CanStart => UsesGameWindow || ((UsesCaptureCard || (console is not null && accountId is not null)) && (ShowsOnComputer || HasTv));
+    public bool CanStart => (UsesGameWindow && !UsesXboxWindow) || ((UsesGameWindow || UsesCaptureCard || (console is not null && accountId is not null)) && (ShowsOnComputer || HasTv));
     public string LastSource { get => lastSource; private set => Set(ref lastSource, value); }
     public string LastTranslation { get => lastTranslation; private set => Set(ref lastTranslation, value); }
     /// <summary>TV'ye giden son satırın ölçümleri tek satırda ("OCR 40 ms · Çeviri 300 ms · Gecikme 520 ms"); satır gelene kadar boş.</summary>
@@ -332,7 +344,9 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     public void Back()
     {
         // Nino: kısa yoldan gelen (PS5 ve TV adımları atlanmış) kullanıcı geri dönünce karşılamaya döner.
-        if (UsesGameWindow && step == OnboardingStep.Translation) Step = OnboardingStep.Welcome;
+        if (UsesGameWindow && !UsesXboxWindow && step == OnboardingStep.Translation) Step = OnboardingStep.Welcome;
+        // Nino: Xbox kısa yolundan gelen PS5 adımlarına düşmez.
+        else if (UsesXboxWindow && step == OnboardingStep.Tv) Step = OnboardingStep.Welcome;
         // Nino: kart rehberinden gelen PS5 adımlarına düşmez; rehbere döner.
         else if (UsesCaptureCard && (step == OnboardingStep.Tv || (step == OnboardingStep.Test && !ShowsOnTv)))
         {
@@ -515,8 +529,20 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// </summary>
     public void UseGameWindowSetup()
     {
-        Settings = settings with { VideoSource = VideoSource.Window, Output = SubtitleOutput.Computer };
+        Settings = settings with { VideoSource = VideoSource.Window, GameConsole = GameConsole.Ps5, Output = SubtitleOutput.Computer };
         Step = OnboardingStep.Translation;
+        StartModelDownload();
+    }
+
+    /// <summary>
+    /// Nino: sihirbazın ilk ekranındaki "Xbox'ta oynuyorum": Xbox bu bilgisayarda Xbox uygulamasının "Uzaktan oynat"ı,
+    /// Greenlight ya da xbox.com/play ile açılır; Nino o pencereyi okur. İkinci hesap ve PS5 adımları atlanır; altyazı TV'de
+    /// gösterilecekse TV eşleştirilir ("TV'm yok" seçilirse bu bilgisayarda, pencerenin üstünde).
+    /// </summary>
+    public void UseXboxWindowSetup()
+    {
+        Settings = settings with { VideoSource = VideoSource.Window, GameConsole = GameConsole.Xbox, Output = SubtitleOutput.Tv };
+        Step = OnboardingStep.Tv;
         StartModelDownload();
     }
 
@@ -1119,7 +1145,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     {
         // Düğmeye iki kez basılması ya da beklerken tekrar çağrılması ikinci bir oturum açmaz.
         if (isRunning || isStarting || !CanStart) return;
-        var windowSource = UsesGameWindow ? services.MakeWindowStream() : null;
+        var windowSource = UsesGameWindow ? services.MakeWindowStream(settings.GameConsole) : null;
         if (UsesGameWindow && windowSource is null) return;
         var cardSource = UsesCaptureCard ? services.MakeCardStream(ShowsOnComputer, PreferredCardId) : null;
         if (UsesCaptureCard && cardSource is null) return;

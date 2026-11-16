@@ -15,9 +15,10 @@ yeterlidir. Kurulum yaklaşık **5–10 dakika** sürer.
 | Bilgisayarınız yok ama TV'niz akıllı | **Telefon + TV** | Android telefon, TV'de Nino uygulaması, ikinci PSN hesabı |
 | PS5'iniz **sıradan bir monitöre / eski TV'ye** bağlı | **Telefon ekranında altyazı** | Android telefon (ya da iPhone), ikinci PSN hesabı |
 | Elinizde **HDMI Capture Card** var | **Mac/Windows + Capture Card** | Mac ya da Windows bilgisayar, Capture Card (Remote Play ve ikinci hesap gerekmez) |
+| **Xbox Series X\|S**'te oynuyorsunuz | **Android telefon** (ya da Mac/Windows'ta Xbox penceresi) | Microsoft hesabınız; ikinci hesap gerekmez (bkz. Bölüm 6) |
 | Sadece **denemek** istiyorsunuz | **Demo** | Yalnız telefon: "PS5'siz Deneyin" |
 
-Hepsinde PS5, telefon/bilgisayar ve TV **aynı Wi-Fi ağında** olmalıdır.
+Hepsinde konsol (PS5 ya da Xbox), telefon/bilgisayar ve TV **aynı Wi-Fi ağında** olmalıdır.
 
 ---
 
@@ -46,14 +47,15 @@ dosyasını çalıştırın ("bilgisayarınızı korudu" uyarısında **Ek bilgi
 
 ### 3.2 İlk açılış
 1. **Karşılama:** Üç kısa sayfa Nino'yu tanıtır. Sağ üstteki bayraktan dili seçin: 🇹🇷 Türkçe ya da 🇸🇦 Arapça.
-2. **Adım 1 – İkinci PSN Hesabı:** **"Sony İle Giriş Yapın"**a dokunun ve oyun oynadığınız hesaptan **farklı**,
+2. **Konsol:** "Hangi Konsolda Oynuyorsunuz?" ekranında **PS5**'i seçin. (Xbox için Bölüm 6'ya bakın.)
+3. **Adım 1 – İkinci PSN Hesabı:** **"Sony İle Giriş Yapın"**a dokunun ve oyun oynadığınız hesaptan **farklı**,
    ücretsiz bir PlayStation hesabıyla giriş yapın. Giriş Sony'nin kendi sayfasında yapılır; şifreniz Nino'ya gelmez.
    *(Neden ikinci hesap? PS5, oyun oynadığınız hesapla aynı anda Remote Play bağlantısı açmaya izin vermez.)*
-3. **Adım 2 – PS5'inizi Eşleyin:** Nino PS5'inizi ağda kendiliğinden bulur.
+4. **Adım 2 – PS5'inizi Eşleyin:** Nino PS5'inizi ağda kendiliğinden bulur.
    - PS5'te **ikinci hesapla** giriş yapın → **Ayarlar › Sistem › Uzaktan Oynatma › Cihazı Eşle**.
    - Ekranda çıkan **8 haneli kodu** telefona yazın ve **Eşle**'ye basın.
    - PS5 görünmüyorsa: PS5'in açık ya da dinlenme modunda olduğundan emin olun; liste birkaç saniyede bir yenilenir.
-4. **Adım 3 – Altyazılar Nerede Görünsün?**
+5. **Adım 3 – Altyazılar Nerede Görünsün?**
    - **TV'de:** Akıllı TV'nizde Nino uygulaması varsa (bkz. Bölüm 5).
    - **Telefonda:** TV uygulaması yoksa ya da PS5 bir monitöre bağlıysa. Telefonu ekranın yanına koymanız yeterli.
 
@@ -72,6 +74,9 @@ dosyasını çalıştırın ("bilgisayarınızı korudu" uyarısında **Ek bilgi
 iPhone uygulaması App Store incelemesindedir. Yayınlanınca bağlantısı burada olacaktır. Kurulum adımları Android
 ile aynıdır.
 
+> **Google Play:** Android uygulaması Google Play'de kapalı testte. Herkese açılınca bağlantısı burada olacak; o zamana
+> kadar APK ile kurun (Bölüm 3).
+
 ---
 
 ## 5. TV uygulaması (Android TV / Google TV)
@@ -88,7 +93,42 @@ TV'de Nino'yu açtığınızda TV, PS5'in bağlı olduğu HDMI girişine geçer 
 
 ---
 
-## 6. Sık karşılaşılan durumlar
+## 6. Xbox ile kullanım (yeni, deneysel)
+
+> Xbox desteği 0.1.8'de geldi. Kod hazır ve testleri geçiyor ama gerçek bir Xbox ile henüz az denendi. Sorun görürseniz
+> [GitHub › Issues](https://github.com/yunusdemirbag/nino-game-translator/issues)'a yazın.
+
+<p align="center">
+  <img src="nino/tanitim/xbox-konsol.jpg" width="200" alt="Hangi konsolda oynuyorsunuz">&nbsp;
+  <img src="nino/tanitim/xbox-giris.jpg" width="200" alt="Xbox'ınızı bağlayın">&nbsp;
+  <img src="nino/tanitim/xbox-kaynak.jpg" width="200" alt="Görüntü kaynağı: PS5, Xbox, Capture Card">
+</p>
+
+### 6.1 Android telefonla (önerilen)
+1. **Xbox'ta:** **Ayarlar › Cihazlar ve bağlantılar › Uzak özellikler**'i açın. Güç modu "Uyku" olmalı ki Nino Xbox'ı
+   uzaktan bulabilsin.
+2. **Telefonda:** Nino'yu açın, **"Hangi Konsolda Oynuyorsunuz?"** ekranında **Xbox**'ı seçin.
+   (Daha önce kurduysanız: **Ayarlar › Görüntü Kaynağı › Xbox**.)
+3. **Microsoft ile Giriş Yapın**'a dokunun. Nino bir kod gösterir; **Kodu Kopyala ve Sayfayı Aç** ile
+   microsoft.com/link sayfasında kodu girin. Xbox'ta oturum açık olan **aynı hesabı** kullanın. Şifrenizi Nino'ya yazmazsınız.
+4. Listeden Xbox'ınızı seçin. Oyunu açıp çubuğu **kaydırın**; altyazılar telefonda ya da TV'de akar.
+
+PS5'tekinin aksine **ikinci hesap gerekmez**: Nino, Xbox uygulamasındaki "Uzaktan oynat" ile aynı ev yayınını yalnız
+izler. Ses çalmaz, kolunuza ya da hesabınıza dokunmaz.
+
+### 6.2 Mac ya da Windows ile (Xbox penceresi)
+1. Xbox'ı bilgisayarda açın: **Windows**'ta Microsoft'un **Xbox** uygulamasındaki **Uzaktan oynat**, **Mac**'te ücretsiz
+   [Greenlight](https://github.com/unknownskl/greenlight) ya da tarayıcıda **xbox.com/play**.
+2. Nino'nun ilk ekranında **"Xbox'ta oynuyorum"**u seçin. PS5 adımları atlanır; Nino o pencereyi okur ve çeviriyi TV'ye
+   ya da bilgisayar ekranına gönderir.
+
+### 6.3 Capture Card ile
+Capture Card yolu konsoldan bağımsızdır: Xbox'ı kartın HDMI girişine bağlayın, gerisi PS5 ile aynı (Bölüm 2 ve
+Ayarlar › Görüntü Kaynağı › Capture Card). Xbox oyunlarda genellikle HDCP kullanmaz.
+
+---
+
+## 7. Sık karşılaşılan durumlar
 
 | Durum | Çözüm |
 |---|---|
@@ -97,6 +137,7 @@ TV'de Nino'yu açtığınızda TV, PS5'in bağlı olduğu HDMI girişine geçer 
 | Altyazı görünmüyor | Oyunun kendi altyazısının **açık** olduğundan emin olun (Nino İngilizce altyazıyı okur). |
 | "Uzaktan Oynatma" bildirimi sürekli çıkıyor | PS5'te **Ayarlar › Sistem › Uzaktan Oynatma**'da en alttaki bildirim seçeneğini kapatın. |
 | Telefon ısınıyor | Telefonu şarjda ve serin bir yerde tutun; ekran parlaklığı tam ekranda kendiliğinden azalır. |
+| Xbox listede görünmüyor | Xbox'ta Uzak özellikler açık mı, aynı Microsoft hesabıyla mı giriş yaptınız? Güç modunu "Uyku" yapın. |
 | Sadece görmek istiyorum | Ana ekranda **"PS5'siz Deneyin"**e dokunun; örnek altyazılarla uygulamayı gezebilirsiniz. |
 
 ---

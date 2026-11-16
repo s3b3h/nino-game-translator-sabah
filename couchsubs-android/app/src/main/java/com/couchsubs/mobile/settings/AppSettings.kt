@@ -21,8 +21,11 @@ import javax.crypto.spec.GCMParameterSpec
 /** Altyazının gösterileceği yer. */
 enum class SubtitleTarget { TV, PHONE }
 
-/** Nino: oyun görüntüsünün kaynağı: PS5 Remote Play (ikinci PSN hesabı) ya da USB-C ile takılı HDMI yakalama kartı. */
-enum class VideoSource { REMOTE_PLAY, CAPTURE_CARD }
+/**
+ * Nino: oyun görüntüsünün kaynağı: PS5 Remote Play (ikinci PSN hesabı), Xbox ev yayını (Microsoft hesabı) ya da USB-C ile
+ * takılı HDMI yakalama kartı (iki konsolda da çalışır).
+ */
+enum class VideoSource { REMOTE_PLAY, CAPTURE_CARD, XBOX }
 
 /** Nino: ana ekran arayüzü (Mac ile aynı): Salon (fişi prize takın) ya da Cam düğme. */
 enum class HomeStyle { LIVING_ROOM, TOGGLE }
@@ -86,7 +89,7 @@ class SecretStore(context: Context) {
 }
 
 /** Uygulama ayarları; gizli olanlar [SecretStore]'da. */
-class AppSettings(private val appContext: Context) {
+class AppSettings(private val appContext: Context) : com.couchsubs.mobile.xbox.XboxStore {
     private val prefs: SharedPreferences = appContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
     val secrets = SecretStore(appContext)
 
@@ -105,6 +108,26 @@ class AppSettings(private val appContext: Context) {
         set(value) = prefs.edit().putString("videoSource", value.name).apply()
 
     val usesCaptureCard: Boolean get() = videoSource == VideoSource.CAPTURE_CARD
+
+    /** Nino: Xbox ev yayını seçili (PSN girişi ve PS5 eşlemesi yerine Microsoft girişi ve Xbox seçimi). */
+    val usesXbox: Boolean get() = videoSource == VideoSource.XBOX
+
+    /** Kurulumda konsol türü (PS5 / Xbox) soruldu mu. */
+    var consoleAsked: Boolean
+        get() = prefs.getBoolean("consoleAsked", false)
+        set(value) = prefs.edit().putBoolean("consoleAsked", value).apply()
+
+    /** Microsoft hesabının uzun ömürlü jetonu (şifre değil); gizli depoda. */
+    override var xboxRefreshToken: String?
+        get() = secrets.get("xbox.refresh")
+        set(value) = secrets.put("xbox.refresh", value)
+
+    override var xboxConsole: com.couchsubs.mobile.xbox.XboxConsole?
+        get() = com.couchsubs.mobile.xbox.XboxConsole.fromJson(prefs.getString("xboxConsole", null))
+        set(value) = prefs.edit().apply { if (value == null) remove("xboxConsole") else putString("xboxConsole", value.toJson()) }.apply()
+
+    /** Xbox ile çeviriye hazır: giriş yapılmış ve konsol seçilmiş. */
+    val xboxReady: Boolean get() = !xboxRefreshToken.isNullOrEmpty() && xboxConsole != null
 
     var target: SubtitleTarget
         get() = enumOr(prefs.getString("target", null), SubtitleTarget.TV)

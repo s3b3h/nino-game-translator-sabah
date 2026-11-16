@@ -120,6 +120,8 @@ class TranslationService : Service() {
      * kuruluysa o önceliklidir. Oturum başında bir kez belirlenir.
      */
     private var captureCard = false
+    /** Nino: bu oturumda görüntü Xbox ev yayınından gelir (Ayarlar › Görüntü Kaynağı › Xbox). */
+    private var xbox = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -133,7 +135,10 @@ class TranslationService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (!begun) captureCard = settings.usesCaptureCard && FrameSources.replacement == null
+        if (!begun) {
+            captureCard = settings.usesCaptureCard && FrameSources.replacement == null
+            xbox = settings.usesXbox && FrameSources.replacement == null
+        }
         startInForeground()
         if (!begun) {
             begun = true
@@ -150,7 +155,7 @@ class TranslationService : Service() {
         val notification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.notification_title))
-            .setContentText(getString(if (captureCard) R.string.capture_notification_text else R.string.notification_text))
+            .setContentText(getString(if (captureCard) R.string.capture_notification_text else if (xbox) R.string.xbox_notification_text else R.string.notification_text))
             .setContentIntent(open)
             .setOngoing(true)
             .addAction(Notification.Action.Builder(null, getString(R.string.stop), stop).build())
@@ -173,12 +178,18 @@ class TranslationService : Service() {
         // Yerine geçen kaynak: debug yapısında kayıtlı klip (Play görüntüleri için) ya da Nino'da yakalama kartı.
         // İkisinde de PSN hesabı, PS5 eşlemesi ve PS5 kitaplığı gerekmez.
         val replacement = FrameSources.replacement ?: if (captureCard) CaptureCards.factory else null
-        if (replacement == null && (console == null || accountId == null)) {
+        // Nino: Xbox'ta PSN ve Remote Play kitaplığı gerekmez; Microsoft girişi ve seçili konsol gerekir.
+        if (xbox && replacement == null && !settings.xboxReady) {
+            LiveState.update { it.copy(running = false, error = getString(R.string.xbox_error_not_ready)) }
+            stopSelf()
+            return
+        }
+        if (replacement == null && !xbox && (console == null || accountId == null)) {
             LiveState.update { it.copy(running = false, error = getString(R.string.error_not_paired)) }
             stopSelf()
             return
         }
-        if (replacement == null && !NativeBridge.available) {
+        if (replacement == null && !xbox && !NativeBridge.available) {
             LiveState.update { it.copy(running = false, error = getString(R.string.error_native)) }
             stopSelf()
             return
@@ -188,7 +199,7 @@ class TranslationService : Service() {
         LiveState.update { LiveStatus(running = true, phase = getString(R.string.phase_preparing), startedAt = startedAt, engineLabel = engineLabel()) }
         LiveState.health.sessionStarted()
         Telemetry.event(Telemetry.SESSION_START, "target" to settings.target.name.lowercase(), "engine" to settings.engine.name.lowercase(),
-            "packs" to settings.packsEnabled, "source" to if (captureCard) "capture_card" else "remote_play")
+            "packs" to settings.packsEnabled, "source" to if (captureCard) "capture_card" else if (xbox) "xbox" else "remote_play")
         // Paketlerin açılması, çeviri modeli ve sunucu kurulumu ana iş parçacığında yapılırsa zayıf telefonda
         // "CouchSubs yanıt vermiyor" uyarısı çıkar; kurulum kendi iş parçacığında yapılır.
         Thread({
@@ -301,6 +312,17 @@ class TranslationService : Service() {
                 }
             }
         }
+        // Nino: Xbox kareleri android.media.Image değildir (WebRTC I420); yalnız parlaklık düzlemi gelir.
+        val onLuma = com.couchsubs.mobile.xbox.LumaSink { buffer, rowStride, width, height ->
+            val now = System.currentTimeMillis()
+            if (!reading.get() && now - lastRead >= 1000 / MAX_READS_PER_SECOND) {
+                SubtitleReader.copyLuma(buffer, rowStride, 1, 0, 0, width, height, region)?.let { pixels ->
+                    lastRead = now
+                    reading.set(true)
+                    ocr.execute { read(pixels) }
+                }
+            }
+        }
         val onState: (SessionState) -> Unit = { state ->
             when (state) {
                 SessionState.Connecting -> LiveState.health.connecting()
@@ -316,8 +338,10 @@ class TranslationService : Service() {
                     error = if (cardProblem) phase else if (it.error in cardMessages) null else it.error)
             }
         }
+        val xboxConsole = settings.xboxConsole
         val source = replacement?.create(this, onFrame, onState)
-            ?: StreamSession(console!!, accountId!!, onFrame, onState, onConsoleMoved = { moved -> settings.console = moved })
+            ?: if (xbox && xboxConsole != null) com.couchsubs.mobile.xbox.XboxStreamSession(this, com.couchsubs.mobile.xbox.XboxAccount(settings), xboxConsole, onLuma, onState)
+            else StreamSession(console!!, accountId!!, onFrame, onState, onConsoleMoved = { moved -> settings.console = moved })
         synchronized(lifecycle) {
             // Kurulum sürerken durdurulduysa (onDestroy çalıştı) açılan bağlantı başlatılmaz.
             if (destroyed) {
@@ -416,13 +440,15 @@ class TranslationService : Service() {
         emptyMap()
     }
 
-    private val CARD_PROBLEMS = setOf(DisconnectKind.NO_CAPTURE_CARD, DisconnectKind.NO_CAMERA_PERMISSION, DisconnectKind.BLACK_PICTURE)
+    private val CARD_PROBLEMS = setOf(DisconnectKind.NO_CAPTURE_CARD, DisconnectKind.NO_CAMERA_PERMISSION, DisconnectKind.BLACK_PICTURE,
+        DisconnectKind.XBOX_SIGNED_OUT)
     private val cardMessages by lazy {
-        setOf(getString(R.string.capture_not_found), getString(R.string.capture_no_permission), getString(R.string.capture_black))
+        setOf(getString(R.string.capture_not_found), getString(R.string.capture_no_permission), getString(R.string.capture_black),
+            getString(R.string.xbox_phase_signed_out))
     }
 
     private fun describe(state: SessionState): String = when (state) {
-        SessionState.Connecting -> getString(if (captureCard) R.string.capture_phase_opening else R.string.phase_connecting)
+        SessionState.Connecting -> getString(if (captureCard) R.string.capture_phase_opening else if (xbox) R.string.xbox_phase_connecting else R.string.phase_connecting)
         SessionState.Streaming -> getString(R.string.phase_streaming)
         is SessionState.Disconnected -> when (state.kind) {
             DisconnectKind.NO_CAPTURE_CARD -> getString(R.string.capture_not_found)
@@ -433,6 +459,8 @@ class TranslationService : Service() {
             DisconnectKind.CONSOLE_ASLEEP -> getString(R.string.phase_asleep)
             DisconnectKind.LOGIN_PASSCODE -> getString(R.string.phase_passcode)
             DisconnectKind.REFUSED -> getString(R.string.phase_refused)
+            DisconnectKind.XBOX_SIGNED_OUT -> getString(R.string.xbox_phase_signed_out)
+            DisconnectKind.XBOX_UNREACHABLE -> getString(R.string.xbox_phase_unreachable)
             else -> getString(R.string.phase_reconnecting)
         }
     }

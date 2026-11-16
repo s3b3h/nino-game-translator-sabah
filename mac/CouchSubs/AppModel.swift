@@ -701,8 +701,19 @@ final class AppModel: ObservableObject {
     /// Nino: sihirbazın ilk ekranındaki "Bu bilgisayarda PS Remote Play ile oynuyorum": PS5 eşleştirmesi, ikinci hesap ve TV
     /// adımları atlanır; görüntü Remote Play penceresinden okunur, çeviri pencerenin üstünde gösterilir.
     func useGameWindowSetup() {
+        settings.gameConsole = .ps5
         settings.videoSource = .window
         step = .done
+    }
+
+    /// Nino: sihirbazın ilk ekranındaki "Xbox'ta oynuyorum": Xbox ev yayını bu bilgisayarda Greenlight ya da tarayıcıda
+    /// xbox.com/play ile açılır (Microsoft hesabına orada girilir); Nino o pencereyi okur, çeviriyi üstünde gösterir.
+    /// PS5 eşleştirmesi ve ikinci hesap adımları atlanır.
+    func useXboxWindowSetup() {
+        settings.gameConsole = .xbox
+        settings.videoSource = .window
+        // Altyazı TV'de gösterilecekse TV eşleştirilir ("TV'm yok" seçilirse bu bilgisayarda).
+        step = .tv
     }
 
     /// Nino: sihirbazın ilk ekranındaki "Yakalama kartım var": PS5 eşleştirmesi ve ikinci hesap atlanır; görüntü karttan
@@ -740,6 +751,8 @@ final class AppModel: ObservableObject {
     }
 
     func back() {
+        // Nino: Xbox kısa yolundan gelen PS5 adımlarına düşmez.
+        if usesXboxWindow, step == .tv { step = .welcome; return }
         guard let previous = Step(rawValue: step.rawValue - 1) else { return }
         step = previous
     }
@@ -1153,8 +1166,10 @@ final class AppModel: ObservableObject {
 
         let session: StreamControlling
         if windowSource {
-            SubtitleLog.write("görüntü kaynağı: oyun penceresi (PS Remote Play / chiaki-ng)")
+            let xbox = settings.gameConsole == .xbox
+            SubtitleLog.write("görüntü kaynağı: oyun penceresi " + (xbox ? "(Xbox: Greenlight / xbox.com/play)" : "(PS Remote Play / chiaki-ng)"))
             let window = services.makeWindowStream()
+            window.target = xbox ? .xbox : .playStation
             window.onWindowStatus = { [weak self] status in self?.windowStatusChanged(status) }
             window.onGameArea = { [weak self] area in self?.gameArea = area }
             session = window
@@ -1204,8 +1219,13 @@ final class AppModel: ObservableObject {
 
     /// Çeviri başlatılabilir mi: PS5 kurulu ve altyazının gideceği bir yer var (TV eşleşmiş ya da bilgisayar ekranı seçili).
     var canStart: Bool {
-        usesGameWindow || ((usesCaptureCard || (console != nil && accountId != nil)) && (showsOnComputer || hasTV))
+        // Nino: Xbox penceresinde altyazı TV'ye de gidebilir; TV seçiliyse TV eşleşmiş olmalı.
+        (usesGameWindow && !usesXboxWindow) || ((usesGameWindow || usesCaptureCard || (console != nil && accountId != nil)) && (showsOnComputer || hasTV))
     }
+
+    /// Nino: görüntü bu bilgisayardaki Xbox yayın penceresinden (Greenlight ya da xbox.com/play) okunuyor. Oyun çoğu
+    /// zaman TV'de oynanır; pencere yalnız görüntünün kaynağıdır, altyazı seçilen yere (TV ya da bu bilgisayar) gider.
+    var usesXboxWindow: Bool { usesGameWindow && settings.gameConsole == .xbox }
 
     /// Nino: görüntü bu bilgisayardaki oyun penceresinden okunuyor (PS5 eşleştirmesi gerekmez).
     var usesGameWindow: Bool { settings.videoSource == .window }
@@ -1216,10 +1236,10 @@ final class AppModel: ObservableObject {
 
     /// Altyazı bilgisayar ekranında gösteriliyor mu. Oyun penceresinden okunurken oyun bu bilgisayarda oynanır; altyazı
     /// her zaman pencerenin üstündedir.
-    var showsOnComputer: Bool { usesGameWindow || settings.output.showsOnComputer }
+    var showsOnComputer: Bool { (usesGameWindow && !usesXboxWindow) || settings.output.showsOnComputer }
 
     /// Altyazı TV'ye gidiyor mu. Oyun bu bilgisayarda oynanıyorsa TV'ye gönderilmez.
-    var showsOnTV: Bool { !usesGameWindow && settings.output.showsOnTV }
+    var showsOnTV: Bool { (!usesGameWindow || usesXboxWindow) && settings.output.showsOnTV }
 
     /// Görüntü kaynağı değişti: altyazının yeri güncellenir, çeviri sürüyorsa yeni kaynakla yeniden başlar.
     private func videoSourceChanged() {
@@ -1266,9 +1286,12 @@ final class AppModel: ObservableObject {
     /// Oyun penceresi durumunun kullanıcıya gösterilecek metni.
     var windowStatusText: String {
         switch windowStatus {
-        case .stopped: return String(localized: "Reads the PS Remote Play window")
+        case .stopped: return settings.gameConsole == .xbox ? String(localized: "Reads the Xbox stream window")
+            : String(localized: "Reads the PS Remote Play window")
         case .needsPermission: return String(localized: "Allow Nino in System Settings › Privacy & Security › Screen Recording, then reopen Nino.")
-        case .lookingForWindow: return String(localized: "Open PS Remote Play or chiaki-ng and start playing")
+        case .lookingForWindow: return settings.gameConsole == .xbox
+            ? String(localized: "Open Greenlight or xbox.com/play in your browser and start streaming your Xbox")
+            : String(localized: "Open PS Remote Play or chiaki-ng and start playing")
         case .capturing(let app): return String(format: String(localized: "Reading %@"), app)
         }
     }

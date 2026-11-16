@@ -1,6 +1,118 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Start Remote play in the Xbox app, Greenlight or xbox.com/play" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ابدأ اللعب عن بُعد في تطبيق Xbox أو Greenlight أو xbox.com/play"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox uygulamasında Uzaktan oynat'ı, Greenlight'ı ya da xbox.com/play'i başlatın"
+          }
+        }
+      }
+    },
+    "Start Remote play in the Xbox app, Greenlight or xbox.com/play. Nino reads that window and sends the translation to your TV." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ابدأ اللعب عن بُعد في تطبيق Xbox أو Greenlight أو xbox.com/play. يقرأ Nino تلك النافذة ويرسل الترجمة إلى التلفاز."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox uygulamasında Uzaktan oynat'ı, Greenlight'ı ya da xbox.com/play'i başlatın. Nino o pencereyi okur ve çeviriyi TV'nize gönderir."
+          }
+        }
+      }
+    },
+    "Reads the Xbox stream window" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يقرأ نافذة بث Xbox"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox yayın penceresini okur"
+          }
+        }
+      }
+    },
+    "Open Greenlight or xbox.com/play in your browser and start streaming your Xbox" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "افتح Greenlight أو xbox.com/play في المتصفح وابدأ بث جهاز Xbox"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Greenlight'ı ya da tarayıcıda xbox.com/play'i açıp Xbox'ınızı yayınlamaya başlayın"
+          }
+        }
+      }
+    },
+    "Xbox: open Greenlight or xbox.com/play › My consoles in your browser and sign in with your Microsoft account. Nino reads that window and shows the translation on top." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox: افتح Greenlight أو xbox.com/play › أجهزتي في المتصفح وسجّل الدخول بحساب Microsoft. يقرأ Nino تلك النافذة ويعرض الترجمة فوقها."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox: Greenlight'ı ya da tarayıcıda xbox.com/play › Konsollarım'ı açın ve Microsoft hesabınızla giriş yapın. Nino o pencereyi okur ve çeviriyi üstünde gösterir."
+          }
+        }
+      }
+    },
+    "I play on Xbox" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ألعب على Xbox"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox'ta oynuyorum"
+          }
+        }
+      }
+    },
+    "Stream your Xbox to this computer with Greenlight or xbox.com/play. Nino reads that window and shows the translation on top." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بُثّ جهاز Xbox إلى هذا الحاسوب عبر Greenlight أو xbox.com/play. يقرأ Nino تلك النافذة ويعرض الترجمة فوقها."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox'ınızı Greenlight ya da xbox.com/play ile bu bilgisayara yayınlayın. Nino o pencereyi okur ve çeviriyi üstünde gösterir."
+          }
+        }
+      }
+    },
     "%@ was damaged while downloading. Try again." : {
       "localizations" : {
         "ar" : {

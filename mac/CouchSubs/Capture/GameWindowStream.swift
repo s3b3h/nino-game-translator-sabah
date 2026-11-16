@@ -33,6 +33,12 @@ final class GameWindowStream: StreamControlling {
         }
     }
 
+    /// Nino: aranan pencere (PS5 ya da Xbox).
+    var target: GameWindowTarget {
+        get { capture.target }
+        set { capture.target = newValue }
+    }
+
     func start() { capture.start() }
     func stop() { capture.stop() }
     func reconnectNow() { capture.refresh() }

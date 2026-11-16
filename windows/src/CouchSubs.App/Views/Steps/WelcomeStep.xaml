@@ -20,6 +20,10 @@
             <WrapPanel>
                 <Button Content="{t:T 'I play on this computer with PS Remote Play'}" Style="{StaticResource SecondaryButton}"
                         HorizontalAlignment="Left" Padding="16,0" Margin="0,0,12,0" Click="OnGameWindow" />
+                <!-- Nino: Xbox: Xbox uygulamasının "Uzaktan oynat"ı, Greenlight ya da xbox.com/play penceresi okunur. -->
+                <Button Content="{t:T 'I play on Xbox'}" Style="{StaticResource SecondaryButton}"
+                        ToolTip="{t:T 'Start Remote play in the Xbox app, Greenlight or xbox.com/play. Nino reads that window and sends the translation to your TV.'}"
+                        HorizontalAlignment="Left" Padding="16,0" Margin="0,0,12,0" Click="OnXbox" />
                 <!-- Nino: Capture Card olanlar için (PS5 → kart → bilgisayar ya da TV): PS5 eşleştirmesi ve ikinci hesap gerekmez. -->
                 <Button Style="{StaticResource GhostButton}" Click="OnCaptureCard"
                         ToolTip="{t:T 'No second account needed. Nino reads the game from the card and shows it with the translation on top.'}">

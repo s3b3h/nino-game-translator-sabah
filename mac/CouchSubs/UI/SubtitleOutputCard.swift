@@ -22,6 +22,16 @@ struct SubtitleOutputCard: View {
                 (.window, String(localized: "Remote Play window"), "macwindow"),
                 (.card, String(localized: "Capture card"), "cable.connector"),
             ])
+            if model.usesGameWindow {
+                // Nino: pencere yolunda konsol türü: PS5 (Remote Play / chiaki-ng) ya da Xbox (Greenlight / xbox.com/play).
+                NinoSegmented(selection: $model.settings.gameConsole, options: [
+                    (.ps5, "PS5", "gamecontroller"),
+                    (.xbox, "Xbox", "gamecontroller.fill"),
+                ])
+                if detailed && model.settings.gameConsole == .xbox {
+                    HintText(text: "Xbox: open Greenlight or xbox.com/play › My consoles in your browser and sign in with your Microsoft account. Nino reads that window and shows the translation on top.")
+                }
+            }
             if model.usesCaptureCard {
                 // Nino: kartla iki düzen var: geçişli kartla oyun TV'de (altyazı TV uygulamasında) ya da oyun bu
                 // bilgisayarda tam ekran (altyazı üstünde; akıllı olmayan TV ve monitörler için).

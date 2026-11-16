@@ -29,18 +29,22 @@ class SubtitleReader : AutoCloseable {
                 return if (android.os.Build.VERSION.SDK_INT >= 29) copyRegionGpu(image, region) else null
             }
             val crop = image.cropRect
-            val frameWidth = crop.width()
-            val frameHeight = crop.height()
-            if (frameWidth <= 0 || frameHeight <= 0) return null
-            val left = (crop.left + region.left * frameWidth).toInt() and 1.inv()
-            val top = (crop.top + region.top * frameHeight).toInt() and 1.inv()
-            val width = ((region.right - region.left) * frameWidth).toInt().coerceAtMost(crop.right - left) and 1.inv()
-            val height = ((region.bottom - region.top) * frameHeight).toInt().coerceAtMost(crop.bottom - top) and 1.inv()
-            if (width < 16 || height < 16) return null
             val plane = image.planes[0]
-            val buffer = plane.buffer
-            val rowStride = plane.rowStride
-            val pixelStride = plane.pixelStride
+            return copyLuma(plane.buffer, plane.rowStride, plane.pixelStride, crop.left, crop.top, crop.width(), crop.height(), region)
+        }
+
+        /**
+         * Nino: parlaklık düzleminden (Y) bölge kopyası. Android `Image` vermeyen kaynaklar (Xbox ev yayınının WebRTC
+         * kareleri, I420) bunu doğrudan kullanır; `Image` yolu da buraya iner. [buffer]'ın konumu değişir.
+         */
+        fun copyLuma(buffer: java.nio.ByteBuffer, rowStride: Int, pixelStride: Int, cropLeft: Int, cropTop: Int,
+                     frameWidth: Int, frameHeight: Int, region: CropRegion): RegionPixels? {
+            if (frameWidth <= 0 || frameHeight <= 0) return null
+            val left = (cropLeft + region.left * frameWidth).toInt() and 1.inv()
+            val top = (cropTop + region.top * frameHeight).toInt() and 1.inv()
+            val width = ((region.right - region.left) * frameWidth).toInt().coerceAtMost(cropLeft + frameWidth - left) and 1.inv()
+            val height = ((region.bottom - region.top) * frameHeight).toInt().coerceAtMost(cropTop + frameHeight - top) and 1.inv()
+            if (width < 16 || height < 16) return null
             val out = ByteArray(width * height * 3 / 2)
             var signature = 1125899906842597L
             val row = ByteArray(if (pixelStride == 1) width else (width - 1) * pixelStride + 1)

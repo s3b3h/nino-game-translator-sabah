@@ -251,8 +251,10 @@ internal sealed class FakeServices : IAppServices
         return stream;
     }
     public List<FakeWindowStream> WindowStreams { get; } = [];
-    public IGameWindowStream? MakeWindowStream()
+    public GameConsole? WindowConsole { get; private set; }
+    public IGameWindowStream? MakeWindowStream(GameConsole console)
     {
+        WindowConsole = console;
         var stream = new FakeWindowStream();
         WindowStreams.Add(stream);
         return stream;

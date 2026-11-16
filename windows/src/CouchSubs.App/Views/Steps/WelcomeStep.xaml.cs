@@ -36,6 +36,8 @@ public partial class WelcomeStep : UserControl
     /// <summary>Nino: oyunu bu bilgisayarda Remote Play ile oynayanlar PS5 ve TV adımlarını atlar.</summary>
     private void OnGameWindow(object sender, RoutedEventArgs e) => Controller?.UseGameWindowSetup();
 
+    private void OnXbox(object sender, RoutedEventArgs e) => Controller?.UseXboxWindowSetup();
+
     /// <summary>Nino: Capture Card olanlar ikinci hesap ve PS5 eşleştirmesi yerine kart rehberine geçer.</summary>
     private void OnCaptureCard(object sender, RoutedEventArgs e) => Controller?.UseCaptureCardSetup();
 

@@ -102,7 +102,7 @@ public sealed class LiveServices : IAppServices
 
     public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId) => new StreamSession(console, accountId);
 
-    public IGameWindowStream? MakeWindowStream() => new GameWindowCapture();
+    public IGameWindowStream? MakeWindowStream(GameConsole console) => new GameWindowCapture(console);
 
     public ICaptureCardStream? MakeCardStream(bool showsPlayer, string? preferredId) => new CaptureCardStream(showsPlayer, preferredId);
 

@@ -35,8 +35,10 @@ struct WelcomeStep: View {
                                     detail: "Free, takes 2 minutes")
                 }
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: Theme.space("l")) { shortcuts }
-                    VStack(alignment: .leading, spacing: Theme.space("s")) { shortcuts }
+                    HStack(spacing: Theme.space("l")) { shortcuts(compact: false) }
+                    // Nino: üç kısa yol yan yana sığmazsa ilk düğmenin kısa adı (dikey dizilişte kart alttan kesiliyordu).
+                    HStack(spacing: Theme.space("l")) { shortcuts(compact: true) }
+                    VStack(alignment: .leading, spacing: Theme.space("s")) { shortcuts(compact: true) }
                 }
                 .padding(.top, Theme.space("s"))
                 .padding(.horizontal, Theme.space("xs"))
@@ -51,16 +53,28 @@ struct WelcomeStep: View {
     }
 
     /// PS5 eşleştirmesi ve ikinci hesap gerekmeyen iki yol.
-    @ViewBuilder private var shortcuts: some View {
+    @ViewBuilder private func shortcuts(compact: Bool) -> some View {
         Button {
             model.useGameWindowSetup()
         } label: {
-            Label("I play on this computer with PS Remote Play", systemImage: "macwindow")
+            Label(compact ? LocalizedStringKey("Remote Play window") : LocalizedStringKey("I play on this computer with PS Remote Play"),
+                  systemImage: "macwindow")
                 .font(.csCallout.weight(.semibold))
         }
         .buttonStyle(.plain)
         .foregroundStyle(Color.csAccentText)
         .help(Text("No TV or second account needed. Nino reads the Remote Play window and shows the translation on top of the game."))
+        Spacer(minLength: 0)
+        // Nino: Xbox ev yayını (Greenlight ya da xbox.com/play penceresi).
+        Button {
+            model.useXboxWindowSetup()
+        } label: {
+            Label("I play on Xbox", systemImage: "gamecontroller.fill")
+                .font(.csCallout.weight(.semibold))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.csAccentText)
+        .help(Text("Stream your Xbox to this computer with Greenlight or xbox.com/play. Nino reads that window and shows the translation on top."))
         Spacer(minLength: 0)
         Button {
             model.useCaptureCardSetup()

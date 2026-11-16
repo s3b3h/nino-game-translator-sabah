@@ -85,6 +85,12 @@ public enum VideoSource: String, Codable, CaseIterable {
     case ps5, window, card
 }
 
+/// Nino: oyunun oynandığı konsol. `xbox`: oyun penceresi yolunda Greenlight ya da tarayıcıdaki xbox.com/play
+/// penceresi okunur (Xbox ev yayını); yakalama kartı iki konsolda da aynı çalışır.
+public enum GameConsole: String, Codable, CaseIterable {
+    case ps5, xbox
+}
+
 /// Uygulama pencerelerinin görünümü (Windows'taki `AppAppearance` ile aynı). Nino: varsayılan sistemle aynıdır (açık ya da koyu).
 public enum AppAppearance: String, Codable, CaseIterable {
     case dark, light, system
@@ -125,6 +131,8 @@ public struct UserSettings: Codable, Equatable {
     public var overlayClickThrough = false
     /// Nino: oyun görüntüsünün kaynağı. Eski kayıtlarda yoktur; PS5 ile açılır.
     public var videoSource = VideoSource.ps5
+    /// Nino: konsol türü. Eski kayıtlarda yoktur; PS5 ile açılır.
+    public var gameConsole = GameConsole.ps5
     /// Oyun paketlerindeki hazır Türkçe çeviriler kullanılır (yalnız İngilizce→Türkçe).
     public var gamePacks = true
     /// Pakette bulunmayan İngilizce satırlar ortak havuza gönderilir (anonim; bkz. `LinePool`).
@@ -166,6 +174,7 @@ public struct UserSettings: Codable, Equatable {
         if output == .both { output = .tv }
         overlayClickThrough = try values.decodeIfPresent(Bool.self, forKey: .overlayClickThrough) ?? defaults.overlayClickThrough
         videoSource = (try? values.decodeIfPresent(VideoSource.self, forKey: .videoSource)) ?? defaults.videoSource
+        gameConsole = (try? values.decodeIfPresent(GameConsole.self, forKey: .gameConsole)) ?? defaults.gameConsole
         gamePacks = try values.decodeIfPresent(Bool.self, forKey: .gamePacks) ?? defaults.gamePacks
         sharePool = try values.decodeIfPresent(Bool.self, forKey: .sharePool) ?? defaults.sharePool
         translateCorners = (try? values.decodeIfPresent(Bool.self, forKey: .translateCorners)) ?? defaults.translateCorners

@@ -12,7 +12,7 @@ iPhone, Mac, Windows ve TV uygulamaları. Nino ücretsiz ve açık kaynaklıdır
 
 **Cihazınızda kalanlar**
 
-- PS5'ten (Remote Play ya da Capture Card ile) gelen oyun görüntüsü yalnız altyazıyı okumak için bellekte işlenir;
+- PS5'ten ya da Xbox'tan (Remote Play, Xbox ev yayını ya da Capture Card ile) gelen oyun görüntüsü yalnız altyazıyı okumak için bellekte işlenir;
   kaydedilmez, hiçbir yere gönderilmez.
 - Yazı tanıma ve ücretsiz çeviri cihazınızda yapılır. Çeviriler yalnız sizin ekranınızda ya da ev ağınızdaki TV'de
   gösterilir.
@@ -22,6 +22,9 @@ iPhone, Mac, Windows ve TV uygulamaları. Nino ücretsiz ve açık kaynaklıdır
 **Dışarıyla kurulan bağlantılar**
 
 - **Sony:** PlayStation Network girişi doğrudan Sony'nin kendi sayfasında yapılır. Şifrenizi Nino görmez ve saklamaz.
+- **Microsoft (yalnız Xbox kullanırsanız):** Giriş, Microsoft'un kendi sayfasında (microsoft.com/link) kodla yapılır;
+  şifrenizi Nino görmez. Xbox'ın ev yayınını açmak için Microsoft ve Xbox Live sunucularıyla konuşulur. Oturum jetonu
+  yalnız cihazınızda şifreli saklanır; görüntü ev ağınızda doğrudan Xbox'tan gelir ve kaydedilmez.
 - **Ev ağı:** PS5'i ve TV'yi bulmak ve onlara bağlanmak için yalnız yerel ağ kullanılır.
 - **Çeviri modeli ve oyun paketleri:** Ücretsiz çeviri modeli ve hazır oyun çeviri paketleri internetten indirilir;
   bu indirmelerde sizinle ilgili bir bilgi gönderilmez.
@@ -47,7 +50,7 @@ satırların silinmesini GitHub › Issues üzerinden isteyebilirsiniz.
 
 **In short:** Nino needs no account, shows no ads, does not track you, and does not sell or share your personal data.
 
-**Stays on your device:** The PS5 picture (from Remote Play or a capture card) is processed in memory only to read
+**Stays on your device:** The PS5 or Xbox picture (from Remote Play, the Xbox home stream or a capture card) is processed in memory only to read
 the subtitles; it is never stored or sent anywhere. Text recognition and the free translation run on your device.
 Your numeric PSN account ID and PS5/TV pairing keys are stored only on your device. Camera permission is requested
 only to read a capture card's picture.
@@ -55,6 +58,10 @@ only to read a capture card's picture.
 **External connections:**
 
 - **Sony:** PSN sign-in happens on Sony's own page. Nino never sees or stores your password.
+- **Microsoft (only if you use Xbox):** sign-in happens on Microsoft's own page (microsoft.com/link) with a code; Nino
+  never sees your password. Nino talks to Microsoft and Xbox Live servers to start the Xbox home stream. The session
+  token is stored encrypted only on your device; the picture comes directly from your Xbox over your home network and
+  is not stored.
 - **Home network:** used only to find and connect to your PS5 and TV.
 - **Translation model and game packs** are downloaded without sending any information about you.
 - **Translation service you choose (optional):** if you enter your own DeepL, Google Gemini, OpenAI or Anthropic key,

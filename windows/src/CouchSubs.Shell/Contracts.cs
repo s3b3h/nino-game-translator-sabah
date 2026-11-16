@@ -196,6 +196,8 @@ public sealed record UserSettings
     public bool OverlayClickThrough { get; init; }
     /// <summary>Nino: oyun görüntüsünün kaynağı (PS5 ya da bu bilgisayardaki Remote Play penceresi). Eski kayıtlarda PS5.</summary>
     public VideoSource VideoSource { get; init; } = VideoSource.Ps5;
+    /// <summary>Nino: konsol türü (pencere yolunda hangi pencerenin aranacağı). Eski kayıtlarda PS5.</summary>
+    public GameConsole GameConsole { get; init; } = GameConsole.Ps5;
     /// <summary>Altyazı penceresinin son yeri; null ise ana ekranın altında ortada açılır.</summary>
     public OverlayBounds? Overlay { get; init; }
     /// <summary>Oyun paketlerindeki hazır Türkçe çeviriler kullanılır (yalnız İngilizce→Türkçe).</summary>
@@ -331,7 +333,7 @@ public interface IAppServices
     Task<TvPairing> PairTvAsync(LgTv tv, string? key, string server);
     IStreamSession MakeStream(RegisteredConsole console, byte[] accountId);
     /// <summary>Nino: bu bilgisayardaki PS Remote Play ya da chiaki-ng penceresinden okuyan kaynak; bu derlemede yoksa null.</summary>
-    IGameWindowStream? MakeWindowStream() => null;
+    IGameWindowStream? MakeWindowStream(GameConsole console) => null;
     /// <summary>Nino: bu bilgisayara takılı HDMI yakalama kartından okuyan kaynak; bu derlemede yoksa null.</summary>
     /// <param name="showsPlayer">Oyun bu bilgisayarda tam ekran gösterilir, sesi çalınır (altyazı bilgisayar ekranındaysa).</param>
     /// <param name="preferredId">Kullanıcının seçtiği aygıt; null ise kendiliğinden seçilir.</param>

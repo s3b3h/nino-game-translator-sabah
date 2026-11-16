@@ -43,6 +43,50 @@ final class GameWindowTests: XCTestCase {
         XCTAssertNil(GameWindowPicker.pick([window("Finder", 1200, 800)], wanted: ["remote play"]))
     }
 
+    /// Nino: Xbox: Greenlight ya da başlığında "Xbox" olan tarayıcı penceresi; PS5 pencereleri seçilmez.
+    func testPicksXboxStreamWindow() {
+        func titled(_ app: String, _ bundle: String, _ title: String, _ w: CGFloat, id: CGWindowID) -> GameWindowInfo {
+            GameWindowInfo(id: id, appName: app, bundleID: bundle, title: title, frame: CGRect(x: 0, y: 0, width: w, height: w * 9 / 16), fillsScreen: false)
+        }
+        let windows = [
+            titled("Safari", "com.apple.Safari", "Haberler", 1800, id: 1),
+            titled("Safari", "com.apple.Safari", "Xbox Cloud Gaming on Xbox.com", 1400, id: 2),
+            titled("PS Remote Play", "com.playstation.RemotePlay", "", 1600, id: 3),
+            titled("TextEdit", "com.apple.TextEdit", "xbox notları", 1700, id: 4),
+        ]
+        XCTAssertEqual(GameWindowPicker.pick(windows, target: .xbox)?.id, 2)
+        XCTAssertEqual(GameWindowPicker.pick(windows + [titled("Greenlight", "com.unknownskl.greenlight", "", 1500, id: 5)], target: .xbox)?.id, 5)
+        XCTAssertNil(GameWindowPicker.pick([titled("Greenlight", "", "", 300, id: 6)], target: .xbox))
+        XCTAssertEqual(GameWindowPicker.pick(windows, target: .playStation)?.id, 3)
+    }
+
+    /// Nino: "Xbox'ta oynuyorum": PS5 adımları atlanır, pencere yolu Xbox'la açılır; eski kayıtlar PS5 kalır.
+    func testXboxWindowSetup() {
+        let defaults = UserDefaults.isolated()
+        let store = MemoryStore()
+        let model = AppModel(services: FakeServices(), store: store, defaults: defaults)
+        XCTAssertEqual(model.settings.gameConsole, .ps5)
+        model.useXboxWindowSetup()
+        // Xbox'ta oyun genelde TV'de: altyazı TV'ye gider, bu yüzden TV adımı sorulur.
+        XCTAssertEqual(model.step, .tv)
+        XCTAssertEqual(model.settings.videoSource, .window)
+        XCTAssertTrue(model.usesXboxWindow)
+        XCTAssertTrue(model.showsOnTV)
+        XCTAssertFalse(model.showsOnComputer)
+        XCTAssertFalse(model.canStart)
+        model.back()
+        XCTAssertEqual(model.step, .welcome)
+        // "TV'm yok": altyazı bu bilgisayarda, pencerenin üstünde.
+        model.settings.output = .computer
+        XCTAssertTrue(model.canStart)
+        XCTAssertTrue(model.showsOnComputer)
+        model.step = .done
+        let reopened = AppModel(services: FakeServices(), store: store, defaults: defaults)
+        XCTAssertEqual(reopened.settings.gameConsole, .xbox)
+        reopened.useGameWindowSetup()
+        XCTAssertEqual(reopened.settings.gameConsole, .ps5)
+    }
+
     func testGameAreaBelowTitleBarAndLetterboxed() {
         // 1280 × 748 pencere: 28 pt başlık, altında 1280 × 720 oyun.
         XCTAssertEqual(GameArea.rect(windowSize: CGSize(width: 1280, height: 748), fillsScreen: false),

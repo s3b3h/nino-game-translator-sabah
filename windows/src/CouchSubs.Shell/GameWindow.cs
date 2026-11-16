@@ -14,6 +14,13 @@ namespace CouchSubs.Shell;
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<VideoSource>))]
 public enum VideoSource { Ps5, Window, Card }
 
+/// <summary>
+/// Nino: oyunun oynandığı konsol. <see cref="Xbox"/>: pencere yolunda Microsoft'un Xbox uygulamasındaki "Uzaktan oynat",
+/// Greenlight ya da tarayıcıdaki xbox.com/play penceresi okunur; altyazı TV'ye de gidebilir (oyun çoğu zaman TV'dedir).
+/// </summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<GameConsole>))]
+public enum GameConsole { Ps5, Xbox }
+
 /// <summary>Ekrandaki bir pencerenin özeti (Windows API'sinden bağımsız; seçim kuralları bununla sınanır).</summary>
 /// <param name="Client">Pencerenin içerik alanı (başlık çubuğu ve kenarlık hariç), ekran pikseliyle.</param>
 public sealed record GameWindowInfo(IntPtr Handle, string ProcessName, string Title, ScreenArea Client);
@@ -25,6 +32,37 @@ public static class GameWindowRules
 {
     /// <summary>Süreç adında ya da başlıkta aranan parçalar (küçük harf).</summary>
     public static readonly IReadOnlyList<string> Wanted = ["remoteplay", "remote play", "chiaki"];
+
+    /// <summary>Nino: Xbox yayınını gösteren uygulamalar (süreç adı, küçük harf): Xbox uygulaması ve Greenlight.</summary>
+    public static readonly IReadOnlyList<string> XboxApps = ["xboxpcapp", "greenlight"];
+    /// <summary>Başlığında "xbox" geçen penceresi okunabilecek tarayıcılar (xbox.com/play sekmesi).</summary>
+    public static readonly IReadOnlyList<string> Browsers = ["chrome", "msedge", "firefox", "brave", "opera", "vivaldi", "arc"];
+
+    /// <summary>Konsola göre seçim: PS5'te Remote Play/chiaki-ng, Xbox'ta Xbox uygulaması, Greenlight ya da tarayıcı.</summary>
+    public static GameWindowInfo? Pick(IEnumerable<GameWindowInfo> windows, GameConsole console) => console switch
+    {
+        GameConsole.Xbox => windows
+            .Where(w =>
+            {
+                var process = w.ProcessName.ToLowerInvariant();
+                return (XboxApps.Any(process.Contains) || (Browsers.Contains(process) && w.Title.Contains("xbox", StringComparison.OrdinalIgnoreCase)))
+                       && w.Client.Width >= MinWidth && w.Client.Height >= MinHeight;
+            })
+            .OrderByDescending(w => w.Client.Width * w.Client.Height)
+            .FirstOrDefault(),
+        _ => Pick(windows),
+    };
+
+    /// <summary>Okunan uygulamanın ekranda gösterilen adı.</summary>
+    public static string AppName(string process)
+    {
+        var name = process.ToLowerInvariant();
+        if (name.Contains("chiaki")) return "chiaki-ng";
+        if (name.Contains("greenlight")) return "Greenlight";
+        if (name.Contains("xboxpcapp")) return "Xbox";
+        if (Browsers.Contains(name)) return "xbox.com/play";
+        return "PS Remote Play";
+    }
 
     public const double MinWidth = 320;
     public const double MinHeight = 180;

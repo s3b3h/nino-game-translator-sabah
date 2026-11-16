@@ -15,6 +15,8 @@ enum class DisconnectKind {
     STOPPED, IN_USE, REFUSED, NETWORK, NOT_FOUND, CONSOLE_ASLEEP, LOGIN_PASSCODE, OTHER,
     // Nino: yakalama kartı kaynağı (capture/CaptureCardSource): kart takılı değil, kamera izni yok, görüntü simsiyah.
     NO_CAPTURE_CARD, NO_CAMERA_PERMISSION, BLACK_PICTURE,
+    // Nino: Xbox ev yayını (xbox/XboxStreamSession): Microsoft girişi geçersiz, konsol oturumu kuramadı.
+    XBOX_SIGNED_OUT, XBOX_UNREACHABLE,
 }
 
 sealed class SessionState {

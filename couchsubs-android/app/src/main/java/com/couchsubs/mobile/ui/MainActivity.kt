@@ -41,6 +41,8 @@ object Routes {
     const val SETTINGS = "settings"
     const val HEALTH = "health"
     const val SOURCE = "source"
+    const val CONSOLE = "console"
+    const val XBOX = "xbox"
 
     /** Kurulumun eksik ilk adımı; hepsi tamamsa ana ekran. */
     fun next(): String {
@@ -49,8 +51,11 @@ object Routes {
             !settings.welcomeSeen -> WELCOME
             // "Şimdilik geç" ile atlandıysa PS5'siz ana ekrana gidilir (ör. Play incelemesi); eşleme Ayarlar'dan.
             // Nino: yakalama kartıyla PSN girişi ve PS5 eşlemesi gerekmez.
-            settings.accountId == null && !settings.setupSkipped && !settings.usesCaptureCard -> PSN
-            settings.console == null && !settings.setupSkipped && !settings.usesCaptureCard -> PAIR
+            // Nino: kurulumda önce konsol türü (PS5 / Xbox) sorulur; kurulumu bitmiş eski kurulumlara sorulmaz.
+            !settings.consoleAsked && !settings.onboarded -> CONSOLE
+            settings.usesXbox && !settings.xboxReady && !settings.setupSkipped -> XBOX
+            settings.accountId == null && !settings.setupSkipped && !settings.usesCaptureCard && !settings.usesXbox -> PSN
+            settings.console == null && !settings.setupSkipped && !settings.usesCaptureCard && !settings.usesXbox -> PAIR
             !settings.onboarded -> TARGET
             else -> MAIN
         }
@@ -99,6 +104,8 @@ class MainActivity : ComponentActivity() {
                             else advance(navigation)
                         }
                     }
+                    composable(Routes.CONSOLE) { ConsoleScreen(onBack = back(navigation)) { advance(navigation) } }
+                    composable(Routes.XBOX) { XboxScreen(onBack = back(navigation), onSkip = skip(navigation)) { advance(navigation) } }
                     composable(Routes.PAIR) { PairScreen(onBack = back(navigation), onSkip = skip(navigation)) { advance(navigation) } }
                     composable(Routes.TARGET) {
                         val onboarding = navigation.previousBackStackEntry == null
@@ -138,7 +145,13 @@ class MainActivity : ComponentActivity() {
                             onTarget = { navigation.navigate(Routes.TARGET) }, onPairing = { pairing(navigation) },
                             onHealth = { navigation.navigate(Routes.HEALTH) }, onSource = { navigation.navigate(Routes.SOURCE) })
                     }
-                    composable(Routes.SOURCE) { SourceScreen(onBack = back(navigation)) { navigation.popBackStack() } }
+                    composable(Routes.SOURCE) {
+                        SourceScreen(onBack = back(navigation)) {
+                            navigation.popBackStack()
+                            // Nino: Xbox seçildiyse ve kurulmadıysa Microsoft girişi ve konsol seçimi hemen açılır.
+                            if (settings.usesXbox && !settings.xboxReady) navigation.navigate(Routes.XBOX)
+                        }
+                    }
                     composable(Routes.HEALTH) { SystemHealthScreen(onBack = { navigation.popBackStack() }) }
                 }
                 if (showSplash) NinoSplash { showSplash = false }
@@ -173,7 +186,8 @@ class MainActivity : ComponentActivity() {
 
     /** PS5 eşleme: PSN girişi yoksa (kurulum atlandıysa) önce giriş, ardından eşleme. */
     private fun pairing(navigation: NavHostController) {
-        navigation.navigate(if (Services.settings.accountId == null) Routes.PSN else Routes.PAIR)
+        val settings = Services.settings
+        navigation.navigate(if (settings.usesXbox) Routes.XBOX else if (settings.accountId == null) Routes.PSN else Routes.PAIR)
     }
 
     /** Nino: yakalama kartında çeviri, kamera izni sorulduktan sonra başlar (izin verilmezse sorun ana ekranda yazılır). */

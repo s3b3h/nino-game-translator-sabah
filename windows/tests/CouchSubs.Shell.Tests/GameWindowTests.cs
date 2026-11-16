@@ -33,6 +33,25 @@ public class GameWindowTests
         Assert.Null(GameWindowRules.Pick([Window("explorer", 1200, 800)]));
     }
 
+    /// <summary>Nino: Xbox: Xbox uygulaması, Greenlight ya da başlığında "Xbox" olan tarayıcı; PS5 pencereleri seçilmez.</summary>
+    [Fact]
+    public void PicksXboxStreamWindow()
+    {
+        GameWindowInfo[] windows = [
+            Window("chrome", 1800, 1000, 1, "Haberler - Google Chrome"),
+            Window("msedge", 1400, 800, 2, "Xbox Cloud Gaming on Xbox.com - Microsoft Edge"),
+            Window("RemotePlay", 1600, 900, 3),
+            Window("notepad", 1700, 900, 4, "xbox notları"),
+        ];
+        Assert.Equal(2, (int)GameWindowRules.Pick(windows, GameConsole.Xbox)!.Handle);
+        Assert.Equal(5, (int)GameWindowRules.Pick([.. windows, Window("XboxPcApp", 1500, 850, 5, "Xbox")], GameConsole.Xbox)!.Handle);
+        Assert.Null(GameWindowRules.Pick([Window("Greenlight", 300, 150, 6)], GameConsole.Xbox));
+        Assert.Equal(3, (int)GameWindowRules.Pick(windows, GameConsole.Ps5)!.Handle);
+        Assert.Equal("Xbox", GameWindowRules.AppName("XboxPcApp"));
+        Assert.Equal("xbox.com/play", GameWindowRules.AppName("msedge"));
+        Assert.Equal("PS Remote Play", GameWindowRules.AppName("RemotePlay"));
+    }
+
     [Fact]
     public void GameAreaIsLetterboxedInsideTheClientArea()
     {
@@ -107,6 +126,28 @@ public class GameWindowTests
 
 public class GameWindowSetupTests
 {
+    /// <summary>Nino: "Xbox'ta oynuyorum": PS5 adımları atlanır, TV adımı sorulur; "TV'm yok" ile altyazı bilgisayarda.</summary>
+    [Fact]
+    public async Task XboxWindowSetupSendsSubtitlesToTheTv()
+    {
+        var services = new FakeServices();
+        var settings = new MemorySettings();
+        var controller = AppControllerTests.Make(services, new MemoryStore(), settings);
+        controller.UseXboxWindowSetup();
+        Assert.Equal(OnboardingStep.Tv, controller.Step);
+        Assert.True(controller.UsesXboxWindow);
+        Assert.True(controller.ShowsOnTv);
+        Assert.False(controller.ShowsOnComputer);
+        Assert.False(controller.CanStart);
+        controller.Back();
+        Assert.Equal(OnboardingStep.Welcome, controller.Step);
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Computer };
+        Assert.True(controller.CanStart);
+        await controller.StartAsync();
+        Assert.Equal(GameConsole.Xbox, services.WindowConsole);
+        Assert.Equal(GameConsole.Xbox, JsonSerializer.Deserialize<UserSettings>(JsonSerializer.Serialize(controller.Settings))!.GameConsole);
+    }
+
     [Fact]
     public void SetupWithoutPs5WhenPlayingOnThisComputer()
     {

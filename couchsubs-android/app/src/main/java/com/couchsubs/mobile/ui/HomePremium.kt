@@ -119,9 +119,10 @@ fun PremiumHome(
     onPacks: () -> Unit,
     onFullScreen: () -> Unit,
     onDemo: () -> Unit = {},
+    consoleLabel: String = "PS5",
 ) {
     val state = homeState(status, paired)
-    val name = consoleName ?: "PS5"
+    val name = consoleName ?: consoleLabel
     Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
         // Durum satırı: renkli nokta + PS5 adı + durum.
         StatusLine(state, if (status.demo) stringResource(R.string.demo_name) else name, onTv)
@@ -130,7 +131,7 @@ fun PremiumHome(
         AnimatedContent(state, Modifier.fillMaxWidth(), transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) }, label = "title") { s ->
             Text(
                 when (s) {
-                    HomeState.NOT_PAIRED -> stringResource(R.string.home_title_pair)
+                    HomeState.NOT_PAIRED -> stringResource(if (consoleLabel == "Xbox") R.string.xbox_home_title_pair else R.string.home_title_pair)
                     HomeState.LIVE -> stringResource(R.string.home_title_live)
                     else -> stringResource(R.string.home_title_ready, targetLanguageName())
                 },
@@ -158,7 +159,7 @@ fun PremiumHome(
         Spacer(Modifier.height(28.dp))
         // Üç kısa yol; çeviri motoru Ayarlar'da.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Shortcut(Icons.Filled.SportsEsports, "PS5", consoleName ?: stringResource(R.string.profile_not_paired), Modifier.weight(1f), onPairing)
+            Shortcut(Icons.Filled.SportsEsports, consoleLabel, consoleName ?: stringResource(R.string.profile_not_paired), Modifier.weight(1f), onPairing)
             Shortcut(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, stringResource(R.string.nino_output),
                 if (onTv) "TV" else stringResource(R.string.nino_phone), Modifier.weight(1f).then(targetMarker), onTarget)
             Shortcut(Icons.Filled.Inventory2, stringResource(R.string.nino_packs),

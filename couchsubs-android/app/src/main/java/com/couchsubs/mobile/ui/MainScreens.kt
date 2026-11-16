@@ -119,9 +119,12 @@ fun MainScreen(
     var tour by remember { mutableStateOf(if (settings.tourShown) null else TourStep.START) }
     // Nino: yakalama kartıyla PS5 eşlemesi gerekmez; kart modu "hazır" sayılır, PS5 kısa yolu kaynak ekranını açar.
     val captureCard = settings.usesCaptureCard
-    val paired = captureCard || settings.console != null
-    val sourceName = if (captureCard) stringResource(R.string.capture_card) else settings.console?.name
+    // Nino: Xbox'ta "eşli" = Microsoft girişi yapılmış ve konsol seçilmiş; kısa yol Xbox ekranını açar.
+    val xbox = settings.usesXbox
+    val paired = captureCard || if (xbox) settings.xboxReady else settings.console != null
+    val sourceName = if (captureCard) stringResource(R.string.capture_card) else if (xbox) settings.xboxConsole?.name else settings.console?.name
     val onSourceTap = if (captureCard) onSource else onPairing
+    val consoleLabel = if (xbox) "Xbox" else "PS5"
     // Nino: ana ekran hep dikeydir (manifest); yalnız tam ekran altyazı yataydır. Çeviri açıkken telefon yan çevrilince
     // (yön algılayıcısı, ekran dönmeden) tam ekran açılır. Tam ekrandan dönünce, telefon önce dikeye gelmeden yeniden açılmaz;
     // masadaki telefonun titremesi için yan durum en az 0,7 sn sürmelidir.
@@ -175,11 +178,11 @@ fun MainScreen(
                 PremiumHome(status, paired, sourceName, onTv, settings.packsEnabled,
                     startMarker = mark(TourStep.START), targetMarker = mark(TourStep.TARGET), packsMarker = mark(TourStep.PACKS),
                     onStart = onStart, onStop = onStop, onPairing = onSourceTap, onTarget = onTarget, onPacks = onPacks,
-                    onFullScreen = openPhoneView, onDemo = { com.couchsubs.mobile.service.DemoSession.start() })
+                    onFullScreen = openPhoneView, onDemo = { com.couchsubs.mobile.service.DemoSession.start() }, consoleLabel = consoleLabel)
             }
             if (settings.homeStyle == HomeStyle.LIVING_ROOM) androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickLink(Icons.Filled.SportsEsports, "PS5", sourceName ?: stringResource(R.string.profile_not_paired), onClick = onSourceTap)
+                QuickLink(Icons.Filled.SportsEsports, consoleLabel, sourceName ?: stringResource(R.string.profile_not_paired), onClick = onSourceTap)
                 QuickLink(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, stringResource(R.string.nino_output),
                     if (onTv) (if (status.connectedTvs > 0) stringResource(R.string.nino_tv_connected) else "TV") else stringResource(R.string.nino_phone), mark(TourStep.TARGET), onClick = onTarget)
                 QuickLink(Icons.Filled.Inventory2, stringResource(R.string.nino_packs), if (settings.packsEnabled) stringResource(R.string.packs_free) else null, mark(TourStep.PACKS), onClick = onPacks)
