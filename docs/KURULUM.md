@@ -11,7 +11,8 @@ yeterlidir. Kurulum yaklaşık **5–10 dakika** sürer.
 
 | Durumunuz | Önerilen kurulum | Neye ihtiyacınız var |
 |---|---|---|
-| PS5'iniz **akıllı TV'ye** bağlı (Android TV / Google TV) | **Telefon + TV** ya da **Mac + TV** | Android telefon ya da Mac, TV'de Nino uygulaması, ikinci (ücretsiz) PSN hesabı |
+| PS5'iniz **akıllı TV'ye** bağlı (Android TV / Google TV) | **Mac ya da Windows + TV** (önerilen) | Mac ya da Windows bilgisayar, TV'de Nino uygulaması, ikinci (ücretsiz) PSN hesabı |
+| Bilgisayarınız yok ama TV'niz akıllı | **Telefon + TV** | Android telefon, TV'de Nino uygulaması, ikinci PSN hesabı |
 | PS5'iniz **sıradan bir monitöre / eski TV'ye** bağlı | **Telefon ekranında altyazı** | Android telefon (ya da iPhone), ikinci PSN hesabı |
 | Elinizde **HDMI Capture Card** var | **Mac/Windows + Capture Card** | Mac ya da Windows bilgisayar, Capture Card (Remote Play ve ikinci hesap gerekmez) |
 | Sadece **denemek** istiyorsunuz | **Demo** | Yalnız telefon: "PS5'siz Deneyin" |
@@ -20,15 +21,30 @@ Hepsinde PS5, telefon/bilgisayar ve TV **aynı Wi-Fi ağında** olmalıdır.
 
 ---
 
-## 2. Android telefonla kurulum (en kolay yol)
+## 2. Mac ve Windows ile kurulum (TV için önerilen)
 
-### 2.1 Uygulamayı yükleyin
+1. **[Nino-Mac.zip](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)**
+   dosyasını indirin, açın ve **Nino**'yu **Uygulamalar** klasörüne sürükleyin.
+2. Nino'yu açın. Mac "doğrulanamadı" derse: **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**.
+3. Nino sizi adım adım yönlendirir: ikinci PSN hesabıyla giriş → PS5'i 8 haneli kodla eşleme → TV seçimi.
+4. **Capture Card'ınız varsa:** İlk açılışta ya da **Ayarlar › Bağlantı**'da görüntü kaynağı olarak **Capture Card**'ı
+   seçin. Bu yolda Remote Play ve ikinci PSN hesabı gerekmez; kartı PS5 ile TV/monitör arasına bağlayın.
+5. Mac uygulaması yeni sürümleri kendiliğinden indirip kurar.
+
+**Windows:** **[Nino-Windows-Setup.exe](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)**
+dosyasını çalıştırın ("bilgisayarınızı korudu" uyarısında **Ek bilgi › Yine de çalıştır**). Kurulum Mac ile aynıdır.
+
+---
+
+## 3. Android telefonla kurulum (bilgisayar yerine)
+
+### 3.1 Uygulamayı yükleyin
 1. Telefonda şu bağlantıyı açın:
    **[Nino-Telefon.apk](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)**
 2. İnen dosyaya dokunun. Telefon izin isterse **"Bu kaynaktan yüklemeye izin ver"** seçeneğini açın ve **Yükle**'ye basın.
 3. Daha önce Nino kuruluysa yeni sürüm eskisinin üstüne kurulur; ayarlarınız korunur.
 
-### 2.2 İlk açılış
+### 3.2 İlk açılış
 1. **Karşılama:** Üç kısa sayfa Nino'yu tanıtır. Sağ üstteki bayraktan dili seçin: 🇹🇷 Türkçe ya da 🇸🇦 Arapça.
 2. **Adım 1 – İkinci PSN Hesabı:** **"Sony İle Giriş Yapın"**a dokunun ve oyun oynadığınız hesaptan **farklı**,
    ücretsiz bir PlayStation hesabıyla giriş yapın. Giriş Sony'nin kendi sayfasında yapılır; şifreniz Nino'ya gelmez.
@@ -41,7 +57,7 @@ Hepsinde PS5, telefon/bilgisayar ve TV **aynı Wi-Fi ağında** olmalıdır.
    - **TV'de:** Akıllı TV'nizde Nino uygulaması varsa (bkz. Bölüm 5).
    - **Telefonda:** TV uygulaması yoksa ya da PS5 bir monitöre bağlıysa. Telefonu ekranın yanına koymanız yeterli.
 
-### 2.3 Kullanım
+### 3.3 Kullanım
 1. PS5'te oyununuzu kendi hesabınızla açın.
 2. Nino'da **"Başlatmak İçin Kaydırın"** çubuğunu sona kadar kaydırın.
 3. Altyazılar akmaya başlar. Telefonu **yan çevirirseniz** altyazı **tam ekran** açılır.
@@ -51,25 +67,10 @@ Hepsinde PS5, telefon/bilgisayar ve TV **aynı Wi-Fi ağında** olmalıdır.
 
 ---
 
-## 3. iPhone
+## 4. iPhone
 
 iPhone uygulaması App Store incelemesindedir. Yayınlanınca bağlantısı burada olacaktır. Kurulum adımları Android
 ile aynıdır.
-
----
-
-## 4. Mac ile kurulum
-
-1. **[Nino-Mac.zip](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)**
-   dosyasını indirin, açın ve **Nino**'yu **Uygulamalar** klasörüne sürükleyin.
-2. Nino'yu açın. Mac "doğrulanamadı" derse: **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**.
-3. Nino sizi adım adım yönlendirir: ikinci PSN hesabıyla giriş → PS5'i 8 haneli kodla eşleme → TV seçimi.
-4. **Capture Card'ınız varsa:** İlk açılışta ya da **Ayarlar › Bağlantı**'da görüntü kaynağı olarak **Capture Card**'ı
-   seçin. Bu yolda Remote Play ve ikinci PSN hesabı gerekmez; kartı PS5 ile TV/monitör arasına bağlayın.
-5. Mac uygulaması yeni sürümleri kendiliğinden indirip kurar.
-
-**Windows:** **[Nino-Windows-Setup.exe](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)**
-dosyasını çalıştırın ("bilgisayarınızı korudu" uyarısında **Ek bilgi › Yine de çalıştır**). Kurulum Mac ile aynıdır.
 
 ---
 
