@@ -1,171 +1,75 @@
-# Gizlilik / Privacy
+# Nino Gizlilik Politikası / Privacy Policy
 
-*Son güncelleme / Last updated: 2026-11-14*
+*Son güncelleme / Last updated: 2026-11-16*
+
+Bu politika **Nino Game Translator** (Nino) uygulamalarını kapsar: Android telefon (`com.ninotranslator.mobile`),
+iPhone, Mac, Windows ve TV uygulamaları. Nino ücretsiz ve açık kaynaklıdır (AGPL-3.0); CouchSubs'tan türetilmiştir.
+İletişim: [GitHub › Issues](https://github.com/yunusdemirbag/nino-game-translator/issues).
 
 ## Türkçe
 
-CouchSubs, Enmera tarafından yayınlanan açık kaynaklı bir uygulamadır. Hesap istemez, reklam göstermez, sizi izlemez.
-Kendi sunucumuza giden tek şey, kapatabileceğiniz ortak havuzdaki İngilizce oyun metnidir (aşağıya bakın).
-Bilgisayar ve TV uygulamaları hiçbir kişisel veri toplamaz; reklam, analiz ya da izleme kodu içermez. iPhone ve
-Android telefon uygulamalarının kimliğe bağlanmayan kullanım istatistikleri için aşağıdaki "iPhone uygulaması" ve
-"Android telefon uygulaması" bölümlerine bakın.
+**Kısaca:** Nino hesap açtırmaz, reklam göstermez, sizi izlemez, kişisel verinizi satmaz ya da paylaşmaz.
 
-**Bilgisayarda kalanlar**
+**Cihazınızda kalanlar**
 
-- PS5'ten gelen oyun görüntüsü yalnız altyazıyı okumak için bellekte işlenir; kaydedilmez, hiçbir yere
-  gönderilmez.
-- Okunan altyazılar ve çevirileri bilgisayarda üretilir ve yalnız ev ağınızdaki TV'ye gönderilir (çevrimiçi çeviriyi
-  açarsanız İngilizce metin DeepL'e de gider; aşağıya bakın).
-- PlayStation Network hesap kimliği (sayısal), PS5 eşleme anahtarı ve TV eşleme anahtarı bilgisayarda
-  saklanır: Mac'te Anahtar Zinciri'nde, Windows'ta yalnız sizin kullanıcı hesabınızın açabileceği
-  şifreli bir dosyada (DPAPI).
+- PS5'ten (Remote Play ya da Capture Card ile) gelen oyun görüntüsü yalnız altyazıyı okumak için bellekte işlenir;
+  kaydedilmez, hiçbir yere gönderilmez.
+- Yazı tanıma ve ücretsiz çeviri cihazınızda yapılır. Çeviriler yalnız sizin ekranınızda ya da ev ağınızdaki TV'de
+  gösterilir.
+- PlayStation Network hesap kimliği (sayısal) ve PS5/TV eşleme anahtarları yalnız cihazınızda saklanır.
+- Capture Card kullanırsanız kamera izni yalnız kartın görüntüsünü okumak için istenir.
 
 **Dışarıyla kurulan bağlantılar**
 
-- **Sony:** PlayStation Network girişi doğrudan Sony'nin sayfasında yapılır; şifrenizi CouchSubs görmez.
-  Girişten sonra Sony'den yalnız hesap kimliği alınır, oturum anahtarı saklanmaz.
-- **Hugging Face (yalnız Windows):** ilk açılışta çeviri modeli `huggingface.co` adresinden bir kez indirilir.
-- **Apple (yalnız Mac):** çeviri dilleri macOS tarafından indirilir ve yönetilir.
-- **DeepL (yalnız siz açarsanız):** ayarlarda kendi DeepL anahtarınızı girip çevrimiçi çeviriyi açarsanız okunan
-  İngilizce altyazı metni çeviri için DeepL'e (`api.deepl.com` ya da `api-free.deepl.com`) gönderilir. Görüntü,
-  ses ve hesap bilgisi gönderilmez. DeepL'in kendi gizlilik koşulları geçerlidir. Anahtar Mac'te Anahtar
-  Zinciri'nde, Windows'ta DPAPI ile şifreli dosyada saklanır. Açmazsanız DeepL'e hiçbir şey gönderilmez.
-- **Ortak havuz (Ayarlar › Çeviri'den kapatılabilir):** hiçbir oyun paketinde bulunmayan, okunan İngilizce altyazı
-  satırları yeni Türkçe oyun paketleri hazırlamak için Nino'nun kendi havuz sunucusuna gönderilir. Giden yalnız
-  şunlardır: satırın metni, biliniyorsa hangi oyunun paketine yakın olduğu (ör. "gta-v"), kaç kez ve ne zaman
-  görüldüğü, uygulamanın her açılışta yeniden ürettiği rastgele bir oturum kimliği, kuruluma özgü rastgele bir kimlik,
-  uygulama sürümü ve işletim sistemi (mac/windows/ios/android). Görüntü, ses, kullanıcı adı, PSN ya da hesap bilgisi
-  gönderilmez. PS5'in kendi bildirim yazıları (ör. "… oturum açtı") ve Türkçe satırlar daha cihazdayken elenir.
-  Sunucu IP adresini kaydetmez; kurulum kimliğini de açık hâliyle değil, geri çevrilemeyen bir özet olarak saklar.
-  Sunucuya ulaşılamazsa satırlar cihazda bekler ve sonra gönderilir. Kapatınca gönderim hemen durur ve bekleyen
-  satırlar silinir.
-- **Ev ağı:** PS5 ve LG TV'yi bulmak ve onlarla eşleşmek için yalnız yerel ağ kullanılır.
+- **Sony:** PlayStation Network girişi doğrudan Sony'nin kendi sayfasında yapılır. Şifrenizi Nino görmez ve saklamaz.
+- **Ev ağı:** PS5'i ve TV'yi bulmak ve onlara bağlanmak için yalnız yerel ağ kullanılır.
+- **Çeviri modeli ve oyun paketleri:** Ücretsiz çeviri modeli ve hazır oyun çeviri paketleri internetten indirilir;
+  bu indirmelerde sizinle ilgili bir bilgi gönderilmez.
+- **Seçtiğiniz çeviri hizmeti (isteğe bağlı):** Ayarlarda kendi anahtarınızla DeepL, Google Gemini, OpenAI ya da
+  Anthropic seçerseniz okunan İngilizce altyazı metni çeviri için o hizmete gider. Görüntü, ses ya da hesap bilgisi
+  gitmez. Anahtarınız yalnız cihazınızda kalır. Bu hizmetlerin kendi gizlilik koşulları geçerlidir.
+- **Ortak havuz (isteğe bağlı, Ayarlar'dan kapatılabilir):** Hiçbir hazır pakette olmayan İngilizce altyazı satırları,
+  yeni oyun paketleri hazırlamak için Nino'nun havuz sunucusuna (Cloudflare Workers) şifreli bağlantıyla gönderilir.
+  Giden yalnız: satırın metni, hangi oyuna yakın olduğu, kaç kez görüldüğü, rastgele üretilmiş bir kurulum kimliği,
+  uygulama sürümü ve işletim sistemi. Ad, e-posta, PSN bilgisi, görüntü ya da ses gönderilmez. Sunucu IP adresini
+  kaydetmez. Kapatınca gönderim durur ve bekleyen satırlar silinir.
 
-TV uygulaması altyazıları yalnız ev ağındaki CouchSubs bilgisayarından alır ve internete bağlanmaz.
+**Olmayanlar:** Reklam, reklam kimliği, analiz ya da izleme kodu, hesap sistemi, uygulama içi satın alma yoktur.
+Nino 13 yaş altındaki çocuklara yönelik değildir ve bilerek onlardan veri toplamaz.
 
-**iPhone uygulaması**
+**Verilerinizin silinmesi:** Nino'da hesap olmadığı için silinecek bir hesap yoktur. Uygulamayı kaldırdığınızda
+cihazdaki her şey silinir. Havuza giden satırlar kişiyle ilişkilendirilemez; yine de kurulum kimliğinize bağlı
+satırların silinmesini GitHub › Issues üzerinden isteyebilirsiniz.
 
-- **Reklam yok, izleme yok, hesap yok.** Uygulamada reklam gösterilmez. Apple'ın izleme izni (App Tracking
-  Transparency) istenmez ve reklam kimliği (IDFA) toplanmaz; veriler başka şirketlerin verileriyle birleştirilmez.
-- **Kullanım istatistikleri (Profil › Kullanım verisi'nden kapatılabilir):** uygulamanın nasıl kullanıldığı Google
-  Firebase Analytics ve Meta App Events ile, kimliğinize bağlanmadan ölçülür; çökmeler Firebase Crashlytics ile
-  bildirilir. Giden: çevirinin başlaması ve süresi, altyazının nerede gösterildiği (TV ya da telefon), bağlanan TV'nin
-  markası, hazır paketten gelen satır sayısı, güncellenen paket sayısı, açılan ekranlar; ayrıca bu hizmetlerin
-  uygulamaya özgü rastgele kimliği, cihaz modeli, iOS sürümü ve IP'den çıkan ülke. Meta'ya olayların yalnız adı
-  (ayrıntısız) ve uygulamanın açılışı gider.
-  Altyazı metni, görüntü, PSN hesabı ya da anahtarlar gönderilmez. Google'ın ve Meta'nın kendi gizlilik koşulları
-  geçerlidir.
-- **PSN girişi** Sony'nin kendi sayfasında yapılır; şifreniz uygulamada tutulmaz, görülmez. Yalnız sayısal hesap
-  kimliği ile PS5 ve TV eşleme anahtarları telefonun Anahtar Zinciri'nde saklanır.
-- **Çeviri anahtarları** (Gemini, DeepL ve benzeri) yalnız telefonda, Anahtar Zinciri'nde kalır. Okunan İngilizce
-  metin yalnız siz bu hizmetlerden birini açarsanız ona gönderilir.
-- **Ortak havuza** yalnız hiçbir oyun paketinde bulunmayan, okunan İngilizce oyun satırları gider (yukarıda anlatıldığı
-  gibi). Profil'deki "Ortak havuza katkı" ile kapatılır.
-- Oyun paketleri paket sunucusundan hesap ya da kimlik bilgisi gönderilmeden indirilir.
-
-**Android telefon uygulaması**
-
-- **Reklam yok, hesap yok.** Uygulamada reklam gösterilmez; reklam kimliği (Android Advertising ID) toplanmaz, ilgili
-  izinler uygulamada yoktur.
-- **PS5 bağlantısı yalnız ev ağında:** telefon PS5'e Uzaktan Oynatma (Remote Play) ile aynı Wi-Fi üzerinden bağlanır.
-  Gelen oyun görüntüsü yalnız altyazıyı okumak için telefonun belleğinde, cihaz üstünde (Google ML Kit yazı tanıma)
-  işlenir; kaydedilmez, hiçbir yere gönderilmez. Çeviri işi sürerken kalıcı bir bildirim görünür.
-- **PSN girişi** uygulama içinde açılan Sony'nin kendi sayfasında yapılır; şifreniz yalnız Sony'ye gider. Sony'den yalnız
-  sayısal hesap kimliği alınır, oturum anahtarı saklanmaz. Hesap kimliği, PS5 eşleme anahtarları ve girdiğiniz çeviri
-  anahtarları yalnız telefonda, Android Keystore anahtarıyla şifrelenmiş olarak saklanır; uygulama silinince gider ve
-  yedeğe alınmaz.
-- **Ücretsiz çeviri** telefonun içinde Google ML Kit ile yapılır; Türkçe dil modeli ilk kullanımda Google'dan bir kez
-  indirilir. Google ML Kit, kendi çalışmasıyla ilgili performans ve kullanım ölçümlerini Google'a gönderebilir; altyazı
-  metni ya da görüntü bunlara dahil değildir.
-- **Çevrimiçi çeviri (yalnız siz seçerseniz):** kendi anahtarınızla DeepL, Gemini (Google), OpenAI ya da Claude
-  (Anthropic) seçerseniz okunan İngilizce satır ve bağlam için son birkaç satır doğrudan o servise gönderilir. Görüntü,
-  ses ve hesap bilgisi gönderilmez; o servisin kendi gizlilik koşulları geçerlidir.
-- **Kullanım istatistikleri (Profil › Kullanım verisi'nden kapatılabilir, varsayılan açık):** Google Firebase Analytics
-  ve Meta App Events uygulamanın nasıl kullanıldığını, kimliğinize bağlanmadan ölçer; çökmeler Firebase Crashlytics ile
-  bildirilir. Giden: açılan ekranlar, kurulumun bitmesi ve seçilen altyazı hedefi (TV ya da telefon), çevirinin
-  başlaması (hedef, çeviri motoru, paketlerin açık olup olmadığı) ve bitmesi (süre, satır sayısı, hazır paketten gelen
-  satır sayısı), bağlanan TV sayısı, kullanılan oyun paketinin adı; ayrıca bu hizmetlerin uygulamaya özgü rastgele
-  kimliği, cihaz modeli, Android sürümü ve IP'den çıkan ülke. Meta'ya olayların yalnız adı (ayrıntısız) ve uygulamanın
-  açılışı gider, karşılama ekranı geçildikten sonra. Altyazı metni, görüntü, PSN hesabı ya da anahtarlar gönderilmez.
-  Kapatınca Firebase ve Meta'ya hiçbir şey gitmez. Google'ın ve Meta'nın kendi gizlilik koşulları geçerlidir.
-- **Ortak havuz (Ayarlar › Ortak havuza katkı'dan kapatılabilir, varsayılan açık):** yukarıda anlatıldığı gibi; işletim
-  sistemi "android" olarak gider.
-- **TV'de gösterme:** telefon ev ağında küçük bir altyazı sunucusu açar (port 8787) ve TV'yi yerel ağda arar; altyazılar
-  yalnız aynı ağdaki CouchSubs TV uygulamasına gider.
-- Oyun paketleri haftada bir, hesap ya da kimlik bilgisi gönderilmeden indirilir.
-
-Sorularınız ve silme talepleriniz için: info@enmera.com.tr ya da https://github.com/yorulmazsinan/couchsubs/issues
+**Değişiklikler:** Bu politika değişirse bu sayfa ve üstteki tarih güncellenir.
 
 ## English
 
-CouchSubs is open-source software published by Enmera. It needs no account, shows no ads and does not track you.
-The only thing sent to a server of ours is English game text for the shared pool, which you can turn off (see
-below). The computer and TV apps collect no personal data and contain no advertising, analytics or tracking code. For
-the unlinked usage statistics of the iPhone and Android phone apps, see "iPhone app" and "Android phone app" below.
+**In short:** Nino needs no account, shows no ads, does not track you, and does not sell or share your personal data.
 
-**Stays on your computer:** the game picture received from the PS5 is processed in memory only to read
-subtitles and is never stored or uploaded. Subtitles and translations are produced on your computer and
-sent only to the TV on your home network. Your numeric PlayStation Network account ID and the PS5 and TV
-pairing keys are stored locally (Keychain on Mac; a file encrypted for your Windows user account with
-DPAPI on Windows).
+**Stays on your device:** The PS5 picture (from Remote Play or a capture card) is processed in memory only to read
+the subtitles; it is never stored or sent anywhere. Text recognition and the free translation run on your device.
+Your numeric PSN account ID and PS5/TV pairing keys are stored only on your device. Camera permission is requested
+only to read a capture card's picture.
 
-**External connections:** PlayStation Network sign-in happens on Sony's own page, and CouchSubs never sees
-your password; afterwards only the account ID is requested from Sony, and no session token is kept. On
-Windows, the translation model is downloaded once from `huggingface.co`. On Mac, translation languages are
-downloaded and managed by macOS. If you enter your own DeepL key in settings and turn on online
-translation, the English subtitle text that was read is sent to DeepL (`api.deepl.com` or
-`api-free.deepl.com`) to be translated; no picture, audio or account data is sent, and DeepL's own privacy
-terms apply. The key is stored in the Keychain on Mac and in the DPAPI-encrypted file on Windows. Nothing is
-sent to DeepL unless you turn this on. PS5 and TV discovery and pairing use your local network only.
+**External connections:**
 
-**Shared pool (can be turned off in Settings › Translation):** English subtitle lines that were read and are not
-in any game pack are sent to Nino's own pool server to build new Turkish game packs. Only this is sent: the line's
-text, the game pack it is closest to if known (e.g. "gta-v"), how many times and when it was seen, a random session ID
-the app makes anew each time it starts, a random ID made for this installation, the app version and the operating
-system (mac/windows/ios/android). No picture, audio, user name, PSN or account data is sent. The PS5's own notification
-texts (e.g. "… signed in") and Turkish lines are filtered out on the device. The server does not record IP addresses
-and stores the installation ID only as a one-way hash. If the server can't be reached, lines wait on the device and
-are sent later. Turning it off stops sending at once and deletes lines waiting to be sent.
+- **Sony:** PSN sign-in happens on Sony's own page. Nino never sees or stores your password.
+- **Home network:** used only to find and connect to your PS5 and TV.
+- **Translation model and game packs** are downloaded without sending any information about you.
+- **Translation service you choose (optional):** if you enter your own DeepL, Google Gemini, OpenAI or Anthropic key,
+  the English subtitle text is sent to that service for translation. No picture, audio or account data is sent. Your
+  key stays on your device. That service's own privacy terms apply.
+- **Shared pool (optional, can be turned off in Settings):** English subtitle lines that are not in any game pack are
+  sent over an encrypted connection to Nino's pool server (Cloudflare Workers) to build new game packs. Only the line
+  text, the nearest game pack, how often it was seen, a random installation ID, the app version and the operating
+  system are sent. No name, email, PSN data, picture or audio. The server does not log IP addresses. Turning it off
+  stops sending and deletes pending lines.
 
-The TV app receives subtitles only from the CouchSubs computer on your home network and does not connect
-to the internet.
+**Not included:** ads, advertising IDs, analytics or tracking code, accounts, in-app purchases. Nino is not directed
+at children under 13 and does not knowingly collect their data.
 
-**iPhone app:** no ads, no tracking, no account. No ads are shown. The app never asks for tracking permission (App
-Tracking Transparency) and does not collect the advertising identifier (IDFA); data is not combined with other
-companies' data. Usage statistics (can be turned off in Profile › Usage data) are measured with Google Firebase Analytics
-and Meta App Events without being linked to you, and crashes are reported with Firebase Crashlytics. What is sent: when
-translation starts and how long it ran, where subtitles are shown (TV or phone), the brand of the connected TV, how many
-lines came from a ready-made pack, how many packs were updated, which screens were opened, plus these services' random
-app-specific ID, device model, iOS version and the country derived from the IP address. Meta receives only the event
-names (without details) and app launches. No subtitle text, picture, PSN account or keys are sent. Google's and Meta's own privacy terms apply. PlayStation
-Network sign-in happens on Sony's own page; your password is never seen or kept by the app. Only the numeric account ID
-and the PS5 and TV pairing keys are stored, in the phone's Keychain. Translation keys (Gemini, DeepL and similar) stay on
-the phone, in the Keychain; English text is sent to such a service only if you turn it on. Only English game lines that
-are not in any game pack go to the shared pool (as described above); turn it off with "Contribute to the shared pool"
-in Profile. Game packs are downloaded from the pack server without sending any account or identifying data.
+**Deletion:** There is no account to delete; uninstalling the app removes all data on the device. Pool lines cannot
+be linked to a person; you may still request deletion of lines tied to your installation ID via GitHub Issues.
 
-**Android phone app:** no ads, no account. No ads are shown and the Android advertising ID is not collected; the app
-does not hold the related permissions. The phone connects to your PS5 with Remote Play over your home Wi-Fi only. The
-game picture is processed in the phone's memory, on the device (Google ML Kit text recognition), only to read
-subtitles; it is never stored or uploaded. A persistent notification is shown while translation runs. PlayStation
-Network sign-in happens on Sony's own page opened inside the app; your password goes only to Sony. Only the numeric
-account ID is requested from Sony and no session token is kept. The account ID, the PS5 pairing keys and any
-translation keys you enter are stored only on the phone, encrypted with an Android Keystore key; they are removed with
-the app and are not backed up. Free translation runs on the phone with Google ML Kit; the Turkish language model is
-downloaded once from Google on first use, and ML Kit may send Google performance and usage metrics about its own
-operation, which do not include subtitle text or pictures. If you choose DeepL, Gemini (Google), OpenAI or Claude
-(Anthropic) with your own key, the English line that was read and the last few lines for context are sent directly to
-that service; no picture, audio or account data, and that service's own privacy terms apply. Usage statistics (on by
-default, turn off in Profile › Usage data) are measured with Google Firebase Analytics and Meta App Events without being
-linked to you, and crashes are reported with Firebase Crashlytics. What is sent: opened screens, finishing setup and the
-chosen subtitle target (TV or phone), translation start (target, engine, whether packs are on) and stop (duration,
-number of lines, lines from a ready-made pack), number of connected TVs, the name of the game pack used, plus these
-services' random app-specific ID, device model, Android version and the country derived from the IP address. Meta
-receives only event names (without details) and app launches, after the welcome screen. No subtitle text, picture, PSN
-account or keys are sent; when turned off nothing goes to Firebase or Meta. Google's and Meta's own privacy terms apply.
-The shared pool works as described above (can be turned off in Settings › Contribute to the shared pool, on by default;
-the operating system is sent as "android"). To show subtitles on a TV, the phone runs a small subtitle server on your
-home network (port 8787) and looks for TVs on the local network; subtitles go only to the CouchSubs TV app on the same
-network. Game packs are downloaded about once a week without sending any account or identifying data.
-
-Contact and deletion requests: info@enmera.com.tr or https://github.com/yorulmazsinan/couchsubs/issues
+**Changes:** If this policy changes, this page and the date above are updated.
