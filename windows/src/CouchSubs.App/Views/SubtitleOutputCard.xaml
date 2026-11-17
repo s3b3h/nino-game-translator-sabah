@@ -8,6 +8,14 @@
              xmlns:t="clr-namespace:CouchSubs.App.Theme">
     <c:Card>
         <StackPanel>
+            <!-- Nino: önce konsol (PS5 ya da Xbox) açıkça seçilir; görüntü kaynağı seçenekleri konsola göre değişir (Mac ile aynı). -->
+            <TextBlock Text="{t:T 'Console'}" Style="{StaticResource CaptionText}" Margin="0,0,0,8" />
+            <Border Style="{StaticResource SegmentGroup}" HorizontalAlignment="Stretch" Margin="0,0,0,12">
+                <UniformGrid Rows="1">
+                    <RadioButton x:Name="ConsolePs5" Content="PS5" GroupName="gameConsole" Style="{StaticResource SegmentButton}" Checked="OnConsole" Tag="Ps5" />
+                    <RadioButton x:Name="ConsoleXbox" Content="Xbox" GroupName="gameConsole" Style="{StaticResource SegmentButton}" Checked="OnConsole" Tag="Xbox" />
+                </UniformGrid>
+            </Border>
             <!-- Nino: oyun TV'de mi (PS5'e ikinci hesapla bağlanılır), bu bilgisayardaki Remote Play penceresinde mi. -->
             <TextBlock Text="{t:T 'Game picture from'}" Style="{StaticResource CaptionText}" Margin="0,0,0,8" />
             <Border Style="{StaticResource SegmentGroup}" HorizontalAlignment="Stretch" Margin="0,0,0,12">

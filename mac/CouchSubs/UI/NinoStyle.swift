@@ -221,6 +221,8 @@ struct NinoSegmented<Value: Hashable>: View {
 /// Tıklanabilir seçenek kartı: solda degrade simge, başlık ve açıklama, sağda ok. Üzerine gelince hafifçe büyür.
 struct OptionCard: View {
     let symbol: String
+    /// Nino: varsa simgenin yerine bu görsel (Assets'te bu adla bir görsel yoksa simge kalır).
+    var image: String? = nil
     let title: LocalizedStringKey
     let detail: LocalizedStringKey
     var action: () -> Void
@@ -230,7 +232,11 @@ struct OptionCard: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: Theme.space("l")) {
-                GradientIcon(symbol: symbol, size: 44)
+                if let image, NSImage(named: image) != nil {
+                    Image(image).resizable().scaledToFit().frame(width: 88, height: 60)
+                } else {
+                    GradientIcon(symbol: symbol, size: 44)
+                }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title).font(.csHeadline).foregroundStyle(Color.csText)
                     Text(detail).font(.csCallout).foregroundStyle(Color.csSecondary)

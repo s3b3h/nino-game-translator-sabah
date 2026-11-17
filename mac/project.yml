@@ -145,14 +145,14 @@ targets:
     info:
       path: AppStore/Info.plist
       properties:
-        CFBundleDisplayName: CouchSubs
+        CFBundleDisplayName: Nino
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.utilities
-        NSLocalNetworkUsageDescription: CouchSubs finds your PS5 and TV on the local network to send translated subtitles.
-        NSCameraUsageDescription: CouchSubs reads the game picture from your HDMI capture card to translate its subtitles.
-        NSMicrophoneUsageDescription: CouchSubs plays the game sound from your HDMI capture card.
-        NSHumanReadableCopyright: AGPL-3.0. Uses chiaki-ng (AGPL-3.0).
+        NSLocalNetworkUsageDescription: Nino finds your PS5 and TV on the local network to send translated subtitles.
+        NSCameraUsageDescription: Nino reads the game picture from your HDMI capture card to translate its subtitles.
+        NSMicrophoneUsageDescription: Nino plays the game sound from your HDMI capture card.
+        NSHumanReadableCopyright: AGPL-3.0. Based on CouchSubs by Sinan Yorulmaz. Uses chiaki-ng (AGPL-3.0).
     entitlements:
       path: AppStore/CouchSubs.entitlements
       properties:

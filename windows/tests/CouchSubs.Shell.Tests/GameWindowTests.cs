@@ -164,4 +164,18 @@ public class GameWindowSetupTests
         Assert.Equal(OnboardingStep.Done, reopened.Step);
         Assert.True(reopened.UsesGameWindow);
     }
+
+    /// <summary>Nino: Ayarlar › Bağlantı'da Xbox'a geçince PS5'e doğrudan bağlanma bırakılır, Xbox penceresi okunur.</summary>
+    [Fact]
+    public void SwitchConsoleInSettings()
+    {
+        var controller = AppControllerTests.Make(new FakeServices(), new MemoryStore(), new MemorySettings());
+        Assert.Equal(VideoSource.Ps5, controller.Settings.VideoSource);
+        controller.SwitchConsole(GameConsole.Xbox);
+        Assert.Equal(GameConsole.Xbox, controller.Settings.GameConsole);
+        Assert.Equal(VideoSource.Window, controller.Settings.VideoSource);
+        controller.Settings = controller.Settings with { VideoSource = VideoSource.Card };
+        controller.SwitchConsole(GameConsole.Ps5);
+        Assert.Equal(VideoSource.Card, controller.Settings.VideoSource);
+    }
 }

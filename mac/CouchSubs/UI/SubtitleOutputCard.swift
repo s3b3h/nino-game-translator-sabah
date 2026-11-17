@@ -16,21 +16,28 @@ struct SubtitleOutputCard: View {
         Card {
             // Nino: oyun TV'de mi oynanıyor (PS5'e ikinci hesapla bağlanılır), yoksa bu bilgisayarda PS Remote Play
             // penceresinde mi (görüntü pencereden okunur, altyazı pencerenin üstünde; monitörde oynayanlar için).
-            Text("Game picture from").font(.csCaption).foregroundStyle(Color.csSecondary)
-            NinoSegmented(selection: $model.settings.videoSource, options: [
+            // Nino: önce konsol (PS5 ya da Xbox) açıkça seçilir; görüntü kaynağı seçenekleri konsola göre değişir. Xbox'ta
+            // PS5'e doğrudan bağlanma yoktur: Xbox penceresi (xbox.com/play ya da Greenlight) ya da Capture Card.
+            Text("Console").font(.csCaption).foregroundStyle(Color.csSecondary)
+            NinoSegmented(selection: Binding(get: { model.settings.gameConsole }, set: { model.switchConsole(to: $0) }), options: [
                 (.ps5, "PS5", "gamecontroller"),
-                (.window, String(localized: "Remote Play window"), "macwindow"),
-                (.card, String(localized: "Capture card"), "cable.connector"),
+                (.xbox, "Xbox", "gamecontroller.fill"),
             ])
-            if model.usesGameWindow {
-                // Nino: pencere yolunda konsol türü: PS5 (Remote Play / chiaki-ng) ya da Xbox (Greenlight / xbox.com/play).
-                NinoSegmented(selection: $model.settings.gameConsole, options: [
-                    (.ps5, "PS5", "gamecontroller"),
-                    (.xbox, "Xbox", "gamecontroller.fill"),
+            Text("Game picture from").font(.csCaption).foregroundStyle(Color.csSecondary)
+            if model.settings.gameConsole == .xbox {
+                NinoSegmented(selection: $model.settings.videoSource, options: [
+                    (.window, String(localized: "Xbox window"), "macwindow"),
+                    (.card, String(localized: "Capture card"), "cable.connector"),
                 ])
-                if detailed && model.settings.gameConsole == .xbox {
+                if detailed && model.usesGameWindow {
                     HintText(text: "Xbox: open Greenlight or xbox.com/play › My consoles in your browser and sign in with your Microsoft account. Nino reads that window and shows the translation on top.")
                 }
+            } else {
+                NinoSegmented(selection: $model.settings.videoSource, options: [
+                    (.ps5, "PS5", "gamecontroller"),
+                    (.window, String(localized: "Remote Play window"), "macwindow"),
+                    (.card, String(localized: "Capture card"), "cable.connector"),
+                ])
             }
             if model.usesCaptureCard {
                 // Nino: kartla iki düzen var: geçişli kartla oyun TV'de (altyazı TV uygulamasında) ya da oyun bu
@@ -51,7 +58,10 @@ struct SubtitleOutputCard: View {
                 .disabled(model.isRunning)
                 .help(Text("How to connect the PS5, the card and your screen, and how to turn off HDCP."))
             } else if model.usesGameWindow {
-                HintText(text: "Play in PS Remote Play or chiaki-ng on this computer. Nino reads that window and shows the translation on top of the game. No second account needed.")
+                // Nino: Xbox'un açıklaması yukarıda (konsol seçiminin altında); bu açıklama yalnız PS5 içindir.
+                if model.settings.gameConsole != .xbox {
+                    HintText(text: "Play in PS Remote Play or chiaki-ng on this computer. Nino reads that window and shows the translation on top of the game. No second account needed.")
+                }
                 ComputerScreenOptions()
             } else {
                 // Nino: PS5 yolunda altyazı her zaman TV uygulamasındadır; yer seçimi yalnız Capture Card'da gösterilir.

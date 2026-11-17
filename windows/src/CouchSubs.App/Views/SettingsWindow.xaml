@@ -453,10 +453,23 @@
                 <StackPanel>
                     <TextBlock Text="{t:T 'About Nino'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
                     <c:Card>
-                        <Grid>
-                            <Button Content="{t:T 'About Nino'}" Click="OnAbout" />
-                            <Button Content="{t:T 'Set up again…'}" HorizontalAlignment="Right" Foreground="{DynamicResource dangerBrush}" Click="OnReset" />
-                        </Grid>
+                        <Button Content="{t:T 'About Nino'}" HorizontalAlignment="Left" Click="OnAbout" />
+                    </c:Card>
+                </StackPanel>
+            </TabItem>
+            <!-- Nino: sıfırlama ayrı ve en altta (Hakkında'nın içinde değil; Mac ile aynı). -->
+            <TabItem Header="{t:T 'Reset'}">
+                <StackPanel>
+                    <TextBlock Text="{t:T 'Reset'}" Style="{StaticResource DisplayText}" Margin="0,0,0,16" />
+                    <c:Card>
+                        <StackPanel>
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,16" Foreground="{DynamicResource textSecondaryBrush}"
+                                       Text="{t:T 'From the TV: your PS5 account and PS5 pairing stay; only the TV connection is set up again. Reset everything: the saved PS5, account and TV connection are removed and you sign in to PSN again.'}" />
+                            <WrapPanel>
+                                <Button Content="{t:T 'Set up again from the TV'}" Padding="16,0" Margin="0,0,12,0" Click="OnResetFromTv" />
+                                <Button Content="{t:T 'Reset everything'}" Padding="16,0" Foreground="{DynamicResource dangerBrush}" Click="OnResetEverything" />
+                            </WrapPanel>
+                        </StackPanel>
                     </c:Card>
                 </StackPanel>
             </TabItem>

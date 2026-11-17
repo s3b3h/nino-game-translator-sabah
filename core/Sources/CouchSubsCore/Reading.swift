@@ -87,6 +87,17 @@ public struct Reading: Equatable, Sendable {
 
     /// Yazı tanımanın uydurduğu sözcük çöpleri ("ou$3e", "waters2aljd") ayıklanmış hali; çevirmen bunları olduğu
     /// gibi taşıyıp TV'de anlamsız harfler gösteriyordu.
+    /// Nino: okunan alanın hem sol hem sağ kenarına değen satır kesiktir, altyazı değildir: oyunların açılıştaki yasal uyarısı
+    /// ("…rental, pay for play, or circumvention of copy protection…") ya da PS5 menüsündeki kayan yazı alanın iki yanından
+    /// taşar, yarım okunur ve anlamsız çevrilirdi. Altyazılar ortalıdır, iki kenara birden değmez. (Yalnız bir kenara değen
+    /// satır kalır: dar seçilmiş bir alanda gerçek altyazı da bir yandan taşabilir.) `margin`, alan genişliğine oranla.
+    public func withoutClippedLines(margin: Double = 0.015) -> Reading {
+        Reading(lines: lines.filter { line in
+            guard let box = line.box else { return true }
+            return !(box.left <= margin && box.right >= 1 - margin)
+        })
+    }
+
     public func withoutOcrNoise() -> Reading {
         Reading(lines: lines.map { TextLine(OcrNoise.clean($0.text), box: $0.box, confidence: $0.confidence) })
     }

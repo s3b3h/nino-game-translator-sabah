@@ -16,8 +16,9 @@ struct TestStep: View {
         StepLayout(title: "Let's test it",
                    message: onComputer ? "Nino will show a sample subtitle on this computer's screen, at the bottom."
                        : "Nino will send a sample subtitle to your TV. It should appear at the bottom of the screen, on top of the game.") {
-            HStack(alignment: .top, spacing: Theme.space("gap")) {
-                SubtitleStylePreview(style: model.settings.style, size: CGSize(width: 330, height: 186),
+            // Nino: ortalı tek akış: büyük TV önizlemesi, altında tek büyük düğme, gönderince "Görüyor musunuz?" sorusu.
+            VStack(spacing: Theme.space("l")) {
+                SubtitleStylePreview(style: model.settings.style, size: CGSize(width: 400, height: 225),
                                      live: (String(localized: "This is a test subtitle. Can you see it on top of the game?"), ""))
                     .overlay(alignment: .topLeading) {
                         if !onComputer {
@@ -31,44 +32,21 @@ struct TestStep: View {
                             .padding(10)
                         }
                     }
-                VStack(alignment: .leading, spacing: Theme.space("m")) {
-                    Button {
-                        sending = true
-                        notSeen = false
-                        Task {
-                            await model.testSubtitle()
-                            sending = false
-                            sent = true
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            if sending { ProgressView().controlSize(.small).tint(.white) }
-                            Text(sending ? (onComputer ? "Showing…" : "Opening the TV app…")
-                                 : (onComputer ? "Show Test Subtitle" : "Send Test Subtitle to TV"))
-                        }
-                        .fixedSize()
-                    }
-                    .buttonStyle(CSButtonStyle(kind: sent ? .secondary : .primary))
-                    .disabled(sending)
-                    if onComputer {
-                        Button("Adjust the subtitle window") { model.overlayAdjusting = true }
-                            .buttonStyle(.secondary)
-                            .disabled(model.overlayAdjusting)
-                    }
-                    if sent {
+                if sent {
+                    // Gönderildi: soru ve iki düğme yan yana; "Tekrar gönder" küçük bağlantı.
+                    HStack(spacing: Theme.space("m")) {
                         Text(onComputer ? "Do you see it on the screen?" : "Do you see it on the TV?").font(.csHeadline)
-                        HStack(spacing: Theme.space("m")) {
-                            Button("Yes, I see it") {
-                                model.overlayAdjusting = false
-                                model.advance()
-                            }
-                            .buttonStyle(.primary)
-                            .keyboardShortcut(.defaultAction)
-                            Button("No") { notSeen = true }.buttonStyle(.secondary)
+                        Button("No") { notSeen = true }
+                            .buttonStyle(CSButtonStyle(kind: .secondary, height: "buttonLarge"))
+                        Button("Yes, I see it") {
+                            model.overlayAdjusting = false
+                            model.advance()
                         }
+                        .buttonStyle(CSButtonStyle(kind: .primary, height: "buttonLarge"))
+                        .keyboardShortcut(.defaultAction)
                     }
                     if notSeen {
-                        VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: Theme.space("m")) {
                             Label(onComputer ? "It shows for a few seconds at the bottom of the screen. Send it again."
                                   : "Make sure the TV is on and the Nino TV app is open, then send it again.",
                                   systemImage: "lightbulb.fill")
@@ -80,9 +58,52 @@ struct TestStep: View {
                             }
                         }
                     }
+                    sendButton(primary: false)
+                } else {
+                    sendButton(primary: true)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                if onComputer {
+                    Button("Adjust the subtitle window") { model.overlayAdjusting = true }
+                        .buttonStyle(.plain)
+                        .font(.csCallout.weight(.semibold))
+                        .foregroundStyle(Color.csAccentText)
+                        .disabled(model.overlayAdjusting)
+                }
             }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// Örnek altyazıyı gönderir. İlk seferde büyük birincil düğme, gönderildikten sonra küçük "tekrar gönder" bağlantısı.
+    @ViewBuilder private func sendButton(primary: Bool) -> some View {
+        let action = {
+            sending = true
+            notSeen = false
+            Task {
+                await model.testSubtitle()
+                sending = false
+                sent = true
+            }
+        }
+        if primary {
+            Button(action: action) {
+                HStack(spacing: 8) {
+                    if sending { ProgressView().controlSize(.small).tint(.white) }
+                    Text(sending ? (onComputer ? "Showing…" : "Opening the TV app…")
+                         : (onComputer ? "Show Test Subtitle" : "Send Test Subtitle to TV"))
+                }
+                .frame(minWidth: 280)
+            }
+            .buttonStyle(CSButtonStyle(kind: .primary, height: "buttonLarge"))
+            .disabled(sending)
+        } else {
+            Button(action: action) {
+                Label(sending ? (onComputer ? "Showing…" : "Opening the TV app…") : "Send again", systemImage: "arrow.clockwise")
+            }
+            .buttonStyle(.plain)
+            .font(.csCallout.weight(.semibold))
+            .foregroundStyle(Color.csAccentText)
+            .disabled(sending)
         }
     }
 }

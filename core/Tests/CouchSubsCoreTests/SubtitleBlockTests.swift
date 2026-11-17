@@ -30,6 +30,17 @@ final class SubtitleBlockTests: XCTestCase {
         XCTAssertEqual(block.box, TextBox(left: 0.25, top: 0.7, right: 0.75, bottom: 0.77))
     }
 
+    /// Nino: RDR2'nin açılıştaki yasal uyarısı alanın iki yanından taşar ("rema pay or play, or copy protector…"); çevrilmez.
+    func testLineClippedOnBothSidesIsNotSubtitle() {
+        let reading = Reading(lines: [line("rema pay or play, or copy protector crediverton is promoted a volutes coun", 0.0, 0.8, 1.0)])
+        XCTAssertEqual(reading.withoutClippedLines().subtitleBlock(in: area), .empty)
+        // Tek yana taşan (dar alan) ya da ortalı uzun altyazı kalır.
+        let wide = Reading(lines: [line("Arthur, we need to get to the boat before the storm reaches the valley!", 0.06, 0.8, 0.94)])
+        XCTAssertEqual(wide.withoutClippedLines().text, wide.text)
+        let oneSide = Reading(lines: [line("before the storm reaches the valley", 0.0, 0.8, 0.7)])
+        XCTAssertEqual(oneSide.withoutClippedLines().text, oneSide.text)
+    }
+
     func testTwoLineSubtitleStaysTogether() {
         let reading = Reading(lines: [
             line("Mac and John... they were both shot.", 0.3, 0.6, 0.7),

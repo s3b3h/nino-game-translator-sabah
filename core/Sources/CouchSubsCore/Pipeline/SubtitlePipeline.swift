@@ -214,7 +214,7 @@ public final class SubtitlePipeline {
             })
         }
         visible = withoutStaleLines(visible, at: captured)
-        let reading = visible.withoutButtonPrompts().withoutOcrNoise().subtitleBlock(in: place)
+        let reading = visible.withoutButtonPrompts().withoutOcrNoise().withoutClippedLines().subtitleBlock(in: place)
         onPrompts?(Reading(lines: visible.withoutOcrNoise().lines.filter { ButtonPrompts.isPrompt($0.text) }).placed(in: place))
         currentRead = ReadInfo(capturedAt: captured, ocrMs: lastReadMs, confidence: reading.confidence)
         let box = reading.box?.placed(in: place).centeredOnScreen()

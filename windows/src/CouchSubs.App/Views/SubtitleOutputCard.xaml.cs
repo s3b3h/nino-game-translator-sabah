@@ -55,11 +55,17 @@ public partial class SubtitleOutputCard : UserControl
         loading = true;
         var settings = controller.Settings;
         (settings.Output switch { SubtitleOutput.Computer => OutputComputer, SubtitleOutput.Both => OutputBoth, _ => OutputTv }).IsChecked = true;
+        // Nino: Xbox'ta PS5'e doğrudan bağlanma yok; pencere seçeneği "Xbox penceresi" olur (Windows'ta Greenlight anılmaz).
+        var xbox = settings.GameConsole == GameConsole.Xbox;
+        (xbox ? ConsoleXbox : ConsolePs5).IsChecked = true;
+        SourcePs5.Visibility = xbox ? Visibility.Collapsed : Visibility.Visible;
+        SourceWindow.Content = Localizer.Current[xbox ? "Xbox window" : "Remote Play window"];
         (controller.UsesGameWindow ? SourceWindow : controller.UsesCaptureCard ? SourceCard : SourcePs5).IsChecked = true;
         var ps5 = controller.Settings.VideoSource == VideoSource.Ps5;
         SourceHint.Text = Localizer.Current[controller.UsesCaptureCard
             ? "Connect the PS5 to the capture card and the card to this computer. No second account needed. Turn off Settings › System › HDMI › Enable HDCP on the PS5."
             : ps5 ? "Subtitles show on your TV, in the Nino TV app."
+            : xbox ? "Start Remote play in the Xbox app or at xbox.com/play. Nino reads that window and shows the translation."
             : "Play in PS Remote Play or chiaki-ng on this computer. Nino reads that window and shows the translation on top of the game. No second account needed."];
         SourceHint.Visibility = Detailed || controller.UsesGameWindow || ps5 ? Visibility.Visible : Visibility.Collapsed;
         ShowCard();
@@ -102,6 +108,12 @@ public partial class SubtitleOutputCard : UserControl
         CardPreview.Content = null;
         CaptureCardGuideWindow.Open(Window.GetWindow(this), controller);
         Refresh();
+    }
+
+    private void OnConsole(object sender, RoutedEventArgs e)
+    {
+        if (loading || controller is null || sender is not RadioButton { Tag: string tag }) return;
+        controller.SwitchConsole(Enum.Parse<GameConsole>(tag));
     }
 
     private void OnSource(object sender, RoutedEventArgs e)

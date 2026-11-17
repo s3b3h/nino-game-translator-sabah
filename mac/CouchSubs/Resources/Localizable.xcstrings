@@ -1,6 +1,806 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Photo guide for Android TV" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "دليل مصوّر لأجهزة Android TV"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Android TV için fotoğraflı rehber"
+          }
+        }
+      }
+    },
+    "Console" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جهاز الألعاب"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konsol"
+          }
+        }
+      }
+    },
+    "Xbox window" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نافذة Xbox"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox penceresi"
+          }
+        }
+      }
+    },
+    "Reset" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إعادة الضبط"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıfırla"
+          }
+        }
+      }
+    },
+    "Reset everything?" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هل تريد إعادة ضبط كل شيء؟"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her şey sıfırlansın mı?"
+          }
+        }
+      }
+    },
+    "The saved PS5, account and TV connection are removed and setup starts from the beginning." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تُحذف بيانات PS5 والحساب واتصال التلفاز المحفوظة، ويبدأ الإعداد من جديد."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kayıtlı PS5, hesap ve TV bağlantısı silinir; kurulum en baştan başlar."
+          }
+        }
+      }
+    },
+    "Connect your TV first, then plug in" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اربط التلفاز أولًا، ثم أدخل القابس"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önce TV'nizi bağlayın, sonra fişi takın"
+          }
+        }
+      }
+    },
+    "Bring Your Xbox to This Mac" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اعرض جهاز Xbox على جهاز Mac هذا"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox'ınızı Bu Mac'e Getirin"
+          }
+        }
+      }
+    },
+    "Nino reads your Xbox picture from a window on this Mac. You only set this up once." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يقرأ Nino صورة Xbox من نافذة على جهاز Mac هذا. تضبط ذلك مرة واحدة فقط."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino, Xbox görüntünüzü bu Mac'teki bir pencereden okur. Bunu yalnızca bir kez ayarlarsınız."
+          }
+        }
+      }
+    },
+    "Turn On Remote Features" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "فعّل الميزات البعيدة"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzak Özellikleri Açın"
+          }
+        }
+      }
+    },
+    "On the Xbox: Settings › Devices & connections › Remote features" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "على Xbox: الإعدادات › الأجهزة والاتصالات › الميزات البعيدة"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox'ta: Ayarlar › Cihazlar ve bağlantılar › Uzak özellikler"
+          }
+        }
+      }
+    },
+    "Open xbox.com/play" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "افتح xbox.com/play"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "xbox.com/play'i Açın"
+          }
+        }
+      }
+    },
+    "On this Mac, in Safari or Chrome. Sign in with your Microsoft account." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "على جهاز Mac هذا في Safari أو Chrome. سجّل الدخول بحساب Microsoft."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Mac'te Safari ya da Chrome'da. Microsoft hesabınızla giriş yapın."
+          }
+        }
+      }
+    },
+    "Start Remote Play" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ابدأ التشغيل عن بُعد"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzaktan Oynatmayı Başlatın"
+          }
+        }
+      }
+    },
+    "My consoles › your Xbox › Remote play. Nino reads that window." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أجهزتي › جهاز Xbox › التشغيل عن بُعد. يقرأ Nino تلك النافذة."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konsollarım › Xbox'ınız › Uzaktan oynat. Nino o pencereyi okur."
+          }
+        }
+      }
+    },
+    "You can also use the free Greenlight app." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يمكنك أيضًا استخدام تطبيق Greenlight المجاني."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İsterseniz ücretsiz Greenlight uygulamasını da kullanabilirsiniz."
+          }
+        }
+      }
+    },
+    "Send again" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إرسال مرة أخرى"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekrar Gönder"
+          }
+        }
+      }
+    },
+    "xbox.com/play or Greenlight" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "xbox.com/play أو Greenlight"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "xbox.com/play ya da Greenlight"
+          }
+        }
+      }
+    },
+    "Free in your browser; your Xbox picture comes to this Mac" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يُفتح مجانًا في المتصفح، وتصل صورة Xbox إلى جهاز Mac هذا"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarayıcıda ücretsiz açılır, Xbox görüntünüz bu Mac'e gelir"
+          }
+        }
+      }
+    },
+    "Open xbox.com/play › My consoles in Safari or Chrome and sign in with your Microsoft account. If you prefer, you can also use the free Greenlight app." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "افتح xbox.com/play › أجهزتي في Safari أو Chrome وسجّل الدخول بحساب Microsoft. ويمكنك أيضًا استخدام تطبيق Greenlight المجاني."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Safari ya da Chrome'da xbox.com/play › Konsollarım'ı açın ve Microsoft hesabınızla giriş yapın. İsterseniz ücretsiz Greenlight uygulamasını da kullanabilirsiniz."
+          }
+        }
+      }
+    },
+    "You play on this Mac with Remote Play; subtitles appear on your Remote Play screen. You can connect a TV later." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تلعب على جهاز Mac هذا عبر التشغيل عن بُعد، وتظهر الترجمة على شاشة التشغيل عن بُعد. يمكنك ربط التلفاز لاحقًا."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oyunu bu Mac'te Remote Play ile oynarsınız; altyazı Remote Play ekranınızda görünür. TV'yi sonra da bağlayabilirsiniz."
+          }
+        }
+      }
+    },
+    "You play on this Mac in the Xbox window; subtitles appear on that screen. You can connect a TV later." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تلعب على جهاز Mac هذا في نافذة Xbox، وتظهر الترجمة على تلك الشاشة. يمكنك ربط التلفاز لاحقًا."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oyunu bu Mac'te Xbox penceresinde oynarsınız; altyazı o ekranda görünür. TV'yi sonra da bağlayabilirsiniz."
+          }
+        }
+      }
+    },
+    "No TV? Show it on this Mac's screen" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا يوجد تلفاز؟ اعرضها على شاشة جهاز Mac هذا"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'm Yok, Bu Mac'in Ekranında Göster"
+          }
+        }
+      }
+    },
+    "Enter the 8-digit code shown on your PS5 screen." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أدخل الرمز المكوّن من 8 أرقام الظاهر على شاشة PS5."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 ekranında çıkan 8 haneli kodu girin."
+          }
+        }
+      }
+    },
+    "Switch to the second user" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "انتقل إلى الحساب الثاني"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İkinci Hesaba Geçin"
+          }
+        }
+      }
+    },
+    "PS button › profile picture › Switch User" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "زر PS › صورة الملف الشخصي › تبديل المستخدم"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS düğmesi › profil resmi › Kullanıcı Değiştir"
+          }
+        }
+      }
+    },
+    "Open Pair Device" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "افتح «إقران الجهاز»"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cihazı Eşleştir'i Açın"
+          }
+        }
+      }
+    },
+    "Settings › System › Remote Play › Pair Device" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الإعدادات › النظام › التشغيل عن بُعد › إقران الجهاز"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir"
+          }
+        }
+      }
+    },
+    "Enter the code" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أدخل الرمز"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kodu Girin"
+          }
+        }
+      }
+    },
+    "Type the 8-digit code from the screen below. It is valid for 5 minutes." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اكتب الرمز المكوّن من 8 أرقام أدناه. صالح لمدة 5 دقائق."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekrandaki 8 haneli kodu aşağıya yazın. Kod 5 dakika geçerlidir."
+          }
+        }
+      }
+    },
+    "Looking for your PS5…" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جارٍ البحث عن PS5…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5'iniz aranıyor…"
+          }
+        }
+      }
+    },
+    "PS5 not found" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لم يتم العثور على PS5"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 bulunamadı"
+          }
+        }
+      }
+    },
+    "Connect with IP address" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الاتصال عبر عنوان IP"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IP adresiyle bağlanın"
+          }
+        }
+      }
+    },
+    "Your password is entered only on Sony's own page; Nino never sees it." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تكتب كلمة المرور في صفحة Sony فقط، ولا يراها Nino."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şifrenizi yalnızca Sony'nin kendi sayfasına yazarsınız, Nino şifrenizi görmez."
+          }
+        }
+      }
+    },
+    "Nino keeps only the account ID, nothing else." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يحتفظ Nino بمعرّف الحساب فقط، ولا شيء غيره."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino yalnızca hesap kimliğini saklar, başka bilgi tutmaz."
+          }
+        }
+      }
+    },
+    "You sign in once; you won't be asked again." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تسجّل الدخول مرة واحدة فقط، ولن يُطلب منك ذلك مجددًا."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş bir kez yapılır, tekrar sorulmaz."
+          }
+        }
+      }
+    },
+    "Sign in with PlayStation" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تسجيل الدخول عبر PlayStation"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PlayStation ile Giriş Yap"
+          }
+        }
+      }
+    },
+    "Sign-in page won't open? Enter the account ID manually" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا تفتح صفحة الدخول؟ أدخل معرّف الحساب يدويًا"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası açılmıyor mu? Hesap kimliğini elle girin"
+          }
+        }
+      }
+    },
+    "Still as the new user, turn on Settings › System › Remote Play › Enable Remote Play and turn off the last option on that screen." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "على الحساب الجديد، فعّل التشغيل عن بُعد من الإعدادات › النظام، وأوقف خيار الإشعار الأخير."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni hesapta Ayarlar › Sistem › Uzaktan Oynama'da Uzaktan Oynama'yı Etkinleştir'i ve en alttaki Bağlantı Durumunu Gizle'yi açın."
+          }
+        }
+      }
+    },
+    "Which console do you play on?" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "على أي جهاز ألعاب تلعب؟"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hangi konsolda oynuyorsunuz?"
+          }
+        }
+      }
+    },
+    "Nino works with both. You can change it later in Settings." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يعمل Nino مع كليهما، ويمكنك تغيير ذلك لاحقًا من الإعدادات."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino ikisiyle de çalışır. Sonra Ayarlar'dan değiştirebilirsiniz."
+          }
+        }
+      }
+    },
+    "Remote Play over Wi-Fi with a second PSN account" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التشغيل عن بُعد عبر Wi-Fi بحساب PSN ثانٍ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi üzerinden Remote Play; ikinci bir PSN hesabıyla"
+          }
+        }
+      }
+    },
+    "Xbox Series X|S or Xbox One; streamed to this Mac" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تُبث صورة جهاز Xbox إلى جهاز Mac هذا"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox Series X|S ya da Xbox One; görüntüsü bu Mac'e gelir"
+          }
+        }
+      }
+    },
+    "Nino reads the English subtitles of your Xbox games and shows a Turkish translation on your TV, on top of the game. You keep playing on the TV with your own controller." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يقرأ Nino النصوص الإنجليزية في ألعاب Xbox ويعرض ترجمتها على التلفاز فوق اللعبة، وتواصل اللعب على التلفاز بيد التحكم الخاصة بك."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino, Xbox oyunlarının İngilizce altyazılarını okur ve Türkçe çevirisini TV'de oyunun üstünde gösterir. Siz de TV'de kendi joystick'inizle oynamaya devam edersiniz."
+          }
+        }
+      }
+    },
+    "Nino reads the English subtitles of your Xbox games and shows an Arabic translation on your TV, on top of the game. You keep playing on the TV with your own controller." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يقرأ Nino النصوص الإنجليزية في ألعاب Xbox ويعرض ترجمتها العربية على التلفاز فوق اللعبة، وتواصل اللعب على التلفاز بيد التحكم الخاصة بك."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino, Xbox oyunlarının İngilizce altyazılarını okur ve Arapça çevirisini TV'de oyunun üstünde gösterir. Siz de TV'de kendi joystick'inizle oynamaya devam edersiniz."
+          }
+        }
+      }
+    },
+    "Nino reads the English subtitles of your PS5 or Xbox games and shows a Turkish translation on your TV, on top of the game. You keep playing on the TV with your own controller." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يقرأ Nino النصوص الإنجليزية في ألعاب PS5 أو Xbox ويعرض ترجمتها على التلفاز فوق اللعبة، وتواصل اللعب على التلفاز بيد التحكم الخاصة بك."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino, PS5 ya da Xbox oyunlarının İngilizce altyazılarını okur ve Türkçe çevirisini TV'de oyunun üstünde gösterir. Siz de TV'de kendi joystick'inizle oynamaya devam edersiniz."
+          }
+        }
+      }
+    },
+    "Remote features on, same Wi-Fi as this Mac" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الميزات البعيدة مفعّلة، على شبكة Wi-Fi نفسها مع جهاز Mac هذا"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzak özellikler açık, bu Mac ile aynı Wi-Fi ağında"
+          }
+        }
+      }
+    },
+    "Greenlight or xbox.com/play" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Greenlight أو xbox.com/play"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Greenlight ya da xbox.com/play"
+          }
+        }
+      }
+    },
+    "Free; your Xbox picture comes to this Mac" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مجاني؛ تصل صورة Xbox إلى جهاز Mac هذا"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ücretsiz; Xbox görüntüsü bu Mac'e gelir"
+          }
+        }
+      }
+    },
+    "Android TV, LG, Samsung or your monitor" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Android TV أو LG أو Samsung أو شاشتك"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Android TV, LG, Samsung ya da monitörünüz"
+          }
+        }
+      }
+    },
     "Start Remote play in the Xbox app, Greenlight or xbox.com/play" : {
       "localizations" : {
         "ar" : {
@@ -734,7 +1534,7 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "حساب PSN ثانٍ"
+            "value" : "يلزم حساب PSN ثانٍ لعرض الترجمة"
           }
         },
         "en" : {
@@ -746,7 +1546,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "İkinci bir PSN hesabı"
+            "value" : "Altyazı İçin 2. PSN Hesabı Açmanız Gerekmektedir"
           }
         }
       }
@@ -1428,7 +2228,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PS5'inizi bağlayın"
+            "value" : "PS5'inizi Bağlayın"
           }
         }
       }
@@ -1450,7 +2250,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TV'nizi bağlayın"
+            "value" : "TV'nizi Bağlayın"
           }
         }
       }
@@ -1652,7 +2452,7 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يتابع Nino اللعبة عبر Remote Play. لو استخدم حسابك أنت، لأوقف PS5 يد التحكم الخاصة بك. أما مع حساب ثانٍ فتواصل اللعب دون انقطاع."
+            "value" : "يقرأ Nino الترجمة بهذا الحساب، وتواصل اللعب بحسابك. يتم الإعداد مرة واحدة."
           }
         },
         "en" : {
@@ -1664,7 +2464,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nino oyunu Remote Play ile izler. Kendi hesabınızı kullansaydı PS5 joystick'inizi kapatırdı. İkinci bir hesapla oyununuz hiç bölünmez."
+            "value" : "Nino altyazıyı bu hesapla okur, siz kendi hesabınızla oynamaya devam edersiniz. Kurulum bir kez yapılır."
           }
         }
       }
@@ -1740,7 +2540,7 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "أنشئ حسابًا مجانيًا على playstation.com ببريد إلكتروني مختلف."
+            "value" : "أنشئ حساب PSN مجانيًا على PlayStation.com ببريد جديد."
           }
         },
         "en" : {
@@ -1752,7 +2552,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "playstation.com'da farklı bir e-posta adresiyle ücretsiz bir hesap açın."
+            "value" : "PlayStation.com'da yeni bir e-posta ile ücretsiz PSN hesabı oluşturun."
           }
         }
       }
@@ -3016,7 +3816,7 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "على PS5، اختر «إضافة مستخدم» وسجّل الدخول مرة واحدة بالحساب الجديد."
+            "value" : "على PS5، اختر «إضافة مستخدم» وسجّل الدخول بالحساب الجديد مرة واحدة."
           }
         },
         "en" : {
@@ -3028,7 +3828,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PS5'te Kullanıcı Ekle'yi seçin ve yeni hesapla bir kez oturum açın."
+            "value" : "PS5'te Kullanıcı Ekle'yi seçin ve yeni hesapla bir kez giriş yapın."
           }
         }
       }
@@ -3880,7 +4680,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Az önce açtığınız ikinci hesapla PlayStation Network'e giriş yapın. Şifreniz doğrudan Sony'ye gider; Nino yalnızca hesap kimliğini saklar."
+            "value" : "Az önce açtığınız 2. PSN hesabıyla giriş yapın. Nino altyazıyı bu hesap üzerinden okur."
           }
         }
       }
@@ -3896,7 +4696,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "İkinci hesabınızla giriş yapın"
+            "value" : "İkinci Hesabınızla Giriş Yapın"
           }
         }
       }
@@ -4076,7 +4876,7 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "وأنت لا تزال بالمستخدم الجديد، انتقل إلى الإعدادات › النظام › Remote Play وشغّل «تمكين Remote Play»."
+            "value" : "وأنت على الحساب الجديد، افتح الإعدادات › النظام › التشغيل عن بُعد وفعّل «تمكين التشغيل عن بُعد»."
           }
         },
         "en" : {
@@ -4088,7 +4888,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hâlâ yeni kullanıcıdayken Ayarlar › Sistem › Uzaktan Oynatma'ya gidin ve Uzaktan Oynatmayı Etkinleştir'i açın."
+            "value" : "Yeni hesaptayken Ayarlar › Sistem › Uzaktan Oynama'da Uzaktan Oynama'yı Etkinleştir'i açın."
           }
         }
       }
@@ -4252,7 +5052,7 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "عُد إلى المستخدم الخاص بك. لن تحتاج إلى ذلك إلا مرة واحدة."
+            "value" : "على حسابك، أوقف الإشعارات من الإعدادات › الإشعارات حتى لا تظهر فوق الترجمة."
           }
         },
         "en" : {
@@ -4264,7 +5064,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kendi kullanıcınıza geri dönün. Bunu yalnızca bir kez yaparsınız."
+            "value" : "Kendi hesabınızda Ayarlar › Bildirimler'den bildirimleri kapatın, altyazının üstünde uyarı çıkmaz."
           }
         }
       }
@@ -5314,7 +6114,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PS5'i açın. İkinci kullanıcıyla Ayarlar › Sistem › Uzaktan Oynatma › Cihazı Eşleştir'i açın ve orada görünen 8 haneli kodu girin."
+            "value" : "PS5'i açın. İkinci kullanıcıyla Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir'i açın ve orada görünen 8 haneli kodu girin."
           }
         }
       }
@@ -7360,7 +8160,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Daha doğal çeviri, ücretsiz"
+            "value" : "Daha Doğal Çeviri, Ücretsiz"
           }
         }
       }
@@ -7854,19 +8654,19 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "لا يوجد تلفاز؟ اعرضها على شاشة الكمبيوتر"
+            "value" : "لا يوجد تلفاز؟ اعرضها على الشاشة"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No TV? Show on the computer screen"
+            "value" : "No TV? Show on your monitor"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TV'niz yok mu? Bilgisayar ekranında gösterin"
+            "value" : "TV'niz yok mu? Monitörde gösterin"
           }
         }
       }
@@ -7888,7 +8688,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Altyazı oyunun ya da PS Remote Play'in üstünde bir pencerede görünür. TV'yi sonra da bağlayabilirsiniz."
+            "value" : "Altyazı oyunun üstünde bir pencerede görünür. TV'yi sonra da bağlayabilirsiniz."
           }
         }
       }
@@ -7910,7 +8710,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nino bu bilgisayarın ekranında, altta örnek bir altyazı gösterecek."
+            "value" : "Nino monitörde, altta örnek bir altyazı gösterecek."
           }
         }
       }
@@ -10874,7 +11674,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PS5'te ikinci hesapla Ayarlar › Sistem › Uzaktan Oynatma › Cihazı Eşleştir'i seçin ve ekrandaki kodu yazın."
+            "value" : "PS5'te ikinci hesapla Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir'i seçin ve ekrandaki kodu yazın."
           }
         }
       }
@@ -13008,7 +13808,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bu bilgisayarın ekranında deneme altyazısı gösterir."
+            "value" : "Monitörde deneme altyazısı gösterir."
           }
         }
       }
@@ -13916,7 +14716,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ayarlar › Sistem › Uzaktan Oynatma'ya gidin."
+            "value" : "Ayarlar › Sistem › Uzaktan Oynama'ya gidin."
           }
         }
       }
@@ -14422,13 +15222,13 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "في الشاشة نفسها، أوقف الخيار الأخير في الأسفل، وإلا فسيظل PS5 يعرض إشعار Remote Play فوق اللعبة."
+            "value" : "في الشاشة نفسها، أوقف الخيار الأخير حتى لا يظهر إشعار أثناء اللعب."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aynı ekranda en alttaki seçeneği kapatın. Yoksa PS5 oyunun üstünde sürekli \"Uzaktan Oynama\" bildirimi gösterir."
+            "value" : "Aynı ekranda en alttaki Uzaktan Oynama Bağlantı Durumunu Gizle'yi açın. Böylece oyun sırasında bildirim görünmez."
           }
         }
       }
@@ -15324,7 +16124,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uzaktan Oynatma başka bir cihazda açık. Oradan kapatın."
+            "value" : "Uzaktan Oynama başka bir cihazda açık. Oradan kapatın."
           }
         }
       }
@@ -16474,13 +17274,13 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bu bilgisayarda PS Remote Play ile oynuyorum"
+            "value" : "Monitörde Remote Play ile oynuyorum"
           }
         },
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ألعب على هذا الحاسوب عبر PS Remote Play"
+            "value" : "ألعب على الشاشة عبر Remote Play"
           }
         }
       }
@@ -16858,7 +17658,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PS5'in nasıl bağlı?"
+            "value" : "PS5'iniz Nasıl Bağlı?"
           }
         },
         "ar" : {
@@ -16954,7 +17754,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PS5'te HDCP'yi kapat"
+            "value" : "PS5'te HDCP'yi Kapatın"
           }
         },
         "ar" : {
@@ -17066,7 +17866,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Capture Card'ı tak"
+            "value" : "Capture Card'ı Takın"
           }
         },
         "ar" : {

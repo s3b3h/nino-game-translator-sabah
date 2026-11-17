@@ -13,12 +13,19 @@ Tamamen ücretsiz · açık kaynak · reklamsız · abonelik yok · hesap yok</p
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk">⬇️ Android telefon</a> &nbsp;·&nbsp;
   📱 iPhone: App Store incelemesinde &nbsp;·&nbsp;
   ▶️ Google Play: kapalı testte &nbsp;·&nbsp;
-  <a href="docs/KURULUM.md"><b>📘 Kurulum Rehberi</b></a>
+  <a href="docs/KURULUM.md"><b>📘 Kurulum Rehberi</b></a> &nbsp;·&nbsp;
+  <a href="#fotoğraflı-kurulum-ps5--android-tv"><b>📷 Fotoğraflı Kurulum (PS5 + Android TV)</b></a>
 </p>
 
 <p align="center">
-  <img src="docs/nino/mac-salon.png" width="440" alt="Nino Mac: Salon ana ekranı, TV'de Türkçe altyazı">&nbsp;
-  <img src="docs/nino/mac-cam-dugme.png" width="440" alt="Nino Mac: Cam düğme ana ekranı">
+  <img src="docs/nino/video/rdr2-turkce-altyazi.gif" width="880" alt="Red Dead Redemption 2: TV'de oyunun üstünde akan Türkçe altyazı"><br>
+  <sub>Gerçek bir TV'den, Red Dead Redemption 2: İngilizce altyazı anında Türkçe olarak oyunun üstünde. <a href="docs/nino/video/rdr2-turkce-altyazi.mp4"><b>▶️ Sesli tam video (30 sn)</b></a></sub>
+</p>
+
+<p align="center">
+  <img src="docs/nino/ekranlar/ana-ps5.jpg" width="440" alt="Nino Mac ana ekranı: PS5">&nbsp;
+  <img src="docs/nino/ekranlar/ana-xbox.jpg" width="440" alt="Nino Mac ana ekranı: Xbox"><br>
+  <sub>PS5 ya da Xbox: fişi prize takın, çeviri başlasın. Ana ekran seçtiğiniz konsola göre değişir.</sub>
 </p>
 
 ---
@@ -40,7 +47,42 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 - **Xbox'ta oynuyorsanız:** Android telefon Xbox'ın ev yayınını Microsoft hesabınızla okur; Mac ve Windows Xbox penceresini okur. Ayrıntılar aşağıda, [Xbox](#xbox) bölümünde.
 - **Bilgisayarınız yoksa ya da monitörde oynuyorsanız:** **Android telefon** (yakında iPhone) aynı işi yapar; altyazıyı TV'ye gönderir ya da kendi ekranında gösterir.
 
-## 0.1.8'de yenilikler
+## Yenilikler
+
+> Aşağıdaki yenilikler Mac için bir sonraki sürümle gelir; Windows'ta şimdilik Ayarlar › Bağlantı'daki konsol seçimi ve Ayarlar › Sıfırla var.
+
+<p align="center"><img src="docs/nino/ekranlar/konsol-secimi.jpg" width="640" alt="Hangi konsolda oynuyorsunuz? PS5 ve Xbox seçimi"></p>
+
+- **🎮 İlk ekranda konsol seçimi (Mac):** "Hangi konsolda oynuyorsunuz?" **PS5** seçilirse ikinci hesap ve eşleştirme adımları, **Xbox** seçilirse "Xbox'ınızı Bu Mac'e Getirin" sayfası gelir (xbox.com/play ya da Greenlight). Konsol sonradan **Ayarlar › Bağlantı**'dan değiştirilir.
+- **🟩 Xbox'a özel ana ekran:** Xbox seçilince salon sahnesinde Xbox durur; fiş ve priz aynı çalışır.
+- **✨ Yeniden tasarlanan kurulum:** Her sayfa pencereye kaydırmadan sığar. Sade, kurumsal anlatım; PSN girişi tek büyük düğme; PS5 eşleştirme üç adım kartı ve 8 kutulu kod alanı; TV seçiminde görseller; "Deneyelim" ortalı.
+- **📷 Fotoğraflı kurulum:** PS5 + Android TV kurulumu gerçek fotoğraflarla [aşağıda](#fotoğraflı-kurulum-ps5--android-tv).
+- **🧹 Daha temiz çeviri:** Oyunların açılıştaki yasal uyarıları ve ekranın iki yanından taşan kesik yazılar artık altyazı sanılıp çevrilmez.
+- **🇸🇦 Mac'te tam Arapça:** Arapça bayrağı seçilince arayüz de Arapçaya döner ve sağdan sola dizilir.
+- **🔄 Sıfırla:** Ayarların en altında ayrı bir bölüm: "TV'den itibaren yeniden kur" ya da "Her şeyi sıfırla" (kurulum konsol seçiminden başlar).
+- **Düzeltmeler:** PS5 menü adları Türkçe arayüzle aynı ("Uzaktan Oynama", "Uzaktan Oynama Bağlantı Durumunu Gizle"); "Monitörde Remote Play ile oynuyorum"; TV'siz kullanım için "TV'm Yok, Bu Mac'in Ekranında Göster".
+
+<details>
+<summary><b>Yeni kurulum ekranları (Mac)</b></summary>
+
+| | |
+|---|---|
+| <img src="docs/nino/ekranlar/ps5-karsilama.jpg" width="420" alt="PS5 karşılama"> | <img src="docs/nino/ekranlar/xbox-kurulum.jpg" width="420" alt="Xbox'ınızı Bu Mac'e Getirin"> |
+| PS5 karşılaması | Xbox: Xbox'ınızı Bu Mac'e Getirin |
+| <img src="docs/nino/ekranlar/ikinci-hesap.jpg" width="420" alt="Altyazı için 2. PSN hesabı"> | <img src="docs/nino/ekranlar/psn-giris.jpg" width="420" alt="İkinci hesabınızla giriş yapın"> |
+| Altyazı için 2. PSN hesabı | İkinci hesabınızla giriş |
+| <img src="docs/nino/ekranlar/ps5-baglama.jpg" width="420" alt="PS5'inizi bağlayın"> | <img src="docs/nino/ekranlar/tv-secimi.jpg" width="420" alt="TV'nizi bağlayın"> |
+| PS5'inizi bağlayın (8 haneli kod) | TV'nizi bağlayın |
+| <img src="docs/nino/ekranlar/deneyelim.jpg" width="420" alt="Deneyelim"> | <img src="docs/nino/ekranlar/daha-iyi-ceviri.jpg" width="420" alt="Daha doğal çeviri"> |
+| Deneyelim | Daha doğal çeviri (ücretsiz) |
+| <img src="docs/nino/ekranlar/ayarlar-baglanti.jpg" width="420" alt="Ayarlar › Bağlantı: PS5 ya da Xbox"> | <img src="docs/nino/ekranlar/ayarlar-sifirla.jpg" width="420" alt="Ayarlar › Sıfırla"> |
+| Ayarlar › Bağlantı: konsol seçimi | Ayarlar › Sıfırla |
+
+</details>
+
+<details>
+<summary><b>0.1.8'de yenilikler</b></summary>
+
 
 - **🎮 Xbox desteği (deneysel):**
   - **Android telefon:** İlk açılışta "Hangi Konsolda Oynuyorsunuz?" diye sorar. Xbox'ı seçin, Microsoft hesabınızla giriş yapın (şifre yazmadan, microsoft.com/link'te kodla), Xbox'ınızı seçin ve kaydırın. İkinci hesap gerekmez.
@@ -48,6 +90,8 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
   - **Capture Card** yolu Xbox'ta da çalışır.
 - Mac'in ilk ekranındaki kısa yollar (Remote Play penceresi, Xbox, Capture Card) artık hep görünüyor.
 - Android'de gizlilik, yardım ve kaynak bağlantıları Nino'nun kendi sayfalarına yönlendirildi. [Gizlilik politikası](PRIVACY.md) Nino için yeniden yazıldı.
+
+</details>
 
 <details>
 <summary><b>0.1.7'de yenilikler</b></summary>
@@ -93,7 +137,7 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 
 ## Kurulum
 
-Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)**
+Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)** · PS5 ve Android TV için fotoğraflı anlatım: **[aşağıda](#fotoğraflı-kurulum-ps5--android-tv)**
 
 **Mac:** [`Nino-Mac.zip`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)'i indirin, Nino'yu **Uygulamalar**'a sürükleyin ve açın ("doğrulanamadı" derse **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**). Nino adım adım yol gösterir: ikinci PSN hesabıyla giriş, PS5'i 8 haneli kodla eşleme, TV seçimi. TV'de USB hata ayıklama açıksa TV uygulamasını da Mac kurar.
 
@@ -103,7 +147,91 @@ Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)**
 
 **Android telefon (bilgisayar yerine):** [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)'yı telefonda indirip kurun, ikinci PSN hesabıyla **Sony İle Giriş Yapın**, PS5'teki 8 haneli kodu yazın ve oyunu açınca **kaydırın**.
 
-**Xbox:** Telefonda ilk ekranda **Xbox**'ı seçip Microsoft hesabınızla giriş yapın; Mac ya da Windows'ta **"Xbox'ta oynuyorum"**a tıklayın. Adımlar: [Kurulum Rehberi › Xbox](docs/KURULUM.md#6-xbox-ile-kullanım-yeni-deneysel).
+**Xbox:** Telefonda ve Mac'te ilk ekranda **Xbox**'ı seçin (telefonda Microsoft hesabınızla giriş yapılır); Windows'ta **"Xbox'ta oynuyorum"**a tıklayın. Adımlar: [Kurulum Rehberi › Xbox](docs/KURULUM.md#6-xbox-ile-kullanım-yeni-deneysel).
+
+## Fotoğraflı kurulum: PS5 + Android TV
+
+PS5'i **Android TV ya da Google TV**'ye bağlı olanlar için, gerçek bir kurulumdan fotoğraflarla (TCL, iFFALCON, Sony, Philips, Vestel, Arçelik, Beko, Grundig ve diğerleri). Kurulum bir kez yapılır ve yaklaşık **10 dakika** sürer. PS5, TV ve bilgisayar **aynı Wi-Fi ağında** olmalıdır. Ayrı sayfa olarak: [📷 Android TV Rehberi](docs/KURULUM-ANDROID-TV.md).
+
+### Adım 1 — İkinci PSN hesabını PS5'e ekleyin
+
+1. [playstation.com](https://www.playstation.com)'da **yeni bir e-posta adresiyle** ücretsiz bir PSN hesabı oluşturun.
+2. PS5'te kullanıcı seçme ekranında **Kullanıcı Ekle**'yi seçin ve yeni hesapla bir kez giriş yapın.
+
+Aşağıdaki örnekte ikinci hesabın adı **"Ceviri Altyazi"**dir. Siz istediğiniz adı verebilirsiniz.
+
+![PS5 kullanıcı seçme ekranı: Kullanıcı Ekle ve ikinci hesap](docs/nino/rehber/android-tv/2-ikinci-hesap.jpg)
+
+> PS5 açıkken başka bir hesaba geçmek için: **PS düğmesi › profil resminiz › Kullanıcı Değiştir**.
+>
+> ![Kullanıcı Değiştir penceresi](docs/nino/rehber/android-tv/1-kullanici-degistir.jpg)
+
+
+### Adım 2 — İkinci hesapta Uzaktan Oynama'yı açın
+
+İkinci hesaptayken **Ayarlar › Sistem › Uzaktan Oynama**'ya gidin:
+
+| Seçenek | Ne yapılacak |
+|---|---|
+| **Uzaktan Oynama'yı Etkinleştir** | Açın. |
+| **Uzaktan Oynama Bağlantı Durumunu Gizle** (en alttaki) | **Açın.** Böylece oyun sırasında "Uzaktan Oynama bağlandı" bildirimi çıkmaz. |
+| **Cihazı Eşleştir** | Adım 3'te bilgisayardaki Nino isteyince seçeceksiniz. |
+
+![PS5 Ayarlar › Sistem › Uzaktan Oynama](docs/nino/rehber/android-tv/3-uzaktan-oynama.jpg)
+
+
+### Adım 3 — Bilgisayarda Nino'yu kurun
+
+1. Nino'yu indirip açın: [Mac](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)
+   · [Windows](docs/KURULUM.md#2-mac-ve-windows-ile-kurulum-tv-için-önerilen).
+2. İlk ekranda **PS5**'i seçin ve **Devam**'a basın.
+3. **İkinci hesabınızla giriş yapın.** Şifrenizi yalnızca Sony'nin kendi sayfasına yazarsınız; Nino şifrenizi görmez.
+4. **PS5'inizi bağlayın.** PS5'te ikinci hesaptayken **Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir**'i seçin.
+   TV'de görünen **8 haneli kodu** Nino'ya yazın ve **Bağlan**'a basın. Kod yaklaşık 5 dakika geçerlidir.
+5. **TV'nizi bağlayın.** **Android TV / Google TV**'yi seçin. Nino, TV uygulamasını TV'ye kendisi kurar ve açar;
+   TV bir kez izin isterse kumandayla onaylayın.
+
+
+### Adım 4 — TV'de Nino uygulaması
+
+Kurulumdan sonra Nino, TV'nin uygulamalar satırında görünür. Açtığınızda bilgisayardaki Nino'yu bekler ve PS5'in hangi
+HDMI girişinde olduğunu söyler.
+
+![TV'deki Nino uygulaması: Bilgisayardaki Nino bekleniyor](docs/nino/rehber/android-tv/6-nino-tv.jpg)
+
+
+### Adım 5 — Oynayın
+
+1. PS5'te **kendi hesabınıza** dönün ve oyununuzu açın.
+
+   ![Kendi hesabınızla PS5 ana ekranı](docs/nino/rehber/android-tv/4-kendi-hesabin.jpg)
+
+2. Bilgisayardaki Nino'da **fişi prize takın** (ya da çeviri düğmesine basın). Nino ikinci hesapla bağlanır; TV'deki
+   Nino uygulaması kendiliğinden açılır.
+
+   ![Uzaktan Oynama bağlandı; TV'nin uygulamalar satırında Nino](docs/nino/rehber/android-tv/5-uzaktan-oynama-baglandi.jpg)
+
+3. TV kumandasının kaynak tuşuyla PS5'in HDMI girişine geçin. Türkçe altyazı, oyunun üstünde görünür.
+
+   ![Oyunun üstünde Türkçe altyazı](docs/nino/rehber/android-tv/7-oyunda-turkce-altyazi.jpg)
+
+   Konuşanın adı da çevrilir ve altyazı oyunun kendi yerinde durur (Mafia: The Old Country):
+
+   ![Mafia: The Old Country'de konuşan adıyla Türkçe altyazı](docs/nino/rehber/android-tv/8-mafia-turkce-altyazi.jpg)
+
+Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
+
+
+### Sorun giderme
+
+| Sorun | Çözüm |
+|---|---|
+| TV'de **"Bilgisayardaki Nino bekleniyor"** yazısı gitmiyor | Bilgisayardaki Nino'nun açık olduğundan ve fişin takılı olduğundan emin olun. Olmazsa bilgisayardaki Nino'yu kapatıp yeniden açın. TV ve bilgisayar aynı Wi-Fi'da olmalı. |
+| Bilgisayarda **"TV uygulaması bekleniyor"** yazıyor | TV'de Nino uygulamasını açın. Bilgisayarda Nino'nun yalnızca **bir** kopyasının açık olduğundan emin olun. |
+| Oyun açılırken yasal uyarılar ya da menü yazıları çevriliyor | Nino yalnız oyunun altyazı alanını okur; açılış ekranları geçince düzelir. Ayarlar › Altyazı alanı'ndan alanı daraltabilirsiniz. |
+| Ekranda **"Uzaktan Oynama bağlandı"** bildirimi çıkıyor | İkinci hesapla Ayarlar › Sistem › Uzaktan Oynama'da **Uzaktan Oynama Bağlantı Durumunu Gizle**'yi açın. |
+| PS5 bulunamıyor | PS5 açık ya da dinlenme modunda olmalı ve aynı Wi-Fi'da olmalı. Mac'te **Sistem Ayarları › Gizlilik ve Güvenlik › Yerel Ağ**'da Nino'ya izin verin. Gerekirse PS5'in IP adresini elle girin. |
+| Her şeyi baştan kurmak istiyorum | Nino'da **Ayarlar › Sıfırla**. |
 
 ## Telefon uygulaması
 
@@ -163,7 +291,7 @@ Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)**
 
 **Neden ikinci bir PSN hesabı gerekiyor?** Remote Play, PS5'e bağlanmak için bir hesap ister. Kendi hesabınızla oyun oynarken aynı anda o hesapla Remote Play açılamaz; ikinci (ücretsiz) hesap bunu çözer.
 
-**Ekranda sürekli "Uzaktan Oynama" bildirimi çıkıyor.** PS5'te **Ayarlar › Sistem › Uzaktan Oynama**'ya gidip en alttaki seçeneği kapatın.
+**Ekranda sürekli "Uzaktan Oynama" bildirimi çıkıyor.** PS5'te ikinci hesapla **Ayarlar › Sistem › Uzaktan Oynama**'ya gidip en alttaki **Uzaktan Oynama Bağlantı Durumunu Gizle**'yi açın.
 
 **Altyazı İngilizcenin tam üstüne gelmiyor.** Nino ilk birkaç altyazıda oyunun altyazı yerini öğrenir. Sorun sürerse Ayarlar › Altyazı'dan yerleşimi değiştirin.
 

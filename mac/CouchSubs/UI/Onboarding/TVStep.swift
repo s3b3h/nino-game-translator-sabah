@@ -24,18 +24,30 @@ struct TVStep: View {
                 if model.tv == nil && !lookingForLGSamsung && !working {
                     // Önce TV'nin türünü sor.
                     Text("Which TV do you have?").font(.csHeadline).frame(maxWidth: .infinity, alignment: .leading)
-                    OptionCard(symbol: "tv.fill", title: "Android TV / Google TV",
+                    OptionCard(symbol: "tv.fill", image: "TVOptionAndroid", title: "Android TV / Google TV",
                                detail: "TCL, iFFALCON, Sony, Philips, Vestel, Arçelik, Beko, Grundig and other Android TVs.") {
                         Task { await pair(LGTV(name: "Android TV", host: "", brand: .androidTV)) }
                     }
-                    OptionCard(symbol: "sparkles.tv.fill", title: "LG or Samsung",
+                    // Nino: PS5 ve Android TV kurulumunun fotoğraflı rehberi (GitHub'da).
+                    if model.settings.gameConsole != .xbox {
+                        Link(destination: URL(string: "https://github.com/yunusdemirbag/nino-game-translator/blob/main/docs/KURULUM-ANDROID-TV.md")!) {
+                            Label("Photo guide for Android TV", systemImage: "photo.on.rectangle")
+                                .font(.csCallout.weight(.semibold))
+                                .foregroundStyle(Color.csAccentText)
+                        }
+                        .padding(.leading, Theme.space("xs"))
+                    }
+                    OptionCard(symbol: "sparkles.tv.fill", image: "TVOptionLGSamsung", title: "LG or Samsung",
                                detail: "LG webOS and Samsung Tizen TVs. Nino finds them on the network.") {
                         lookingForLGSamsung = true
                         Task { await search() }
                     }
                     // TV'si olmayanlar (PS5 monitörde ya da PS Remote Play bilgisayarda): TV kurulumu atlanır.
-                    OptionCard(symbol: "desktopcomputer", title: "No TV? Show on the computer screen",
-                               detail: "Subtitles appear in a window over the game or PS Remote Play. You can connect a TV later.") {
+                    OptionCard(symbol: "desktopcomputer", image: "TVOptionMac", title: "No TV? Show it on this Mac's screen",
+                               // Nino: PS5'te oyun bu Mac'te Remote Play ile, Xbox'ta Greenlight ya da xbox.com/play ile oynanır.
+                               detail: model.settings.gameConsole == .xbox
+                                   ? "You play on this Mac in the Xbox window; subtitles appear on that screen. You can connect a TV later."
+                                   : "You play on this Mac with Remote Play; subtitles appear on your Remote Play screen. You can connect a TV later.") {
                         model.useComputerScreen()
                     }
                 }

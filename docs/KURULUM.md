@@ -24,6 +24,8 @@ Hepsinde konsol (PS5 ya da Xbox), telefon/bilgisayar ve TV **aynı Wi-Fi ağınd
 
 ## 2. Mac ve Windows ile kurulum (TV için önerilen)
 
+> 📷 PS5 ve Android TV için adım adım fotoğraflı anlatım: **[Android TV Rehberi](KURULUM-ANDROID-TV.md)**
+
 1. **[Nino-Mac.zip](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)**
    dosyasını indirin, açın ve **Nino**'yu **Uygulamalar** klasörüne sürükleyin.
 2. Nino'yu açın. Mac "doğrulanamadı" derse: **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**.
@@ -52,7 +54,7 @@ dosyasını çalıştırın ("bilgisayarınızı korudu" uyarısında **Ek bilgi
    ücretsiz bir PlayStation hesabıyla giriş yapın. Giriş Sony'nin kendi sayfasında yapılır; şifreniz Nino'ya gelmez.
    *(Neden ikinci hesap? PS5, oyun oynadığınız hesapla aynı anda Remote Play bağlantısı açmaya izin vermez.)*
 4. **Adım 2 – PS5'inizi Eşleyin:** Nino PS5'inizi ağda kendiliğinden bulur.
-   - PS5'te **ikinci hesapla** giriş yapın → **Ayarlar › Sistem › Uzaktan Oynatma › Cihazı Eşle**.
+   - PS5'te **ikinci hesapla** giriş yapın → **Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir**.
    - Ekranda çıkan **8 haneli kodu** telefona yazın ve **Eşle**'ye basın.
    - PS5 görünmüyorsa: PS5'in açık ya da dinlenme modunda olduğundan emin olun; liste birkaç saniyede bir yenilenir.
 5. **Adım 3 – Altyazılar Nerede Görünsün?**
@@ -135,7 +137,7 @@ Ayarlar › Görüntü Kaynağı › Capture Card). Xbox oyunlarda genellikle HD
 | PS5 bulunamıyor | PS5 açık ya da dinlenme modunda olmalı; telefon ve PS5 aynı Wi-Fi'de olmalı. "Yeniden Ara"ya dokunun. |
 | Sony giriş sayfası açılmıyor | "Tarayıcıda giriş yap" seçeneğini kullanın. |
 | Altyazı görünmüyor | Oyunun kendi altyazısının **açık** olduğundan emin olun (Nino İngilizce altyazıyı okur). |
-| "Uzaktan Oynatma" bildirimi sürekli çıkıyor | PS5'te **Ayarlar › Sistem › Uzaktan Oynatma**'da en alttaki bildirim seçeneğini kapatın. |
+| "Uzaktan Oynama" bildirimi sürekli çıkıyor | PS5'te ikinci hesapla **Ayarlar › Sistem › Uzaktan Oynama**'da en alttaki **Uzaktan Oynama Bağlantı Durumunu Gizle**'yi açın. |
 | Telefon ısınıyor | Telefonu şarjda ve serin bir yerde tutun; ekran parlaklığı tam ekranda kendiliğinden azalır. |
 | Xbox listede görünmüyor | Xbox'ta Uzak özellikler açık mı, aynı Microsoft hesabıyla mı giriş yaptınız? Güç modunu "Uyku" yapın. |
 | Sadece görmek istiyorum | Ana ekranda **"PS5'siz Deneyin"**e dokunun; örnek altyazılarla uygulamayı gezebilirsiniz. |

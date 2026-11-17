@@ -62,7 +62,7 @@
     <string name="psn_problem_crashed">Uygulama içi tarayıcı (Android System WebView) çalışmadı. Play Store\'dan güncellemeyi deneyebilirsiniz.</string>
     <string name="psn_problem_other">Sayfa yüklenirken bir sorun oluştu.</string>
     <string name="pair_title">PS5\'inizi Eşleyin</string>
-    <string name="pair_body">PS5\'te ikinci hesapla Ayarlar › Sistem › Uzaktan Oynatma › Cihazı Eşle\'yi seçin ve ekranda görünen kodu girin.</string>
+    <string name="pair_body">PS5\'te ikinci hesapla Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir\'i seçin ve ekranda görünen kodu girin.</string>
     <string name="pair_searching">PS5 aranıyor…</string>
     <string name="pair_still_searching">PS5\'inizi açın ya da dinlenme modunda bırakın; bulununca burada kendiliğinden görünür. Telefon ve PS5 aynı Wi-Fi\'da olmalı.</string>
     <string name="pair_search_again">Yeniden Ara</string>

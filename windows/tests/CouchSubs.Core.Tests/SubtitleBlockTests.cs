@@ -21,6 +21,18 @@ public class SubtitleBlockTests
         Assert.Empty(reading.SubtitleBlock(Area).Lines);
     }
 
+    /// <summary>Nino: RDR2'nin açılıştaki yasal uyarısı alanın iki yanından taşar; çevrilmez. Tek yana taşan satır kalır.</summary>
+    [Fact]
+    public void LineClippedOnBothSidesIsNotSubtitle()
+    {
+        var clipped = new Reading([Line("rema pay or play, or copy protector crediverton is promoted a volutes coun", 0.0, 0.8, 1.0)]);
+        Assert.Empty(clipped.WithoutClippedLines().SubtitleBlock(Area).Lines);
+        var wide = new Reading([Line("Arthur, we need to get to the boat before the storm reaches the valley!", 0.06, 0.8, 0.94)]);
+        Assert.Single(wide.WithoutClippedLines().Lines);
+        var oneSide = new Reading([Line("before the storm reaches the valley", 0.0, 0.8, 0.7)]);
+        Assert.Single(oneSide.WithoutClippedLines().Lines);
+    }
+
     [Fact]
     public void CenteredSubtitleIsKeptWithoutCornerGauge()
     {

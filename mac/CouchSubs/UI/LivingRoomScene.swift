@@ -22,15 +22,37 @@ struct LivingRoomScene: View {
     @State private var splashID = UUID()
 
     static let canvas = CGSize(width: 1672, height: 941)
-    private static let screen = CGRect(x: 149, y: 40, width: 1151, height: 595)
-    private static let tvFrame = CGRect(x: 139, y: 27, width: 1171, height: 621)
-    private static let standFrame = CGRect(x: 49, y: 713, width: 1502, height: 160)
-    private static let logicalScreen = CGSize(width: 588, height: 588 * 595 / 1151)
-    private static let socket = CGPoint(x: 1564, y: 378)
-    /// Görselde kalan kablonun sehpanın sağ ucundaki ucu; çizilen kablo buradan devam eder.
-    private static let cableStart = CGPoint(x: 1550, y: 734)
-    /// Fiş çıkıkken sehpanın yanından sarkar (görseldeki yeri).
-    private static let hanging = CGPoint(x: 1600, y: 885)
+    /// Nino: sahne konsola göre değişir: PS5'li salon (`Assets/LivingRoom`) ya da kullanıcının Xbox'lı salonu
+    /// (`Assets/LivingRoomXbox`, aynı TV, sehpa ve priz). Koordinatlar görsellerin piksel ölçüsündedir.
+    struct Layout {
+        let image: String
+        let screen: CGRect
+        let tvFrame: CGRect
+        let standFrame: CGRect
+        let socket: CGPoint
+        /// Kablonun çizilmeye başladığı yer (PS5'te görseldeki kablonun ucu, Xbox'ta konsolun sağ arkası).
+        let cableStart: CGPoint
+        /// Fiş çıkıkken sehpanın yanından sarkar.
+        let hanging: CGPoint
+        var logicalScreen: CGSize { CGSize(width: 588, height: 588 * screen.height / screen.width) }
+
+        static let ps5 = Layout(image: "LivingRoom",
+                                screen: CGRect(x: 149, y: 40, width: 1151, height: 595),
+                                tvFrame: CGRect(x: 139, y: 27, width: 1171, height: 621),
+                                standFrame: CGRect(x: 49, y: 713, width: 1502, height: 160),
+                                socket: CGPoint(x: 1564, y: 378),
+                                cableStart: CGPoint(x: 1550, y: 734),
+                                hanging: CGPoint(x: 1600, y: 885))
+        static let xbox = Layout(image: "LivingRoomXbox",
+                                 screen: CGRect(x: 136, y: 40, width: 1185, height: 596),
+                                 tvFrame: CGRect(x: 121, y: 26, width: 1214, height: 630),
+                                 standFrame: CGRect(x: 43, y: 733, width: 1580, height: 167),
+                                 socket: CGPoint(x: 1561, y: 381),
+                                 cableStart: CGPoint(x: 1566, y: 738),
+                                 hanging: CGPoint(x: 1646, y: 912))
+    }
+
+    private var layout: Layout { model.settings.gameConsole == .xbox ? .xbox : .ps5 }
 
     /// Fiş prizde mi: çeviri açık ya da açılıyor. Başlatma başarısız olursa fiş kendiliğinden geri düşer.
     private var plugged: Bool { model.isRunning || model.isStarting || DebugPreview.state != nil }
@@ -39,25 +61,25 @@ struct LivingRoomScene: View {
         let scale = min(1, available.width / Self.canvas.width, available.height / Self.canvas.height)
         ZStack(alignment: .topLeading) {
             leds
-            Image("LivingRoom")
+            Image(layout.image)
                 .resizable()
                 .frame(width: Self.canvas.width, height: Self.canvas.height)
             // Görseldeki ekranın hiçbir anda (geçişlerde bile) görünmemesi için altta siyah zemin.
             Color.black
-                .frame(width: Self.screen.width, height: Self.screen.height)
-                .offset(x: Self.screen.minX, y: Self.screen.minY)
+                .frame(width: layout.screen.width, height: layout.screen.height)
+                .offset(x: layout.screen.minX, y: layout.screen.minY)
             // Ekran içeriği 588 noktalık bir TV'ye göre çizilir ve görseldeki ekrana büyütülür (yazılar orantılı kalır).
-            screenContent(size: Self.logicalScreen)
-                .frame(width: Self.logicalScreen.width, height: Self.logicalScreen.height)
-                .scaleEffect(Self.screen.width / Self.logicalScreen.width, anchor: .topLeading)
-                .frame(width: Self.screen.width, height: Self.screen.height, alignment: .topLeading)
+            screenContent(size: layout.logicalScreen)
+                .frame(width: layout.logicalScreen.width, height: layout.logicalScreen.height)
+                .scaleEffect(layout.screen.width / layout.logicalScreen.width, anchor: .topLeading)
+                .frame(width: layout.screen.width, height: layout.screen.height, alignment: .topLeading)
                 .clipped()
-                .offset(x: Self.screen.minX, y: Self.screen.minY)
+                .offset(x: layout.screen.minX, y: layout.screen.minY)
             // Prize tıklamak da fişi takar/çıkarır.
             Color.clear
                 .frame(width: 120, height: 120)
                 .contentShape(Rectangle())
-                .position(Self.socket)
+                .position(layout.socket)
                 .onTapGesture { toggle() }
             cable
             plug
@@ -66,7 +88,7 @@ struct LivingRoomScene: View {
         .scaleEffect(scale, anchor: .topLeading)
         .frame(width: Self.canvas.width * scale, height: Self.canvas.height * scale, alignment: .topLeading)
         // TV ünitesi (sehpa) pencerenin tam ortasında dursun: görselde sağda priz ve konsol olduğu için sehpa biraz soldadır.
-        .offset(x: (Self.canvas.width / 2 - Self.standFrame.midX) * scale)
+        .offset(x: (Self.canvas.width / 2 - layout.standFrame.midX) * scale)
         .animation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.78), value: plugged)
         .onChange(of: plugged) { now in
             // Her takışta açılış animasyonu baştan oynar.
@@ -160,7 +182,7 @@ struct LivingRoomScene: View {
     /// görselin kenarlarından taşar. Fiş takılınca yanar, çekilince söner.
     private var leds: some View {
         let blue = Color(red: 0.12, green: 0.36, blue: 1.0)
-        let tv = Self.tvFrame, stand = Self.standFrame
+        let tv = layout.tvFrame, stand = layout.standFrame
         return ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 30)
                 .fill(blue)
@@ -189,7 +211,7 @@ struct LivingRoomScene: View {
     }
 
     private var plugPoint: CGPoint {
-        let base = plugged ? Self.socket : Self.hanging
+        let base = plugged ? layout.socket : layout.hanging
         return CGPoint(x: base.x + drag.width, y: base.y + drag.height)
     }
 
@@ -198,7 +220,7 @@ struct LivingRoomScene: View {
         let p = plugPoint
         let end = plugged && drag == .zero ? CGPoint(x: p.x, y: p.y + 30) : CGPoint(x: p.x, y: p.y - 30)
         return Path { path in
-            path.move(to: Self.cableStart)
+            path.move(to: layout.cableStart)
             if plugged && drag == .zero {
                 path.addCurve(to: end, control1: CGPoint(x: 1620, y: 720), control2: CGPoint(x: end.x + 10, y: end.y + 170))
             } else {
@@ -246,9 +268,9 @@ struct LivingRoomScene: View {
         .gesture(DragGesture(minimumDistance: 4)
             .onChanged { drag = $0.translation }
             .onEnded { value in
-                let base = plugged ? Self.socket : Self.hanging
+                let base = plugged ? layout.socket : layout.hanging
                 let end = CGPoint(x: base.x + value.translation.width, y: base.y + value.translation.height)
-                let nearSocket = hypot(end.x - Self.socket.x, end.y - Self.socket.y) < 140
+                let nearSocket = hypot(end.x - layout.socket.x, end.y - layout.socket.y) < 140
                 withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { drag = .zero }
                 if nearSocket != plugged { toggle() }
             })
@@ -274,7 +296,10 @@ struct LivingRoomHint: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        Text(model.isRunning || DebugPreview.state != nil ? "Unplug to stop" : (model.canStart ? "Plug in to turn on Turkish subtitles" : "Connect your PS5 first"))
+        // Nino: Xbox'ta PS5 bağlanmaz; eksik olan TV ya da bu Mac'te açılacak Xbox penceresidir.
+        Text(model.isRunning || DebugPreview.state != nil ? "Unplug to stop"
+             : model.canStart ? "Plug in to turn on Turkish subtitles"
+             : model.settings.gameConsole == .xbox ? "Connect your TV first, then plug in" : "Connect your PS5 first")
             .font(.csCallout)
             .foregroundStyle(Color.csSecondary)
     }

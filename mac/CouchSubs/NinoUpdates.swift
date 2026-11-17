@@ -40,6 +40,8 @@ final class NinoUpdates: ObservableObject {
 
     /// Kendiliğinden en çok altı saatte bir bakılır; `force` ile (Ayarlar'daki düğme) hemen. Ağ yoksa ana ekran sessiz kalır.
     func check(force: Bool = false) async {
+        // Testlerde (README ekran görüntüleri dahil) ağa çıkılmaz; "yeni sürüm hazır" şeridi görüntülere girmez.
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
         guard force || Date().timeIntervalSince(checked) > 6 * 3600 else { return }
         checked = Date()
         state = .checking

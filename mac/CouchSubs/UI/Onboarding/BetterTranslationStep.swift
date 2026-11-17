@@ -15,7 +15,7 @@ struct BetterTranslationStep: View {
 
     var body: some View {
         StepLayout(title: "Better translation (free)", message: FreeGemini.pitch) {
-            VStack(alignment: .leading, spacing: Theme.space("l")) {
+            VStack(alignment: .leading, spacing: Theme.space("m")) {
                 if model.usesFreeGemini {
                     // Nino: sade başarı kartı; örnek çeviri küçük TV önizlemesinde.
                     HStack(alignment: .center, spacing: Theme.space("gap")) {
@@ -33,19 +33,22 @@ struct BetterTranslationStep: View {
                     }
                     .tile(padding: Theme.space("l"))
                 } else {
-                    Card {
-                        NumberedRow(number: 1, text: "Press Get a free key and sign in with your Google account.")
-                        NumberedRow(number: 2, text: "Press Create API key and copy the key.")
-                        NumberedRow(number: 3, text: "Paste the key here and press Save and test.")
-                        Button("Get a free key") { openURL(AIProvider.gemini.keyPage) }
-                            .buttonStyle(.primary)
+                    // Nino: pencereye sığsın diye üç adım tek kartta sıkı satırlar; anahtar alanı ve düğmeler tek sırada.
+                    VStack(alignment: .leading, spacing: Theme.space("m")) {
+                        CompactStep(number: 1, text: "Press Get a free key and sign in with your Google account.")
+                        CompactStep(number: 2, text: "Press Create API key and copy the key.")
+                        CompactStep(number: 3, text: "Paste the key here and press Save and test.")
+                        HStack(spacing: Theme.space("m")) {
+                            Button("Get a free key") { openURL(AIProvider.gemini.keyPage) }
+                                .buttonStyle(.primary)
+                            SecureField("API key", text: $key).textFieldStyle(CSTextFieldStyle())
+                            Button(checking ? LocalizedStringKey("Testing…") : LocalizedStringKey("Save and test")) { save() }
+                                .buttonStyle(.secondary)
+                                .disabled(checking || key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                        .padding(.top, Theme.space("xs"))
                     }
-                    HStack(spacing: Theme.space("m")) {
-                        SecureField("API key", text: $key).textFieldStyle(CSTextFieldStyle())
-                        Button(checking ? LocalizedStringKey("Testing…") : LocalizedStringKey("Save and test")) { save() }
-                            .buttonStyle(.secondary)
-                            .disabled(checking || key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
+                    .tile(padding: Theme.space("l"))
                 }
                 if case .failure(let failure)? = result {
                     ErrorText(error: TranslationCard.describe(OnlineKeyState(failure), engine: .gemini))
@@ -70,6 +73,25 @@ struct BetterTranslationStep: View {
             result = await model.setAIKey(typed, for: .gemini)
             if model.hasKey(.gemini) { key = "" }
             checking = false
+        }
+    }
+}
+
+/// Nino: kart içindeki sıkı adım satırı: küçük mavi numara ve tek paragraf.
+private struct CompactStep: View {
+    let number: Int
+    let text: LocalizedStringKey
+
+    var body: some View {
+        HStack(alignment: .center, spacing: Theme.space("m")) {
+            Text(verbatim: "\(number)")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(Circle().fill(LinearGradient(colors: [Color.csAccentHi, Color(red: 0.0, green: 0.19, blue: 0.52)],
+                                                         startPoint: .topLeading, endPoint: .bottomTrailing)))
+            Text(text).font(.csBody).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
     }
 }

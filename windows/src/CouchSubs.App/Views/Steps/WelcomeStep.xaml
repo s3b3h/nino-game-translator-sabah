@@ -6,7 +6,7 @@
              xmlns:t="clr-namespace:CouchSubs.App.Theme">
     <Grid>
     <c:StepLayout Title="{t:T 'Welcome to Nino'}"
-                  Message="{t:T 'CouchSubs reads the English subtitles of your PS5 games and shows a Turkish translation on your TV, on top of the game. You keep playing on the TV with your own controller.'}">
+                  Message="{t:T 'Nino reads the English subtitles of your PS5 or Xbox games and shows a Turkish translation on your TV, on top of the game. You keep playing on the TV with your own controller.'}">
         <StackPanel>
         <c:Card Title="{t:T 'You will need:'}">
             <StackPanel>

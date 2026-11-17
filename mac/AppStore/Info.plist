@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>CouchSubs</string>
+	<string>Nino</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,12 +23,12 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>NSCameraUsageDescription</key>
-	<string>CouchSubs reads the game picture from your HDMI capture card to translate its subtitles.</string>
+	<string>Nino reads the game picture from your HDMI capture card to translate its subtitles.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>AGPL-3.0. Uses chiaki-ng (AGPL-3.0).</string>
+	<string>AGPL-3.0. Based on CouchSubs by Sinan Yorulmaz. Uses chiaki-ng (AGPL-3.0).</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>CouchSubs finds your PS5 and TV on the local network to send translated subtitles.</string>
+	<string>Nino finds your PS5 and TV on the local network to send translated subtitles.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>CouchSubs plays the game sound from your HDMI capture card.</string>
+	<string>Nino plays the game sound from your HDMI capture card.</string>
 </dict>
 </plist>

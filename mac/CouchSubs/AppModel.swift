@@ -419,6 +419,9 @@ final class AppModel: ObservableObject {
             if step == .done, oldValue != .done { store.save(true, for: StoreKey.setupComplete) }
         }
     }
+    /// Nino: sihirbazın ilk ekranında seçilen konsol. Seçilmeden (`nil`) "Hangi konsolda oynuyorsunuz?" görünür; seçilince o
+    /// konsolun karşılaması. Kaydedilmez: yarıda kalan kurulum yeniden açılınca yine sorulur.
+    @Published var welcomeConsole: GameConsole?
     @Published var accountId: Data?
     @Published var console: RegisteredConsole?
     @Published var tv: LGTV?
@@ -688,9 +691,23 @@ final class AppModel: ObservableObject {
 
     // MARK: - Sihirbaz
 
+    /// Tasarım denemesi: deneme derlemesinde `-NinoFreeNav YES` ile açılınca giriş ve eşleştirme beklenmez.
+    static var freeNavigation: Bool {
+        #if DEBUG
+        UserDefaults.standard.bool(forKey: "NinoFreeNav")
+        #else
+        false
+        #endif
+    }
+
     var canAdvance: Bool {
-        switch step {
-        case .welcome, .secondAccount, .test, .betterTranslation: true
+        #if DEBUG
+        // Tasarım denemesi için: open Nino.app --args -NinoFreeNav YES → giriş ve eşleştirme yapmadan her adımda Devam.
+        if Self.freeNavigation, step != .done, step != .welcome || welcomeConsole != nil { return true }
+        #endif
+        return switch step {
+        case .welcome: welcomeConsole != nil
+        case .secondAccount, .test, .betterTranslation: true
         case .psnLogin: accountId != nil
         case .console: console != nil
         case .tv: hasTV || settings.output == .computer
@@ -712,6 +729,7 @@ final class AppModel: ObservableObject {
     func useXboxWindowSetup() {
         settings.gameConsole = .xbox
         settings.videoSource = .window
+        welcomeConsole = .xbox
         // Altyazı TV'de gösterilecekse TV eşleştirilir ("TV'm yok" seçilirse bu bilgisayarda).
         step = .tv
     }
@@ -745,12 +763,23 @@ final class AppModel: ObservableObject {
     /// Oyun bu Mac'te tam ekran gösteriliyor mu (yakalama kartı, altyazı bilgisayarda, çeviri sürüyor).
     var showsCardPlayer: Bool { isRunning && usesCaptureCard && showsOnComputer }
 
+    /// Nino: ilk ekrandaki konsol kartı: o konsolun karşılamasına geçer.
+    func chooseWelcomeConsole(_ console: GameConsole) {
+        welcomeConsole = console
+        // PS5 yolu Remote Play ile eşleştirmedir; Xbox'tan geri dönüldüyse pencere yolu bırakılır.
+        if console == .ps5 { settings.gameConsole = .ps5; settings.videoSource = .ps5 }
+    }
+
     func advance() {
+        // Nino: Xbox karşılamasından sonra PS5 adımları (ikinci hesap, PSN, eşleştirme) atlanır.
+        if step == .welcome, welcomeConsole == .xbox { useXboxWindowSetup(); return }
         guard canAdvance, let next = Step(rawValue: step.rawValue + 1) else { return }
         step = next
     }
 
     func back() {
+        // Nino: konsolun karşılamasından konsol seçimine.
+        if step == .welcome, welcomeConsole != nil { welcomeConsole = nil; return }
         // Nino: Xbox kısa yolundan gelen PS5 adımlarına düşmez.
         if usesXboxWindow, step == .tv { step = .welcome; return }
         guard let previous = Step(rawValue: step.rawValue - 1) else { return }
@@ -1123,7 +1152,17 @@ final class AppModel: ObservableObject {
         tvKeySaved = false
         tvApp = .unknown
         tvAppMissing = false
+        // Nino: sıfırlanınca kurulum konsol seçiminden başlar (PS5'ten Xbox'a ya da tersine geçilebilsin).
+        welcomeConsole = nil
         step = .welcome
+    }
+
+    /// Nino: Ayarlar › Bağlantı'daki konsol seçimi. Xbox'ta PS5'e doğrudan bağlanma olmadığından görüntü Xbox
+    /// penceresinden okunur (Capture Card seçiliyse o kalır); PS5'e dönülünce pencere yolu PS5'in Remote Play penceresi olur.
+    func switchConsole(to console: GameConsole) {
+        guard settings.gameConsole != console else { return }
+        settings.gameConsole = console
+        if console == .xbox && settings.videoSource == .ps5 { settings.videoSource = .window }
     }
 
     /// Nino: "TV'den itibaren yeniden kur". PS5 hesabı (ikinci PSN hesabı) ve PS5 eşleşmesi korunur; yalnız TV bağlantısı ve

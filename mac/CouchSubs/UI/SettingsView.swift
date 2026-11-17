@@ -5,7 +5,7 @@ import SwiftUI
 
 /// Ayarların bölümleri; solda kenar çubuğunda listelenir, sağda seçili olan gösterilir.
 enum SettingsSection: CaseIterable, Identifiable {
-    case connection, interface, appearance, dubbing, translation, packs, language, area, obs, health, updates, about
+    case connection, interface, appearance, dubbing, translation, packs, language, area, obs, health, updates, about, reset
 
     var id: Self { self }
 
@@ -23,6 +23,7 @@ enum SettingsSection: CaseIterable, Identifiable {
         case .health: "System health"
         case .updates: "Updates"
         case .about: "About Nino"
+        case .reset: "Reset"
         }
     }
 
@@ -40,6 +41,7 @@ enum SettingsSection: CaseIterable, Identifiable {
         case .health: "waveform.path.ecg"
         case .updates: "arrow.down.circle"
         case .about: "info.circle"
+        case .reset: "arrow.counterclockwise"
         }
     }
 }
@@ -60,6 +62,7 @@ extension SettingsSection {
         case .health: Color(red: 0.95, green: 0.30, blue: 0.45)
         case .updates: Color(red: 0.12, green: 0.62, blue: 0.36)
         case .about: Color(red: 0.45, green: 0.50, blue: 0.60)
+        case .reset: Color(red: 0.90, green: 0.30, blue: 0.28)
         }
     }
 }
@@ -126,6 +129,8 @@ private struct SettingsList: View {
         [.interface, .appearance, .translation, .language],
         [.packs, .dubbing, .area, .obs],
         [.health, .updates, .about],
+        // Nino: sıfırlama ayrı ve en altta (Hakkında'nın içinde değil).
+        [.reset],
     ]
 
     var body: some View {
@@ -285,6 +290,8 @@ private struct SettingsPage: View {
             case .connection: SubtitleOutputCard(detailed: true)
             case .about:
                 AboutCard()
+            case .reset:
+                ResetCard()
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -563,30 +570,43 @@ private struct UpdatesCard: View {
 }
 
 private struct AboutCard: View {
+    var body: some View {
+        NinoCredits()
+    }
+}
+
+/// Nino: kurulumu yeniden yapma (ayarların en altında). Çoğu zaman yalnız TV yeniden kurulmak istenir; PS5 hesabını
+/// yeniden girmek gerekmesin. "Her şeyi sıfırla" geri alınamaz, ayrıca onay ister.
+private struct ResetCard: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var confirmReset = false
 
     var body: some View {
-        VStack(spacing: Theme.space("gap")) {
-            NinoCredits()
-            HStack {
-                Spacer()
-                Button("Set up again…") { confirmReset = true }.buttonStyle(.danger)
+        VStack(alignment: .leading, spacing: Theme.space("l")) {
+            Text("From the TV: your PS5 account and PS5 pairing stay; only the TV connection is set up again. Reset everything: the saved PS5, account and TV connection are removed and you sign in to PSN again.")
+                .font(.csBody)
+                .foregroundStyle(Color.csSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: Theme.space("m")) {
+                Button("Set up again from the TV") {
+                    model.resetFromTV()
+                    dismiss()
+                }
+                .buttonStyle(.secondary)
+                Button("Reset everything") { confirmReset = true }
+                    .buttonStyle(.danger)
             }
         }
-        // Nino: çoğu zaman yalnız TV yeniden kurulmak istenir; PS5 hesabını yeniden girmek gerekmesin.
-        .confirmationDialog("Set up again?", isPresented: $confirmReset) {
-            Button("Set up again from the TV") {
-                model.resetFromTV()
-                dismiss()
-            }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .tile(padding: Theme.space("l"))
+        .confirmationDialog("Reset everything?", isPresented: $confirmReset) {
             Button("Reset everything", role: .destructive) {
                 model.resetSetup()
                 dismiss()
             }
         } message: {
-            Text("From the TV: your PS5 account and PS5 pairing stay; only the TV connection is set up again. Reset everything: the saved PS5, account and TV connection are removed and you sign in to PSN again.")
+            Text("The saved PS5, account and TV connection are removed and setup starts from the beginning.")
         }
     }
 }

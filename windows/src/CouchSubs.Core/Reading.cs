@@ -84,6 +84,13 @@ public sealed class Reading
     /// Yazı tanımanın uydurduğu sözcük çöpleri ("ou$3e", "waters2aljd") ayıklanmış hali; çevirmen bunları olduğu
     /// gibi taşıyıp TV'de anlamsız harfler gösteriyordu.
     /// </summary>
+    /// <summary>
+    /// Nino: okunan alanın hem sol hem sağ kenarına değen satır kesiktir, altyazı değildir (oyunun açılıştaki yasal uyarısı,
+    /// PS5 menüsündeki kayan yazı). Yalnız bir kenara değen satır kalır (Mac: Reading.withoutClippedLines).
+    /// </summary>
+    public Reading WithoutClippedLines(double margin = 0.015) =>
+        new(Lines.Where(line => line.Box is not { } box || !(box.Left <= margin && box.Right >= 1 - margin)));
+
     public Reading WithoutOcrNoise() => new(Lines.Select(line => line with { Text = OcrNoise.Clean(line.Text) }));
 
     /// <summary>

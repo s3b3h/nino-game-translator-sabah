@@ -39,7 +39,7 @@ struct OnboardingView: View {
                                             removal: .move(edge: .leading).combined(with: .opacity)))
                     .environment(\.onboardingSymbol, Self.symbol(model.step))
                     .padding(.horizontal, Theme.space("xxl"))
-                    .padding(.vertical, Theme.space("xl"))
+                    .padding(.vertical, Theme.space("l"))
                 }
                 .scrollIndicators(.never)
                 .environment(\.scrollOnboardingTo, { id in
@@ -56,7 +56,7 @@ struct OnboardingView: View {
             StepButtons()
                 .frame(maxWidth: 700)
                 .padding(.horizontal, Theme.space("xxl"))
-                .padding(.vertical, Theme.space("xl"))
+                .padding(.vertical, Theme.space("l"))
             }
         }
         .animation(.easeInOut(duration: 0.25), value: model.cardSetupActive)
@@ -91,7 +91,7 @@ private struct StepButtons: View {
         ZStack {
             PageDots(count: AppModel.Step.allCases.count - 1, current: model.step.rawValue)
             HStack(spacing: Theme.space("m")) {
-                if model.step != .welcome {
+                if model.step != .welcome || model.welcomeConsole != nil {
                     Button { withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { model.back() } } label: {
                         Label("Back", systemImage: "chevron.left")
                     }
@@ -101,7 +101,7 @@ private struct StepButtons: View {
                 if model.step == .betterTranslation && !model.usesFreeGemini {
                     Button("Skip for now") { withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { model.advance() } }
                         .buttonStyle(CSButtonStyle(kind: .secondary, height: "buttonLarge"))
-                } else if model.step != .test {
+                } else if (model.step != .test || AppModel.freeNavigation) && !(model.step == .welcome && model.welcomeConsole == nil) {
                     Button { withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { model.advance() } } label: {
                         Text("Continue").frame(minWidth: 120)
                     }

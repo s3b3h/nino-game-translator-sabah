@@ -16,6 +16,28 @@ struct MainView: View {
             MainHeader()
                 .padding(.horizontal, Theme.space("xl"))
                 .padding(.top, Theme.space("m"))
+            // Nino: salon sahnesi kaydırılmaz: güncelleme şeridi, uyarılar ve ipucundan kalan alanın tamamına sığar.
+            if (DebugPreview.home ?? model.settings.homeStyle) == .livingRoom {
+                VStack(spacing: Theme.space("m")) {
+                    if let release = updates.available { UpdateBanner(version: release.version) { updates.open() } }
+                    GeometryReader { scene in
+                        LivingRoomScene(available: scene.size)
+                            .fixedLeftToRight()
+                            .frame(width: scene.size.width, height: scene.size.height)
+                    }
+                    LivingRoomHint()
+                    if model.showsOnComputer {
+                        Button("Adjust the subtitle window") { model.overlayAdjusting = true }
+                            .buttonStyle(.ghost)
+                            .disabled(model.overlayAdjusting)
+                    }
+                    VStack(spacing: Theme.space("m")) { MainWarnings() }
+                        .frame(maxWidth: 640)
+                }
+                .padding(.horizontal, Theme.space("xl"))
+                .padding(.vertical, Theme.space("m"))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
             // Nino: ana ekran neredeyse tek düğme; pencere ne boyda olursa olsun düğme dikeyde ortada durur.
             GeometryReader { geo in
                 ScrollView {
@@ -60,6 +82,7 @@ struct MainView: View {
                     .padding(.horizontal, Theme.space("xl"))
                 }
                 .scrollIndicators(.never)
+            }
             }
             // Durum ve kısayollar en altta tek satırlık ince şeritte (ortada yalnız TV ve düğme).
             MainBottomBar(open: { settingsSection = $0 })

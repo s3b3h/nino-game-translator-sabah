@@ -243,31 +243,31 @@ struct StepLayout<Content: View>: View {
     @State private var appeared = false
 
     var body: some View {
-        VStack(spacing: Theme.space("l")) {
+        // Nino: her adım pencereye kaydırmadan sığsın diye üst kısım sıkı: küçük simge, 26 punto başlık, dar aralıklar.
+        VStack(spacing: Theme.space("m")) {
             VStack(spacing: Theme.space("m")) {
                 if symbol == "nino.logo" {
-                    LogoView(size: 110)
-                        .shadow(color: Color.csAccent.opacity(0.45), radius: 24)
+                    LogoView(size: 84)
+                        .shadow(color: Color.csAccent.opacity(0.45), radius: 20)
                 } else if let symbol {
-                    GradientIcon(symbol: symbol, size: 72)
+                    GradientIcon(symbol: symbol, size: 56)
                 }
             }
             .scaleEffect(appeared ? 1 : 0.7)
             .opacity(appeared ? 1 : 0)
-            .padding(.bottom, Theme.space("xs"))
             Text(title)
-                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .font(.system(size: 26, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
             Text(message)
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(Color.csSecondary)
                 .multilineTextAlignment(.center)
-                .lineSpacing(3)
-                .frame(maxWidth: 520)
+                .lineSpacing(2)
+                .frame(maxWidth: 540)
                 .fixedSize(horizontal: false, vertical: true)
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, Theme.space("m"))
+                .padding(.top, Theme.space("s"))
         }
         .frame(maxWidth: .infinity)
         .onAppear { withAnimation(.spring(response: 0.55, dampingFraction: 0.7)) { appeared = true } }

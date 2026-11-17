@@ -1106,6 +1106,17 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     }
 
     /// <summary>Kurulumu baştan başlatır (kayıtlı her şeyi siler).</summary>
+    /// <summary>
+    /// Nino: Ayarlar › Bağlantı'daki konsol seçimi (Mac ile aynı). Xbox'ta PS5'e doğrudan bağlanma olmadığından görüntü
+    /// Xbox penceresinden okunur (Capture Card seçiliyse o kalır).
+    /// </summary>
+    public void SwitchConsole(GameConsole console)
+    {
+        if (settings.GameConsole == console) return;
+        var source = console == GameConsole.Xbox && settings.VideoSource == VideoSource.Ps5 ? VideoSource.Window : settings.VideoSource;
+        Settings = settings with { GameConsole = console, VideoSource = source };
+    }
+
     public void ResetSetup()
     {
         Stop();

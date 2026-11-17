@@ -2,6 +2,23 @@
   "sourceLanguage": "en",
   "version": "1.0",
   "strings": {
+    "Start Remote play in the Xbox app or at xbox.com/play. Nino reads that window and shows the translation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox uygulamasında ya da xbox.com/play'de Uzaktan oynat'ı başlatın. Nino o pencereyi okur ve çeviriyi gösterir."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابدأ التشغيل عن بُعد في تطبيق Xbox أو على xbox.com/play. يقرأ Nino تلك النافذة ويعرض الترجمة."
+          }
+        }
+      }
+    },
     "Allow camera access in Windows Settings › Privacy & security › Camera, then try again.": {
       "extractionState": "manual",
       "localizations": {

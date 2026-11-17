@@ -16,6 +16,9 @@ struct ConsoleStep: View {
     @State private var paired = false
     /// Nino: eşli PS5 varken form gizlidir; "Yeniden Eşle" ile açılır.
     @State private var repairing = false
+    /// Nino: IP adresi alanı yalnız istenince (PS5 bulunamadığında "IP adresiyle bağlanın") açılır.
+    @State private var showIP = false
+    @FocusState private var codeFocused: Bool
     @Environment(\.scrollOnboardingTo) private var scrollTo
 
     private static let pairedAnchor = "paired"
@@ -24,7 +27,7 @@ struct ConsoleStep: View {
 
     var body: some View {
         StepLayout(title: "Connect your PS5",
-                   message: "Pair this Mac with the 8-digit code from your PS5. It only takes a minute.") {
+                   message: "Enter the 8-digit code shown on your PS5 screen.") {
             if let console = model.console, !repairing, !paired {
                 HStack(spacing: Theme.space("m")) {
                     GradientIcon(symbol: "checkmark", size: 44)
@@ -38,9 +41,9 @@ struct ConsoleStep: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .tile(padding: Theme.space("l"))
             } else {
-            // Tek ekran: solda PS5, kod ve Bağlan; sağda kodu PS5'ten alma rehberi.
-            HStack(alignment: .top, spacing: Theme.space("gap")) {
-                VStack(alignment: .leading, spacing: Theme.space("m")) {
+            // Nino: yukarıdan aşağı tek akış: üç adım kartı, PS5 durum satırı, 8 kutulu kod, tek büyük Bağlan düğmesi.
+            // IP adresi yalnız PS5 bulunamazsa istenir.
+            VStack(spacing: Theme.space("l")) {
                 // PSN girişi yapılmadan eşleme olmaz: önce giriş adımına yönlendir.
                 if model.accountId == nil {
                     HStack(spacing: Theme.space("m")) {
@@ -52,87 +55,111 @@ struct ConsoleStep: View {
                     .padding(Theme.space("m"))
                     .background(RoundedRectangle(cornerRadius: Theme.radius("control"), style: .continuous).fill(Color.csWarning.opacity(0.10)))
                 }
-                Card {
-                HStack {
-                    Text(verbatim: "PS5").font(.csHeadline)
-                    if searching { ProgressView().controlSize(.small) }
-                    Spacer()
-                    Button("Search again") { Task { await search() } }.buttonStyle(.secondary).disabled(searching)
+                HStack(alignment: .top, spacing: Theme.space("m")) {
+                    PairStepCard(number: 1, symbol: "person.2.fill", title: "Switch to the second user",
+                                 detail: "PS button › profile picture › Switch User")
+                    PairStepCard(number: 2, symbol: "gearshape.fill", title: "Open Pair Device",
+                                 detail: "Settings › System › Remote Play › Pair Device")
+                    PairStepCard(number: 3, symbol: "number", title: "Enter the code",
+                                 detail: "Type the 8-digit code from the screen below. It is valid for 5 minutes.")
                 }
-                if consoles.isEmpty && !searching {
-                    HintText(text: "No PS5 found. Make sure it is on and on the same network, or enter its IP address. Nino must also be allowed in System Settings › Privacy & Security › Local Network.")
-                    TextField("IP address, e.g. 192.168.1.20", text: $manualHost)
-                        .textFieldStyle(CSTextFieldStyle())
+                .overlay(RoundedRectangle(cornerRadius: Theme.radius("card"), style: .continuous)
+                    .strokeBorder(Color.csWarning.opacity(error != nil ? 0.8 : 0), lineWidth: 1.5))
+
+                consoleStatus
+
+                CodeBoxes(pin: pin, focused: codeFocused)
+                    .overlay {
+                        // Kod yazılıp Return'e basılınca bağlanılır. Yalnız rakam, en çok 8 hane; yeni kod yazılınca Bağlan
+                        // yeniden açılır. Alan görünmez, kutuların üstünde durur (tıklanınca odak ona geçer).
+                        TextField("", text: Binding(get: { pin }, set: { value in
+                            pin = String(value.filter(\.isNumber).prefix(8))
+                            if !pin.isEmpty { paired = false; error = nil }
+                        }))
+                        .textFieldStyle(.plain)
+                        .focused($codeFocused)
+                        .opacity(0.02)
                         .onSubmit { Task { await register() } }
-                } else {
-                    Picker("PS5", selection: $selected) {
-                        ForEach(consoles, id: \.host) { Text(verbatim: "\($0.name) — \($0.host)").tag(Optional($0.host)) }
+                        .accessibilityLabel(Text("8-digit code"))
                     }
-                    .labelsHidden()
-                    .pickerStyle(.radioGroup)
-                    .font(.csBody)
+                    .onTapGesture { codeFocused = true }
+
+                // Düğme çalışırken ve eşleşmeden sonra (kod değişene dek) kapalı.
+                Button { Task { await register() } } label: {
+                    Text("Connect").frame(minWidth: 220)
                 }
-                }
-                VStack(alignment: .leading, spacing: Theme.space("s")) {
-                    HStack {
-                        Text("8-digit code").font(.csCallout).foregroundStyle(Color.csSecondary)
-                        Spacer()
-                        Text(verbatim: "\(pin.count)/8").font(.csCaption.monospacedDigit())
-                            .foregroundStyle(pin.count == 8 ? Color.csSuccess : Color.csSecondary)
-                    }
-                    .frame(maxWidth: 240)
-                    // Kod yazılıp Return'e basılınca bağlanılır (eskiden Return, kapalı "Devam"a gidip hiçbir şey yapmıyordu).
-                    // Yeni kod yazılınca Bağlan yeniden açılır (onChange macOS 13'te farklı olduğu için bağlamada).
-                    // Yalnız rakam, en çok 8 hane.
-                    TextField("12345678", text: Binding(get: { pin }, set: { value in
-                        pin = String(value.filter(\.isNumber).prefix(8))
-                        if !pin.isEmpty { paired = false; error = nil }
-                    }))
-                        .textFieldStyle(CSTextFieldStyle(font: .csCode, height: 52))
-                        .frame(maxWidth: 240)
-                        .onSubmit { Task { await register() } }
-                }
-                HStack(spacing: Theme.space("m")) {
-                    // Düğme çalışırken ve eşleşmeden sonra (kod değişene dek) kapalı; eksik kod ya da adres tıklanınca
-                    // açıkça söylenir.
-                    Button("Connect") { Task { await register() } }
-                        .buttonStyle(.primary)
-                        .disabled(working || paired || pin.count != 8 || model.accountId == nil)
-                    if working {
+                .buttonStyle(CSButtonStyle(kind: .primary, height: "buttonLarge"))
+                .disabled(working || paired || pin.count != 8 || model.accountId == nil || host.isEmpty)
+                if working {
+                    HStack(spacing: Theme.space("s")) {
                         ProgressView().controlSize(.small)
                         HintText(text: "Connecting to the PS5… This can take up to 30 seconds.")
                     }
                 }
-                // Eşleşme başarılı: düğmenin hemen altında yeşil ileti (üstteki ad kaydırınca görünmüyordu).
+                // Eşleşme başarılı: düğmenin hemen altında yeşil ileti.
                 if paired, let console = model.console {
                     DoneLabel(text: String(localized: "PS5 paired: \(Self.displayName(of: console)) (\(console.host)). Press Continue."))
                         .id(Self.pairedAnchor)
                 }
-                ErrorText(error: error).textSelection(.enabled)
+                ErrorText(error: error).textSelection(.enabled).multilineTextAlignment(.center)
                 if error != nil {
                     // Eşleştirme olmazsa gönderilecek remoteplay.log Finder'da seçili açılır.
                     Button("Show log file") { showLogFile() }.buttonStyle(.secondary)
                 }
             }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .leading, spacing: Theme.space("m")) {
-                    Label("How to get the code on the PS5", systemImage: "questionmark.circle.fill")
-                        .font(.csHeadline)
-                        .foregroundStyle(error != nil ? Color.csWarning : Color.csText)
-                    GuideRow(number: 1, text: "On the PS5, switch to the second user's profile (press the PS button › your profile picture › Switch User).")
-                    GuideRow(number: 2, text: "Go to Settings › System › Remote Play.")
-                    GuideRow(number: 3, text: "Choose Pair Device. An 8-digit code appears on the TV.")
-                    GuideRow(number: 4, text: "Type the code below and press Connect. The code is valid for about 5 minutes.")
-                }
-                .padding(Theme.space("l"))
-                .frame(width: 290, alignment: .topLeading)
-                .ninoGlass(in: RoundedRectangle(cornerRadius: Theme.radius("card"), style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: Theme.radius("card"), style: .continuous)
-                    .strokeBorder(error != nil ? Color.csWarning : Color.ninoGlassEdge, lineWidth: error != nil ? 1.5 : 1))
-            }
+            .frame(maxWidth: .infinity)
+            .onAppear { codeFocused = true }
             }
         }
         .task { await search() }
+    }
+
+    /// Nino: PS5 araması tek satırlık durum: aranıyor, bulundu (birden çoksa seçim menüsü) ya da bulunamadı.
+    @ViewBuilder private var consoleStatus: some View {
+        HStack(spacing: Theme.space("s")) {
+            if searching {
+                ProgressView().controlSize(.small)
+                Text("Looking for your PS5…").foregroundStyle(Color.csSecondary)
+            } else if consoles.count > 1 {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.csSuccess)
+                Picker("PS5", selection: $selected) {
+                    ForEach(consoles, id: \.host) { Text(verbatim: "\($0.name) — \($0.host)").tag(Optional($0.host)) }
+                }
+                .labelsHidden()
+                .fixedSize()
+            } else if let console = consoles.first {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.csSuccess)
+                Text("\(console.name) found")
+            } else {
+                Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Color.csWarning)
+                Text("PS5 not found")
+                if showIP {
+                    // IP adresi durum satırının içinde: kod kutuları ve Bağlan yerinden oynamaz.
+                    TextField("IP address, e.g. 192.168.1.20", text: $manualHost)
+                        .textFieldStyle(CSTextFieldStyle(height: 30))
+                        .frame(width: 230)
+                        .onSubmit { Task { await register() } }
+                } else {
+                    Button("Connect with IP address") { withAnimation { showIP = true } }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.csAccentText)
+                }
+            }
+            if !searching {
+                Text(verbatim: "·").foregroundStyle(Color.csSecondary)
+                Button("Search again") { Task { await search() } }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.csAccentText)
+            }
+        }
+        .font(.csCallout.weight(.semibold))
+        .padding(.horizontal, Theme.space("l"))
+        .padding(.vertical, Theme.space("s"))
+        .background(Capsule().fill(Color.white.opacity(0.06)))
+        .overlay(Capsule().strokeBorder(Color.ninoGlassEdge, lineWidth: 1))
+        .help(consoles.isEmpty && !searching
+              ? Text("No PS5 found. Make sure it is on and on the same network, or enter its IP address. Nino must also be allowed in System Settings › Privacy & Security › Local Network.")
+              : Text(verbatim: ""))
     }
 
     /// PS5 adını göndermezse yine de başarı görünsün.
@@ -182,21 +209,51 @@ struct ConsoleStep: View {
     }
 }
 
-/// Rehberdeki sıkı satır: küçük mavi numara ve tek paragraf.
-private struct GuideRow: View {
+/// Nino: eşleştirme adım kartı: numara, simge, kısa başlık ve menü yolu.
+private struct PairStepCard: View {
     let number: Int
-    let text: LocalizedStringKey
+    let symbol: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Theme.space("s")) {
-            Text(verbatim: "\(number)")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .frame(width: 20, height: 20)
-                .background(Circle().fill(LinearGradient(colors: [Color.csAccentHi, Color(red: 0.0, green: 0.19, blue: 0.52)],
-                                                         startPoint: .top, endPoint: .bottom)))
-                .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
-            Text(text).font(.csCallout).fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: Theme.space("s")) {
+            HStack {
+                GradientIcon(symbol: symbol, size: 36)
+                Spacer()
+                Text(verbatim: "\(number)")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.csSecondary.opacity(0.6))
+            }
+            Text(title).font(.csHeadline).fixedSize(horizontal: false, vertical: true)
+            Text(detail).font(.csCallout).foregroundStyle(Color.csSecondary).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, minHeight: 130, alignment: .topLeading)
+        .tile(padding: Theme.space("m"))
+    }
+}
+
+/// Nino: 8 kutulu kod (telefon doğrulama kodu gibi). Sıradaki kutu mavi çerçeveli.
+private struct CodeBoxes: View {
+    let pin: String
+    let focused: Bool
+
+    var body: some View {
+        let digits = Array(pin)
+        HStack(spacing: 8) {
+            ForEach(0..<8, id: \.self) { i in
+                let active = focused && i == min(digits.count, 7)
+                Text(verbatim: i < digits.count ? String(digits[i]) : "")
+                    .font(.system(size: 26, weight: .semibold, design: .rounded).monospacedDigit())
+                    .frame(width: 44, height: 56)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(0.06)))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(active ? Color.csAccent : Color.ninoGlassEdge, lineWidth: active ? 2 : 1))
+                if i == 3 { Text(verbatim: "–").foregroundStyle(Color.csSecondary) }
+            }
+        }
+        .environment(\.layoutDirection, .leftToRight)
+        .contentShape(Rectangle())
     }
 }

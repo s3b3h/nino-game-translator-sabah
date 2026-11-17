@@ -87,6 +87,44 @@ final class GameWindowTests: XCTestCase {
         XCTAssertEqual(reopened.settings.gameConsole, .ps5)
     }
 
+    /// Nino: kurulum önce konsolu sorar; Xbox'ta PS5 adımları atlanır, geri gelince Xbox karşılaması ve konsol seçimi görünür.
+    func testConsoleChoiceComesFirst() {
+        let model = AppModel(services: FakeServices(), store: MemoryStore(), defaults: UserDefaults.isolated())
+        XCTAssertEqual(model.step, .welcome)
+        XCTAssertNil(model.welcomeConsole)
+        XCTAssertFalse(model.canAdvance)
+        model.chooseWelcomeConsole(.xbox)
+        model.advance()
+        XCTAssertEqual(model.step, .tv)
+        XCTAssertTrue(model.usesXboxWindow)
+        model.back()
+        XCTAssertEqual(model.step, .welcome)
+        XCTAssertEqual(model.welcomeConsole, .xbox)
+        model.back()
+        XCTAssertNil(model.welcomeConsole)
+        model.chooseWelcomeConsole(.ps5)
+        XCTAssertEqual(model.settings.videoSource, .ps5)
+        XCTAssertEqual(model.settings.gameConsole, .ps5)
+        model.advance()
+        XCTAssertEqual(model.step, .secondAccount)
+        // Sıfırlanınca yeniden konsol sorulur.
+        model.resetSetup()
+        XCTAssertEqual(model.step, .welcome)
+        XCTAssertNil(model.welcomeConsole)
+    }
+
+    /// Nino: Ayarlar › Bağlantı'da Xbox'a geçince PS5'e doğrudan bağlanma bırakılır, Xbox penceresi okunur.
+    func testSwitchConsoleInSettings() {
+        let model = AppModel(services: FakeServices(), store: MemoryStore(), defaults: UserDefaults.isolated())
+        XCTAssertEqual(model.settings.videoSource, .ps5)
+        model.switchConsole(to: .xbox)
+        XCTAssertEqual(model.settings.gameConsole, .xbox)
+        XCTAssertEqual(model.settings.videoSource, .window)
+        model.settings.videoSource = .card
+        model.switchConsole(to: .ps5)
+        XCTAssertEqual(model.settings.videoSource, .card)
+    }
+
     func testGameAreaBelowTitleBarAndLetterboxed() {
         // 1280 × 748 pencere: 28 pt başlık, altında 1280 × 720 oyun.
         XCTAssertEqual(GameArea.rect(windowSize: CGSize(width: 1280, height: 748), fillsScreen: false),

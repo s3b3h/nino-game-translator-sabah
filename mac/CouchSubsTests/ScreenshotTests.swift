@@ -35,6 +35,36 @@ final class ScreenshotTests: XCTestCase {
             return model
         }
         let welcomeTR = firstRun("tr", step: .welcome)
+        // Nino: yeni kurulum ekranları (konsol seçimi, PS5 ve Xbox yolu, giriş, eşleştirme, TV, deneme).
+        func onboarding(_ step: AppModel.Step, console: GameConsole? = nil, signedIn: Bool = false) -> AppModel {
+            let model = AppModel(services: FakeServices(), store: MemoryStore(), defaults: .isolated())
+            model.settings.targetLanguage = "tr"
+            if let console { model.chooseWelcomeConsole(console) }
+            if console == .xbox { model.settings.gameConsole = .xbox; model.settings.videoSource = .window }
+            if signedIn { model.accountId = Data(repeating: 1, count: 8) }
+            model.step = step
+            return model
+        }
+        let picker = onboarding(.welcome)
+        let ps5Welcome = onboarding(.welcome, console: .ps5)
+        let xboxWelcome = onboarding(.welcome, console: .xbox)
+        let secondAccount = onboarding(.secondAccount, console: .ps5)
+        let psnLogin = onboarding(.psnLogin, console: .ps5)
+        let pairing = onboarding(.console, console: .ps5, signedIn: true)
+        let tvChoice = onboarding(.tv, console: .ps5, signedIn: true)
+        let test = onboarding(.test, console: .ps5, signedIn: true)
+        let better = onboarding(.betterTranslation, console: .ps5, signedIn: true)
+        let mainXbox = try await mainModel()
+        mainXbox.settings.gameConsole = .xbox
+        mainXbox.settings.videoSource = .window
+        mainXbox.windowStatus = .capturing(appName: "Safari")
+        mainXbox.isRunning = true
+        mainXbox.sessionState = .streaming
+        mainXbox.lastSource = "We've been down here too long, Enzo."
+        mainXbox.lastTranslation = "Burada çok uzun kaldık Enzo."
+        let connection = try await mainModel()
+        connection.isRunning = false
+        connection.switchConsole(to: .xbox)
         let welcomeAR = firstRun("ar", step: .welcome)
         let nextAR = firstRun("ar", step: .secondAccount)
 
@@ -48,6 +78,19 @@ final class ScreenshotTests: XCTestCase {
             ("ilk-acilis-turkce-secili", AnyView(OnboardingView().environmentObject(welcomeTR)), CGSize(width: width, height: height)),
             ("ilk-acilis-arapca-secili", AnyView(OnboardingView().environmentObject(welcomeAR)), CGSize(width: width, height: height)),
             ("arapca-sonraki-ekran", AnyView(OnboardingView().environmentObject(nextAR)), CGSize(width: width, height: height)),
+            ("nino-konsol-secimi", AnyView(OnboardingView().environmentObject(picker)), CGSize(width: width, height: height)),
+            ("nino-ps5-karsilama", AnyView(OnboardingView().environmentObject(ps5Welcome)), CGSize(width: width, height: height)),
+            ("nino-xbox-kurulum", AnyView(OnboardingView().environmentObject(xboxWelcome)), CGSize(width: width, height: height)),
+            ("nino-ikinci-hesap", AnyView(OnboardingView().environmentObject(secondAccount)), CGSize(width: width, height: height)),
+            ("nino-psn-giris", AnyView(OnboardingView().environmentObject(psnLogin)), CGSize(width: width, height: height)),
+            ("nino-ps5-baglama", AnyView(OnboardingView().environmentObject(pairing)), CGSize(width: width, height: height)),
+            ("nino-tv-secimi", AnyView(OnboardingView().environmentObject(tvChoice)), CGSize(width: width, height: height)),
+            ("nino-deneyelim", AnyView(OnboardingView().environmentObject(test)), CGSize(width: width, height: height)),
+            ("nino-daha-iyi-ceviri", AnyView(OnboardingView().environmentObject(better)), CGSize(width: width, height: height)),
+            ("nino-ana-ps5", AnyView(MainView().environmentObject(main)), CGSize(width: width, height: height)),
+            ("nino-ana-xbox", AnyView(MainView().environmentObject(mainXbox)), CGSize(width: width, height: height)),
+            ("nino-ayarlar-baglanti", AnyView(SettingsView(section: .connection).environmentObject(connection)), settingsSize),
+            ("nino-ayarlar-sifirla", AnyView(SettingsView(section: .reset).environmentObject(connection)), settingsSize),
         ]
         let shown = screens.enumerated().map { index, screen in
             (screen.0, show(screen.1, size: screen.2, offset: CGFloat(index) * 40))
@@ -99,7 +142,7 @@ final class ScreenshotTests: XCTestCase {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.title = "CouchSubs"
+        window.title = "Nino"
         window.titlebarAppearsTransparent = true
         window.appearance = NSAppearance(named: .darkAqua)
         window.backgroundColor = NSColor(Color.csBackground)

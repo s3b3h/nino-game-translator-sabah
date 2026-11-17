@@ -639,20 +639,22 @@ public partial class SettingsWindow : Window
 
     private void OnAbout(object sender, RoutedEventArgs e) => AboutWindow.Open(this);
 
-    /// <summary>Nino: Baştan Kur iki seçenekli (Mac ile aynı): TV'den itibaren (PS5 hesabı kalır) ya da her şeyi sıfırla.</summary>
-    private void OnReset(object sender, RoutedEventArgs e)
+    /// <summary>Nino: TV'den itibaren yeniden kur: PS5 hesabı ve eşleştirmesi kalır, yalnız TV bağlantısı yeniden kurulur.</summary>
+    private void OnResetFromTv(object sender, RoutedEventArgs e)
     {
-        switch (ResetChoiceWindow.Ask(this))
-        {
-            case ResetChoiceWindow.Choice.FromTv:
-                controller.ResetFromTv();
-                Close();
-                break;
-            case ResetChoiceWindow.Choice.Everything:
-                controller.ResetSetup();
-                Close();
-                break;
-        }
+        controller.ResetFromTv();
+        Close();
+    }
+
+    /// <summary>Nino: her şeyi sıfırla geri alınamaz; ayrıca onay ister (Mac ile aynı).</summary>
+    private void OnResetEverything(object sender, RoutedEventArgs e)
+    {
+        var answer = MessageBox.Show(this,
+            Localizer.Current["The saved PS5, account and TV connection are removed and setup starts from the beginning."],
+            Localizer.Current["Reset everything?"], MessageBoxButton.OKCancel, MessageBoxImage.Warning, MessageBoxResult.Cancel);
+        if (answer != MessageBoxResult.OK) return;
+        controller.ResetSetup();
+        Close();
     }
 
     /// <summary>Arayüz kartları: seçili olanın çerçevesi vurgulanır.</summary>

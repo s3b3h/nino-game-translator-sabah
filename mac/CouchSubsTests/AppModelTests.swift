@@ -469,7 +469,10 @@ final class AppModelTests: XCTestCase {
 
     func testOnboardingWalksAllStepsInOrder() async throws {
         let model = AppModel(services: FakeServices(), store: MemoryStore(), defaults: .isolated())
+        // Nino: ilk ekran önce konsolu sorar; konsol seçilmeden Devam olmaz.
         XCTAssertEqual(model.step, .welcome); model.advance()
+        XCTAssertEqual(model.step, .welcome)
+        model.chooseWelcomeConsole(.ps5); model.advance()
         XCTAssertEqual(model.step, .secondAccount); model.advance()
         XCTAssertEqual(model.step, .psnLogin)
         try await model.completePSNLogin(redirect: URL(string: "https://remoteplay.dl.playstation.net/remoteplay/redirect?code=x")!)

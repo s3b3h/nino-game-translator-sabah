@@ -20,7 +20,8 @@ struct PSNLoginStep: View {
     var body: some View {
         StepLayout(title: "Sign in with the second account",
                    message: "Sign in to PlayStation Network with the second account you just created. Your password goes directly to Sony; Nino only keeps the account ID.") {
-            VStack(alignment: .leading, spacing: Theme.space("m")) {
+            // Nino: ortalı ve simetrik: üstte üç kısa güvence satırı, ortada tek büyük giriş düğmesi, altta elle giriş bağlantısı.
+            VStack(spacing: Theme.space("l")) {
                 if let id = model.accountId {
                     // Giriş yapıldıysa: hangi hesap olduğu ve Çıkış Yap; başka düğme yok.
                     HStack(spacing: Theme.space("m")) {
@@ -33,21 +34,36 @@ struct PSNLoginStep: View {
                         Spacer()
                         Button("Sign Out") { model.signOutPSN() }.buttonStyle(.danger)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: 520)
                     .tile(padding: Theme.space("l"))
                 } else {
-                    Button("Sign in") {
+                    VStack(alignment: .leading, spacing: Theme.space("m")) {
+                        InfoLine(symbol: "lock.shield.fill",
+                                 text: "Your password is entered only on Sony's own page; Nino never sees it.")
+                        Divider().opacity(0.4)
+                        InfoLine(symbol: "person.text.rectangle.fill", text: "Nino keeps only the account ID, nothing else.")
+                        Divider().opacity(0.4)
+                        InfoLine(symbol: "checkmark.seal.fill", text: "You sign in once; you won't be asked again.")
+                    }
+                    .frame(maxWidth: 520)
+                    .tile(padding: Theme.space("l"))
+
+                    Button {
                         redirected = false
                         pageProblem = nil
                         showLogin = true
+                    } label: {
+                        Label("Sign in with PlayStation", systemImage: "person.crop.circle.fill")
+                            .frame(minWidth: 260)
                     }
-                    .buttonStyle(.primary)
+                    .buttonStyle(CSButtonStyle(kind: .primary, height: "buttonLarge"))
                     .disabled(working)
                     if working { ProgressView().controlSize(.small) }
                     ErrorText(error: error).textSelection(.enabled)
-                    manualEntry.padding(.top, Theme.space("s"))
+                    manualEntry
                 }
             }
+            .frame(maxWidth: .infinity)
         }
         .sheet(isPresented: $showLogin, onDismiss: sheetClosed) {
             PSNLoginSheet(onRedirect: received, onProblem: { pageProblem = $0 })
@@ -64,7 +80,7 @@ struct PSNLoginStep: View {
     /// Sony girişi açılmıyorsa (ör. servis sağlayıcı engelliyor) hesap kimliği elle yazılır.
     @ViewBuilder private var manualEntry: some View {
         if showManual {
-            VStack(alignment: .leading, spacing: Theme.space("s")) {
+            VStack(spacing: Theme.space("s")) {
                 HintText(text: "If Sony's sign-in page does not open (some internet providers block it), enter the second account's PSN account ID in base64 (12 characters, e.g. AbCdEfGhIjk=).")
                 HStack(spacing: Theme.space("m")) {
                     TextField("", text: $manualId)
@@ -76,7 +92,10 @@ struct PSNLoginStep: View {
                 ErrorText(error: manualError)
             }
         } else {
-            Button("Enter account ID manually") { showManual = true }.buttonStyle(.secondary)
+            Button("Sign-in page won't open? Enter the account ID manually") { showManual = true }
+                .buttonStyle(.plain)
+                .font(.csCallout.weight(.semibold))
+                .foregroundStyle(Color.csAccentText)
         }
     }
 
@@ -104,6 +123,23 @@ struct PSNLoginStep: View {
         Task {
             do { try await model.completePSNLogin(redirect: url) } catch { self.error = error.localizedDescription }
             working = false
+        }
+    }
+}
+
+/// Nino: simgeli tek satırlık güvence (giriş ekranındaki bilgi kartı).
+private struct InfoLine: View {
+    let symbol: String
+    let text: LocalizedStringKey
+
+    var body: some View {
+        HStack(spacing: Theme.space("m")) {
+            Image(systemName: symbol)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.csAccentText)
+                .frame(width: 26)
+            Text(text).font(.csBody).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
     }
 }
