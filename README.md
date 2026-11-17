@@ -9,7 +9,7 @@ Tamamen ücretsiz · açık kaynak · reklamsız · abonelik yok · hesap yok</p
 <p align="center">
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip"><b>⬇️ Mac</b></a> &nbsp;·&nbsp;
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe"><b>⬇️ Windows</b></a> &nbsp;·&nbsp;
-  <b>📺 TV: Downloader'a <code>is.gd/ninoapk</code> yazın</b><br>
+  <a href="https://yunusdemirbag.github.io/nino-game-translator/"><b>📺 Android TV</b></a> (TV'de Downloader'a <code>is.gd/ninotvapk</code> yazın)<br>
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk">⬇️ Android telefon</a> &nbsp;·&nbsp;
   📱 iPhone: App Store incelemesinde &nbsp;·&nbsp;
   ▶️ Google Play: kapalı testte &nbsp;·&nbsp;
@@ -156,7 +156,7 @@ Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)** · PS5 ve Andr
 
 **Windows:** [`Nino-Windows-Setup.exe`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)'yi çalıştırın ("bilgisayarınızı korudu" derse **Ek bilgi › Yine de çalıştır**). Kurulum Mac ile aynıdır.
 
-**TV (Android TV / Google TV):** Google Play'den **Downloader**'ı kurun, `is.gd/ninoapk` yazıp inen dosyayı kurun.
+**TV (Android TV / Google TV):** En kolayı: Mac ya da Windows'taki Nino, TV uygulamasını kendisi kurar. Elle kurmak için TV'de Google Play'den ücretsiz **Downloader**'ı kurun, **`is.gd/ninotvapk`** yazıp **Git**'e basın ve inen dosyayı kurun. Bilgisayardan indirmek için: [Nino TV indirme sayfası](https://yunusdemirbag.github.io/nino-game-translator/) · [`Nino-TV.apk`](https://yunusdemirbag.github.io/nino-game-translator/tv.apk).
 
 **Android telefon (bilgisayar yerine):** [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)'yı telefonda indirip kurun, ikinci PSN hesabıyla **Sony İle Giriş Yapın**, PS5'teki 8 haneli kodu yazın ve oyunu açınca **kaydırın**.
 
