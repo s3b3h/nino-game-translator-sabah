@@ -87,7 +87,7 @@ ile aynıdır.
 - **Elle kurulum:**
   1. TV'de Google Play'den ücretsiz **Downloader** uygulamasını kurun.
   2. Downloader'a **bilinmeyen kaynaklardan yükleme** izni verin.
-  3. Downloader'a **`is.gd/ninotvapk`** yazıp **Git**'e basın; inen dosyayı kurun. (Olmazsa tam adresi yazın: `yunusdemirbag.github.io/nino-game-translator/tv.apk`)
+  3. Downloader'ın **Ana Sayfa**'sındaki adres kutusuna **`https://is.gd/ninotvapk`** yazıp **Git**'e basın; inen dosyayı kurun. (Tarayıcı sekmesine yazarsanız Google'da arar.) (Olmazsa tam adresi yazın: `yunusdemirbag.github.io/nino-game-translator/tv.apk`)
   4. Bazı TV'lerde (ör. TCL): **Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster ›
      Nino** iznini açın.
 

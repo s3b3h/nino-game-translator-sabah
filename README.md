@@ -156,7 +156,11 @@ Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)** · PS5 ve Andr
 
 **Windows:** [`Nino-Windows-Setup.exe`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)'yi çalıştırın ("bilgisayarınızı korudu" derse **Ek bilgi › Yine de çalıştır**). Kurulum Mac ile aynıdır.
 
-**TV (Android TV / Google TV):** En kolayı: Mac ya da Windows'taki Nino, TV uygulamasını kendisi kurar. Elle kurmak için TV'de Google Play'den ücretsiz **Downloader**'ı kurun, **`is.gd/ninotvapk`** yazıp **Git**'e basın ve inen dosyayı kurun. Bilgisayardan indirmek için: [Nino TV indirme sayfası](https://yunusdemirbag.github.io/nino-game-translator/) · [`Nino-TV.apk`](https://yunusdemirbag.github.io/nino-game-translator/tv.apk).
+**TV (Android TV / Google TV):** TV uygulamasını yazı yazmadan kurmanın iki yolu var:
+- **Telefondan (bilgisayarsız, telefon uygulamasının bir sonraki sürümüyle geliyor):** Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a basın. Telefon TV'yi Wi-Fi'da bulur, uygulamayı kurar ve açar. TV'de bir kez **Ayarlar › Sistem › Hakkında › Android TV işletim sistemi yapısı**'na 7 kez basıp **Geliştirici seçenekleri › USB hata ayıklama**'yı açmanız ve TV'deki izin sorusuna **Tamam** demeniz yeter.
+- **Bilgisayardan:** Mac ya da Windows'taki Nino aynı şekilde kendisi kurar.
+
+Elle kurmak isterseniz: TV'de Google Play'den ücretsiz **Downloader**'ı açın, **Ana Sayfa**'daki adres kutusuna **`https://is.gd/ninotvapk`** yazıp **Git**'e basın ve inen dosyayı kurun (Downloader'ın Tarayıcı sekmesine yazarsanız Google'da arar). Doğrudan link: [Nino TV indirme sayfası](https://yunusdemirbag.github.io/nino-game-translator/) · [`Nino-TV.apk`](https://yunusdemirbag.github.io/nino-game-translator/tv.apk). iPhone, TV'ye uygulama kuramaz (Apple izin vermiyor); iPhone kullanıyorsanız bilgisayardaki Nino'yu ya da Downloader'ı kullanın.
 
 **Android telefon (bilgisayar yerine):** [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)'yı telefonda indirip kurun, ikinci PSN hesabıyla **Sony İle Giriş Yapın**, PS5'teki 8 haneli kodu yazın ve oyunu açınca **kaydırın**.
 
