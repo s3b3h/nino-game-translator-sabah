@@ -74,6 +74,15 @@ public sealed class CaptureCardCapture : IDisposable
     private CaptureCardInfo? current;
     private double lastEmit = double.NegativeInfinity;
     private int busy;
+    /// <summary>Kart bu kadar saniye hiç kare vermezse okuyucu takılmış sayılır ve kart yeniden açılır. Kart sinyali
+    /// yeniden kurunca (oyun duraklatılıp uzun süre beklenince, PS5 çözünürlüğü değişince) ses akarken görüntü donabiliyor.</summary>
+    private const double StallSeconds = 3;
+    /// <summary>Takılan kart en fazla bu aralıkla yeniden denenir (sinyal yokken sesi sürekli kesmemek için).</summary>
+    private const double MaxRetrySeconds = 30;
+    private Timer? stallTimer;
+    private double lastFrameAt;
+    private double lastRestartAt = double.NegativeInfinity;
+    private double retryGap = StallSeconds;
 
     public void Start()
     {
@@ -96,6 +105,27 @@ public sealed class CaptureCardCapture : IDisposable
             SubtitleLog.Write($"yakalama kartı: aygıt izleyici açılamadı: {error.GetType().Name}: {error.Message}");
         }
         Kick(TimeSpan.Zero);
+        lock (gate) stallTimer = new Timer(_ => CheckStall(), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private void CheckStall()
+    {
+        var now = clock.Elapsed.TotalSeconds;
+        lock (gate)
+        {
+            if (!running || current is null || reader is null) return;
+            var quiet = now - Volatile.Read(ref lastFrameAt);
+            if (quiet < StallSeconds)
+            {
+                retryGap = StallSeconds;
+                return;
+            }
+            if (now - lastRestartAt < retryGap) return;
+            lastRestartAt = now;
+            retryGap = Math.Min(retryGap * 2, MaxRetrySeconds);
+            SubtitleLog.Write($"yakalama kartı {quiet:0} sn kare vermedi; yeniden açılıyor");
+        }
+        Refresh();
     }
 
     /// <summary>Bloklamaz; kart arka planda bırakılır. Durduktan sonra hiçbir olay gönderilmez.</summary>
@@ -108,6 +138,8 @@ public sealed class CaptureCardCapture : IDisposable
             generation++;
             kick?.Dispose();
             kick = null;
+            stallTimer?.Dispose();
+            stallTimer = null;
             status = CaptureCardStatus.Stopped;
         }
         var deviceWatcher = watcher;
@@ -272,6 +304,7 @@ public sealed class CaptureCardCapture : IDisposable
         }
         blackWatch.Reset();
         lastEmit = double.NegativeInfinity;
+        Volatile.Write(ref lastFrameAt, clock.Elapsed.TotalSeconds);
         SubtitleLog.Write($"yakalama kartı açıldı: {card.Name}, {(choice is null ? "varsayılan biçim" : $"{choice.Width}×{choice.Height} {choice.FramesPerSecond:0.#} fps {choice.Subtype}")}");
         Report(stamp, CaptureCardStatus.Capturing(card.Name));
         if (PlaysAudio) await StartAudioAsync(card, stamp);
@@ -367,6 +400,7 @@ public sealed class CaptureCardCapture : IDisposable
 
     private void OnFrame(MediaFrameReader sender, int stamp, CaptureCardInfo card)
     {
+        Volatile.Write(ref lastFrameAt, clock.Elapsed.TotalSeconds);
         // Önceki kare hâlâ işleniyorsa (ekran ya da okuma hattı yavaşsa) yenisi atlanır; birikme olmaz.
         if (Interlocked.Exchange(ref busy, 1) == 1) return;
         try

@@ -49,7 +49,7 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 
 ## Yenilikler
 
-> Aşağıdaki yenilikler Mac için bir sonraki sürümle gelir; Windows'ta şimdilik Ayarlar › Bağlantı'daki konsol seçimi ve Ayarlar › Sıfırla var.
+> Aşağıdaki yenilikler Mac'te **0.1.9** ile geldi (kurulu Nino kendiliğinden güncellenir); Windows'ta şimdilik Ayarlar › Bağlantı'daki konsol seçimi ve Ayarlar › Sıfırla var.
 
 <p align="center"><img src="docs/nino/tanitim/v2/8-gta6-yatay.jpg" width="880" alt="GTA 6 artık Türkçe altyazılı: Nino Game Translator v2"></p>
 

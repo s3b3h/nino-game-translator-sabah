@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using CouchSubs.App.Controls;
+using CouchSubs.App.Services;
 using CouchSubs.App.Theme;
 using CouchSubs.Core;
 using CouchSubs.Shell;
@@ -91,6 +92,7 @@ public sealed class CaptureCardPlayerWindow : Window
         Closed += (_, _) =>
         {
             cursorTimer.Stop();
+            SleepGuard.KeepDisplayOn(false);
             GameAreaChanged?.Invoke(null);
             if (!closingQuietly) UserClosed?.Invoke();
         };
@@ -103,6 +105,7 @@ public sealed class CaptureCardPlayerWindow : Window
         Show();
         Activate();
         cursorTimer.Start();
+        SleepGuard.KeepDisplayOn(true);
     }
 
     public void ToggleFullScreen()

@@ -2,6 +2,7 @@
 // Nino: `CaptureCardCapture`'ı (ve gerekirse oyunu gösteren pencereyi) uygulamanın görüntü kaynağı arayüzüne bağlayan
 // ince katman. Bu dosya Nino için sıfırdan yazıldı.
 
+import AppKit
 import CoreGraphics
 import RemotePlay
 
@@ -26,12 +27,18 @@ final class CaptureCardStream: StreamControlling {
     private let capture = CaptureCardCapture()
     private let showsPlayer: Bool
     private var player: CaptureCardPlayer?
+    /// Oyun bu bilgisayarda gösterilirken ekranın uykuya geçmesini önler (oyuncu kolla oynar, Mac hiç dokunuş görmez).
+    private var displayActivity: NSObjectProtocol?
+    private var wakeObservers: [NSObjectProtocol] = []
 
     init(showsPlayer: Bool, preferredID: String? = nil) {
         self.showsPlayer = showsPlayer
         capture.preferredID = preferredID
         capture.playsAudio = showsPlayer
         capture.onFrame = { [weak self] frame in self?.onFrame?(frame) }
+        capture.onRestart = { [weak self] in
+            MainActor.assumeIsolated { self?.player?.reattach() }
+        }
         capture.onStatus = { [weak self] status in
             self?.onCardStatus?(status)
             self?.onState?(Self.sessionState(for: status))
@@ -59,6 +66,15 @@ final class CaptureCardStream: StreamControlling {
                 player.onClose = { [weak self] in self?.onPlayerClosed?() }
                 player.show()
                 self.player = player
+                self.displayActivity = ProcessInfo.processInfo.beginActivity(
+                    options: [.userInitiated, .idleDisplaySleepDisabled], reason: "Showing the game from the capture card")
+                // Ekran uyanınca (ya da oturum kilidi açılınca) görüntü katmanı eski karede kalmasın.
+                let center = NSWorkspace.shared.notificationCenter
+                for name in [NSWorkspace.screensDidWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
+                    self.wakeObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                        MainActor.assumeIsolated { self?.player?.reattach() }
+                    })
+                }
             }
         }
     }
@@ -69,6 +85,10 @@ final class CaptureCardStream: StreamControlling {
             MainActor.assumeIsolated {
                 player?.close()
                 player = nil
+                if let displayActivity { ProcessInfo.processInfo.endActivity(displayActivity) }
+                displayActivity = nil
+                wakeObservers.forEach(NSWorkspace.shared.notificationCenter.removeObserver)
+                wakeObservers = []
             }
         }
     }

@@ -51,6 +51,8 @@ class XboxStreamSession(
         const val FRAME_INTERVAL_MS = 100L
         const val KEEPALIVE_SECONDS = 30L
         const val GATHER_TIMEOUT_MS = 5_000L
+        /** Oturum kurulduktan sonra bu süre içinde görüntü gelmezse bağlantı başarısız sayılır (nedeni ekranda görünür). */
+        const val FIRST_FRAME_TIMEOUT_SECONDS = 20L
         @Volatile var initialized = false
     }
 
@@ -69,6 +71,8 @@ class XboxStreamSession(
     @Volatile private var streaming = false
     @Volatile private var lastFrame = 0L
     @Volatile private var generation = 0
+    @Volatile private var peerState: PeerConnection.PeerConnectionState? = null
+    private var firstFrameCheck: ScheduledFuture<*>? = null
 
     @Volatile override var framesReceived = 0L
         private set
@@ -99,6 +103,11 @@ class XboxStreamSession(
             val flow = XboxSessionFlow(api, account::transferToken, stopped = { stopped.get() || attempt != generation })
             val path = flow.open(console.serverId, link) { session = it }
             session = path
+            Log.i(TAG, "oturum kuruldu, görüntü bekleniyor")
+            firstFrameCheck = worker.schedule({
+                if (attempt == generation && !streaming && !stopped.get())
+                    fail(DisconnectKind.XBOX_UNREACHABLE, "no video (${peerState ?: "NEW"})", retry = true)
+            }, FIRST_FRAME_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             keepalive = worker.scheduleWithFixedDelay({
                 try { api.keepalive(path) } catch (error: Exception) { Log.w(TAG, "keepalive", error) }
             }, KEEPALIVE_SECONDS, KEEPALIVE_SECONDS, TimeUnit.SECONDS)
@@ -111,7 +120,7 @@ class XboxStreamSession(
                 XboxStep.SESSION -> DisconnectKind.XBOX_UNREACHABLE
                 else -> DisconnectKind.NETWORK
             }
-            fail(kind, error.detail, retry = kind != DisconnectKind.XBOX_SIGNED_OUT)
+            fail(kind, error.message?.removePrefix("Xbox "), retry = kind != DisconnectKind.XBOX_SIGNED_OUT)
         } catch (error: Exception) {
             Log.w(TAG, "bağlantı", error)
             fail(DisconnectKind.NETWORK, error.message, retry = true)
@@ -128,6 +137,9 @@ class XboxStreamSession(
     }
 
     private fun teardown() {
+        firstFrameCheck?.cancel(false)
+        firstFrameCheck = null
+        peerState = null
         keepalive?.cancel(false)
         keepalive = null
         streaming = false
@@ -167,6 +179,7 @@ class XboxStreamSession(
             override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {}
             override fun onConnectionChange(state: PeerConnection.PeerConnectionState?) {
                 Log.i(TAG, "bağlantı: $state")
+                if (attempt == generation) peerState = state
                 if (state == PeerConnection.PeerConnectionState.FAILED || state == PeerConnection.PeerConnectionState.DISCONNECTED)
                     post { if (attempt == generation && !stopped.get()) fail(DisconnectKind.NETWORK, state.name, retry = true) }
             }
@@ -194,7 +207,9 @@ class XboxStreamSession(
         }
         val pc = factory.createPeerConnection(config, observer) ?: throw IllegalStateException("createPeerConnection null")
         peer = pc
-        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
+        // Ses satırı "gönder-al" olmalı (Xbox'ın web istemcisi ve xbox-xcloud-player böyle ister; sohbet sesi bu satırdan
+        // gider). Nino ses parçası eklemez, mikrofon açılmaz; yalnız teklif başvuru istemcisiyle aynı olur.
+        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_RECV))
         val video = pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
         try {
             val codecs = factory.getRtpReceiverCapabilities(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO).codecs

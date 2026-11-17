@@ -4,6 +4,7 @@
 import AVFoundation
 import CoreImage
 import CoreMedia
+import os
 
 /// Bilgisayara takılı bir yakalama kartının (ya da başka bir görüntü aygıtının) özeti; seçim kuralları bununla sınanır.
 struct CaptureCardInfo: Equatable {
@@ -86,11 +87,17 @@ final class CaptureCardCapture: NSObject, @unchecked Sendable {
     var playsAudio = false
     /// Kullanıcının seçtiği aygıt (yoksa kendiliğinden seçilir).
     var preferredID: String?
+    /// Oturum takılıp yeniden kurulduktan sonra (ana iş parçacığında); oyun penceresi görüntüsünü yeniden bağlar.
+    var onRestart: (() -> Void)?
 
     static let outputSize = CGSize(width: 1920, height: 1080)
     static let framesPerSecond = 10.0
     /// Bu kadar saniye simsiyah gelirse kullanıcıya HDCP uyarısı gösterilir.
     static let blackSeconds = 4.0
+    /// Kart bu kadar saniye hiç kare vermezse oturum takılmış sayılır ve yeniden kurulur (ses gelir ama görüntü donar).
+    static let stallSeconds = 3.0
+    /// Takılan oturum en fazla bu aralıkla yeniden denenir (kartta sinyal yokken sesi sürekli kesmemek için).
+    static let maxRetrySeconds = 30.0
 
     /// Görüntü penceresi bu oturuma bağlanır.
     let session = AVCaptureSession()
@@ -106,6 +113,12 @@ final class CaptureCardCapture: NSObject, @unchecked Sendable {
     private var lastEmit: CFTimeInterval = 0
     private var blackSince: CFTimeInterval?
     private var observers: [NSObjectProtocol] = []
+    /// Son görüntü karesinin geldiği an (her karede; okuma hattına giden 10 kareden bağımsız).
+    private var lastFrameAt: CFTimeInterval = 0
+    private var lastRestartAt: CFTimeInterval = 0
+    private var retryGap = CaptureCardCapture.stallSeconds
+    private var watchdog: DispatchSourceTimer?
+    private static let log = Logger(subsystem: "com.ninotranslator.mac", category: "capture-card")
 
     func start() {
         queue.async { [self] in
@@ -117,6 +130,14 @@ final class CaptureCardCapture: NSObject, @unchecked Sendable {
                     self?.queue.async { self?.connect() }
                 })
             }
+            // Oturum hata verip durursa ya da kesinti biterse baştan kurulur.
+            for name in [AVCaptureSession.runtimeErrorNotification, AVCaptureSession.interruptionEndedNotification] {
+                observers.append(center.addObserver(forName: name, object: session, queue: nil) { [weak self] note in
+                    Self.log.notice("session \(note.name.rawValue, privacy: .public)")
+                    self?.queue.async { self?.restart(reason: "session") }
+                })
+            }
+            startWatchdog()
             authorizeThenConnect()
         }
     }
@@ -124,6 +145,8 @@ final class CaptureCardCapture: NSObject, @unchecked Sendable {
     func stop() {
         queue.async { [self] in
             running = false
+            watchdog?.cancel()
+            watchdog = nil
             observers.forEach(NotificationCenter.default.removeObserver)
             observers = []
             endSession()
@@ -133,10 +156,40 @@ final class CaptureCardCapture: NSObject, @unchecked Sendable {
 
     /// Kartı yeniden arar (ör. Mac uykudan uyandı).
     func refresh() {
-        queue.async { [self] in
-            endSession()
-            connect()
+        queue.async { [self] in restart(reason: "refresh") }
+    }
+
+    /// Oturumu baştan kurar; `connect()`'in "zaten çalışıyor" kısa yolu atlanır (takılı oturum da çalışıyor görünür).
+    private func restart(reason: String) {
+        guard running else { return }
+        Self.log.notice("restart: \(reason, privacy: .public)")
+        lastRestartAt = CACurrentMediaTime()
+        endSession()
+        connect()
+        let done = onRestart
+        DispatchQueue.main.async { done?() }
+    }
+
+    /// Kartın kare verip vermediğini saniyede bir yoklar. Ses akarken görüntü durabiliyor (kart sinyali yeniden
+    /// kurunca, oyun duraklatılıp uzun süre beklenince); bu durumda oturum yeniden kurulur.
+    private func startWatchdog() {
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + 1, repeating: 1)
+        timer.setEventHandler { [weak self] in self?.checkStall() }
+        timer.resume()
+        watchdog = timer
+    }
+
+    private func checkStall() {
+        guard running, current != nil else { return }
+        let now = CACurrentMediaTime()
+        if now - lastFrameAt < Self.stallSeconds {
+            retryGap = Self.stallSeconds
+            return
         }
+        guard now - lastRestartAt >= retryGap else { return }
+        retryGap = min(retryGap * 2, Self.maxRetrySeconds)
+        restart(reason: "no frames for \(Int(now - lastFrameAt)) s")
     }
 
     /// Takılı görüntü aygıtları (ayarlardaki seçici için).
@@ -197,7 +250,12 @@ final class CaptureCardCapture: NSObject, @unchecked Sendable {
         current = picked
         lastEmit = 0
         blackSince = nil
+        let format = device.activeFormat.formatDescription
+        let size = CMVideoFormatDescriptionGetDimensions(format)
+        let fps = device.activeFormat.videoSupportedFrameRateRanges.map(\.maxFrameRate).max() ?? 0
+        Self.log.notice("card \(picked.name, privacy: .public): \(size.width)x\(size.height) @\(fps) fourcc \(CMFormatDescriptionGetMediaSubType(format)) preset \(self.session.sessionPreset.rawValue, privacy: .public)")
         session.startRunning()
+        lastFrameAt = CACurrentMediaTime()
         set(.capturing(name: picked.name))
     }
 
@@ -268,6 +326,7 @@ extension CaptureCardCapture: AVCaptureVideoDataOutputSampleBufferDelegate, AVCa
         }
         // Kart saniyede 60 kare verir; okuma hattına saniyede 10 kare yeter (okuma zaten önceki kare bitmeden yenisini almaz).
         let now = CACurrentMediaTime()
+        lastFrameAt = now
         guard now - lastEmit >= 1 / Self.framesPerSecond, let pixels = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         lastEmit = now
         checkBlack(pixels, now: now)

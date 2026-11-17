@@ -63,6 +63,14 @@ final class CaptureCardPlayer: NSObject, NSWindowDelegate {
         window.toggleFullScreen(nil)
     }
 
+    /// Görüntüyü oturuma yeniden bağlar: oturum yeniden kurulunca ya da ekran uykudan uyanınca görüntü katmanı
+    /// eski karede donup kalabiliyor (ses gelmeye devam ederken).
+    func reattach() {
+        guard window != nil, let session = layer.session else { return }
+        layer.session = nil
+        layer.session = session
+    }
+
     /// Pencereyi kapatır (çeviri durdu); `onClose` çağrılmaz.
     func close() {
         closing = true

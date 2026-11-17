@@ -460,7 +460,8 @@ class TranslationService : Service() {
             DisconnectKind.LOGIN_PASSCODE -> getString(R.string.phase_passcode)
             DisconnectKind.REFUSED -> getString(R.string.phase_refused)
             DisconnectKind.XBOX_SIGNED_OUT -> getString(R.string.xbox_phase_signed_out)
-            DisconnectKind.XBOX_UNREACHABLE -> getString(R.string.xbox_phase_unreachable)
+            // Nino: nedeni (ör. "timeout in Provisioning", "no video (FAILED)") altta küçük yazıyla; sorun bildirilirken işe yarar.
+            DisconnectKind.XBOX_UNREACHABLE -> getString(R.string.xbox_phase_unreachable) + (state.detail?.let { "\n($it)" } ?: "")
             else -> getString(R.string.phase_reconnecting)
         }
     }
