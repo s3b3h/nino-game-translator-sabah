@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/nino/afis.jpg" width="420" alt="Nino Game Translator: PS5 oyunlarına Türkçe altyazı"></p>
+<p align="center"><img src="docs/nino/tanitim/v2/1-v2-ana-afis.jpg" width="880" alt="Nino Game Translator v2: Yeni Sürüm Geldi! PS5 ve Xbox oyunlarında anlık Türkçe altyazı"></p>
 
 <h1 align="center">Nino Game Translator</h1>
 
@@ -51,7 +51,20 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 
 > Aşağıdaki yenilikler Mac için bir sonraki sürümle gelir; Windows'ta şimdilik Ayarlar › Bağlantı'daki konsol seçimi ve Ayarlar › Sıfırla var.
 
-<p align="center"><img src="docs/nino/ekranlar/konsol-secimi.jpg" width="640" alt="Hangi konsolda oynuyorsunuz? PS5 ve Xbox seçimi"></p>
+<p align="center"><img src="docs/nino/tanitim/v2/8-gta6-yatay.jpg" width="880" alt="GTA 6 artık Türkçe altyazılı: Nino Game Translator v2"></p>
+
+<p align="center">
+  <img src="docs/nino/tanitim/v2/2-ps5-mi-xbox-mu.jpg" width="440" alt="PS5 mi, Xbox mu? İkisinde de Türkçe altyazı">&nbsp;
+  <img src="docs/nino/tanitim/v2/3-tv-oyunun-ustunde.jpg" width="440" alt="Oyun TV'de, Türkçe altyazı oyunun üstünde">
+</p>
+<p align="center">
+  <img src="docs/nino/tanitim/v2/4-kurulum.jpg" width="440" alt="Baştan tasarlanan kurulum">&nbsp;
+  <img src="docs/nino/tanitim/v2/6-xbox-kurulum.jpg" width="440" alt="Xbox'a özel kurulum">
+</p>
+<p align="center">
+  <img src="docs/nino/tanitim/v2/5-telefon.jpg" width="300" alt="Bilgisayarınız yoksa telefonunuz yeter: iPhone ve Android">&nbsp;
+  <img src="docs/nino/tanitim/v2/7-gta6-dikey.jpg" width="300" alt="GTA 6 artık Türkçe altyazılı">
+</p>
 
 - **🎮 İlk ekranda konsol seçimi (Mac):** "Hangi konsolda oynuyorsunuz?" **PS5** seçilirse ikinci hesap ve eşleştirme adımları, **Xbox** seçilirse "Xbox'ınızı Bu Mac'e Getirin" sayfası gelir (xbox.com/play ya da Greenlight). Konsol sonradan **Ayarlar › Bağlantı**'dan değiştirilir.
 - **🟩 Xbox'a özel ana ekran:** Xbox seçilince salon sahnesinde Xbox durur; fiş ve priz aynı çalışır.
