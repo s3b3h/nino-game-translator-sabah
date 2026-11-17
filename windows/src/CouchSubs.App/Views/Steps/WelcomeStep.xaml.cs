@@ -29,6 +29,33 @@ public partial class WelcomeStep : UserControl
         {
             if (DataContext is AppController controller) controller.PropertyChanged -= OnControllerChanged;
         };
+        Loaded += (_, _) =>
+        {
+            if (Controller is not { } controller) return;
+            Ps5.IsChecked = !controller.IsXbox;
+            Xbox.IsChecked = controller.IsXbox;
+            Ps5.IsEnabled = Xbox.IsEnabled = !controller.ConsoleKindLocked;
+            ShowRequirements();
+        };
+    }
+
+    /// <summary>Konsol seçimi (CouchSubs): Xbox seçilirse PS5 eşleştirmesi yerine Microsoft hesabıyla Xbox'a bağlanılır.</summary>
+    private void OnSelected(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded || Controller is not { } controller) return;
+        controller.SelectConsoleKind(Xbox.IsChecked == true ? GameConsoleKind.Xbox : GameConsoleKind.PlayStation);
+        ShowRequirements();
+    }
+
+    private void ShowRequirements()
+    {
+        if (Controller is not { } controller) return;
+        var text = Localizer.Current;
+        Layout.Message = controller.IsXbox
+            ? text["Xbox support is in beta. Nino reads the subtitles in the game picture and shows the translation on your TV or computer. You keep playing with your own controller."]
+            : text["Nino reads the English subtitles of your PS5 or Xbox games and shows a Turkish translation on your TV, on top of the game. You keep playing on the TV with your own controller."];
+        XboxRequirements.Visibility = controller.IsXbox ? Visibility.Visible : Visibility.Collapsed;
+        Ps5Requirements.Visibility = controller.IsXbox ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private AppController? Controller => DataContext as AppController;
@@ -46,77 +73,25 @@ public partial class WelcomeStep : UserControl
         if (e.PropertyName == nameof(AppController.Settings)) ShowFlags();
     }
 
-    /// <summary>Nino: çeviri dili için yalnız bayraklar; seçili olan tam renkli ve ince mavi halkalı, öteki soluk.</summary>
+    /// <summary>
+    /// Nino: çeviri dili sağ üstte bayraklı açılır listeyle seçilir (seçili dilin bayrağı ve adı; Türkçe en üstte).
+    /// 11 bayrağı yan yana dizmek kalabalık olurdu.
+    /// </summary>
     private void ShowFlags()
     {
         Flags.Children.Clear();
         if (Controller is not { } controller) return;
+        var picker = new ComboBox { MinWidth = 190, FlowDirection = FlowDirection.LeftToRight };
+        AutomationPropertiesHelper.SetName(picker, Localizer.Current["Translation language"]);
         foreach (var (code, name) in TargetLanguage.Choices)
+            picker.Items.Add(new ComboBoxItem { Content = Views.LanguageFlags.Row(code, name), Tag = code,
+                                                IsSelected = TargetLanguage.Code(controller.Settings.TargetLanguage) == code });
+        picker.SelectionChanged += (_, _) =>
         {
-            var selected = controller.Settings.TargetLanguage == code;
-            var ring = new Border
-            {
-                Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Margin = new Thickness(3, 0, 3, 0),
-                BorderThickness = new Thickness(1.5),
-                Background = new SolidColorBrush(Color.FromArgb(selected ? (byte)26 : (byte)0, 255, 255, 255)),
-                Opacity = selected ? 1 : 0.45,
-                Cursor = Cursors.Hand,
-                ToolTip = name,
-                Child = Flag(code),
-                FlowDirection = FlowDirection.LeftToRight,
-            };
-            if (selected) ring.SetResourceReference(Border.BorderBrushProperty, "accentBrush");
-            else ring.BorderBrush = Brushes.Transparent;
-            AutomationPropertiesHelper.SetName(ring, name);
-            ring.MouseLeftButtonUp += (_, _) => controller.Settings = controller.Settings with { TargetLanguage = code };
-            Flags.Children.Add(ring);
-        }
-    }
-
-    /// <summary>Küçük, sade bayrak (22×15): Türkiye ya da Suudi Arabistan (Arapça).</summary>
-    private static FrameworkElement Flag(string code)
-    {
-        const double W = 22, H = 15;
-        var canvas = new Canvas { Width = W, Height = H, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-                                  Clip = new RectangleGeometry(new Rect(0, 0, W, H), 2.5, 2.5) };
-        if (code == TargetLanguage.Arabic)
-        {
-            canvas.Background = new SolidColorBrush(Color.FromRgb(0x00, 0x6C, 0x35));
-            // Yazı yerine iki ince beyaz çizgi, altta kılıç: küçük boyda sade bir simge.
-            Add(canvas, new Rectangle { Width = 12, Height = 1.2, Fill = Brushes.White }, 5, 4.2);
-            Add(canvas, new Rectangle { Width = 9, Height = 1.2, Fill = Brushes.White }, 6.5, 6.6);
-            Add(canvas, new Rectangle { Width = 13, Height = 1, Fill = Brushes.White }, 4.5, 10.2);
-            Add(canvas, new Rectangle { Width = 1, Height = 2.4, Fill = Brushes.White }, 15.5, 9.5);
-        }
-        else
-        {
-            var red = new SolidColorBrush(Color.FromRgb(0xE3, 0x0A, 0x17));
-            canvas.Background = red;
-            Add(canvas, new Ellipse { Width = 7.6, Height = 7.6, Fill = Brushes.White }, 4.2, 3.7);
-            Add(canvas, new Ellipse { Width = 6.1, Height = 6.1, Fill = red }, 5.9, 4.45);
-            Add(canvas, Star(2.1), 13.4, 7.5);
-        }
-        return canvas;
-    }
-
-    private static void Add(Canvas canvas, UIElement element, double left, double top)
-    {
-        Canvas.SetLeft(element, left);
-        Canvas.SetTop(element, top);
-        canvas.Children.Add(element);
-    }
-
-    /// <summary>Beş köşeli beyaz yıldız; (0,0) merkezde.</summary>
-    private static Polygon Star(double radius)
-    {
-        var star = new Polygon { Fill = Brushes.White };
-        for (var i = 0; i < 10; i++)
-        {
-            var r = i % 2 == 0 ? radius : radius * 0.42;
-            var angle = Math.PI / 2 + i * Math.PI / 5;
-            star.Points.Add(new Point(r * Math.Cos(angle), -r * Math.Sin(angle)));
-        }
-        return star;
+            if (picker.SelectedItem is ComboBoxItem { Tag: string code } && code != controller.Settings.TargetLanguage)
+                controller.Settings = controller.Settings with { TargetLanguage = code };
+        };
+        Flags.Children.Add(picker);
     }
 }
 

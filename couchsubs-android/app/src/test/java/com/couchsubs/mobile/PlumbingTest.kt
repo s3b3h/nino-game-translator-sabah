@@ -3,6 +3,7 @@ package com.couchsubs.mobile
 
 import com.couchsubs.mobile.core.LinePool
 import com.couchsubs.mobile.core.PackKey
+import com.couchsubs.mobile.core.RunningGame
 import com.couchsubs.mobile.remoteplay.PsnAccount
 import com.couchsubs.mobile.remoteplay.PsnPageProblem
 import com.couchsubs.mobile.remoteplay.RegisteredConsole
@@ -78,6 +79,15 @@ class RemotePlayLogicTest {
     }
 
     @Test
+    fun googleSignInIsDetected() {
+        assertTrue(PsnAccount.isGoogleSignIn("https://accounts.google.com/o/oauth2/v2/auth?client_id=x"))
+        assertTrue(PsnAccount.isGoogleSignIn("https://ACCOUNTS.google.com/signin"))
+        assertFalse(PsnAccount.isGoogleSignIn("https://my.account.sony.com/?next=accounts.google.com"))
+        assertFalse(PsnAccount.isGoogleSignIn("https://accounts.google.com.evil.example/"))
+        assertFalse(PsnAccount.isGoogleSignIn("not a url"))
+    }
+
+    @Test
     fun loginPageProblemsAreTold() {
         assertEquals(PsnPageProblem.OFFLINE, PsnPageProblem.fromWebError(-2))
         assertEquals(PsnPageProblem.OFFLINE, PsnPageProblem.fromWebError(-6))
@@ -143,9 +153,46 @@ class OnlineTranslationTest {
     }
 
     @Test
+    fun aiCacheIsScopedByTheGameAndTheGameGoesToTheModel() {
+        val http = FakeHttp(200, "{\"content\":[{\"type\":\"text\",\"text\":\"[\\\"Banka kapalı.\\\"]\"}]}")
+        var game: String? = null
+        val translator = AiTranslator(AiProvider.CLAUDE, "sk", AiModel("claude-x", "Hızlı"), null, http, playedGame = { game })
+        translator.translate("The bank is close.")
+        // Oyun bilinmiyorken eski (oyunsuz) kayıt kullanılır.
+        translator.translate("The bank is close.")
+        assertEquals(1, http.requests.size)
+        game = " Red Dead Redemption 2 "
+        translator.translate("The bank is close.")
+        assertEquals(2, http.requests.size)
+        val body = JSONObject(http.requests.last().third!!).getJSONArray("messages").getJSONObject(0).getString("content")
+        assertTrue(body.startsWith("Game: Red Dead Redemption 2\n"))
+        translator.translate("The bank is close.")
+        assertEquals(2, http.requests.size)
+        game = "Mafia"
+        translator.translateAll(listOf("The bank is close."))
+        assertEquals(3, http.requests.size)
+    }
+
+    @Test
     fun translationsAcceptFencedArraysAndPlainText() {
         assertEquals(listOf("Bir", "İki"), AiRequest.translations("```json\n[\"Bir\", \"İki\"]\n```", 2))
         assertEquals(listOf("Koş!"), AiRequest.translations("\"Koş!\"", 1))
+        // Tırnaksız dizi (#27): köşeli parantezler ekranda kalmaz, cümle içi virgül bölünmez.
+        assertEquals(listOf("Hareket etmemiz lazım."), AiRequest.translations("[Hareket etmemiz lazım.]", 1))
+        assertEquals(listOf("Geri çekil lan!"), AiRequest.translations("<think>…</think>\n[Geri çekil lan!]", 1))
+        assertEquals(listOf("[gülüyor] Hadi."), AiRequest.translations("[gülüyor] Hadi.", 1))
+        assertEquals(listOf("Satır bir.", "Satır iki."), AiRequest.translations("[Satır bir., Satır iki.]", 2))
+        assertEquals(listOf("Gidelim.", "Yakın dur."), AiRequest.translations("[\n  Gidelim.,\n  Yakın dur.\n]", 2))
+        assertEquals(listOf("Evet, efendim.", "Hayır, gitmiyorum."), AiRequest.translations("[Evet, efendim., Hayır, gitmiyorum.]", 2))
+        assertNull(AiRequest.unquotedList("[Dur, bekle, gitme.]", 2))
+        assertEquals(listOf("Dur, bekle, gitme."), AiRequest.translations("[Dur, bekle, gitme.]", 1))
+        assertNull(AiRequest.unquotedList("[Satır bir.]", 2))
+        // Yerel modellerin bitiş işaretleri ekranda kalmaz; sondaki fazla virgül diziyi bozmaz (#27).
+        assertEquals(listOf("Yere yat!"), AiRequest.translations("[\"Yere yat!\"]</s>", 1))
+        assertEquals(listOf("Yere yat!"), AiRequest.translations("[Yere yat!]</s>", 1))
+        assertEquals(listOf("Defol buradan!"), AiRequest.translations("Defol buradan!<|im_end|>", 1))
+        assertEquals(listOf("Bir.", "İki."), AiRequest.translations("<s>[\"Bir.\", \"İki.\",]<|eot_id|>", 2))
+        assertEquals(listOf("<b> etiketi kalır"), AiRequest.translations("[\"<b> etiketi kalır\"]", 1))
         assertEquals(OnlineKeyState.INVALID, AiRequest.failure(400, "API key not valid"))
         assertEquals(OnlineKeyState.MODEL_REJECTED, AiRequest.failure(404, ""))
     }
@@ -194,6 +241,49 @@ class LinePoolTest {
         // Gönderilen satır yeniden kuyruğa girmez.
         reopened.offer("Get in the car, Enzo.")
         assertEquals(0, reopened.queued.size)
+    }
+
+    /** PS5'te çalışan oyun bilinince satırla gider ve kuyruk dosyasında kalır; bilinmiyorsa alanlar hiç yazılmaz. */
+    @Test
+    fun runningGameTravelsWithTheLine() {
+        val file = File(Files.createTempDirectory("pool").toFile(), "pool.json")
+        val bodies = mutableListOf<String>()
+        var status = 503
+        val post = { _: URL, body: String -> bodies.add(body); status to null }
+        val pool = LinePool(file, "test", post = post, clock = { 1_700_000_000_000 })
+        pool.offer("Who is that over there?")
+        pool.setGame(RunningGame.create("ppsa12345", "  Grand Theft Auto VI\n"))
+        pool.offer("Get in the car, Lucia.")
+        pool.setGame(null)
+        pool.offer("Keep your head down, Jason.")
+        pool.flush()
+        val reopened = LinePool(file, "test", post = post, clock = { 1_700_000_000_000 })
+        assertEquals("PPSA12345", reopened.queued[1].titleId)
+        assertEquals("Grand Theft Auto VI", reopened.queued[1].game)
+        status = 200
+        reopened.flush()
+        val lines = JSONObject(bodies.last()).getJSONArray("lines")
+        assertFalse(lines.getJSONObject(0).has("titleId"))
+        assertEquals("PPSA12345", lines.getJSONObject(1).getString("titleId"))
+        assertEquals("Grand Theft Auto VI", lines.getJSONObject(1).getString("game"))
+        assertFalse(lines.getJSONObject(2).has("game"))
+    }
+
+    @Test
+    fun runningGameValidatesTheTitleId() {
+        assertEquals("CUSA00419_00", RunningGame.create("CUSA00419_00", null)?.titleId)
+        assertNull(RunningGame.create("PPSA1234", "x"))
+        assertNull(RunningGame.create("PPSA01234_0", "x"))
+        assertNull(RunningGame.create(null, "x"))
+        assertNull(RunningGame.create("PPSA01234", " \u0000 ")?.name)
+        assertEquals(120, RunningGame.create("PPSA01234", "x".repeat(300))?.name?.length)
+        // Yerel kütüphanenin keşif satırı: eski biçim (üç alan) ve oyunlu biçim.
+        val old = com.couchsubs.mobile.remoteplay.ConsoleDiscovery.parseLine("192.168.1.20\tPS5-123\t1")
+        assertNull(old?.runningAppTitleId)
+        val playing = com.couchsubs.mobile.remoteplay.ConsoleDiscovery.parseLine("192.168.1.20\tPS5-123\t1\tPPSA12345\tGrand Theft Auto VI")
+        assertEquals("PPSA12345", playing?.runningAppTitleId)
+        assertEquals("Grand Theft Auto VI", playing?.runningAppName)
+        assertNull(com.couchsubs.mobile.remoteplay.ConsoleDiscovery.parseLine("192.168.1.20\tPS5-123\t0\t\t")?.runningAppName)
     }
 
     @Test

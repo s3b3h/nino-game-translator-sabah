@@ -37,24 +37,63 @@ public static class ScreenTranslation
         // Küçük karede (720p) köşe yazıları birkaç piksel boyundadır; büyütmek yazı tanımanın onları da bulmasını sağlar.
         var reading = await Task.Run(() => reader.ReadLines(frame.Height < 900 ? frame.Scaled(2) : frame, false), cancellationToken)
             .ConfigureAwait(false);
+        return await TranslateAsync(reading, translator, progress, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Okunmuş karenin gruplarını çevirir. Çevirmen parçaları tek istekte çevirebiliyorsa (yapay zekâ) ekranın bütün
+    /// parçaları birlikte gider ve sonuç bir kerede gelir; yoksa gruplar sırayla çevrilip hazırlandıkça bildirilir.
+    /// </summary>
+    public static async Task<IReadOnlyList<Item>> TranslateAsync(
+        Reading reading, ITextTranslator translator,
+        Action<IReadOnlyList<Item>>? progress = null, CancellationToken cancellationToken = default)
+    {
         var items = new List<Item>();
-        foreach (var group in Groups(reading))
+        var groups = Groups(reading);
+        if (translator.TranslatesTogether)
+        {
+            var paragraphs = groups.SelectMany(group => group.Paragraphs).ToList();
+            if (paragraphs.Count == 0) return items;
+            var translations = await translator.TranslateAllAsync(paragraphs, cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            var next = 0;
+            foreach (var group in groups)
+            {
+                var translated = Enumerable.Range(next, group.Paragraphs.Count)
+                    .Select(i => i < translations.Count ? translations[i] : paragraphs[i]).ToList();
+                next += group.Paragraphs.Count;
+                if (Build(group, translated) is { } item) items.Add(item);
+            }
+            if (items.Count > 0) progress?.Invoke([.. items]);
+            return items;
+        }
+        foreach (var group in groups)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var translated = new List<string>(group.Paragraphs.Count);
-            var changed = false;
             foreach (var paragraph in group.Paragraphs)
-            {
-                var text = (await translator.TranslateAsync(paragraph, cancellationToken).ConfigureAwait(false)).Trim();
-                if (text.Length == 0) text = paragraph;
-                changed |= !TextMatch.IsSimilar(TextMatch.Normalize(paragraph), TextMatch.Normalize(text), 0.90);
-                translated.Add(text);
-            }
-            if (!changed) continue;
-            items.Add(new Item(string.Join('\n', group.Paragraphs), string.Join('\n', translated), group.Box, group.LineHeight));
+                translated.Add(await translator.TranslateAsync(paragraph, cancellationToken).ConfigureAwait(false));
+            if (Build(group, translated) is not { } item) continue;
+            items.Add(item);
             progress?.Invoke([.. items]);
         }
         return items;
+    }
+
+    /// <summary>Grubun gösterilecek çevirisi; çevirisi aslıyla aynıysa (ad, sayı, zaten Türkçe yazı) null.</summary>
+    private static Item? Build(Group group, IReadOnlyList<string> translations)
+    {
+        var changed = false;
+        var texts = new List<string>(group.Paragraphs.Count);
+        for (var i = 0; i < group.Paragraphs.Count; i++)
+        {
+            var paragraph = group.Paragraphs[i];
+            var text = translations[i].Trim();
+            if (text.Length == 0) text = paragraph;
+            changed |= !TextMatch.IsSimilar(TextMatch.Normalize(paragraph), TextMatch.Normalize(text), 0.90);
+            texts.Add(text);
+        }
+        return changed ? new Item(string.Join('\n', group.Paragraphs), string.Join('\n', texts), group.Box, group.LineHeight) : null;
     }
 
     /// <summary>
@@ -72,6 +111,9 @@ public static class ScreenTranslation
         foreach (var line in lines)
         {
             var index = groups.FindLastIndex(group => Belongs(line.Box!.Value, group[^1].Box!.Value));
+            // İki bağımsız sütuna değen geniş başlık/alt satır, sütunlardan birinin parçası değildir.
+            if (index >= 0 && (BridgesColumns(groups[index][^1].Box!.Value, line.Box!.Value, lines)
+                || BridgesColumns(line.Box!.Value, groups[index][^1].Box!.Value, lines))) index = -1;
             if (index >= 0) groups[index].Add(line);
             else groups.Add([line]);
         }
@@ -82,6 +124,18 @@ public static class ScreenTranslation
             return new Group(Paragraphs(group), box, heights[heights.Count / 2]);
         })];
     }
+
+    // Geniş kutu, yan yana duran iki ayrı satırı birbirine bağlamasın. Yalnız filtrelenmiş OCR satırları kullanılır.
+    private static bool BridgesColumns(TextBox wide, TextBox column, IReadOnlyList<TextLine> lines) =>
+        lines.Any(line =>
+        {
+            var peer = line.Box!.Value;
+            if (Math.Min(column.Right, peer.Right) > Math.Max(column.Left, peer.Left)) return false;
+            var rowOverlap = Math.Min(column.Bottom, peer.Bottom) - Math.Max(column.Top, peer.Top);
+            if (rowOverlap <= 0 || rowOverlap < Math.Min(column.Bottom - column.Top, peer.Bottom - peer.Top) * 0.5) return false;
+            return (Belongs(column, wide) && Belongs(peer, wide))
+                || (Belongs(wide, column) && Belongs(wide, peer));
+        });
 
     /// <summary>Alt satır üsttekinin hemen altında (arada satır yüksekliğinin %80'inden az), yatayda onunla üst üste ve yazı boyu benzer.</summary>
     private static bool Belongs(TextBox lower, TextBox upper)

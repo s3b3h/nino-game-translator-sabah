@@ -55,6 +55,75 @@ struct ReconnectPolicy {
     }
 }
 
+/// Bağlı oturumda PS5'ten görüntü gelmiyor mu (Windows'taki PictureWatchdog ve Android'deki eşi ile aynı kural).
+///
+/// libchiaki bir karenin FEC onarımı tutmayınca PS5'ten bir kez yeni anahtar kare (IDR) ister ve o gelene kadar bütün
+/// kareleri atlar (`enable_idr_on_fec_failure`). İstenen IDR karesinin kendisi de bozuk gelirse yeniden istemez
+/// ("Video FEC failure, already waiting for requested IDR"): bağlantı açık kalır, ama bir daha hiç kare gelmez. Kablosuz
+/// ağda bu birkaç dakikada bir olur; altyazı duruyor, TV bağlı görünüyor ve ancak uygulamayı kapatıp açmak düzeltiyordu.
+/// Bağlıyken `stallAfter` boyunca hiç görüntü gelmezse oturum yeniden kurulur; yeni oturum anahtar kareyle başlar.
+struct PictureWatchdog {
+    /// IDR ile olağan toparlanma bir saniyeden kısa sürer; bundan uzun boşluk takılmadır.
+    static let stallAfter: TimeInterval = 8
+    /// Yeniden bağlanırken ana ekranda "Yeniden bağlanılıyor… (…)" içinde görünen neden.
+    static let reason = "no picture from the PS5"
+    /// Art arda bu kadar oturumda hiç görüntü gelmezse yeniden bağlanma bırakılır (Android'deki eşi ile aynı).
+    static let maxNoPictureSessions = 3
+
+    /// Takılma sonrası ne yapılacak.
+    enum Next: Equatable {
+        /// Yeniden kur.
+        case reconnect
+        /// Art arda `maxNoPictureSessions` oturumda hiç görüntü gelmedi: sonsuz "Yeniden bağlanılıyor…" yerine dur.
+        case giveUp
+    }
+
+    /// Bağlıyken son görüntünün (ya da bağlanmanın) anı; bağlı değilken nil.
+    private var since: Date?
+    /// Bu oturumda görüntü geldi mi.
+    private var hasPicture = false
+    /// Art arda hiç görüntü gelmeyen oturum sayısı; görüntü gelince sıfırlanır.
+    private(set) var noPictureSessions = 0
+
+    /// Kullanıcı başlattı ya da ağ değişti: sayaç sıfırdan.
+    mutating func reset() {
+        since = nil
+        hasPicture = false
+        noPictureSessions = 0
+    }
+
+    /// Oturum bağlandı: süre bağlanma anından sayılır (ilk kare hiç gelmezse de yakalanır).
+    mutating func connected(at now: Date = Date()) {
+        since = now
+        hasPicture = false
+    }
+
+    /// Görüntü geldi.
+    mutating func picture(at now: Date = Date()) {
+        guard since != nil else { return }
+        since = now
+        hasPicture = true
+        noPictureSessions = 0
+    }
+
+    /// `stalled` boşluk bildirdi; oturum kapatılırken ne yapılacağı.
+    mutating func afterStall() -> Next {
+        if hasPicture { return .reconnect }
+        noPictureSessions += 1
+        return noPictureSessions >= Self.maxNoPictureSessions ? .giveUp : .reconnect
+    }
+
+    /// Oturum kapandı ya da yeniden kuruluyor.
+    mutating func ended() { since = nil }
+
+    /// Bağlıyken `stallAfter`'dan uzun süredir görüntü yoksa boşluğun süresi (sn); yoksa nil.
+    func stalled(at now: Date = Date()) -> TimeInterval? {
+        guard let since else { return nil }
+        let gap = now.timeIntervalSince(since)
+        return gap >= Self.stallAfter ? gap : nil
+    }
+}
+
 /// Bağlantının neden koptuğu; kullanıcıya anlatılabilecek biçimde.
 public enum DisconnectReason: Equatable, Sendable {
     case stopped
@@ -65,13 +134,22 @@ public enum DisconnectReason: Equatable, Sendable {
     /// PS5 bağlantıyı reddetti (ör. kayıt geçersiz ya da Uzaktan Oynatma kapalı).
     case refused
     case network
-    /// İkinci kullanıcının PS5'te giriş şifresi var; Uzaktan Oynatma şifre istiyor.
+    /// İkinci kullanıcının PS5'te giriş şifresi var ve Ayarlar'da kayıtlı şifre yok.
     case loginPasscode
+    /// Ayarlar'daki giriş şifresini PS5 kabul etmedi. Yeniden gönderilmez (yanlış şifreyle döngüye girilmez).
+    case loginPasscodeIncorrect
     /// PS5 oturum isteğinde kaydı kabul etmedi (0x80108b09 kayıt geçersiz, 0x80108b02 hesap tanınmıyor). Yeniden denemek
     /// aynı yere çıkar; PS5 ikinci hesapla yeniden eşlenmelidir.
     case registrationInvalid
+    /// Bağlantı kuruluyor ama art arda `PictureWatchdog.maxNoPictureSessions` oturumda PS5'ten hiç görüntü gelmedi;
+    /// yeniden bağlanma bırakıldı (eskiden sonsuza kadar "Yeniden bağlanılıyor…").
+    case noPicture
     /// Kayıtlı adreste PS5 aramaya yanıt vermedi ve oturum da açılamadı (değer: adres).
     case notFound(String)
+    /// PS5 oturum isteğini (TCP 9295) kayıt dışı bir nedenle reddetti ya da yanıtı okunamadı; libchiaki bunu yalnız
+    /// "Unknown Session Request Error" diye verir (GitHub #33, #202). Değer: PS5'in "Reported Application Reason" kodu
+    /// (libchiaki'nin tanımadığı kodlar, ör. 0x80108bff; günlükte kod yoksa nil).
+    case rejected(UInt32?)
     case other(String)
 
     /// Oturum ağ hatasıyla düştüyse ve PS5 aramaya da yanıt vermediyse neden "bulunamadı"dır (eskiden yalnız
@@ -92,7 +170,7 @@ public enum DisconnectReason: Equatable, Sendable {
             let token = line[marker.upperBound...].drop { $0 == " " }.prefix { !$0.isWhitespace }.lowercased()
             let hex = token.hasPrefix("0x") ? String(token.dropFirst(2)) : token
             guard let code = UInt32(hex, radix: 16) else { return nil }
-            return registrationRejectedCodes.contains(code) ? .registrationInvalid : nil
+            return registrationRejectedCodes.contains(code) ? .registrationInvalid : .rejected(code)
         }
         // PS5'e bağlanılamadı ya da yanıt gelmedi: PS5 dinlenmeden yeni uyandıysa ilk denemelerde olağandır.
         return unreachableLines.contains(where: line.contains) ? .network : nil
@@ -106,10 +184,11 @@ public enum DisconnectReason: Equatable, Sendable {
         "Failed to receive session request response",
     ]
 
-    /// Oturum isteği bilinmeyen nedenle düştüyse günlükten anlaşılan neden kullanılır.
+    /// Oturum isteği bilinmeyen nedenle düştüyse günlükten anlaşılan neden kullanılır. Günlükte neden yoksa (PS5'in
+    /// yanıtı okunamadı) PS5 oturumu başlatmamıştır: anlamsız İngilizce metin yerine `.rejected(nil)`.
     init(quit: ChiakiQuitReason, sessionRequestHint hint: DisconnectReason?) {
-        if quit == CHIAKI_QUIT_REASON_SESSION_REQUEST_UNKNOWN, let hint {
-            self = hint
+        if quit == CHIAKI_QUIT_REASON_SESSION_REQUEST_UNKNOWN {
+            self = hint ?? .rejected(nil)
         } else {
             self.init(quit: quit)
         }
@@ -125,6 +204,31 @@ public enum DisconnectReason: Equatable, Sendable {
              CHIAKI_QUIT_REASON_CTRL_CONNECT_FAILED, CHIAKI_QUIT_REASON_STREAM_CONNECTION_UNKNOWN: self = .network
         default: self = .other(String(cString: chiaki_quit_reason_string(quit)))
         }
+    }
+}
+
+/// PS5 oturum giriş şifresi (4 hane). PS5 ikinci hesapta şifre isterse Ayarlar'da kayıtlı şifre gönderilir.
+public enum LoginPasscode {
+    public static let length = 4
+
+    /// Boşlukları atar; tam 4 rakam değilse nil.
+    public static func normalized(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              trimmed.count == length, trimmed.allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
+        return trimmed
+    }
+
+    /// Şifre isteğine ne yapılacağı: kayıtlı geçerli şifre varsa ilk istekte gönderilir (libchiaki rakamları ASCII
+    /// olarak bekler, chiaki-ng'deki gibi). Şifre yoksa ya da PS5 önceki şifreyi kabul etmediyse oturum kapatılır.
+    public enum Reply: Equatable, Sendable {
+        case send(Data)
+        case stop(DisconnectReason)
+    }
+
+    public static func reply(saved: String?, incorrect: Bool) -> Reply {
+        if incorrect { return .stop(.loginPasscodeIncorrect) }
+        guard let pin = normalized(saved) else { return .stop(.loginPasscode) }
+        return .send(Data(pin.utf8))
     }
 }
 
@@ -243,6 +347,8 @@ public final class StreamSession: @unchecked Sendable {
     /// Tüm ağı taramak pahalı; PS5 kapalıyken her yeniden denemede yapılmaz.
     private var nextRelocate = Date.distantPast
     private let accountId: Data
+    /// PS5 bu hesap için giriş şifresi isterse gönderilecek 4 hane (Ayarlar'da kayıtlıysa).
+    private let loginPasscode: String?
     private let queue = DispatchQueue(label: "couchsubs.stream-session")
     private let decodeQueue = DispatchQueue(label: "couchsubs.decode")
     private var decoder = H264FrameDecoder()
@@ -250,6 +356,9 @@ public final class StreamSession: @unchecked Sendable {
     private var policy = ReconnectPolicy()
     /// Yalnız `queue` üzerinde okunup yazılır.
     private var box: ChiakiSessionBox?
+    /// Bağlıyken görüntü gelmezse oturum yeniden kurulur. Kare çözme kuyruğundan da yazılır; `watchLock` ile korunur.
+    private var watchdog = PictureWatchdog()
+    private let watchLock = NSLock()
 
     /// Durdurma isteği ve kuşak numarası; her başlat/durdur yeni bir kuşak açar ve eski
     /// bloklar (yeniden deneme, eski oturumun kapanma olayı) kendini iptal eder.
@@ -257,9 +366,10 @@ public final class StreamSession: @unchecked Sendable {
     private var running = false
     private var generation = 0
 
-    public init(console: RegisteredConsole, accountId: Data) {
+    public init(console: RegisteredConsole, accountId: Data, loginPasscode: String? = nil) {
         self.console = console
         self.accountId = accountId
+        self.loginPasscode = LoginPasscode.normalized(loginPasscode)
     }
 
     deinit {
@@ -271,6 +381,7 @@ public final class StreamSession: @unchecked Sendable {
         let current = bump(running: true)
         queue.async { [weak self] in
             self?.policy.reset()
+            self?.watch { $0.reset() }
             self?.connect(current)
         }
     }
@@ -289,6 +400,7 @@ public final class StreamSession: @unchecked Sendable {
             guard let self else { return }
             self.closeBox()
             self.policy.reset()
+            self.watch { $0.reset() }
             self.connect(current)
         }
     }
@@ -407,6 +519,13 @@ public final class StreamSession: @unchecked Sendable {
             }
             chiaki_session_set_audio_sink(box.pointer, &sink)
         }
+        // PS5 "bu görüntü yayınlanamaz" (korumalı içerik) ya da "yeniden yayınlanabilir" dediğinde libchiaki ctrl iş parçacığı
+        // `cantdisplay_cb`yi koşulsuz çağırır; atanmazsa NULL işlev çağrılır ve uygulama SIGSEGV ile kapanır. Altyazı için
+        // yapılacak bir şey yok: yalnız günlüğe yazılır, akış sürer.
+        var displaySink = ChiakiCtrlDisplaySink(user: user, cantdisplay_cb: { _, cantDisplay in
+            RemotePlayLog.write(cantDisplay ? "PS5 stream can't display (protected content)" : "PS5 stream can display again")
+        })
+        chiaki_session_ctrl_set_display_sink(box.pointer, &displaySink)
 
         let started = chiaki_session_start(box.pointer)
         guard started.isSuccess else {
@@ -418,6 +537,7 @@ public final class StreamSession: @unchecked Sendable {
 
     /// Geçerli oturumu kapatır. Kapatma join içerdiği için kuyruğu bekletmemek adına arka planda yapılır.
     private func closeBox() {
+        watch { $0.ended() }
         guard let box else { return }
         self.box = nil
         DispatchQueue.global().async { box.tearDown() }
@@ -430,15 +550,27 @@ public final class StreamSession: @unchecked Sendable {
             queue.async { [weak self] in
                 guard let self, self.box?.generation == eventGeneration else { return }
                 self.policy.connected()
+                self.watch { $0.connected() }
                 self.emit(.streaming)
+                self.scheduleWatch(eventGeneration)
             }
         case CHIAKI_EVENT_LOGIN_PIN_REQUEST:
-            // Kol girdisi göndermediğimiz için şifre giremeyiz; yeniden denemek de aynı yere çıkar.
+            // libchiaki olayı state_mutex tutarken verir; şifre kuyrukta (kilit bırakıldıktan sonra) gönderilir.
+            let reply = LoginPasscode.reply(saved: loginPasscode, incorrect: event.login_pin_request.pin_incorrect)
             queue.async { [weak self] in
-                guard let self, self.box?.generation == eventGeneration else { return }
-                _ = self.bump(running: false)
-                self.closeBox()
-                self.emit(.disconnected(.loginPasscode))
+                guard let self, let box = self.box, box.generation == eventGeneration else { return }
+                switch reply {
+                case .send(let pin):
+                    RemotePlayLog.write("PS5 giriş şifresi istedi; Ayarlar'daki şifre gönderiliyor")
+                    pin.withUnsafeBytes { raw in
+                        _ = chiaki_session_set_login_pin(box.pointer, raw.bindMemory(to: UInt8.self).baseAddress, pin.count)
+                    }
+                case .stop(let reason):
+                    // Şifre yok ya da yanlış: yeniden denemek aynı yere çıkar, oturum kapatılır.
+                    _ = self.bump(running: false)
+                    self.closeBox()
+                    self.emit(.disconnected(reason))
+                }
             }
         case CHIAKI_EVENT_QUIT:
             let reason = DisconnectReason(quit: event.quit.reason, sessionRequestHint: sessionRequestHint)
@@ -456,6 +588,32 @@ public final class StreamSession: @unchecked Sendable {
             }
         default:
             break
+        }
+    }
+
+    private func watch<T>(_ body: (inout PictureWatchdog) -> T) -> T {
+        watchLock.lock()
+        defer { watchLock.unlock() }
+        return body(&watchdog)
+    }
+
+    /// Bağlıyken saniyede bir bakılır: görüntü `PictureWatchdog.stallAfter`'dan uzun süredir gelmiyorsa bağlantı açık
+    /// görünse de oturum kapatılıp yeniden kurulur (bkz. `PictureWatchdog`).
+    private func scheduleWatch(_ boxGeneration: Int) {
+        queue.asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard let self, self.box?.generation == boxGeneration, self.isCurrent(boxGeneration) else { return }
+            guard let gap = self.watch({ $0.stalled() }) else { return self.scheduleWatch(boxGeneration) }
+            let next = self.watch { $0.afterStall() }
+            let streak = self.watch { $0.noPictureSessions }
+            RemotePlayLog.write("PS5'ten \(Int(gap)) sn'dir görüntü gelmiyor (bağlantı açık, art arda görüntüsüz oturum \(streak)): \(next)")
+            self.closeBox()
+            self.policy.ended()
+            if next == .giveUp {
+                // Görüntü hiç gelmiyor: sonsuz yeniden bağlanma döngüsü yerine dur ve nedenini söyle.
+                _ = self.bump(running: false)
+                return self.emit(.disconnected(.noPicture))
+            }
+            self.scheduleReconnect(boxGeneration, reason: .other(PictureWatchdog.reason))
         }
     }
 
@@ -505,6 +663,7 @@ public final class StreamSession: @unchecked Sendable {
             guard let self else { return }
             let wanted = self.throttle.shouldPass()
             if let image = self.decoder.decode(annexB: sample, makeImage: wanted), wanted {
+                self.watch { $0.picture() }
                 self.onFrame?(image)
             }
         }

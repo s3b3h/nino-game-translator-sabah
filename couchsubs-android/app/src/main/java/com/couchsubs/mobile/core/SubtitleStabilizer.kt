@@ -31,10 +31,23 @@ class SubtitleStabilizer(
     companion object {
         /** Bölge bu kadar boş kalırsa altyazı kalkmış sayılır; parlak arka planda kaçan birkaç okuma silmez. */
         const val CLEAR_AFTER_MS = 800
+        /**
+         * Okuma boş döndüğü halde satırın yeri, satır son okunduğundan beri değişmediyse (bölge izi,
+         * [RegionSignature.changed]) yazı hâlâ oradadır, yazı tanıma kaçırmıştır: parlak zeminde beyaz yazı saniyelerce
+         * okunamıyor, TV'deki Türkçe İngilizce dururken siliniyordu (It Takes Two, 2026-11-13). Satırın yeri değişince
+         * her zamanki [CLEAR_AFTER_MS] sayılır. Değişmeyen yerde de satır en çok bu kadar tutulur (Mac/iPhone ile aynı).
+         */
+        const val HOLD_UNCHANGED_MS = 4000
         /** Kalkan satır bu süre içinde geri gelirse aynı satırdır (okuma kaçmıştı); yeniden çevrilmez. */
         const val RESTORE_WITHIN_MS = 1500
         /** Çevirisi başarısız olan satır en erken bu kadar sonra yeniden denenir. */
         const val RETRY_AFTER_MS = 1000
+        /**
+         * Çöp gibi okunan satır ([OcrNoise.looksGarbled]) ancak bu kadar süre aynı okununca gider. Altyazılar geçişte üst
+         * üste solarken yazı tanıma iki satırı karıştırıp birkaç kare aynı çöpü okuyabiliyordu ("- Nat) but, you knpw.
+         * shit, I m", GTA V, #26); süslü ama gerçekten öyle duran yazı yine çevrilir.
+         */
+        const val GARBLED_STABLE_MS = 700
         private const val HISTORY_SIZE = 5
 
         /** Satır nokta, ünlem, soru ya da üç noktayla bitiyor mu (kapanan tırnak ve parantezler yok sayılır). */
@@ -49,15 +62,24 @@ class SubtitleStabilizer(
     private val now: () -> Long = clock ?: monotonicClock
     private var candidate = ""
     private var candidateCount = 0
+    private var candidateSince = 0L
     /** Ekrandaki (gönderilmiş) satır: sadeleştirilmiş satırlar alt alta, ve ilk okunduğu hali. */
     private var sent = ""
     private var sentRaw = ""
     private var emptySince: Long? = null
+    /** Boş okunan bölgede satırın yerinin değiştiği (ya da yeri bilinmediği için kalkmış sayıldığı) an. */
+    private var goneSince: Long? = null
+    /** Ekrandaki satırın son okunduğu karenin bölge izi ve satırın bölgedeki yeri. */
+    private var lastSeen: Pair<ByteArray, TextBox>? = null
     private val history = mutableListOf<Left>()
     private var forgotten = ""
     private var retryAt = 0L
 
-    fun feed(rawText: String): StabilizerAction {
+    /**
+     * [signature]: karenin bölge izi ([RegionSignature.of]); verilmezse boş okuma hep kalkma sayılır.
+     * [box]: okunan yazının bölgedeki yeri (bölgenin kenarlarına oranla).
+     */
+    fun feed(rawText: String, signature: ByteArray? = null, box: TextBox? = null): StabilizerAction {
         val time = now()
         val text = TextMatch.normalize(rawText)
         // 3 karakterden kısa okumalar (gürültü, tek simge) boş kare sayılır.
@@ -65,7 +87,11 @@ class SubtitleStabilizer(
             candidate = ""
             candidateCount = 0
             val since = emptySince ?: time.also { emptySince = it }
-            if (sent.isNotEmpty() && time - since >= clearAfterMs) {
+            if (sent.isEmpty()) return StabilizerAction.None
+            // Satırın yeri son okunduğu kareden beri değişmediyse yazı tanıma kaçırmıştır; kalkma sayılmaz.
+            if (goneSince == null && !looksUnchanged(signature)) goneSince = time
+            val gone = goneSince?.let { time - it >= clearAfterMs } ?: false
+            if (gone || time - since >= HOLD_UNCHANGED_MS) {
                 leaveScreen(time)
                 return StabilizerAction.Clear
             }
@@ -73,16 +99,30 @@ class SubtitleStabilizer(
         }
 
         emptySince = null
+        goneSince = null
         if (TextMatch.isSimilar(text, candidate, similarity)) {
             candidateCount++
         } else {
             candidate = text
             candidateCount = 1
+            candidateSince = time
         }
-        // Daktilo efektinde metin büyürken aday değişir; noktalamayla biten satır ilk karede gider.
-        val ready = candidateCount >= stableFrames || endsSentence(rawText)
+        // Daktilo efektinde metin büyürken aday değişir; noktalamayla biten satır ilk karede gider. Çöp gibi okunan satır
+        // (altyazılar geçişte üst üste solarken karışan okuma) beklemeden gitmez; geçiş süresinden uzun kararlıysa gider.
+        val ready = if (OcrNoise.looksGarbled(rawText)) candidateCount >= stableFrames && time - candidateSince >= GARBLED_STABLE_MS
+            else candidateCount >= stableFrames || endsSentence(rawText)
         // Gönderilenin gürültülü yeniden okuması yeni satır değildir.
-        if (!ready || isSame(text, sent)) return StabilizerAction.None
+        if (isSame(text, sent)) {
+            remember(signature, box)
+            return StabilizerAction.None
+        }
+        if (!ready) return StabilizerAction.None
+        // Aynı cümlenin bir iki sözcüğü başka okunmuş, daha iyi olmayan okuması da yeni satır değildir; çevrilseydi TV'de
+        // aynı cümlenin iki üç çevirisi üst üste dururdu. Daha çok sözcük okuyan okuma yeniden çevrilir (TV yerine koyar).
+        if (sentRaw.isNotEmpty() && TextMatch.isWorseReread(rawText, sentRaw)) {
+            remember(signature, box)
+            return StabilizerAction.None
+        }
 
         // Az önce kalkan satır geri geldiyse okuma birkaç kare kaçmıştır: çevirisi yeniden gösterilir.
         val index = history.indexOfLast { time - it.leftAt <= RESTORE_WITHIN_MS && isSame(text, it.rows) }
@@ -91,6 +131,7 @@ class SubtitleStabilizer(
             leaveScreen(time)
             sent = back.rows
             sentRaw = back.raw
+            remember(signature, box)
             return StabilizerAction.restore(back.raw)
         }
         // Çevirisi az önce başarısız olan satır her karede yeniden istenmez.
@@ -100,7 +141,20 @@ class SubtitleStabilizer(
         forgotten = ""
         sentRaw = rawText.trim()
         sent = TextMatch.normalizeRows(sentRaw)
+        remember(signature, box)
         return StabilizerAction.translate(sentRaw)
+    }
+
+    /** Ekrandaki satır bu karede okundu: bölgenin izi ve satırın yeri saklanır (yer bilinmiyorsa hiçbiri). */
+    private fun remember(signature: ByteArray?, box: TextBox?) {
+        lastSeen = if (signature != null && box != null) signature to box else null
+    }
+
+    /** Bu karede satırın yeri, satırın son okunduğu karedekiyle aynı mı (izi ve yeri bilinmiyorsa hayır). */
+    private fun looksUnchanged(signature: ByteArray?): Boolean {
+        val seen = lastSeen ?: return false
+        if (signature == null) return false
+        return !RegionSignature.changed(seen.first, signature, RegionSignature.CHANGE_THRESHOLD, seen.second)
     }
 
     private fun isSame(text: String, rows: String) = rows.isNotEmpty() && TextMatch.isSameSubtitle(text, rows)
@@ -111,6 +165,7 @@ class SubtitleStabilizer(
         if (history.size > HISTORY_SIZE) history.removeAt(0)
         sent = ""
         sentRaw = ""
+        lastSeen = null
     }
 
     /** Çeviri kaynağıyla neredeyse aynıysa metin zaten hedef dildedir (ör. konsolun Türkçe menüleri). */
@@ -123,6 +178,7 @@ class SubtitleStabilizer(
         retryAt = now() + RETRY_AFTER_MS
         sent = ""
         sentRaw = ""
+        lastSeen = null
         candidate = ""
         candidateCount = 0
     }
@@ -131,6 +187,8 @@ class SubtitleStabilizer(
         candidate = ""
         candidateCount = 0
         emptySince = null
+        goneSince = null
+        lastSeen = null
         history.clear()
         forgotten = ""
         if (sent.isEmpty()) return StabilizerAction.None

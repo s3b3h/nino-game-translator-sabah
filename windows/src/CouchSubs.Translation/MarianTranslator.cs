@@ -8,7 +8,7 @@ using CouchSubs.Core.Dubbing;
 namespace CouchSubs.Translation;
 
 /// <summary>
-/// Cihaz üstü İngilizce→Türkçe çeviri (OPUS-MT, ONNX Runtime). Model ilk çeviride yüklenir; aynı cümle oyunda
+/// Cihaz üstü İngilizce→Türkçe çeviri (OPUS-MT, CTranslate2). Model ilk çeviride yüklenir; aynı cümle oyunda
 /// defalarca okunduğu için sonuçlar önbelleklenir (Mac'teki gibi). Uygulama kalıcı önbelleği verir: önceki
 /// oturumlarda çevrilmiş cümleler modeli hiç çalıştırmadan döner. Metin hattı (terim sözlüğü, kısa satır bağlamı,
 /// Türkçe düzeltmeler) <see cref="FreeTranslation"/>'dadır, Mac'teki Apple çevirisiyle ortaktır.
@@ -19,7 +19,7 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
     /// Kalıcı önbellek dosyasındaki motor adı; model ya da metin hattı (<see cref="FreeTranslation.PipelineVersion"/>)
     /// değişirse bu da değişir, eski kurallarla çevrilmiş satırlar gösterilmez.
     /// </summary>
-    public static readonly string EngineId = "opus-mt-p" + FreeTranslation.PipelineVersion;
+    public static readonly string EngineId = "opus-mt-ct2-p" + FreeTranslation.PipelineVersion;
 
     private readonly Func<ISentenceEngine> _engineFactory;
     private readonly Func<bool> _isInstalled;
@@ -43,19 +43,26 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Motor açılamadı (ör. onnxruntime.dll ya da bağımlılığı yüklenemedi). Bir kez, arka plan iş parçacığından çağrılır;
+    /// Motor açılamadı (ör. CTranslate2 çalışma zamanı eksik). Bir kez, arka plan iş parçacığından çağrılır;
     /// uygulama günlüğe yazar ve kullanıcıya gösterir. Çeviriler bundan sonra <see cref="TranslatorStatus.EngineFailed"/> fırlatır.
     /// </summary>
     public event Action<Exception>? EngineFailed;
 
     /// <param name="cache">Kalıcı önbellek; verilmezse yalnız bellekte tutulur.</param>
     /// <param name="glossary">Terim sözlüğü; verilmezse genel sözlük ve %LOCALAPPDATA%\CouchSubs\glossary\*.json.</param>
-    /// <param name="target">Hedef dil ("tr" ya da "ar"); modelin dizini de bu dile ait olmalı (<see cref="ModelStore.FilesFor"/>).</param>
-    public MarianTranslator(string modelDirectory, int maxOutputTokens = 128, int beams = OnnxMarianEngine.DefaultBeams,
-        TranslationCache? cache = null, GlossaryStore? glossary = null, string target = "tr")
-        : this(() => new OnnxMarianEngine(modelDirectory, maxOutputTokens, beams, ModelStore.TargetPrefixFor(target)),
-            () => IsInstalledIn(modelDirectory), cache, glossary ?? new GlossaryStore(GlossaryStore.UserDirectory),
-            turkish: TargetLanguage.IsTurkish(target)) { }
+    /// <param name="target">Nino: hedef dil ("tr", "ar", "hi"…); modelin dizini de bu dile ait olmalı (<see cref="ModelStore.FilesFor"/>).
+    /// Dizinde CTranslate2 modeli (model.bin) varsa o, yoksa ONNX modeli (Türkçe dışındaki ücretsiz diller) çalışır.</param>
+    public MarianTranslator(string modelDirectory, int maxOutputTokens = 128, int beams = 4,
+        TranslationCache? cache = null, GlossaryStore? glossary = null, bool useGpu = false, Action? onGpuFallback = null,
+        Task? cudaReady = null, string? cudaDirectory = null, int cpuThreads = 2, string target = "tr")
+        : this(() => IsCt2(modelDirectory)
+                ? new Ct2MarianEngine(modelDirectory, maxOutputTokens, beams, useGpu, onGpuFallback,
+                    cudaReady, cudaDirectory, cpuThreads, ModelStore.TargetPrefixFor(target))
+                : new OnnxMarianEngine(modelDirectory, maxOutputTokens, beams, ModelStore.TargetPrefixFor(target)),
+            () => IsInstalledIn(modelDirectory), cache,
+            glossary ?? new GlossaryStore(GlossaryStore.UserDirectory), turkish: TargetLanguage.IsTurkish(target)) { }
+
+    private static bool IsCt2(string modelDirectory) => File.Exists(Path.Combine(modelDirectory, "model.bin"));
 
     internal MarianTranslator(Func<ISentenceEngine> engineFactory, Func<bool> isInstalled, TranslationCache? cache = null,
         GlossaryStore? glossary = null, Func<DateTimeOffset>? clock = null, bool turkish = true)
@@ -75,7 +82,9 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
 
     /// <summary>Çeviri için gereken dosyalar yerinde mi (ModelStore yalnızca doğrulanmış dosyayı asıl adına taşır).</summary>
     public static bool IsInstalledIn(string modelDirectory) =>
-        OnnxMarianEngine.RequiredFiles.All(name => File.Exists(Path.Combine(modelDirectory, name)));
+        new Ct2ModelStore(modelDirectory).IsInstalled
+        // Nino: Türkçe dışındaki ücretsiz modeller ONNX dosyalarıdır.
+        || OnnxMarianEngine.RequiredFiles.All(name => File.Exists(Path.Combine(modelDirectory, name)));
 
     /// <summary>
     /// Modeli önceden yükler ve bir kez çalıştırır; ilk altyazı beklemesin. Arka planda başlatılıp beklenmediği için
@@ -148,17 +157,29 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
             ObjectDisposedException.ThrowIf(_disposed, this);
             // Beklerken başka bir çağrı aynı cümleyi çevirmiş olabilir.
             if (_cache.TryGet(key, out var cached)) return cached;
+            if (_engineFailure is { } failure) throw new TranslatorException(TranslatorStatus.EngineFailed, failure);
             var engine = _engine ??= CreateEngine();
             var names = _names.Keys.ToHashSet(StringComparer.Ordinal);
             names.UnionWith(glossary.CapitalWords);
             // Çıkarım CPU'yu saniyenin onda biri kadar tutar; çağıranın (arayüz) iş parçacığını bloklamasın.
-            var translation = await Task.Run(() => _turkish
-                ? FreeTranslation.Translate(sentence, context, glossary,
-                    text => SubtitleSegmenter.NormalizeCase(text, names),
-                    input => engine.Translate(input, cancellationToken))
-                // Arapça: Türkçe düzeltmeler ve terim koruma yok; büyük harf düzeni ve oyun deyimleri yine yapılır.
-                : engine.Translate(GameEnglish.Plain(SubtitleSegmenter.NormalizeCase(sentence, names)), cancellationToken),
-                cancellationToken).ConfigureAwait(false);
+            string translation;
+            try
+            {
+                translation = await Task.Run(() => _turkish
+                    ? FreeTranslation.Translate(sentence, context, glossary,
+                        text => SubtitleSegmenter.NormalizeCase(text, names),
+                        input => engine.Translate(input, cancellationToken))
+                    // Nino: Türkçe dışında Türkçe düzeltmeler ve terim koruma yok; büyük harf düzeni ve oyun deyimleri yine yapılır.
+                    : engine.Translate(GameEnglish.Plain(SubtitleSegmenter.NormalizeCase(sentence, names)), cancellationToken),
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (IOException error)
+            {
+                // Alt süreç kapandıysa her satırda yeniden denemek kuyruğu kilitler; kullanıcıya tek uyarı verilir.
+                Volatile.Write(ref _engineFailure, error);
+                EngineFailed?.Invoke(error);
+                throw new TranslatorException(TranslatorStatus.EngineFailed, error);
+            }
             // Sıra bırakılmadan önce önbelleğe yazılır; sırada bekleyen aynı cümle yeniden çevrilmez.
             _cache.Store(key, translation);
             return translation;
@@ -180,8 +201,7 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
         }
         catch (Exception error) when (error is not (OperationCanceledException or TranslatorException))
         {
-            // ONNX Runtime'ın yerel DLL'i yüklenemeyince TypeInitializationException (içinde DllNotFoundException) gelir;
-            // .NET bu hatayı süreç boyunca saklar, yeniden denemek işe yaramaz.
+            // Çalışma zamanı açılamazsa bu çevirmen aynı hatayı yeniden denemez; aygıt değiştirilince yeni örnek kurulur.
             Volatile.Write(ref _engineFailure, error);
             EngineFailed?.Invoke(error);
             throw new TranslatorException(TranslatorStatus.EngineFailed, error);

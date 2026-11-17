@@ -6,7 +6,7 @@
   'use strict';
 
   // TV uygulamasının sürümü: appinfo.json, tv-tizen/config.xml ve tv-android/app/build.gradle ile aynı tutulur.
-  var APP_VERSION = '0.9.18';
+  var APP_VERSION = '0.9.22';
   var t = window.t;
   var config = window.COUCHSUBS_CONFIG || {};
   var platform = window.COUCHSUBS_PLATFORM;
@@ -135,9 +135,156 @@
       inputError: ['inputError', 'bad'],
       sourceError: ['sourceError', 'bad']
     };
+    watchPicture(port);
     platform.showHdmi(port, $('video-host'), function (kind) {
       setStatus('st-video', t(statuses[kind][0]), statuses[kind][1]);
+      notePicture(port, kind);
     });
+  }
+
+  // --- HDMI görüntüsü gelmiyor ---
+  // LG'de HDMI girişi <video> ile (ext://hdmi), Samsung'da TVWindow ile açılır. Giriş açılamazsa ya da 10 sn içinde
+  // görüntü gelmezse ekran sessizce siyah kalıyordu (LG QNED: "Çeviriyi başlat"a basınca TV kararıyor). Artık nedeni ve
+  // HDMI girişi düğmeleri gösterilir; doğru girişte de siyahsa TV'nin kendi girişine dönüp altyazıyı telefonda izlemek
+  // önerilir. Android TV'deki giriş seçiciyle (#155) aynı akış; Android bunu kendi ekranında yaptığından orada kapalıdır.
+
+  var NO_PICTURE_MS = 10000;
+  var pictureTimer = null;
+  var pictureOk = false;
+  var noPictureClosed = false;
+  var noPictureFocus = 0;
+  var noPictureActions = [];
+
+  function watchPicture(port) {
+    clearTimeout(pictureTimer);
+    pictureOk = false;
+    noPictureClosed = false;
+    hideNoPicture();
+    if (!platform.noPictureHelp) return;
+    pictureTimer = setTimeout(function () {
+      // Bazı TV'ler görüntüyü gösterip 'playing' olayını hiç göndermiyor; görüntü varsa kutu açılmaz.
+      if (pictureOk || (platform.hasPicture && platform.hasPicture())) return;
+      showNoPicture(port, false);
+    }, NO_PICTURE_MS);
+  }
+
+  function notePicture(port, kind) {
+    if (port !== hdmiPort) return;
+    if (kind === 'ready' || kind === 'playing') {
+      pictureOk = true;
+      clearTimeout(pictureTimer);
+      hideNoPicture();
+    } else if (kind === 'inputError' || kind === 'sourceError') {
+      clearTimeout(pictureTimer);
+      if (platform.noPictureHelp) showNoPicture(port, true);
+    }
+  }
+
+  function noPictureShown() { return $('no-picture').className !== 'hidden'; }
+
+  function showNoPicture(port, failed) {
+    if (noPictureClosed || pictureOk || demoRunning()) return;
+    // Neden ve ne yapılacağı düğmelerin üstünde; uzun "hâlâ siyah mı" açıklaması (index.html, #no-picture-help)
+    // düğmelerin altında, küçük ve ikincil renkte durur.
+    $('no-picture-text').textContent = t(failed ? 'noPictureError' : 'noPicture').replace('%1', port) + ' ' +
+      t('noPictureChoose');
+    var box = $('no-picture-choices');
+    box.innerHTML = '';
+    var actions = [];
+    for (var i = 1; i <= 4; i++) actions.push({ label: 'HDMI ' + i, port: i });
+    actions.push({ label: t('noPictureExit'), exit: true });
+    actions.push({ label: t('noPictureClose'), close: true });
+    for (var j = 0; j < actions.length; j++) {
+      var button = document.createElement('div');
+      button.className = 'button' + (actions[j].port === port ? ' current' : '');
+      button.textContent = actions[j].label;
+      button.addEventListener('click', choiceClick(actions[j], j));
+      // LG Magic Remote: işaretçinin üstünde durduğu düğme seçili olur; Tamam ve oklar oradan devam eder.
+      button.addEventListener('mouseover', choiceHover(j));
+      actions[j].el = button;
+      box.appendChild(button);
+    }
+    noPictureActions = actions;
+    $('panel').className = 'hidden';
+    $('waiting').className = 'hidden';
+    $('no-picture').className = '';
+    // Açık olandan sonraki giriş seçili gelir (HDMI 1 açıksa HDMI 2).
+    focusNoPicture(port % 4);
+  }
+
+  function choiceClick(action, index) {
+    return function (e) {
+      e.stopPropagation();
+      // Tamam tuşu işaretçi görünürken tıklama da gönderir; tuşla seçilen bir daha seçilmez.
+      if (Date.now() - lastOkKey < 400) return;
+      focusNoPicture(index);
+      runNoPicture(action);
+    };
+  }
+
+  function choiceHover(index) {
+    return function () {
+      if (index !== noPictureFocus) focusNoPicture(index);
+    };
+  }
+
+  function focusNoPicture(index) {
+    var count = noPictureActions.length;
+    noPictureFocus = (index + count) % count;
+    for (var i = 0; i < count; i++) {
+      var el = noPictureActions[i].el;
+      el.className = el.className.replace(' focused', '') + (i === noPictureFocus ? ' focused' : '');
+    }
+  }
+
+  // ▲▼: düğmeler iki satıra bölünürse (uzun dil, dar ekran) bir üst/alt satırda yatayda en yakın düğmeye geçer.
+  // Tek satırda yerinde kalır (◀▶ zaten sırayla gezer).
+  function focusNoPictureRow(step) {
+    var current = noPictureActions[noPictureFocus].el;
+    var top = current.offsetTop;
+    var center = current.offsetLeft + current.offsetWidth / 2;
+    var best = -1, bestRow = 0, bestSide = 0;
+    for (var i = 0; i < noPictureActions.length; i++) {
+      var el = noPictureActions[i].el;
+      var row = (el.offsetTop - top) * step;
+      // Aynı satırdakiler (birkaç piksel fark dahil) ve ters yöndekiler atlanır.
+      if (row <= 2) continue;
+      var side = Math.abs(el.offsetLeft + el.offsetWidth / 2 - center);
+      if (best < 0 || row < bestRow - 2 || (Math.abs(row - bestRow) <= 2 && side < bestSide)) {
+        best = i;
+        bestRow = row;
+        bestSide = side;
+      }
+    }
+    if (best >= 0) focusNoPicture(best);
+  }
+
+  function runNoPicture(action) {
+    if (action.exit) {
+      hideNoPicture();
+      leaving = true;
+      platform.exit();
+    } else if (action.close) {
+      closeNoPicture();
+    } else {
+      hdmiPort = action.port;
+      save('hdmi', hdmiPort);
+      showHdmi(hdmiPort);
+      showPanel(true);
+    }
+  }
+
+  // Kullanıcı kutuyu kapattı: başka giriş seçilene ya da uygulama yeniden başlatılana kadar yeniden açılmaz.
+  function closeNoPicture() {
+    noPictureClosed = true;
+    hideNoPicture();
+  }
+
+  function hideNoPicture() {
+    var el = $('no-picture');
+    if (!el || el.className === 'hidden') return;
+    el.className = 'hidden';
+    if (!server && !demoRunning()) $('waiting').className = '';
   }
 
   function autoSelectConsole(onNotFound) {
@@ -164,11 +311,99 @@
     return box.right > box.left && box.bottom > box.top ? box : null;
   }
 
+  // --- Uzun çeviriyi bölme ---
+  // Uzun çeviri ekranda tek uzun satır olarak taşmasın: satır başına en çok 42 karakter, en çok 3 satır, kelime
+  // sınırından ve dengeli bölünür; 3 satıra sığmazsa yazı biraz küçülür (en çok %75'e kadar). Konuşan adı ("ARTHUR:")
+  // sonraki sözcükle birleşik kalır, hep ilk satırdadır. Mac, Windows, Android ve OBS (SubtitleWrap) aynı kuralları uygular.
+  var WRAP_MAX_CHARS = 42;
+  var WRAP_MAX_LINES = 3;
+  var WRAP_MIN_SCALE = 0.75;
+  var fontBase = 46;
+
+  function wrapTokens(text) {
+    var words = text.split(/\s+/).filter(function (w) { return w; });
+    for (var i = 0; i < Math.min(3, words.length); i++) {
+      var w = words[i];
+      if (w.charAt(w.length - 1) === ':' || w.charAt(w.length - 1) === '\uFF1A') {
+        if (i + 1 < words.length) words.splice(0, i + 2, words.slice(0, i + 2).join(' '));
+        break;
+      }
+    }
+    return words;
+  }
+
+  function wrapWidth(words, from, to) {
+    var sum = to - from - 1;
+    for (var i = from; i < to; i++) sum += words[i].length;
+    return sum;
+  }
+
+  function wrapBalance(words, lines) {
+    var count = words.length;
+    var best = null;
+    function consider(cuts) {
+      var edges = [0].concat(cuts, [count]);
+      var longest = 0;
+      var spread = 0;
+      for (var i = 0; i < edges.length - 1; i++) {
+        var width = wrapWidth(words, edges[i], edges[i + 1]);
+        longest = Math.max(longest, width);
+        spread += width * width;
+      }
+      if (!best || longest < best.longest || (longest === best.longest && spread < best.spread)) {
+        best = { longest: longest, spread: spread, cuts: cuts };
+      }
+    }
+    var a, b;
+    if (lines === 2 || count < 3) {
+      for (a = 1; a < count; a++) consider([a]);
+    } else {
+      for (a = 1; a < count - 1; a++) for (b = a + 1; b < count; b++) consider([a, b]);
+    }
+    if (!best) return words.join(' ');
+    var all = [0].concat(best.cuts, [count]);
+    var out = [];
+    for (var i = 0; i < all.length - 1; i++) out.push(words.slice(all[i], all[i + 1]).join(' '));
+    return out.join('\n');
+  }
+
+  function wrapSubtitle(text) {
+    var length = Array.from ? Array.from(text).length : text.length;
+    if (length <= WRAP_MAX_CHARS || text.indexOf('\n') >= 0) return { text: text, scale: 1 };
+    var words = wrapTokens(text);
+    if (words.length < 2) return { text: text, scale: 1 };
+    var scale = Math.min(1, Math.max(WRAP_MIN_SCALE, WRAP_MAX_CHARS * WRAP_MAX_LINES / length));
+    var cap = Math.floor(WRAP_MAX_CHARS / scale);
+    var lines = Math.min(WRAP_MAX_LINES, Math.max(2, Math.ceil(length / cap)));
+    return { text: wrapBalance(words, Math.min(lines, words.length)), scale: scale };
+  }
+
+  // Satırı yazar. Sayfadaki metin bölünmüş hâlidir; karşılaştırmalar için özgün metin elementte kalır.
+  // Nino: rich ise düğme simgeleri rozet olarak çizilir (setRich); her durumda Arapça satır sağdan sola dizilir.
+  function setLineText(textId, text, paragraphs, baseSize, rich) {
+    var el = $(textId);
+    var wrapped = paragraphs ? { text: text, scale: 1 } : wrapSubtitle(text);
+    el.rawText = text;
+    if (rich) {
+      setRich(el, wrapped.text);
+    } else {
+      el.textContent = wrapped.text;
+      setDirection(el, text);
+    }
+    el.style.whiteSpace = 'pre-line';
+    el.style.fontSize = Math.round(baseSize * wrapped.scale) + 'px';
+  }
+
+  function rawText(id) {
+    var el = $(id);
+    return el.rawText !== undefined ? el.rawText : el.textContent;
+  }
+
   // paragraphs: görev paneli gibi başlık ve maddeli yazılar satır satır, sola yaslı gösterilir.
   // replaces: bilgisayar bu satırı öncekinin uzamış ya da düzelmiş okuması saydı (bkz. replacesCurrent).
   function showSubtitle(text, duration, box, paragraphs, replaces) {
     var now = Date.now();
-    var current = $('subtitle-text').textContent;
+    var current = rawText('subtitle-text');
     // Önceki satır kısa göründüyse yeni satırın üstünde kalır. Aynı cümlenin başka bir okunuşu (ya da yeniden gelen
     // satır) ikinci çeviri gibi durmasın diye üste çıkmaz; görev paneli gibi çok satırlı yazılar da üst üste binmez.
     if (replacesCurrent(replaces, paragraphs)) {
@@ -183,8 +418,8 @@
     shownParagraphs = !!paragraphs;
     holdUntil = shownAt + Math.min(HOLD_MAX_MS, 2000 + text.length * 60);
     currentBox = validBox(box);
-    setRich($('subtitle-text'), text);
-    $('subtitle-text').style.whiteSpace = paragraphs ? 'pre-line' : '';
+    setLineText('subtitle-text', text, paragraphs, fontBase, true);
+    // Nino: "start" sağdan sola (Arapça) satırda sağa yaslar.
     $('subtitle-text').style.textAlign = paragraphs ? 'start' : '';
     $('subtitle').className = '';
     layout();
@@ -238,7 +473,7 @@
   // Önceki satır üste çıkar. Orada hâlâ görünen bir satır varsa o da bir üst sıraya (iki önceki) kayar; en çok üç satır.
   function showPrevious(text) {
     var older = $('subtitle-prev');
-    var olderText = $('subtitle-prev-text').textContent;
+    var olderText = rawText('subtitle-prev-text');
     if (older.className === '' && olderText && !sameLine(olderText, text)) {
       showSlot('subtitle-prev2', olderText);
     } else {
@@ -251,8 +486,7 @@
     var timers = previousTimers[id];
     clearTimeout(timers[0]);
     clearTimeout(timers[1]);
-    $(id + '-text').textContent = text;
-    setDirection($(id + '-text'), text);
+    setLineText(id + '-text', text, false, Math.round(fontBase * 0.8));
     $(id).className = '';
     timers[0] = setTimeout(function () {
       $(id).className = 'fading';
@@ -277,17 +511,29 @@
     var x = plainText(a);
     var y = plainText(b);
     if (!x || !y) return x === y;
-    return x === y || x.indexOf(y) >= 0 || y.indexOf(x) >= 0;
+    // Boşluklar karşılaştırmaya girmez (OCR boşluğu bazen yutar ya da fazladan koyar). Tek sözcüklük satır ise
+    // ancak öteki satırda tam sözcük olarak geçerse aynıdır: "No!" ve "Not now!" farklı altyazılardır.
+    var cx = x.replace(/ /g, '');
+    var cy = y.replace(/ /g, '');
+    if (cx === cy) return true;
+    if (cx.indexOf(cy) >= 0) return y.indexOf(' ') >= 0 || (' ' + x + ' ').indexOf(' ' + y + ' ') >= 0;
+    if (cy.indexOf(cx) >= 0) return x.indexOf(' ') >= 0 || (' ' + y + ' ').indexOf(' ' + x + ' ') >= 0;
+    return false;
   }
 
   function plainText(text) {
-    return String(text).toLowerCase().replace(/[\s.,!?;:…"'“”‘’«»()\[\]\-–—،؟؛]+/g, '');
+    // Nino: Arapça noktalama (، ؟ ؛) da yok sayılır.
+    return String(text).toLowerCase().replace(/[.,!?;:…"'“”‘’«»()\[\]\-–—،؟؛]+/g, '').replace(/\s+/g, ' ').trim();
   }
 
   // --- Ekranı çevir ---
   // Bilgisayar ekranın tamamını okuyup her yazı grubunun çevirisini yeriyle gönderir. Her çeviri kendi İngilizce
   // yazısını örter; yazı boyu o yazının satır yüksekliğinden seçilir, Türkçe uzun gelirse sığana kadar küçülür.
 
+
+  // Ekran çevirisinin durumu. Nino'nun yazı yardımcıları (setRich, setDirection) bundan sonra durur: ekran çevirisi
+  // onları kullanır ve scripts/tv-screen.test.js bu satırdan hideScreen'e kadarki bölümü tarayıcıda çalıştırır.
+  var screenTimer = null;
 
   // Nino: çevirideki düğme simgeleri (✕ ○ △ □ ●, L1–R3) oyundaki gibi yuvarlak rozet olarak çizilir.
   var ICON_RE = /(✕|○|△|□|●|↑|↓|←|→|✜|▦|◆|[\u24B6-\u24CF]|\b[LR][123]\b|\bOPTIONS\b|\bTOUCHPAD\b)/;
@@ -328,11 +574,27 @@
       }
     }
   }
-  var screenTimer = null;
   var SCREEN_PAD = 0.004;
   var SCREEN_PAD_X = 0.018;
   var SCREEN_PAD_Y = 0.008;
   var SCREEN_MIN_FONT = 14;
+
+  // Yalnız aşağıdaki bağımsız kutular büyümeyi sınırlar; kaynakta zaten üst üste olan
+  // kutuların yerini değiştirmeyiz. Aynı hesap bütün sonuçlar için yapılır, sıra önemli değildir.
+  function screenBottom(items, box, left, width, screenWidth, screenHeight) {
+    var bottom = screenHeight;
+    for (var j = 0; j < items.length; j++) {
+      var other = items[j];
+      var next = validBox(other && other.box);
+      if (!next || !other.text || next.top < box.bottom) continue;
+      // Nino: komşunun örtüsü de solda ve dikeyde geniş paylıdır (showScreen ile aynı).
+      var nextLeft = Math.max(0, next.left - SCREEN_PAD_X) * screenWidth;
+      var nextWidth = Math.max(80, (Math.min(1, next.right + SCREEN_PAD) * screenWidth - nextLeft));
+      if (left < nextLeft + nextWidth && left + width > nextLeft)
+        bottom = Math.min(bottom, Math.max(0, next.top - SCREEN_PAD_Y) * screenHeight);
+    }
+    return bottom;
+  }
 
   function showScreen(items, duration) {
     var host = $('screen');
@@ -356,19 +618,24 @@
       var boxHeight = (box.bottom - box.top + 2 * SCREEN_PAD_Y) * height;
       el.style.left = (left * 100) + '%';
       el.style.top = (top * 100) + '%';
-      el.style.width = Math.max(80, (Math.min(1, box.right + SCREEN_PAD) - left) * width) + 'px';
+      var itemWidth = Math.max(80, (Math.min(1, box.right + SCREEN_PAD) - left) * width);
+      el.style.width = itemWidth + 'px';
       if (box.left > 0.5) el.style.textAlign = 'right';
-      el.style.minHeight = Math.round(boxHeight) + 'px';
+      // Bir piksel pay, tarayıcının kesirli koordinat/scrollHeight yuvarlamasını karşılar.
+      var available = Math.max(0, Math.floor(screenBottom(items, box, left * width, itemWidth, width, height) - top * height) - 1);
+      el.style.minHeight = Math.min(Math.round(boxHeight), available) + 'px';
       var line = typeof item.line === 'number' && item.line > 0 ? item.line * height : box.bottom * height - box.top * height;
       var size = Math.max(SCREEN_MIN_FONT, Math.min(96, Math.round(line * 0.95)));
       el.style.fontSize = size + 'px';
       host.appendChild(el);
       // Türkçe çoğu zaman İngilizceden uzundur: kutu biraz uzayabilir, daha fazlası için yazı küçülür.
-      var limit = Math.max(boxHeight * 1.5, line * 2.6);
+      var limit = Math.min(available, Math.max(boxHeight * 1.5, line * 2.6));
       while (el.scrollHeight > limit && size > SCREEN_MIN_FONT) {
-        size -= 2;
+        size = Math.max(SCREEN_MIN_FONT, size - 2);
         el.style.fontSize = size + 'px';
       }
+      // En küçük okunabilir boyutta da sığmayan metni kesmeyiz/gizlemeyiz.
+      // Bu uç durumda eski doğal büyüme davranışı korunur.
     }
     clearTimeout(screenTimer);
     screenTimer = setTimeout(hideScreen, duration || 20000);
@@ -380,12 +647,77 @@
     $('screen').innerHTML = '';
   }
 
+  // --- Ek alanlar ---
+  // Bilgisayar altyazının yanında ekranın köşelerindeki yazıları da (görev, telefon mesajı, bildirim) sürekli okur ve
+  // her alanın çevirisini "region" olayıyla gönderir: {id, text, box, line}. Çeviri İngilizce yazının yerinde küçük bir
+  // kutuda durur; ekranın sağ yarısındaki kutu sağa, alt yarısındaki alta yaslanır, Türkçe uzun gelirse kutu ekranın
+  // içine doğru büyür. Boş "text" o alanın kutusunu, "region-clear" hepsini kaldırır. Ana altyazıya dokunulmaz.
+
+  var regionBoxes = {};
+  var REGION_PAD = 0.004;
+  var REGION_MIN_FONT = 18;
+  var REGION_MAX_FONT = 44;
+
+  function showRegion(data) {
+    var id = data && typeof data.id === 'string' ? data.id : '';
+    if (!id) return;
+    var box = validBox(data.box);
+    if (!data.text || !box) return hideRegion(id);
+    var el = regionBoxes[id];
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'region';
+      $('regions').appendChild(el);
+      regionBoxes[id] = el;
+    }
+    $('regions').className = '';
+    var width = window.innerWidth || 1920;
+    var height = window.innerHeight || 1080;
+    el.textContent = data.text;
+    el.style.left = el.style.right = el.style.top = el.style.bottom = '';
+    if ((box.left + box.right) / 2 > 0.5) {
+      el.style.right = (Math.max(0, 1 - box.right - REGION_PAD) * 100) + '%';
+    } else {
+      el.style.left = (Math.max(0, box.left - REGION_PAD) * 100) + '%';
+    }
+    if ((box.top + box.bottom) / 2 > 0.5) {
+      el.style.bottom = (Math.max(0, 1 - box.bottom - REGION_PAD) * 100) + '%';
+    } else {
+      el.style.top = (Math.max(0, box.top - REGION_PAD) * 100) + '%';
+    }
+    var boxWidth = (box.right - box.left + 2 * REGION_PAD) * width;
+    el.style.minWidth = Math.round(boxWidth) + 'px';
+    el.style.maxWidth = Math.round(Math.max(boxWidth, width * 0.3)) + 'px';
+    var line = typeof data.line === 'number' && data.line > 0 ? data.line * height : 30;
+    el.style.fontSize = Math.max(REGION_MIN_FONT, Math.min(REGION_MAX_FONT, Math.round(line * 0.9))) + 'px';
+  }
+
+  function hideRegion(id) {
+    var el = regionBoxes[id];
+    if (!el) return;
+    delete regionBoxes[id];
+    $('regions').removeChild(el);
+  }
+
+  function hideRegions() {
+    for (var id in regionBoxes) {
+      if (Object.prototype.hasOwnProperty.call(regionBoxes, id)) $('regions').removeChild(regionBoxes[id]);
+    }
+    regionBoxes = {};
+    $('regions').className = 'hidden';
+  }
+
   // Konum hem CouchSubs uygulamasından hem kumandanın oklarıyla ayarlanır. Kumandayla
   // seçilen konum, uygulamadaki ayar değişene kadar korunur (son değiştiren geçerlidir).
+  // Alttan en az %3: ekran kenarı taşan (overscan) TV'lerde altyazının alt satırı kesilmesin.
+  var BOTTOM_MIN_PERCENT = 3;
+
   function setBottom(percent) {
-    bottomPercent = Math.max(0, Math.min(85, percent));
+    bottomPercent = Math.max(BOTTOM_MIN_PERCENT, Math.min(85, percent));
     layout();
   }
+
+  var SIDE_MIN = 0.05;
 
   // Altyazıyı seçilen yerleşime göre konumlar. İngilizce altyazının yeri bilinmiyorsa sabit yükseklik kullanılır.
   function layout() {
@@ -409,11 +741,11 @@
     if (mode === 'below' && box.bottom > 0.88) mode = 'above';
     if (mode === 'above' && box.top < 0.12) mode = 'below';
 
-    // Yatayda İngilizce satırın ortasına hizalanır.
+    // Yatayda İngilizce satırın ortasına hizalanır; yanlarda güvenli alan (1920'de 96 piksel, %5) kadar boşluk kalır.
     var center = (box.left + box.right) / 2;
     var half = Math.max(0.3, Math.min(center, 1 - center));
-    el.style.left = (Math.max(0.02, center - half) * 100) + '%';
-    el.style.right = (Math.max(0.02, 1 - center - half) * 100) + '%';
+    el.style.left = (Math.max(SIDE_MIN, center - half) * 100) + '%';
+    el.style.right = (Math.max(SIDE_MIN, 1 - center - half) * 100) + '%';
 
     if (autoSize) {
       // Nino: İngilizce satırın yüksekliğinden yazı boyu (birden çok satırlı kutuda satır başına).
@@ -464,12 +796,17 @@
       right = Math.max(right, text.right);
       bottom = Math.max(bottom, text.bottom);
     }
+    // Tam genişlik bandı: oyundaki İngilizce yazı yan yana taşsa da görünmesin diye örtü ekranın iki kenarına uzanır.
+    if (bandShape) { left = 0; right = width; }
     cover.style.left = Math.round(left) + 'px';
     // Çeviri gibi alttan konumlanır: sayfanın yüksekliği sonradan değişirse (Android TV ölçeklemesi) ikisi birlikte kayar.
     cover.style.top = 'auto';
     cover.style.bottom = Math.round(height - bottom) + 'px';
     cover.style.width = Math.round(right - left) + 'px';
     cover.style.height = Math.round(bottom - top) + 'px';
+    // Örtü telefondaki "Arka plan koyuluğu"na uyar: eskiden hep %97'ydi, kaydırıcı %0'da da kutu opak kalıyordu.
+    // %100 tamamen opaktır; koyuluğu göndermeyen eski sürümlerde style.css'teki %97 geçerlidir.
+    cover.style.background = coverBackground;
     cover.className = '';
   }
 
@@ -493,19 +830,41 @@
   // Çevirinin zemini (bilgisayardaki "Zemin koyuluğu"); boşsa style.css'teki varsayılan. Örtü varken saydam olur.
   var textBackground = '';
 
+  // Örtünün zemini (koyuluğa göre, %100'de tamamen opak; boşsa style.css'teki %97) ve tam genişlik bant mı; eski
+  // bilgisayar uygulamaları alanı göndermez, yazı kadar kalır.
+  var coverBackground = '';
+  var bandShape = false;
+
+  // body'deki tek bir sınıfı açar ya da kapatır; diğerleri kalır. Eskiden className baştan yazılıyordu ve Android TV
+  // katmanının 'overlay' sınıfı ilk style olayında siliniyordu.
+  function setBodyClass(name, on) {
+    var body = document.body;
+    if (!body) return;
+    var rest = (' ' + body.className + ' ').replace(' ' + name + ' ', ' ');
+    body.className = (on ? rest + name : rest).replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ');
+  }
+
   // Bilgisayardaki "Yazı rengi" seçimi; bilinmeyen değer gelirse renk değişmez.
   var TEXT_COLORS = { white: '#FFFFFF', yellow: '#FFE135' };
 
   function applyStyle(style) {
     if (style.fontSize) {
-      $('subtitle-text').style.fontSize = style.fontSize + 'px';
+      fontBase = style.fontSize;
+      var shown = rawText('subtitle-text');
+      if ($('subtitle-text').rawText !== undefined && shown) setLineText('subtitle-text', shown, !!shownParagraphs, fontBase, true);
+      else $('subtitle-text').style.fontSize = style.fontSize + 'px';
       $('subtitle-prev-text').style.fontSize = Math.round(style.fontSize * 0.8) + 'px';
       $('subtitle-prev2-text').style.fontSize = Math.round(style.fontSize * 0.8) + 'px';
     }
     if (PLACEMENTS[style.placement]) placement = style.placement;
+    bandShape = style.backgroundShape === 'band';
+    setBodyClass('band', bandShape);
     if (typeof style.background === 'number') {
       var alpha = Math.max(0, Math.min(100, style.background)) / 100;
+      // Zemin çok saydamsa yazıya sert kontur eklenir (style.css, body.thin-bg).
+      setBodyClass('thin-bg', alpha < 0.3);
       textBackground = 'rgba(0, 0, 0, ' + alpha + ')';
+      coverBackground = style.background >= 100 ? '#000' : textBackground;
       $('subtitle-text').style.background = textBackground;
       $('subtitle-prev-text').style.background = 'rgba(0, 0, 0, ' + (alpha * 0.83).toFixed(2) + ')';
       $('subtitle-prev2-text').style.background = 'rgba(0, 0, 0, ' + (alpha * 0.83).toFixed(2) + ')';
@@ -521,6 +880,8 @@
       $('subtitle-prev2-text').style.fontWeight = style.bold ? '700' : '600';
     }
     if (typeof style.autoSize === 'boolean') autoSize = style.autoSize;
+    // Nino: yazı tipi (style.css'te body[data-font=...] kuralları; fonts/ klasöründeki OFL yazı tipleri).
+    if (typeof style.font === 'string') document.body.setAttribute('data-font', style.font);
     // Nino: altyazı teması (style.css'te body[data-theme=...] kuralları).
     if (typeof style.theme === 'string') document.body.setAttribute('data-theme', style.theme);
     if (TEXT_COLORS[style.textColor]) {
@@ -596,6 +957,7 @@
           dropTimer = null;
           hideSubtitle('drop');
           hideScreen();
+          hideRegions();
         }, DROP_HIDE_MS);
       }
       setStatus('st-conn', t('reconnecting'), 'bad');
@@ -615,6 +977,8 @@
     onEvent('clear', onClear);
     onEvent('screen', function (data) { showScreen(data.items, data.duration); });
     onEvent('screen-clear', hideScreen);
+    onEvent('region', showRegion);
+    onEvent('region-clear', hideRegions);
     onEvent('style', applyStyle);
     onEvent('speech', function (data) { if (data.url) playSpeech(server + data.url); });
     onEvent('speech-stop', stopSpeech);
@@ -896,10 +1260,24 @@
     return match ? match[1] : null;
   }
 
+  // Bekleme ekranındaki durum satırı: TV'nin adresi (biliniyorsa; telefonda elle yazılabilir) ve aramanın sürdüğü.
+  // Adres ayrıca sorulmaz, taramanın zaten sorduğu adres kullanılır.
+  var tvAddress = null;
+
+  function renderWaitingStatus() {
+    var el = $('waiting-status');
+    if (!el) return;
+    el.textContent = (tvAddress ? t('waitingAddress').replace('%1', tvAddress) + ' · ' : '') + t('waitingSearching');
+  }
+
   // Taranacak ağlar: TV'nin kendi ağı, sonra kayıtlı adresin ağı (aynıysa bir kez).
   function scanSubnets(done) {
     var fromServer = subnetOf(server);
     function finish(ip) {
+      if (ip && ip !== tvAddress) {
+        tvAddress = ip;
+        renderWaitingStatus();
+      }
       var list = [];
       var own = subnetOf(ip);
       if (own) list.push(own);
@@ -1080,6 +1458,7 @@
   // Geri tuşu: önce ipucu, demo ya da panel kapanır; giriş ekranında TV'nin ana ekranına dönülür.
   function goBack() {
     if (sourceTipShown()) return hideSourceTip();
+    if (noPictureShown()) return closeNoPicture();
     if (demoRunning()) return stopDemo();
     if ($('panel').className !== 'hidden') return hidePanel();
     leaving = true;
@@ -1197,6 +1576,7 @@
   document.addEventListener('click', function () {
     if (Date.now() - lastOkKey < 400) return;
     if (sourceTipShown()) hideSourceTip();
+    else if (noPictureShown()) return;
     else if ($('waiting').className !== 'hidden') togglePanel();
     else if (!demoRunning()) togglePanel();
   });
@@ -1206,6 +1586,14 @@
     if (code === KEY.OK) lastOkKey = Date.now();
     if (code === KEY.OK && sourceTipShown()) {
       hideSourceTip();
+    } else if (noPictureShown() && (code === KEY.LEFT || code === KEY.RIGHT)) {
+      focusNoPicture(noPictureFocus + (code === KEY.RIGHT ? 1 : -1));
+      e.preventDefault();
+    } else if (noPictureShown() && (code === KEY.UP || code === KEY.DOWN)) {
+      focusNoPictureRow(code === KEY.DOWN ? 1 : -1);
+      e.preventDefault();
+    } else if (noPictureShown() && code === KEY.OK) {
+      runNoPicture(noPictureActions[noPictureFocus]);
     } else if (code === 48) { // 0: elle seçimi unut, konsolu yeniden ara
       save('hdmi', '');
       autoSelectConsole(function () {
@@ -1251,6 +1639,7 @@
 
   $('app-version').textContent = APP_VERSION;
   renderDiag();
+  renderWaitingStatus();
   // Önceki açılışta TV kendiliğinden kaynağa geçtiyse ipucu şimdi gösterilir.
   maybeShowSourceTip();
   var initial = parseParams(platform.launchParams());

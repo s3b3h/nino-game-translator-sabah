@@ -51,8 +51,19 @@ object PackKey {
     fun key(text: String): String? {
         val canon = canon(text)
         if (canon.isEmpty()) return null
-        val hash = MessageDigest.getInstance("SHA-256").digest(canon.toByteArray(Charsets.UTF_8))
+        val hash = digest.get()!!.digest(canon.toByteArray(Charsets.UTF_8))
         return hash.take(8).joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    }
+
+    private val digest = ThreadLocal.withInitial { MessageDigest.getInstance("SHA-256") }
+
+    /** Anahtarın sayı hâli doğrudan (hex dizesi kurulmadan; `number(key(text))` ile aynı); harf ya da rakam yoksa null. */
+    fun keyNumber(text: String): Long? = canonNumber(canon(text))
+
+    /** Zaten canon olan metnin anahtar sayısı; boşsa null. */
+    fun canonNumber(canon: String): Long? {
+        if (canon.isEmpty()) return null
+        return java.nio.ByteBuffer.wrap(digest.get()!!.digest(canon.toByteArray(Charsets.UTF_8))).long
     }
 
     /** Anahtarın sayı hâli (sözlükte daha az yer tutar); geçersizse null. */
@@ -93,14 +104,21 @@ class InvalidPackException(message: String, cause: Throwable? = null) : IOExcept
 /**
  * Bir oyunun çeviri paketi. Dosya gzip'li JSON'dur: `{"format":1|2,"id":…,"title":…,"entries":{anahtar: Türkçe}}`;
  * yalnız `{anahtar: Türkçe}` nesnesi de kabul edilir (adı dosya adından gelir). Biçim 2 ayrıca `segments` taşır (oyunun
- * ayrı gösterdiği parçalar ve çok cümleli satırların cümleleri; aynı düzen). Masaüstünün biçim 2'deki `fuzzy` imzaları
- * (OCR'ın bozduğu satırı bulma) telefonda henüz kullanılmıyor.
+ * ayrı gösterdiği parçalar ve çok cümleli satırların cümleleri; aynı düzen) ve `fuzzy` (OCR'ın bozduğu satırı bulmak
+ * için imzalar, bkz. [PackFuzzy]) taşır.
  *
  * Telefonda bellek sınırlıdır (uygulamayla gelen altı pakette ~520 bin satır): satırlar sıralı anahtar dizisi ve tek bir
  * UTF-8 bayt bloğunda tutulur (~30 MB; HashMap<Long, String> bunun üç katından fazlasını isterdi), ikili aramayla bulunur.
  * Dosya da akış hâlinde okunur ([PackJson]); bütün JSON bir nesne ağacına dönüştürülmez.
  */
-class GamePack private constructor(val id: String, val title: String, private val entries: Table, private val segments: Table) {
+class GamePack private constructor(
+    val id: String,
+    val title: String,
+    private val entries: Table,
+    private val segments: Table,
+    /** Bulanık imzalar (biçim 2); yoksa ya da bozuksa null. */
+    internal val fuzzy: PackFuzzyIndex?,
+) {
     /** Sıralı anahtarlar ve UTF-8 metin bloğu. */
     internal class Table(private val keys: LongArray, private val offsets: IntArray, private val blob: ByteArray) {
         val size get() = keys.size
@@ -111,19 +129,74 @@ class GamePack private constructor(val id: String, val title: String, private va
             return String(blob, offsets[index], offsets[index + 1] - offsets[index], Charsets.UTF_8)
         }
 
+        fun contains(key: Long) = java.util.Arrays.binarySearch(keys, key) >= 0
+
         companion object {
-            fun of(map: Map<Long, String>): Table {
-                val keys = map.keys.toLongArray().also { it.sort() }
-                val offsets = IntArray(keys.size + 1)
-                val blob = java.io.ByteArrayOutputStream(map.size * 48)
-                for ((index, key) in keys.withIndex()) {
-                    offsets[index] = blob.size()
-                    blob.write(map.getValue(key).toByteArray(Charsets.UTF_8))
-                }
-                offsets[keys.size] = blob.size()
-                return Table(keys, offsets, blob.toByteArray())
-            }
+            val EMPTY = Table(LongArray(0), IntArray(1), ByteArray(0))
         }
+    }
+
+    /**
+     * Satırları geldiği sırayla düz dizilere yazar, sonunda anahtara göre sıralı [Table] kurar. Satır başına nesne
+     * (HashMap düğümü, Long, String) tutulmaz: GTA V gibi büyük paket açılırken bellek tepe noktası birkaç kat düşer.
+     */
+    internal class TableBuilder {
+        private var keys = LongArray(1024)
+        private var ends = IntArray(1024)
+        private var count = 0
+        /** Tamponu kopyalamadan okunabilen bayt akışı (toByteArray() bütün metni bir kez daha kopyalardı). */
+        private class Bytes : java.io.ByteArrayOutputStream(1 shl 16) {
+            fun raw(): ByteArray = buf
+        }
+        private val blob = Bytes()
+
+        val isEmpty get() = count == 0
+
+        fun add(key: Long, text: String) {
+            if (count == keys.size) {
+                keys = keys.copyOf(count * 2)
+                ends = ends.copyOf(count * 2)
+            }
+            blob.write(text.toByteArray(Charsets.UTF_8))
+            keys[count] = key
+            ends[count] = blob.size()
+            count++
+        }
+
+        fun build(): Table {
+            if (count == 0) return Table.EMPTY
+            val bytes = blob.raw()
+            // Kararlı sıralama: aynı anahtarın kayıtları geliş sırasıyla yan yana kalır, sonuncusu alınır.
+            val order = (0 until count).sortedWith { a, b -> keys[a].compareTo(keys[b]) }
+            var unique = 0
+            var total = 0
+            for (position in order.indices) {
+                val index = order[position]
+                if (position + 1 < order.size && keys[order[position + 1]] == keys[index]) continue
+                unique++
+                total += ends[index] - start(index)
+            }
+            val sortedKeys = LongArray(unique)
+            val offsets = IntArray(unique + 1)
+            val text = ByteArray(total)
+            var slot = 0
+            var at = 0
+            for (position in order.indices) {
+                val index = order[position]
+                if (position + 1 < order.size && keys[order[position + 1]] == keys[index]) continue
+                val from = start(index)
+                val length = ends[index] - from
+                System.arraycopy(bytes, from, text, at, length)
+                sortedKeys[slot] = keys[index]
+                offsets[slot] = at
+                at += length
+                slot++
+            }
+            offsets[unique] = at
+            return Table(sortedKeys, offsets, text)
+        }
+
+        private fun start(index: Int) = if (index == 0) 0 else ends[index - 1]
     }
 
     /** Tam satır sayısı (parçalar hariç). */
@@ -135,31 +208,53 @@ class GamePack private constructor(val id: String, val title: String, private va
     /** Anahtarın parça ("segments") Türkçesi. */
     fun segment(key: Long): String? = segments[key]
 
+    /** Anahtar pakette (tam satır ya da parça) var mı. */
+    fun contains(key: Long) = entries.contains(key) || segments.contains(key)
+
     companion object {
         /** [name]: dosya adı uzantısız ("mafia-the-old-country"); düz biçimde kimlik ve başlık olur. */
         fun decode(data: ByteArray, name: String): GamePack {
             val json = if (data.size >= 2 && data[0] == 0x1f.toByte() && data[1] == 0x8b.toByte()) decompress(data) else data
-            val entries = HashMap<Long, String>()
-            val segments = HashMap<Long, String>()
-            fun add(target: HashMap<Long, String>, key: String, value: String) {
+            val entries = TableBuilder()
+            val segments = TableBuilder()
+            // İmzaların sırası: dosyadaki bütün geçerli anahtarlar (Türkçesi boş kalanlar da); imzalar yoksa atılır.
+            var order = LongArray(1024)
+            var orderCount = 0
+            fun add(target: TableBuilder, key: String, value: String) {
                 val number = PackKey.number(key.lowercase(Locale.ROOT)) ?: return
+                if (orderCount == order.size) order = order.copyOf(orderCount * 2)
+                order[orderCount++] = number
                 val text = cleaned(value)
-                // Aynı anahtar iki kez varsa sonraki kazanır.
-                if (text.isNotEmpty()) target[number] = text
+                // Aynı anahtar iki kez varsa sonraki kazanır (TableBuilder.build).
+                if (text.isNotEmpty()) target.add(number, text)
             }
             val parsed = PackJson.parse(json, { key, value -> add(entries, key, value) }, { key, value -> add(segments, key, value) })
             if (!parsed.wrapped) {
                 parsed.rootStrings.forEach { (key, value) -> add(entries, key, value) }
-                return build(name, name, entries, emptyMap())
+                return build(name, name, entries, TableBuilder())
             }
             if (parsed.format != null && parsed.format != 1.0 && parsed.format != 2.0) throw InvalidPackException("Desteklenmeyen paket biçimi")
             val id = parsed.id?.takeIf { it.isNotEmpty() } ?: name
-            return build(id, parsed.title?.takeIf { it.isNotEmpty() } ?: id, entries, segments)
+            if (entries.isEmpty) throw InvalidPackException("Pakette satır yok")
+            val fuzzy = parsed.fuzzy?.let { PackFuzzyIndex.decode(it, unsignedUnique(order, orderCount)) }
+            return GamePack(id, parsed.title?.takeIf { it.isNotEmpty() } ?: id, entries.build(), segments.build(), fuzzy)
         }
 
-        private fun build(id: String, title: String, entries: Map<Long, String>, segments: Map<Long, String>): GamePack {
-            if (entries.isEmpty()) throw InvalidPackException("Pakette satır yok")
-            return GamePack(id, title, Table.of(entries), Table.of(segments))
+        private fun build(id: String, title: String, entries: TableBuilder, segments: TableBuilder): GamePack {
+            if (entries.isEmpty) throw InvalidPackException("Pakette satır yok")
+            return GamePack(id, title, entries.build(), segments.build(), null)
+        }
+
+        /** İlk [count] anahtar işaretsiz sayı sırasıyla, tekrarsız (paket betiği anahtarları UInt64 olarak sıralar). */
+        private fun unsignedUnique(keys: LongArray, count: Int): LongArray {
+            val sorted = LongArray(count) { keys[it] xor Long.MIN_VALUE }
+            sorted.sort()
+            var unique = 0
+            for (index in sorted.indices) {
+                if (unique > 0 && sorted[unique - 1] == sorted[index]) continue
+                sorted[unique++] = sorted[index]
+            }
+            return LongArray(unique) { sorted[it] xor Long.MIN_VALUE }
         }
 
         /** Paketteki Türkçede de oyunun biçim etiketleri kalmış olabilir ("<b><h>…</>"); TV'de görünmesinler. */
@@ -168,11 +263,30 @@ class GamePack private constructor(val id: String, val title: String, private va
             return PackKey.stripTags(text, "").split(' ').filter { it.isNotEmpty() }.joinToString(" ").trim()
         }
 
+        /**
+         * Açılmış boyut gzip'in son 4 baytında yazar (ISIZE); dizi bir kerede o boyutta ayrılır. readBytes() büyüyen
+         * tamponla açılmış boyutun yaklaşık üç katı geçici bellek isterdi (GTA V: 18 MB JSON).
+         */
         private fun decompress(data: ByteArray): ByteArray = try {
-            GZIPInputStream(ByteArrayInputStream(data)).use { it.readBytes() }
+            val size = if (data.size >= 18) (data[data.size - 4].toInt() and 0xff) or ((data[data.size - 3].toInt() and 0xff) shl 8) or
+                ((data[data.size - 2].toInt() and 0xff) shl 16) or ((data[data.size - 1].toInt() and 0xff) shl 24) else -1
+            GZIPInputStream(ByteArrayInputStream(data), 1 shl 16).use { input ->
+                if (size !in 0..MAX_EXACT_SIZE) return@use input.readBytes()
+                val out = ByteArray(size)
+                var at = 0
+                while (at < size) {
+                    val count = input.read(out, at, size - at)
+                    if (count < 0) break
+                    at += count
+                }
+                // Boyut tutmadıysa (birden çok gzip üyesi ya da bozuk dosya) güvenli yola dönülür.
+                if (at != size || input.read() != -1) GZIPInputStream(ByteArrayInputStream(data)).use { it.readBytes() } else out
+            }
         } catch (error: IOException) {
             throw InvalidPackException("Paket açılamadı", error)
         }
+
+        private const val MAX_EXACT_SIZE = 256 shl 20
     }
 }
 
@@ -181,15 +295,21 @@ data class PackMatch(val text: String, val packId: String? = null)
 
 /**
  * Uygulamayla gelen ve kullanıcının klasörüne bırakılan paketler (Windows: GamePackLibrary). Sıra: uygulamanınkiler,
- * sonra kullanıcınınkiler (dosya adına göre); aynı anahtarda sonraki kazanır, aynı kimlikli pakette kullanıcının dosyası
+ * sonra kullanıcınınkiler (dosya adına göre), en son içe aktarılanlar; aynı anahtarda sonraki kazanır, aynı kimlikli pakette kullanıcının dosyası
  * uygulamanınkinin yerine geçer. Ayarlarda kapatılan paketlere bakılmaz.
  *
  * Masaüstü paketleri tek sözlükte birleştirir; burada her paket ayrı tutulur ve sondan başa aranır (aynı sonuç), böylece
  * satırın hangi oyunun paketinden geldiği bilinir.
  */
 class GamePackLibrary(
-    private val bundled: (() -> List<Pair<String, ByteArray>>)?,
+    /**
+     * Uygulamayla gelen paketlerin adları ve okuyucuları. Dosyalar sırayla, biri çözülüp bırakıldıktan sonra okunur:
+     * hepsi birden belleğe alınırsa zayıf telefonda bellek yetmiyordu (çeviri başlarken uygulama kapanıyordu).
+     */
+    private val bundled: (() -> List<Pair<String, () -> ByteArray>>)?,
     private val userDirectory: File?,
+    /** Ayarlar › Oyun paketleri'nden içe aktarılan topluluk paketleri ([GamePackImporter]); en son okunur, çakışan satırda kazanır. */
+    private val importedDirectory: File? = null,
 ) {
     data class Info(val id: String, val title: String, val entries: Int, val builtIn: Boolean)
 
@@ -197,6 +317,16 @@ class GamePackLibrary(
     private var loaded = false
     private var packs: List<Pair<GamePack, Boolean>> = emptyList()
     @Volatile private var disabled: Set<String> = emptySet()
+    /**
+     * Son tam eşleşmenin geldiği paket ([packs] sırası): bulanık arama yalnız orada yapılır (oynanan oyun). Satır birden
+     * çok pakette varsa kapsam o paketlerden biri değilse ilkine geçer; hiç tam eşleşme olmadıysa bulanık arama yapılmaz.
+     */
+    private var scope: Int? = null
+    private var distinctive: Int? = null
+    /** Elle seçilen oyunun adı ([GameName.key]); null ise bütün paketlerde aranır. */
+    private var limitKey: String? = null
+    /** Elle seçilen oyunun paketi (paket listesi, sınır ve kapalı paketlere göre; her satırda yeniden aranmaz). */
+    private var limitCache: Triple<List<Pair<GamePack, Boolean>>, Pair<String, Set<String>>, Set<Int>>? = null
 
     val infos: List<Info>
         get() = synchronized(lock) {
@@ -219,24 +349,132 @@ class GamePackLibrary(
         infos
     }
 
+    /**
+     * Kullanıcının elle seçtiği oyun ([GameSense.packLimit]). Verilirse satırlar yalnız o oyunun paketinde aranır (tam ve
+     * bulanık), paketi yoksa ya da kapalıysa hiç aranmaz: paketi olmayan oyunda "Let's go." gibi kısa, genel satırlar
+     * başka oyunların paketinden yanlış çeviri getiriyor, oyunu da o pakete kaydırıyordu (#218). null: bütün paketler.
+     */
+    fun limitToGame(name: String?) {
+        val key = name?.let { GameName.key(it) }?.takeIf { it.isNotEmpty() }
+        synchronized(lock) {
+            if (key == limitKey) return
+            limitKey = key
+            scope = null
+            distinctive = null
+        }
+    }
+
+    /** Aramanın yapılacağı paketler: elle seçilen oyun varsa yalnız onun paketi (yoksa hiçbiri), sınırı yoksa hepsi. */
+    private fun searched(current: List<Pair<GamePack, Boolean>>, key: String?): Set<Int>? {
+        if (key == null) return null
+        val off = disabled
+        synchronized(lock) {
+            limitCache?.let { (list, of, result) -> if (list === current && of == key to off) return result }
+        }
+        val index = current.indices.lastOrNull { index ->
+            val pack = current[index].first
+            pack.id != GameSense.GENERAL_PACK && pack.id !in off &&
+                (GameName.key(pack.title) == key || GameName.key(pack.id) == key)
+        }
+        val result = setOfNotNull(index)
+        synchronized(lock) { limitCache = Triple(current, key to off, result) }
+        return result
+    }
+
     /** Satırın tamamı için paketteki Türkçe ve paketin kimliği (parçalara bölme yok; bkz. [PackLookup]). */
     fun findWithPack(text: String): PackMatch? {
-        val current = synchronized(lock) {
+        val (current, key) = synchronized(lock) {
             loadIfNeeded()
-            packs
+            packs to limitKey
         }
         if (current.isEmpty()) return null
-        val number = PackKey.key(text)?.let(PackKey::number) ?: return null
+        val only = searched(current, key)
+        if (only?.isEmpty() == true) return null
+        val number = PackKey.keyNumber(text) ?: return null
+        val found = lookup(current, number, only) ?: return null
+        noteHit(current, number, only)
+        return found
+    }
+
+    /**
+     * Tam anahtar yoksa oynanan oyunun (son tam eşleşmenin paketi) paketinde en yakın satırın Türkçesi: önce tek OCR
+     * düzeltmesiyle ([PackFuzzy.variants]) tam anahtar, sonra bulanık imza. Hiç tam eşleşme olmadıysa null.
+     */
+    fun nearestWithPack(text: String): PackMatch? {
+        val (current, chosen, limit) = synchronized(lock) {
+            loadIfNeeded()
+            Triple(packs, scope, limitKey)
+        }
+        // Elle seçilen oyunda bulanık arama da hep onun paketinde (tam eşleşme beklenmez); paketi yoksa yapılmaz.
+        val only = searched(current, limit)
+        val index = if (only != null) only.firstOrNull() else chosen
+        val pack = index?.let { current.getOrNull(it)?.first }?.takeIf { it.id !in disabled } ?: return null
+        corrected(text, pack, current, only)?.let { return it }
+        val key = pack.fuzzy?.nearest(text) { lookup(current, it, only)?.text } ?: return null
+        return lookup(current, key, only)
+    }
+
+    /** Bulanık aramanın yapılacağı paketin kimliği (son tam eşleşmenin paketi); yoksa null. */
+    val searchScope: String? get() = synchronized(lock) { scope?.let { packs.getOrNull(it)?.first?.id } }
+
+    /**
+     * Son tam eşleşmenin geldiği paketin başlığı; yoksa null. Tek satırla değişebilir: yapay zekâya giden oyun adı bu
+     * değil, [GameSense.current]'tır (#27).
+     */
+    val scopeTitle: String? get() = synchronized(lock) { scope?.let { packs.getOrNull(it)?.first?.title } }
+
+    /** Tek OCR düzeltmesiyle [pack]'te tam bulunan satırın Türkçesi; düzeltmelerin hepsi aynı Türkçeye çıkmıyorsa null. */
+    private fun corrected(text: String, pack: GamePack, current: List<Pair<GamePack, Boolean>>, only: Set<Int>?): PackMatch? {
+        var found: PackMatch? = null
+        for (variant in PackFuzzy.variants(text)) {
+            // ASCII canon metin yeniden sadeleştirilince değişmez; Normalizer'a gitmeden özetlenir.
+            val number = (if (variant.all { it.code < 128 }) PackKey.canonNumber(variant) else PackKey.keyNumber(variant)) ?: continue
+            if (!pack.contains(number)) continue
+            val turkish = lookup(current, number, only) ?: continue
+            if (found != null && found.text != turkish.text) return null
+            found = turkish
+        }
+        return found
+    }
+
+    /**
+     * Son çağrıdan beri yalnız tek bir pakette bulunan satırın paketi; okununca silinir. Okunan satırlar art arda aynı
+     * paketten geliyorsa oynanan oyun o pakettir ([GameSense]). Birkaç pakette ortak satırlar ("Okay.") sayılmaz.
+     */
+    fun takeDistinctiveHit(): Info? = synchronized(lock) {
+        val index = distinctive
+        distinctive = null
+        index?.let { packs.getOrNull(it) }?.let { (pack, builtIn) -> Info(pack.id, pack.title, pack.size, builtIn) }
+    }
+
+    private fun noteHit(current: List<Pair<GamePack, Boolean>>, number: Long, only: Set<Int>?) {
+        val off = disabled
+        val owners = current.indices.filter {
+            (only == null || it in only) && current[it].first.id !in off && current[it].first.contains(number)
+        }
+        val first = owners.firstOrNull() ?: return
+        synchronized(lock) {
+            if (packs !== current) return
+            if (owners.size == 1) distinctive = first
+            if (owners.size == 1 || scope !in owners) scope = first
+        }
+    }
+
+    /**
+     * Anahtarın Türkçesi: açık paketlerde sondan başa tam satır, yoksa parça (masaüstünün birleşik sözlüğüyle aynı).
+     * [only]: yalnız bu paketlerde (elle seçilen oyun).
+     */
+    private fun lookup(current: List<Pair<GamePack, Boolean>>, number: Long, only: Set<Int>? = null): PackMatch? {
         val off = disabled
         for (index in current.indices.reversed()) {
             val pack = current[index].first
-            if (pack.id in off) continue
+            if (pack.id in off || (only != null && index !in only)) continue
             pack[number]?.let { return PackMatch(it, pack.id) }
         }
         // Tam satır yoksa parçalar: bir oyunun tam satırı başka oyunun parçasına yenilmez (masaüstüyle aynı öncelik).
         for (index in current.indices.reversed()) {
             val pack = current[index].first
-            if (pack.id in off) continue
+            if (pack.id in off || (only != null && index !in only)) continue
             pack.segment(number)?.let { return PackMatch(it, pack.id) }
         }
         return null
@@ -257,16 +495,28 @@ class GamePackLibrary(
             list.removeAll { it.first.id == pack.id }
             list.add(pack to builtIn)
         }
-        bundled?.invoke()?.sortedBy { it.first }?.forEach { (name, data) -> if (isPackFile(name)) add(name, data, true) }
-        userDirectory?.listFiles()?.filter { it.isFile && isPackFile(it.name) }?.sortedBy { it.name }?.forEach { file ->
+        bundled?.invoke()?.sortedBy { it.first }?.forEach { (name, read) ->
+            if (!isPackFile(name)) return@forEach
             val data = try {
-                file.readBytes()
+                read()
             } catch (error: IOException) {
                 return@forEach
             }
-            add(file.name, data, false)
+            add(name, data, true)
+        }
+        for (directory in listOfNotNull(userDirectory, importedDirectory)) {
+            directory.listFiles()?.filter { it.isFile && isPackFile(it.name) }?.sortedBy { it.name }?.forEach { file ->
+                val data = try {
+                    file.readBytes()
+                } catch (error: IOException) {
+                    return@forEach
+                }
+                add(file.name, data, false)
+            }
         }
         packs = list
+        scope = null
+        distinctive = null
     }
 
     companion object {

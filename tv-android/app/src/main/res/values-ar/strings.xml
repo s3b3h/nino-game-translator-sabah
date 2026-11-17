@@ -9,8 +9,18 @@
     <string name="overlay_choose_input">بدّل التلفاز إلى مدخل PS5 (HDMI %1$d) باستخدام جهاز التحكم عن بُعد. ستظهر الترجمة فوق الصورة.</string>
     <string name="overlay_permission_needed">يحتاج وضع الطبقة إلى إذن «الظهور فوق التطبيقات الأخرى».</string>
     <string name="overlay_fallback_needs_permission">لا تصل صورة PS5 إلى Nino. في بعض أجهزة التلفاز تبقى الشاشة سوداء هنا؛ ويحلّ وضع الطبقة هذه المشكلة، لكنه يحتاج إلى إذن «الظهور فوق التطبيقات الأخرى».</string>
-    <string name="overlay_unavailable">لا تصل صورة PS5 إلى Nino. في بعض أجهزة التلفاز تبقى الشاشة سوداء هنا. ويحلّ وضع الطبقة هذه المشكلة، لكنه متوفر فقط في تطبيق التلفاز الذي يثبّته Nino من الكمبيوتر: أزل هذه النسخة، وفعّل تصحيح أخطاء USB على التلفاز، وابدأ الترجمة من الكمبيوتر.</string>
+    <string name="overlay_unavailable">وضع الطبقة محدد، لكن تطبيق التلفاز هذا المثبّت من Google Play لا يتضمن وضع الطبقة، لذا تظهر الترجمة داخل Nino. يتوفر وضع الطبقة في النسخة التي يثبّتها Nino من الكمبيوتر مباشرة على التلفاز: أزل هذه النسخة، وفعّل تصحيح أخطاء USB على التلفاز، وابدأ الترجمة من الكمبيوتر.</string>
     <string name="overlay_permission_how">يمنحه Nino على الكمبيوتر عند تثبيت تطبيق التلفاز: ابدأ الترجمة من هناك مع تفعيل تصحيح أخطاء USB. أو افتح على التلفاز الإعدادات › التطبيقات › الوصول الخاص إلى التطبيقات › الظهور فوق التطبيقات الأخرى وفعّل Nino.</string>
     <string name="overlay_active">يعمل Nino الآن. ستظهر الترجمة فوق صورة PS5؛ ابدأ الترجمة من Nino على الكمبيوتر أو الهاتف.</string>
     <string name="press_input_again">اضغط زر المدخل مرة أخرى لاختيار مدخل PS5.</string>
+    <string name="no_picture">لا تصل صورة من مدخل HDMI %1$d.</string>
+    <string name="no_picture_empty">لا يوجد جهاز على مدخل HDMI %1$d.</string>
+    <string name="no_picture_choose">اختر مدخل HDMI المتصل به جهاز PS5 (أزرار الأسهم ثم OK، أو أزرار الأرقام 1–4):</string>
+    <string name="no_picture_still_black">هل تبقى الشاشة سوداء على المدخل الصحيح؟ قد لا يتيح هذا التلفاز صورة HDMI للتطبيقات (بعض أجهزة Vestel وMediaTek)، أو يمنعها HDCP. جرّب تعطيل الإعدادات › النظام › HDMI › تمكين HDCP على PS5. وإلا فانقل التلفاز إلى مدخل HDMI الخاص بـ PS5 بجهاز التحكم وتابع الترجمة على شاشة الهاتف.</string>
+    <string name="hdmi_not_offered">لا يتيح هذا التلفاز مداخل HDMI للتطبيقات، لذا لا يمكن عرض صورة PS5 داخل Nino. انقل التلفاز إلى مدخل HDMI الخاص بـ PS5 بجهاز التحكم وتابع الترجمة على شاشة الهاتف.</string>
+    <string name="overlay_from_computer">لا تتضمن نسخة Google Play هذه وضع الطبقة. يتوفر في تطبيق التلفاز الذي يثبّته Nino من الكمبيوتر: تظهر الترجمة فوق صورة HDMI الخاصة بالتلفاز.</string>
+    <string name="picker_connected">متصل</string>
+    <string name="picker_close">إغلاق</string>
+    <string name="overlay_offer">أو انتقل إلى وضع الطبقة: يعرض التلفاز PS5 على مدخل HDMI الخاص به وتظهر الترجمة فوق الصورة.</string>
+    <string name="overlay_switch">الانتقال إلى وضع الطبقة</string>
 </resources>

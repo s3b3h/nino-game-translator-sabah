@@ -17,7 +17,7 @@ import java.util.UUID
 /**
  * Ortak havuz (varsayılan açık, ayarlardan kapatılabilir): hiçbir pakette bulunmayan İngilizce oyun satırları biriktirilir
  * ve beş dakikada bir (ve okuma dururken) sunucuya gönderilir; yeni paketler bunlardan hazırlanır. Yalnız satırın metni,
- * anahtarı ve ilk görüldüğü an gider; kimlik olarak kuruluma özgü rastgele bir UUID kullanılır. Mac ve Windows'taki
+ * anahtarı, ilk görüldüğü an ve biliniyorsa PS5'te çalışan oyunun kimliğiyle adı ([RunningGame]) gider; kimlik olarak kuruluma özgü rastgele bir UUID kullanılır. Mac ve Windows'taki
  * LinePool ile aynı kurallar ve aynı sunucu.
  */
 class LinePool(
@@ -46,7 +46,8 @@ class LinePool(
             val text = raw.trim()
             if (text.isEmpty() || text.length > MAX_LENGTH) return false
             val words = text.split(Regex("\\s+")).count { word -> word.codePoints().anyMatch { Character.isLetter(it) } }
-            return words >= MIN_WORDS && !looksLikeNoise(text)
+            // PS5'in sistem yazısı, Türkçe arayüzü ya da yarım okuma da havuza gitmez (PoolFilter, Mac/iPhone ile aynı).
+            return words >= MIN_WORDS && !looksLikeNoise(text) && PoolFilter.accepts(text)
         }
 
         /** Yazı tanıma çöpü içeren ("ou$3e") ya da harften çok rakam ve simge taşıyan ("100/100 HP 25%") satır. */
@@ -62,7 +63,8 @@ class LinePool(
             SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date(millis))
     }
 
-    data class Line(val text: String, val key: String, val firstSeen: String)
+    /** [titleId] ve [game]: satır okunurken PS5'te çalışan oyun; bilinmiyorsa null ve JSON'a hiç yazılmaz. */
+    data class Line(val text: String, val key: String, val firstSeen: String, val titleId: String? = null, val game: String? = null)
 
     private val lock = Any()
     private var install = UUID.randomUUID().toString()
@@ -74,6 +76,7 @@ class LinePool(
     private var lastSave = 0L
     private var dirty = false
     private var enabled = enabled
+    private var game: RunningGame? = null
 
     init {
         load()
@@ -93,6 +96,12 @@ class LinePool(
         saveLocked()
     }
 
+    /** PS5'te o an çalışan oyun (keşif yanıtından; bağlantı yokken null). Yeni satırlara eklenir. */
+    val currentGame: RunningGame? get() = synchronized(lock) { game }
+
+    /** PS5'te çalışan oyun değişti (bilinmiyorsa null); bundan sonra kuyruğa giren satırlar bu oyunla gider. */
+    fun setGame(value: RunningGame?) = synchronized(lock) { game = value }
+
     /** Okunan (pakette bulunmayan) satırı kuyruğa ekler; kapalıysa, filtreye takılırsa ya da zaten varsa bir şey yapmaz. */
     fun offer(raw: String) {
         val text = raw.trim()
@@ -100,7 +109,7 @@ class LinePool(
         val key = PackKey.key(text) ?: return
         synchronized(lock) {
             if (!enabled || key in queuedKeys || key in sentKeys) return
-            queue.add(Line(text, key, timestamp(clock())))
+            queue.add(Line(text, key, timestamp(clock()), game?.titleId, game?.name))
             queuedKeys.add(key)
             // Sınır aşılırsa en eski satırlar düşer.
             while (queue.size > MAX_QUEUE) queuedKeys.remove(queue.removeAt(0).key)
@@ -155,8 +164,15 @@ class LinePool(
         .put("install", install)
         .put("app", app)
         .put("platform", platform)
-        .put("lines", JSONArray(batch.map { JSONObject().put("text", it.text).put("key", it.key).put("firstSeen", it.firstSeen) }))
+        .put("lines", JSONArray(batch.map(::lineJson)))
         .toString()
+
+    /** Oyun bilinmiyorsa alanlar hiç yazılmaz (eski sunucu ve eski kuyruk dosyası da okur). */
+    private fun lineJson(line: Line): JSONObject = JSONObject().put("text", line.text).put("key", line.key).put("firstSeen", line.firstSeen)
+        .apply {
+            line.titleId?.let { put("titleId", it) }
+            line.game?.let { put("game", it) }
+        }
 
     private fun remove(batch: List<Line>, sent: Boolean) {
         val keys = batch.map { it.key }.toSet()
@@ -175,7 +191,7 @@ class LinePool(
             file.parentFile?.mkdirs()
             val state = JSONObject()
                 .put("install", install)
-                .put("queue", JSONArray(queue.map { JSONObject().put("text", it.text).put("key", it.key).put("firstSeen", it.firstSeen) }))
+                .put("queue", JSONArray(queue.map(::lineJson)))
                 .put("sent", JSONArray(sent.toList()))
             retryAfter?.let { state.put("retryAfter", it) }
             val temporary = File(file.path + ".tmp")
@@ -203,7 +219,8 @@ class LinePool(
         state.optJSONArray("queue")?.let { array ->
             for (i in 0 until array.length()) {
                 val item = array.optJSONObject(i) ?: continue
-                val line = Line(item.optString("text"), item.optString("key"), item.optString("firstSeen"))
+                val line = Line(item.optString("text"), item.optString("key"), item.optString("firstSeen"),
+                    item.optString("titleId").ifEmpty { null }, item.optString("game").ifEmpty { null })
                 if (line.key.isNotEmpty() && queuedKeys.add(line.key)) queue.add(line)
             }
         }

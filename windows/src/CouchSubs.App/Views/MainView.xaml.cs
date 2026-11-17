@@ -38,6 +38,7 @@ public partial class MainView : UserControl
         Refresh();
         ShowStrip();
         ShowUpdate();
+        ShowGame();
         _ = controller.CheckForUpdateAsync();
     }
 
@@ -52,8 +53,11 @@ public partial class MainView : UserControl
             ShowStrip();
         }
         if (e.PropertyName is nameof(AppController.Ps5StatusText) or nameof(AppController.Ps5Tone) or nameof(AppController.TvStatusText)
-            or nameof(AppController.TvTone) or nameof(AppController.IsRunning) or nameof(AppController.SessionState))
+            or nameof(AppController.TvTone) or nameof(AppController.IsRunning) or nameof(AppController.SessionState)
+            or nameof(AppController.ConsoleTitle))
             ShowStrip();
+        if (e.PropertyName is nameof(AppController.IsRunning) or nameof(AppController.PlayedGame) or nameof(AppController.AskingGame))
+            ShowGame();
         if (e.PropertyName is nameof(AppController.UpdateVersion) or nameof(AppController.Updating)
             or nameof(AppController.UpdateProgress) or nameof(AppController.UpdateError))
             ShowUpdate();
@@ -90,8 +94,9 @@ public partial class MainView : UserControl
         var settings = controller.Settings;
         EngineValue.Text = settings.Engine == TranslationEngine.Free ? text["Free"] : settings.Engine.DisplayName();
         // Çeviri kapalıyken eşleşmiş PS5 için kısa yazı (uzun durum yazısı şeride sığmıyordu).
-        Ps5Label.Text = controller.UsesGameWindow ? text["Game window"] : controller.UsesCaptureCard ? text["Capture card"] : "PS5";
-        Ps5Value.Text = controller.Settings.VideoSource == VideoSource.Ps5 && !controller.IsRunning && controller.Console is { } console
+        Ps5Label.Text = controller.UsesGameWindow ? text["Game window"] : controller.UsesCaptureCard ? text["Capture card"] : controller.ConsoleTitle;
+        var pairedPs5 = controller.Settings.VideoSource == VideoSource.Ps5 && !controller.IsXbox && controller.Settings.FrameSource == FrameSource.Ps5;
+        Ps5Value.Text = pairedPs5 && !controller.IsRunning && controller.Console is { } console
             ? text["%@ · ready"].Replace("%@", string.IsNullOrEmpty(console.Name) ? "PS5" : console.Name)
             : controller.Ps5StatusText;
         Ps5Dot.Fill = ToneBrush(controller.Ps5Tone);
@@ -121,6 +126,7 @@ public partial class MainView : UserControl
         var running = controller.IsRunning;
         ModelCard.Visibility = controller.ModelInstalled ? Visibility.Collapsed : Visibility.Visible;
         EngineCard.Visibility = controller.TranslatorStatus == TranslatorStatus.EngineFailed ? Visibility.Visible : Visibility.Collapsed;
+        LanguageCard.Visibility = controller.TranslatorStatus == TranslatorStatus.Unsupported ? Visibility.Visible : Visibility.Collapsed;
         // Çevrimiçi motor çeviremiyor; satırlar bu arada cihaz üstü modelle geliyor.
         var issue = running ? controller.OnlineIssue : null;
         OnlineCard.Visibility = issue is null ? Visibility.Collapsed : Visibility.Visible;
@@ -166,4 +172,65 @@ public partial class MainView : UserControl
 
     private void OnLanguageSettings(object sender, RoutedEventArgs e) =>
         Process.Start(new ProcessStartInfo("ms-settings:regionlanguage") { UseShellExecute = true });
+
+    /// <summary>
+    /// Oynanan oyun karosu (yalnız çeviri sürerken): "Oynanan oyun: X · Değiştir" ya da "Hangi oyunu oynuyorsunuz?" kartı
+    /// (Mac, iPhone ve Android ile aynı metin ve davranış).
+    /// </summary>
+    private void ShowGame()
+    {
+        var text = Localizer.Current;
+        GameCard.Visibility = controller.IsRunning ? Visibility.Visible : Visibility.Collapsed;
+        var asking = controller.AskingGame;
+        GameRow.Visibility = asking ? Visibility.Collapsed : Visibility.Visible;
+        GameAsk.Visibility = asking ? Visibility.Visible : Visibility.Collapsed;
+        PlayedGameText.Text = controller.PlayedGame ?? text["Not known"];
+        GameChangeButton.Content = text[controller.PlayedGame is null ? "Choose" : "Change"];
+        if (asking) ShowGameSuggestions();
+        else GameSearch.Text = "";
+    }
+
+    private void ShowGameSuggestions()
+    {
+        var typed = GameSearch.Text.Trim();
+        var suggestions = controller.GameSuggestions(typed).Take(5).ToList();
+        var last = controller.LastPlayedGame;
+        GameList.Children.Clear();
+        foreach (var name in suggestions)
+        {
+            var label = new DockPanel();
+            if (name == last)
+            {
+                var note = new TextBlock { Text = Localizer.Current["Last played"], Style = (Style)FindResource("CaptionText"), VerticalAlignment = VerticalAlignment.Center };
+                DockPanel.SetDock(note, Dock.Right);
+                label.Children.Add(note);
+            }
+            label.Children.Add(new TextBlock { Text = name, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center });
+            var button = new Button
+            {
+                Content = label, Style = (Style)FindResource("GhostButton"), HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 2, 0, 2),
+            };
+            button.Click += (_, _) => controller.ChooseGame(name);
+            GameList.Children.Add(button);
+        }
+        var custom = typed.Length > 0 && !suggestions.Any(n => GameName.Key(n) == GameName.Key(typed));
+        GameCustom.Visibility = custom ? Visibility.Visible : Visibility.Collapsed;
+        GameCustom.Content = Localizer.Current.Format("Not listed: use “%@”", typed);
+    }
+
+    private void OnChangeGame(object sender, RoutedEventArgs e) => controller.AskGame();
+
+    private void OnDontAskGame(object sender, RoutedEventArgs e) => controller.DismissGame();
+
+    private void OnGameSearch(object sender, TextChangedEventArgs e) => ShowGameSuggestions();
+
+    private void OnGameSearchKey(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter || GameSearch.Text.Trim() is not { Length: > 0 } typed) return;
+        controller.ChooseGame(typed);
+        e.Handled = true;
+    }
+
+    private void OnCustomGame(object sender, RoutedEventArgs e) => controller.ChooseGame(GameSearch.Text.Trim());
 }

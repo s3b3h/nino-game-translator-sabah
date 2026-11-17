@@ -46,6 +46,8 @@
     // Anynet+ (HDMI-CEC) ya da Otomatik Kaynak Değiştirme TV'yi kendiliğinden HDMI'ya geçirirse uygulama ipucu
     // gösterir (app.js). Menü adları Samsung'unkiler; başka TV'lerde gösterilmez.
     sourceSwitchTip: true,
+    // HDMI girişi açılamazsa app.js nedenini ve giriş seçimini gösterir.
+    noPictureHelp: true,
 
     init: function () {
       // Renk ve sayı tuşları istenmezse TV kendisi kullanır.
@@ -56,6 +58,11 @@
       // Eski TV'lerde API yoksa sessizce geçilir.
       try {
         webapis.appcommon.setScreenSaver(webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_OFF);
+      } catch (e) {}
+      // Ekranın kararmasını ve TV'nin boşta sanıp kapanmasını Tizen'in güç API'siyle de engeller (izin: power).
+      // Uygulama kapanınca istek kendiliğinden düşer. API ya da izin yoksa sessizce geçilir.
+      try {
+        tizen.power.request('SCREEN', 'SCREEN_NORMAL');
       } catch (e) {}
     },
 

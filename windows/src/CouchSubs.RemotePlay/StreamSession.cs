@@ -22,6 +22,55 @@ internal sealed class ReconnectPolicy
     public void Reset() => attempt = 0;
 }
 
+/// <summary>
+/// Bağlı oturumda PS5'ten görüntü gelmiyor mu (Mac'teki PictureWatchdog ve Android'deki eşi ile aynı kural).
+/// libchiaki bir karenin FEC onarımı tutmayınca PS5'ten bir kez yeni anahtar kare (IDR) ister ve o gelene kadar bütün
+/// kareleri atlar (enable_idr_on_fec_failure). İstenen IDR karesinin kendisi de bozuk gelirse yeniden istemez ("Video FEC
+/// failure, already waiting for requested IDR"): bağlantı açık kalır, ama bir daha hiç kare gelmez. Kablosuz ağda bu
+/// birkaç dakikada bir olur; altyazı duruyor, TV bağlı görünüyor ve ancak uygulamayı kapatıp açmak düzeltiyordu.
+/// Bağlıyken <see cref="StallAfter"/> boyunca hiç görüntü gelmezse oturum yeniden kurulur; yeni oturum anahtar kareyle başlar.
+/// </summary>
+internal sealed class PictureWatchdog
+{
+    /// <summary>IDR ile olağan toparlanma bir saniyeden kısa sürer; bundan uzun boşluk takılmadır.</summary>
+    public static readonly TimeSpan StallAfter = TimeSpan.FromSeconds(8);
+    /// <summary>Yeniden bağlanırken ana ekranda "Yeniden bağlanılıyor… (…)" içinde görünen neden.</summary>
+    public const string Reason = "no picture from the PS5";
+
+    private readonly Lock gate = new();
+    /// <summary>Bağlıyken son görüntünün (ya da bağlanmanın) anı (ms); bağlı değilken null.</summary>
+    private long? since;
+
+    /// <summary>Oturum bağlandı: süre bağlanma anından sayılır (ilk kare hiç gelmezse de yakalanır).</summary>
+    public void Connected(long nowMs)
+    {
+        lock (gate) since = nowMs;
+    }
+
+    /// <summary>Görüntü geldi (kare iş parçacığından).</summary>
+    public void Picture(long nowMs)
+    {
+        lock (gate) if (since is not null) since = nowMs;
+    }
+
+    /// <summary>Oturum kapandı ya da yeniden kuruluyor.</summary>
+    public void Ended()
+    {
+        lock (gate) since = null;
+    }
+
+    /// <summary>Bağlıyken <see cref="StallAfter"/>'dan uzun süredir görüntü yoksa boşluğun süresi; yoksa null.</summary>
+    public TimeSpan? Stalled(long nowMs)
+    {
+        lock (gate)
+        {
+            if (since is not { } last) return null;
+            var gap = TimeSpan.FromMilliseconds(nowMs - last);
+            return gap >= StallAfter ? gap : null;
+        }
+    }
+}
+
 internal static class DisconnectReasons
 {
     /// <summary>Yerel kütüphanenin CS_QUIT_* değerini kullanıcıya anlatılabilecek nedene çevirir.</summary>
@@ -60,16 +109,19 @@ internal static class DisconnectReasons
             var token = line[(at + marker.Length)..].TrimStart().Split(' ', 2)[0];
             if (token.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) token = token[2..];
             if (!uint.TryParse(token, System.Globalization.NumberStyles.HexNumber, null, out var code)) return null;
-            return RegistrationRejectedCodes.Contains(code) ? new(DisconnectKind.RegistrationInvalid) : null;
+            return RegistrationRejectedCodes.Contains(code)
+                ? new(DisconnectKind.RegistrationInvalid)
+                : new(DisconnectKind.Rejected, $"0x{code:x8}");
         }
         // PS5'e bağlanılamadı ya da yanıt gelmedi: PS5 dinlenmeden yeni uyandıysa ilk denemelerde olağandır.
         return UnreachableLines.Any(line.Contains) ? new(DisconnectKind.Network) : null;
     }
 
-    /// <summary>Oturum isteği bilinmeyen nedenle düştüyse günlükten anlaşılan neden kullanılır.</summary>
+    /// <summary>Oturum isteği bilinmeyen nedenle düştüyse günlükten anlaşılan neden kullanılır. Günlükte neden yoksa
+    /// (PS5'in yanıtı okunamadı) PS5 oturumu başlatmamıştır: anlamsız İngilizce metin yerine <see cref="DisconnectKind.Rejected"/>.</summary>
     public static DisconnectReason FromNative(int quit, string? text, DisconnectReason? sessionRequestHint) =>
-        quit == NativeMethods.QuitOther && text == UnknownSessionRequest && sessionRequestHint is not null
-            ? sessionRequestHint
+        quit == NativeMethods.QuitOther && text == UnknownSessionRequest
+            ? sessionRequestHint ?? new(DisconnectKind.Rejected)
             : FromNative(quit, text);
 }
 
@@ -129,9 +181,13 @@ public sealed class StreamSession : IStreamSession
     private RegisteredConsole console;
     private DateTime nextRelocate = DateTime.MinValue;
     private readonly byte[] accountId;
+    /// <summary>PS5 bu hesap için giriş şifresi isterse gönderilecek 4 hane (Ayarlar'da kayıtlıysa).</summary>
+    private readonly string? loginPasscode;
     private readonly SerialQueue queue = new("Nino stream session");
     private readonly FrameDelivery delivery;
     private readonly ReconnectPolicy policy = new();
+    /// <summary>Bağlıyken görüntü gelmezse oturum yeniden kurulur (kare iş parçacığından da yazılır, kendi kilidi var).</summary>
+    private readonly PictureWatchdog watchdog = new();
     /// <summary>Yalnız kuyrukta okunup yazılır.</summary>
     private SessionBox? box;
 
@@ -142,11 +198,12 @@ public sealed class StreamSession : IStreamSession
     private int generation;
     private bool disposed;
 
-    public StreamSession(RegisteredConsole console, byte[] accountId)
+    public StreamSession(RegisteredConsole console, byte[] accountId, string? loginPasscode = null)
     {
         if (accountId.Length != 8) throw new ArgumentException("PSN account id must be 8 bytes", nameof(accountId));
         this.console = console;
         this.accountId = (byte[])accountId.Clone();
+        this.loginPasscode = LoginPasscode.Normalized(loginPasscode);
         delivery = new FrameDelivery(frame => FrameReceived?.Invoke(frame));
     }
 
@@ -291,6 +348,7 @@ public sealed class StreamSession : IStreamSession
     /// <summary>Geçerli oturumu kapatır. Kapatma join içerdiği için kuyruğu bekletmemek adına arka planda yapılır.</summary>
     private void CloseBox()
     {
+        watchdog.Ended();
         if (box is not { } closing) return;
         box = null;
         Task.Run(closing.TearDown);
@@ -304,19 +362,29 @@ public sealed class StreamSession : IStreamSession
             case NativeMethods.EventConnected:
                 queue.Post(() =>
                 {
-                    if (box?.Generation != eventGeneration) return;
+                    if (box?.Generation != eventGeneration || !IsCurrent(eventGeneration)) return;
                     policy.Reset();
+                    watchdog.Connected(Environment.TickCount64);
                     Emit(SessionState.Streaming);
+                    ScheduleWatch(eventGeneration);
                 });
                 break;
             case NativeMethods.EventLoginPin:
-                // Kol girdisi göndermediğimiz için şifre giremeyiz; yeniden denemek de aynı yere çıkar.
+                // libchiaki olayı kilit tutarken verir; şifre kuyrukta gönderilir. quitReason 1: önceki şifre yanlıştı.
+                var (pin, stop) = LoginPasscode.Reply(loginPasscode, incorrect: quitReason == 1);
                 queue.Post(() =>
                 {
-                    if (box?.Generation != eventGeneration) return;
+                    if (box is not { } current || current.Generation != eventGeneration || !IsCurrent(eventGeneration)) return;
+                    if (pin is not null)
+                    {
+                        RemotePlayLog.Note("PS5 giriş şifresi istedi; Ayarlar'daki şifre gönderiliyor");
+                        current.SetLoginPin(pin);
+                        return;
+                    }
+                    // Şifre yok ya da yanlış: yeniden denemek aynı yere çıkar.
                     Bump(running: false);
                     CloseBox();
-                    Emit(SessionState.Disconnected(DisconnectKind.LoginPasscode));
+                    Emit(SessionState.Disconnected(stop ?? DisconnectKind.LoginPasscode));
                 });
                 break;
             case NativeMethods.EventQuit:
@@ -325,7 +393,7 @@ public sealed class StreamSession : IStreamSession
                 queue.Post(() =>
                 {
                     // Eski bir oturumun (ör. ReconnectNow ile kapatılanın) kapanma olayı yeni oturumu etkilemez.
-                    if (box?.Generation != eventGeneration) return;
+                    if (box?.Generation != eventGeneration || !IsCurrent(eventGeneration)) return;
                     CloseBox();
                     if (reason.Kind == DisconnectKind.RegistrationInvalid)
                     {
@@ -338,6 +406,26 @@ public sealed class StreamSession : IStreamSession
                 });
                 break;
         }
+    }
+
+    /// <summary>
+    /// Bağlıyken saniyede bir bakılır: görüntü <see cref="PictureWatchdog.StallAfter"/>'dan uzun süredir gelmiyorsa
+    /// bağlantı açık görünse de oturum kapatılıp yeniden kurulur (bkz. <see cref="PictureWatchdog"/>).
+    /// </summary>
+    private void ScheduleWatch(int boxGeneration)
+    {
+        queue.PostAfter(TimeSpan.FromSeconds(1), () =>
+        {
+            if (box?.Generation != boxGeneration || !IsCurrent(boxGeneration)) return;
+            if (watchdog.Stalled(Environment.TickCount64) is not { } gap)
+            {
+                ScheduleWatch(boxGeneration);
+                return;
+            }
+            RemotePlayLog.Note($"PS5'ten {(int)gap.TotalSeconds} sn'dir görüntü gelmiyor (bağlantı açık); oturum yeniden kuruluyor");
+            CloseBox();
+            ScheduleReconnect(boxGeneration, new DisconnectReason(DisconnectKind.Other, PictureWatchdog.Reason));
+        });
     }
 
     private void ScheduleReconnect(int current, DisconnectReason reason)
@@ -420,6 +508,16 @@ public sealed class StreamSession : IStreamSession
             }
         }
 
+        public unsafe void SetLoginPin(byte[] pin)
+        {
+            lock (tearLock)
+            {
+                if (native == 0) return;
+                fixed (byte* bytes = pin)
+                    NativeMethods.cs_session_set_login_pin(native, bytes, (nuint)pin.Length);
+            }
+        }
+
         private static SessionBox? From(nint user) => user == 0 ? null : GCHandle.FromIntPtr(user).Target as SessionBox;
 
         [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
@@ -428,7 +526,10 @@ public sealed class StreamSession : IStreamSession
             try
             {
                 if (From(user) is { } box && bgra != null && width > 0 && height > 0)
+                {
+                    box.owner.watchdog.Picture(Environment.TickCount64);
                     box.owner.delivery.Offer((nint)bgra, width, height, stride);
+                }
             }
             catch (Exception error) { RemotePlayLog.Write(0, $"frame: {error.Message}"); }
         }

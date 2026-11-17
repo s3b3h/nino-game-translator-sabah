@@ -18,10 +18,13 @@ public enum OcrNoise {
         for (index, token) in tokens.enumerated() {
             let (lead, core, trail) = split(token)
             // Tek başına "l" ya da "|" çoğu zaman yanlış okunmuş "I"dır ("l don't know", "|'ll go"); ardından küçük
-            // harfle süren sözcük gelmiyorsa altyazı kutusunun kenarıdır ("| Get in the car."), atılır.
+            // harfle başlayan sözcük yoksa ve token ?/! ile bitmiyorsa altyazı kutusunun kenarı olabilir.
             if let pronoun = misreadI(core) {
                 let next = index + 1 < tokens.count ? tokens[index + 1].first(where: \.isLetter) : nil
-                if pronoun != "I" || next?.isLowercase == true { kept.append(lead + pronoun + trail) }
+                let endsQuestionOrExclamation = trail.contains(where: { "?!".contains($0) })
+                if pronoun != "I" || next?.isLowercase == true || endsQuestionOrExclamation {
+                    kept.append(lead + pronoun + trail)
+                }
                 continue
             }
             // Yalnız "?!", ".", "," gibi işaretlerden oluşan parça: satır başında ya da cümle bittikten sonra yazı
@@ -54,11 +57,12 @@ public enum OcrNoise {
         var score = 0
         for token in text.split(whereSeparator: \.isWhitespace).map(String.init) {
             let core = split(token).1
-            let letters = core.filter(\.isLetter).count
-            guard letters > 0 else { continue }
+            let letters = String(core.filter(\.isLetter))
+            guard !letters.isEmpty else { continue }
             // Sözcük ortasındaki parantez ("the[lil") de okuma karışıklığıdır.
             let clean = cleanCore(core) == core && normalCase(core) && !core.contains(where: { "[]()".contains($0) })
-            score += clean ? letters : -2 * letters
+                && !vowelless(letters)
+            score += clean ? letters.count : -2 * letters.count
         }
         return score
     }
@@ -83,6 +87,16 @@ public enum OcrNoise {
     private static func vowelless(_ letters: String) -> Bool {
         letters.count >= 3 && !letters.allSatisfy(\.isUppercase)
             && !letters.lowercased().contains(where: { "aeiouyäöüıàáâèéêìíîòóôùúû".contains($0) })
+            && !interjections.contains(collapsed(letters.lowercased()))
+    }
+
+    /// Ünlüsüz ama gerçek ünlemler ("Hmm", "Shh", "Brr", "Grr", "Psst", "Pfft", "Mmm", "Zzz", "Tsk"); art arda tekrarlar tek harf sayılır.
+    private static let interjections: Set<String> = ["hm", "m", "sh", "br", "gr", "pst", "pft", "tsk", "hrm", "z", "pht"]
+
+    private static func collapsed(_ text: String) -> String {
+        var result = ""
+        for character in text where character != result.last { result.append(character) }
+        return result
     }
 
     /// "word", "WORD", "Word", "McDonald", "don't": büyük harf yalnız başta ya da baştan bir dizi.

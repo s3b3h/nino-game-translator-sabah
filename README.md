@@ -49,7 +49,16 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 
 ## Yenilikler
 
-> Aşağıdaki yenilikler Mac'te **0.1.9** ile geldi (kurulu Nino kendiliğinden güncellenir); Windows'ta şimdilik Ayarlar › Bağlantı'daki konsol seçimi ve Ayarlar › Sıfırla var.
+**0.2.0** (Mac, Windows ve Android telefon; kurulu Nino kendiliğinden güncellenir):
+
+- 🌍 **11 çeviri dili:** 🇹🇷 Türkçe (en başta), 🇸🇦 Arapça, 🇮🇳 Hintçe, 🇮🇩 Endonezce, 🇹🇭 Tayca, 🇻🇳 Vietnamca, 🇵🇰 Urduca, 🇧🇩 Bengalce, 🇲🇾 Malayca, 🇵🇭 Filipince, 🇳🇱 Felemenkçe. Bayraklı menüden seçilir; uygulamanın menüleri de o dile geçer.
+- 🔤 **Altyazı yazı tipi:** Aksiyon (GTA tarzı, yeni varsayılan), Modern, Yuvarlak ya da Sade. TV'de, bilgisayarda, telefonda ve OBS'te aynı yazı tipi.
+- 📺 **TV uygulamasını telefondan kurun:** Android telefondaki Nino, Android TV, Samsung ve LG TV'ye uygulamayı bilgisayarsız kurar (Profil › Nino'yu TV'ye Kur).
+- 🎥 **Yayıncılar için (Windows):** Capture card doğrudan OBS'e bağlanır, Nino altyazıyı OBS projektöründen okur (Ayarlar › Görüntü kaynağı › OBS projektörü). Görüntü ve ses OBS'ten temiz gider, altyazı OBS'e tek gelir.
+- 🐞 **Sorun Bildir:** Ayarlar'dan açıklama ve ekran görüntüsü ile doğrudan bize yazın.
+- CouchSubs'ın son düzeltmeleri: Xbox bağlantısı, TV'de daha okunaklı altyazı, daha doğru altyazı okuma ve daha fazlası.
+
+> Önceki sürümün (0.1.9) yenilikleri:
 
 <p align="center"><img src="docs/nino/tanitim/v2/8-gta6-yatay.jpg" width="880" alt="GTA 6 artık Türkçe altyazılı: Nino Game Translator v2"></p>
 
@@ -157,10 +166,10 @@ Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)** · PS5 ve Andr
 **Windows:** [`Nino-Windows-Setup.exe`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)'yi çalıştırın ("bilgisayarınızı korudu" derse **Ek bilgi › Yine de çalıştır**). Kurulum Mac ile aynıdır.
 
 **TV (Android TV / Google TV):** TV uygulamasını yazı yazmadan kurmanın iki yolu var:
-- **Telefondan (bilgisayarsız, telefon uygulamasının bir sonraki sürümüyle geliyor):** Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a basın. Telefon TV'yi Wi-Fi'da bulur, uygulamayı kurar ve açar. TV'de bir kez **Ayarlar › Sistem › Hakkında › Android TV işletim sistemi yapısı**'na 7 kez basıp **Geliştirici seçenekleri › USB hata ayıklama**'yı açmanız ve TV'deki izin sorusuna **Tamam** demeniz yeter.
+- **Telefondan (bilgisayarsız):** Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a basın (Android TV, Samsung ve LG). Telefon TV'yi Wi-Fi'da bulur, uygulamayı kurar ve açar; ekrandaki adımlar TV'nizin markasına göre anlatılır. Android TV'de bir kez **Ayarlar › Sistem › Hakkında › Android TV işletim sistemi yapısı**'na 7 kez basıp **Geliştirici seçenekleri**'nde hata ayıklamayı açmanız ve TV'deki izin sorusuna **Tamam** demeniz yeter.
 - **Bilgisayardan:** Mac ya da Windows'taki Nino aynı şekilde kendisi kurar.
 
-Elle kurmak isterseniz: TV'de Google Play'den ücretsiz **Downloader**'ı açın, **Ana Sayfa**'daki adres kutusuna **`https://is.gd/ninotvapk`** yazıp **Git**'e basın ve inen dosyayı kurun (Downloader'ın Tarayıcı sekmesine yazarsanız Google'da arar). Doğrudan link: [Nino TV indirme sayfası](https://yunusdemirbag.github.io/nino-game-translator/) · [`Nino-TV.apk`](https://yunusdemirbag.github.io/nino-game-translator/tv.apk). iPhone, TV'ye uygulama kuramaz (Apple izin vermiyor); iPhone kullanıyorsanız bilgisayardaki Nino'yu ya da Downloader'ı kullanın.
+Elle kurmak isterseniz: TV'de Google Play'den ücretsiz **Downloader**'ı açın, **Ana Sayfa**'daki adres kutusuna **`https://is.gd/ninotvapk`** yazıp **Git**'e basın ve inen dosyayı kurun (Downloader'ın Tarayıcı sekmesine yazarsanız Google'da arar). Doğrudan link: [Nino TV indirme sayfası](https://yunusdemirbag.github.io/nino-game-translator/) · [`Nino-TV.apk`](https://yunusdemirbag.github.io/nino-game-translator/tv.apk).
 
 **Android telefon (bilgisayar yerine):** [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)'yı telefonda indirip kurun, ikinci PSN hesabıyla **Sony İle Giriş Yapın**, PS5'teki 8 haneli kodu yazın ve oyunu açınca **kaydırın**.
 

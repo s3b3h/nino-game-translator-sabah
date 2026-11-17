@@ -226,7 +226,12 @@ public sealed class GamePackLibrary(Func<IEnumerable<(string Name, byte[] Data)>
     /// varsa kapsam o paketlerden biri değilse ilkine geçer; hiç tam eşleşme olmadıysa bulanık arama yapılmaz.
     /// </summary>
     private int? scope;
+    private int? distinctive;
     private IReadOnlyList<Info> infos = [];
+    /// <summary>Elle seçilen oyunun adı (<see cref="GameName.Key"/>); null ise bütün paketlerde aranır.</summary>
+    private string? limitKey;
+    /// <summary>Elle seçilen oyunun paketi (<see cref="loadedPacks"/> sırası); -1 paketi yok, null henüz aranmadı.</summary>
+    private int? limited;
 
     /// <summary>Uygulamaya gömülü paketler (core/Sources/CouchSubsCore/Resources/packs, ad: "packs/x.json.gz").</summary>
     public static IEnumerable<(string Name, byte[] Data)> EmbeddedPacks()
@@ -273,18 +278,74 @@ public sealed class GamePackLibrary(Func<IEnumerable<(string Name, byte[] Data)>
     }
 
     /// <summary>
+    /// Kullanıcının elle seçtiği oyun (<see cref="GameSense.PackLimit"/>). Verilirse satırlar yalnız o oyunun paketinde
+    /// aranır (tam ve bulanık), paketi yoksa hiç aranmaz: paketi olmayan oyunda "Let's go." gibi kısa, genel satırlar
+    /// başka oyunların paketinden yanlış çeviri getiriyor, oyunu da o pakete kaydırıyordu (#218). null: bütün paketler.
+    /// </summary>
+    public void LimitToGame(string? name)
+    {
+        var key = name is null ? null : GameName.Key(name);
+        if (key?.Length == 0) key = null;
+        lock (gate)
+        {
+            if (key == limitKey) return;
+            limitKey = key;
+            limited = null;
+            scope = null;
+            distinctive = null;
+        }
+    }
+
+    /// <summary>Elle seçilen oyunun paketi: adı ya da kimliği aynı olan son paket. -1 paketi yok, null sınır yok.</summary>
+    private int? LimitedPack()
+    {
+        if (limitKey is null) return null;
+        if (limited is { } known) return known;
+        var found = -1;
+        for (var index = loadedPacks.Count - 1; index >= 0; index--)
+        {
+            var pack = loadedPacks[index];
+            if (pack.Id != GameSense.GeneralPack && (GameName.Key(pack.Title) == limitKey || GameName.Key(pack.Id) == limitKey))
+            {
+                found = index;
+                break;
+            }
+        }
+        limited = found;
+        return found;
+    }
+
+    /// <summary>Elle seçilen oyunun paketinde anahtarın Türkçesi: önce tam satır, sonra parça (yalnız o paketin kendisi).</summary>
+    private static string? Own(GamePack pack, ulong key) =>
+        pack.Entries.TryGetValue(key, out var turkish) ? turkish : pack.Segments.GetValueOrDefault(key);
+
+    /// <summary>
     /// Satırın tamamı için sözlükteki Türkçe (parçalara bölme yok; bkz. CouchSubs.Translation.PackLookup). Bulunursa
-    /// bulanık aramanın kapsamı satırın paketine geçer.
+    /// bulanık aramanın kapsamı satırın paketine geçer. Kullanıcı elle oyun seçtiyse yalnız o oyunun paketinde aranır.
     /// </summary>
     public string? Find(string text)
     {
         Dictionary<ulong, string> current;
         IReadOnlyList<GamePack> packs;
+        int? only;
         lock (gate)
         {
             LoadIfNeeded();
             current = entries;
             packs = loadedPacks;
+            only = LimitedPack();
+        }
+        if (only is { } limit)
+        {
+            if (limit < 0 || PackKey.Key(text) is not { } wanted || PackKey.Number(wanted) is not { } own
+                || Own(packs[limit], own) is not { } found) return null;
+            lock (gate)
+            {
+                if (loadedPacks != packs) return found;
+                distinctive = limit;
+                scope = limit;
+            }
+            return found;
         }
         if (current.Count == 0 || PackKey.Key(text) is not { } key || PackKey.Number(key) is not { } number
             || !current.TryGetValue(number, out var turkish)) return null;
@@ -294,9 +355,26 @@ public sealed class GamePackLibrary(Func<IEnumerable<(string Name, byte[] Data)>
         if (owners.Count > 0)
         {
             lock (gate)
+            {
+                if (owners.Count == 1) distinctive = owners[0];
                 if (owners.Count == 1 || scope is not { } chosen || !owners.Contains(chosen)) scope = owners[0];
+            }
         }
         return turkish;
+    }
+
+    /// <summary>
+    /// Son çağrıdan beri yalnız tek bir pakette bulunan satırın paketi; okununca silinir. Okunan satırlar art arda aynı
+    /// paketten geliyorsa oynanan oyun o pakettir (<see cref="GameSense"/>). Birkaç pakette ortak satırlar ("Okay.") sayılmaz.
+    /// </summary>
+    public Info? TakeDistinctiveHit()
+    {
+        lock (gate)
+        {
+            var hit = distinctive is { } index && index < infos.Count ? infos[index] : null;
+            distinctive = null;
+            return hit;
+        }
     }
 
     /// <summary>
@@ -306,20 +384,60 @@ public sealed class GamePackLibrary(Func<IEnumerable<(string Name, byte[] Data)>
     public string? Nearest(string text)
     {
         Dictionary<ulong, string> current;
-        PackFuzzyIndex? index;
+        GamePack? pack;
+        Func<ulong, string?> translation;
         lock (gate)
         {
             LoadIfNeeded();
             current = entries;
-            index = scope is { } chosen && chosen < loadedPacks.Count ? loadedPacks[chosen].Fuzzy : null;
+            // Elle seçilen oyunda bulanık arama da hep onun paketinde, Türkçesi de o paketten; paketi yoksa yapılmaz.
+            if (LimitedPack() is { } limit)
+            {
+                pack = limit >= 0 ? loadedPacks[limit] : null;
+                var own = pack;
+                translation = key => own is null ? null : Own(own, key);
+            }
+            else
+            {
+                pack = scope is { } chosen && chosen < loadedPacks.Count ? loadedPacks[chosen] : null;
+                translation = key => current.GetValueOrDefault(key);
+            }
         }
-        return index?.Nearest(text, key => current.GetValueOrDefault(key)) is { } found ? current.GetValueOrDefault(found) : null;
+        if (pack is null) return null;
+        if (Corrected(text, pack, translation) is { } corrected) return corrected;
+        return pack.Fuzzy?.Nearest(text, translation) is { } found ? translation(found) : null;
+    }
+
+    /// <summary>
+    /// Tek OCR düzeltmesiyle (<see cref="PackFuzzy.Variants"/>) oynanan oyunun paketinde tam bulunan satırın Türkçesi;
+    /// düzeltmelerin hepsi aynı Türkçeye çıkmıyorsa null.
+    /// </summary>
+    private static string? Corrected(string text, GamePack pack, Func<ulong, string?> translation)
+    {
+        string? found = null;
+        foreach (var variant in PackFuzzy.Variants(text))
+        {
+            if (PackKey.Key(variant) is not { } key || PackKey.Number(key) is not { } number || !Contains(pack.Keys, number)
+                || translation(number) is not { } turkish) continue;
+            if (found is not null && found != turkish) return null;
+            found = turkish;
+        }
+        return found;
     }
 
     /// <summary>Bulanık aramanın yapılacağı paketin kimliği (son tam eşleşmenin paketi); yoksa null.</summary>
     public string? SearchScope
     {
         get { lock (gate) return scope is { } chosen && chosen < infos.Count ? infos[chosen].Id : null; }
+    }
+
+    /// <summary>
+    /// Son tam eşleşmenin geldiği paketin başlığı; yoksa null. Tek satırla değişebilir: yapay zekâya giden oyun adı bu
+    /// değil, <see cref="GameSense.Current"/>'tır (#27).
+    /// </summary>
+    public string? ScopeTitle
+    {
+        get { lock (gate) return scope is { } chosen && chosen < infos.Count ? infos[chosen].Title : null; }
     }
 
     private static bool Contains(IReadOnlyList<ulong> sorted, ulong key)
@@ -369,6 +487,8 @@ public sealed class GamePackLibrary(Func<IEnumerable<(string Name, byte[] Data)>
         entries = merged;
         loadedPacks = [.. packs.Select(p => p.Pack)];
         scope = null;
+        distinctive = null;
+        limited = null;
         infos = [.. packs.Select(p => new Info(p.Pack.Id, p.Pack.Title, p.Pack.Entries.Count, p.BuiltIn))];
     }
 

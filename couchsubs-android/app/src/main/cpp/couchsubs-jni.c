@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 /* Kotlin'deki com.couchsubs.mobile.remoteplay.NativeBridge'in yerel tarafı: libchiaki ile PS5 arama, uyandırma,
  * kayıt ve görüntü akışı. Davranış Windows'taki windows/native/couchsubs_native.c ile aynıdır (1080p30 H.264,
- * ses kapalı, kol girdisi yok); çözme FFmpeg yerine Android MediaCodec'le, ImageReader'ın yüzeyine yapılır.
+ * ses kapalı, kol girdisi yok); çözme FFmpeg yerine Android MediaCodec'le yüzeysiz yapılır, karenin parlaklık düzlemi
+ * kare dinleyicisine verilir (video-decoder.c).
  * JNI kalıpları chiaki-ng'nin android/app/src/main/cpp/chiaki-jni.c dosyasından uyarlandı. */
 
 #include <jni.h>
@@ -157,9 +158,14 @@ static void cs_discovery_cb(ChiakiDiscoveryHost *host, void *user)
 	cs_discover_ctx *ctx = user;
 	if(!host || !host->host_addr || !chiaki_discovery_host_is_ps5(host))
 		return;
-	char line[256];
-	snprintf(line, sizeof(line), "%s\t%s\t%d", host->host_addr, host->host_name ? host->host_name : "PS5",
-			host->state == CHIAKI_DISCOVERY_HOST_STATE_READY ? 1 : 0);
+	/* Sona PS5'te çalışan uygulamanın kimliği ve adı eklenir (yoksa boş): ortak havuz satırı oyunla gider. */
+	char line[512];
+	snprintf(line, sizeof(line), "%s\t%s\t%d\t%s\t%s", host->host_addr, host->host_name ? host->host_name : "PS5",
+			host->state == CHIAKI_DISCOVERY_HOST_STATE_READY ? 1 : 0,
+			host->running_app_titleid ? host->running_app_titleid : "",
+			host->running_app_name ? host->running_app_name : "");
+	for(char *c = line; *c; c++)
+		if(*c == '\n' || *c == '\r') *c = ' ';
 	for(char *c = line; *c; c++)
 		if(*c & 0x80) *c = '?';
 	chiaki_mutex_lock(&ctx->mutex);
@@ -254,15 +260,6 @@ JNIEXPORT jobjectArray JNICALL JNI_FCN(discover)(JNIEnv *env, jclass cls, jobjec
 	}
 	chiaki_mutex_fini(&ctx.mutex);
 	return result;
-}
-
-extern volatile bool couchsubs_prefer_software_decoder;
-
-/* Nino: bir sonraki oturumda yazılım video çözücüsü kullanılsın mı. */
-JNIEXPORT void JNICALL JNI_FCN(setPreferSoftwareDecoder)(JNIEnv *env, jclass cls, jboolean prefer)
-{
-	(void)env; (void)cls;
-	couchsubs_prefer_software_decoder = prefer ? true : false;
 }
 
 JNIEXPORT jint JNICALL JNI_FCN(wake)(JNIEnv *env, jclass cls, jstring host_string, jlong credential)
@@ -461,7 +458,9 @@ static void cs_session_event(ChiakiEvent *event, void *user)
 			type = CS_EVENT_CONNECTED;
 			break;
 		case CHIAKI_EVENT_LOGIN_PIN_REQUEST:
+			/* reason 1: önceki şifre yanlıştı (PS5 yeniden istiyor). */
 			type = CS_EVENT_LOGIN_PIN;
+			reason = event->login_pin_request.pin_incorrect ? 1 : 0;
 			break;
 		case CHIAKI_EVENT_QUIT:
 			type = CS_EVENT_QUIT;
@@ -494,9 +493,19 @@ static void cs_session_event(ChiakiEvent *event, void *user)
 		(*global_vm)->DetachCurrentThread(global_vm);
 }
 
+/* PS5 "bu görüntü yayınlanamaz" (korumalı içerik, rp_prohibit) ya da "yeniden yayınlanabilir" dediğinde libchiaki'nin
+ * ctrl iş parçacığı bu geri çağrıyı koşulsuz çağırır (ctrl.c: displaya/displayb iletileri ve ctrl yanıtı). Atanmazsa
+ * NULL işlev çağrılır ve uygulama SIGSEGV ile kapanır (Crashlytics: ctrl_thread_func, ctrl.c:995/1005). Altyazı için
+ * yapılacak bir şey yok: yalnız günlüğe yazılır, akış sürer. */
+static void cs_session_cant_display(void *user, bool cant_display)
+{
+	cs_session *session = user;
+	CHIAKI_LOGI(&session->log, "PS5 stream %s", cant_display ? "can't display (protected content)" : "can display again");
+}
+
 static void cs_session_free(JNIEnv *env, cs_session *session)
 {
-	couchsubs_video_decoder_fini(&session->decoder);
+	couchsubs_video_decoder_fini(&session->decoder, env);
 	if(session->listener)
 		(*env)->DeleteGlobalRef(env, session->listener);
 	cs_sink_fini(&session->sink);
@@ -504,10 +513,11 @@ static void cs_session_free(JNIEnv *env, cs_session *session)
 }
 
 /* Oturumu başlatır; 0 dönerse lastError'a nedeni yazar. listener.onEvent(type, reason, text) libchiaki'nin iş
- * parçacığından çağrılır. Görüntü surface'e (ImageReader) çözülür. */
+ * parçacığından çağrılır. Kareler frameListener.onFrame(buffer, width, height, rowStride, colorFormat) ile çözücünün
+ * çıkış iş parçacığından verilir (arabellek yalnız çağrı süresince geçerlidir). */
 JNIEXPORT jlong JNICALL JNI_FCN(sessionStart)(JNIEnv *env, jclass cls, jstring host_string, jbyteArray regist_key_array,
-		jbyteArray morning_array, jbyteArray account_array, jint width, jint height, jobject surface, jobject listener,
-		jobject outcome)
+		jbyteArray morning_array, jbyteArray account_array, jint width, jint height, jobject frame_listener, jboolean swap_decoder,
+		jobject listener, jobject outcome)
 {
 	(void)cls;
 	cs_session *session = calloc(1, sizeof(cs_session));
@@ -519,7 +529,7 @@ JNIEXPORT jlong JNICALL JNI_FCN(sessionStart)(JNIEnv *env, jclass cls, jstring h
 	session->on_event = (*env)->GetMethodID(env, (*env)->GetObjectClass(env, listener), "onEvent", "(IILjava/lang/String;)V");
 
 	if(couchsubs_video_decoder_init(&session->decoder, &session->log, width, height) != CHIAKI_ERR_SUCCESS
-			|| !couchsubs_video_decoder_start(&session->decoder, env, surface))
+			|| !couchsubs_video_decoder_start(&session->decoder, env, frame_listener, swap_decoder == JNI_TRUE))
 	{
 		set_object(env, outcome, "errors", "Ljava/lang/String;", (*env)->NewStringUTF(env, "H.264 decoder could not be opened"));
 		cs_session_free(env, session);
@@ -563,6 +573,8 @@ JNIEXPORT jlong JNICALL JNI_FCN(sessionStart)(JNIEnv *env, jclass cls, jstring h
 	}
 	chiaki_session_set_event_cb(&session->session, cs_session_event, session);
 	chiaki_session_set_video_sample_cb(&session->session, couchsubs_video_decoder_video_sample, &session->decoder);
+	ChiakiCtrlDisplaySink display_sink = { .user = session, .cantdisplay_cb = cs_session_cant_display };
+	chiaki_session_ctrl_set_display_sink(&session->session, &display_sink);
 	err = chiaki_session_start(&session->session);
 	if(err != CHIAKI_ERR_SUCCESS)
 	{
@@ -590,6 +602,23 @@ JNIEXPORT void JNICALL JNI_FCN(sessionStop)(JNIEnv *env, jclass cls, jlong ptr)
 	cs_session_free(env, session);
 }
 
+/* PS5'in istediği giriş şifresini (ASCII rakamlar) gönderir. Olay geri çağrısından değil, kuyruktan çağrılmalı:
+ * libchiaki olayı state_mutex tutarken verir. */
+JNIEXPORT jint JNICALL JNI_FCN(sessionSetLoginPin)(JNIEnv *env, jclass cls, jlong ptr, jbyteArray pin_array)
+{
+	(void)cls;
+	cs_session *session = (cs_session *)(intptr_t)ptr;
+	if(!session || !pin_array)
+		return CHIAKI_ERR_INVALID_DATA;
+	jsize size = (*env)->GetArrayLength(env, pin_array);
+	jbyte *pin = (*env)->GetByteArrayElements(env, pin_array, NULL);
+	if(!pin)
+		return CHIAKI_ERR_MEMORY;
+	ChiakiErrorCode err = chiaki_session_set_login_pin(&session->session, (const uint8_t *)pin, (size_t)size);
+	(*env)->ReleaseByteArrayElements(env, pin_array, pin, JNI_ABORT);
+	return (jint)err;
+}
+
 /* Oturumun biriktirdiği hata satırları (yoksa null). */
 JNIEXPORT jstring JNICALL JNI_FCN(sessionErrors)(JNIEnv *env, jclass cls, jlong ptr)
 {
@@ -598,10 +627,10 @@ JNIEXPORT jstring JNICALL JNI_FCN(sessionErrors)(JNIEnv *env, jclass cls, jlong 
 	return session ? cs_sink_errors(env, &session->sink) : NULL;
 }
 
-/* Çözücünün yüzeye verdiği kare sayısı (tanı: görüntü geliyor mu). */
+/* Çözücünün dinleyiciye verdiği kare sayısı (tanı: görüntü geliyor mu). */
 JNIEXPORT jlong JNICALL JNI_FCN(sessionFrames)(JNIEnv *env, jclass cls, jlong ptr)
 {
 	(void)env; (void)cls;
 	cs_session *session = (cs_session *)(intptr_t)ptr;
-	return session ? (jlong)session->decoder.frames_out : 0;
+	return session ? (jlong)atomic_load(&session->decoder.frames_out) : 0;
 }

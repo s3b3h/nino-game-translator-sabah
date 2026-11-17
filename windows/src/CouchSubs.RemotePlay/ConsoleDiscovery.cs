@@ -5,6 +5,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using CouchSubs.Core;
 
 namespace CouchSubs.RemotePlay;
 
@@ -30,6 +31,13 @@ public static class ConsoleDiscovery
         if (found.Count == 1) return found[0];
         var named = found.Where(c => c.Name == name).ToList();
         return named.Count == 1 ? named[0] : null;
+    }
+
+    /// <summary>PS5'te o an çalışan oyun: yalnız bağlı PS5'in adresine sorulur (ortak havuz için; bkz. <see cref="RunningGame"/>).</summary>
+    public static async Task<RunningGame?> RunningGameAsync(string host, CancellationToken ct = default)
+    {
+        var found = await DiscoverAsync(host, TimeSpan.FromSeconds(2), ct).ConfigureAwait(false);
+        return found.Count == 0 ? null : RunningGame.Create(found[0].RunningAppTitleId, found[0].RunningAppName);
     }
 
     /// <summary>Kayıtlı PS5'i dinlenme modundan uyandırır.</summary>
@@ -59,9 +67,9 @@ public static class ConsoleDiscovery
         try
         {
             for (var i = 0; i < targets.Count; i++) strings[i] = Marshal.StringToCoTaskMemUTF8(targets[i]);
-            delegate* unmanaged[Cdecl]<byte*, byte*, int, nint, void> callback = &OnConsole;
+            delegate* unmanaged[Cdecl]<byte*, byte*, int, byte*, byte*, nint, void> callback = &OnConsole;
             fixed (nint* pointer = strings)
-                NativeMethods.cs_discover(pointer, strings.Length, (int)timeout.TotalMilliseconds, (nint)callback, GCHandle.ToIntPtr(handle));
+                NativeMethods.cs_discover_ex(pointer, strings.Length, (int)timeout.TotalMilliseconds, (nint)callback, GCHandle.ToIntPtr(handle));
         }
         finally
         {
@@ -72,12 +80,12 @@ public static class ConsoleDiscovery
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    private static unsafe void OnConsole(byte* host, byte* name, int awake, nint user)
+    private static unsafe void OnConsole(byte* host, byte* name, int awake, byte* titleId, byte* appName, nint user)
     {
         try
         {
             if (GCHandle.FromIntPtr(user).Target is not Collector collector || NativeMethods.Utf8(host) is not { } address) return;
-            var info = new ConsoleInfo(address, NativeMethods.Utf8(name) ?? "PS5", awake != 0);
+            var info = new ConsoleInfo(address, NativeMethods.Utf8(name) ?? "PS5", awake != 0, NativeMethods.Utf8(titleId), NativeMethods.Utf8(appName));
             lock (collector) collector.Hosts[info.Host] = info;
         }
         catch

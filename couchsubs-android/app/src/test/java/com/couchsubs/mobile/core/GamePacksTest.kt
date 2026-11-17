@@ -27,6 +27,7 @@ class PackKeyTest {
             val input = vector.getString("input")
             assertEquals(input, vector.getString("canon"), PackKey.canon(input))
             assertEquals(input, vector.getString("key"), PackKey.key(input) ?: "")
+            assertEquals(input, PackKey.key(input)?.let(PackKey::number), PackKey.keyNumber(input))
         }
     }
 
@@ -86,7 +87,7 @@ class GamePackTest {
         val json = "{\"format\":2,\"id\":\"g\",\"entries\":{\"$down\":\"Yere yat!\"}," +
             "\"segments\":{\"$back\":\"Geri çekil!\",\"$down\":\"Eğil!\"},\"fuzzy\":{\"x\":[1,2]}}"
         assertEquals(1, GamePack.decode(json.toByteArray(), "g").size)
-        val library = GamePackLibrary({ listOf("g.json" to json.toByteArray()) }, null)
+        val library = GamePackLibrary({ listOf("g.json" to { json.toByteArray() }) }, null)
         assertEquals("Yere yat!", library.find("Get Down!"))
         assertEquals("Geri çekil!", library.find("Get back!"))
     }
@@ -98,14 +99,49 @@ class GamePackTest {
         assertEquals("SCANNATURI SPECIALE BIÇAĞI", pack[key])
     }
 
+    /**
+     * Elle seçilen oyunda satırlar yalnız o oyunun paketinde aranır; paketi yoksa hiç aranmaz. Başka oyunların ortak
+     * satırları ("Let's go.") yanlış çeviri getirmez, oyunu da o pakete kaydırmaz (#218). Mac ve Windows'la aynı örnek.
+     */
+    @Test
+    fun chosenGameLimitsTheSearchToItsPack() {
+        val common = PackKey.key("Let's go.")
+        val tarnished = PackKey.key("Rise, Tarnished.")
+        val horse = PackKey.key("Easy, girl.")
+        val elden = """{"format":1,"id":"elden-ring","title":"Elden Ring","entries":{"$common":"Gidelim.","$tarnished":"Kalk, Lekeli."}}"""
+        val rdr = """{"format":1,"id":"rdr-2","title":"Red Dead Redemption 2","entries":{"$common":"Hadi gidelim.","$horse":"Sakin ol kızım."}}"""
+        val library = GamePackLibrary({ listOf("a.json" to { elden.toByteArray() }, "b.json" to { rdr.toByteArray() }) }, null)
+        // Seçim yokken bütün paketlerde aranır, aynı satırda sonraki paket kazanır.
+        assertEquals("Hadi gidelim.", PackLookup.match(library, "Let's go.")?.text)
+
+        // Paketi olmayan oyun: hiçbir pakette aranmaz.
+        library.limitToGame("Marvel's Wolverine")
+        assertNull(PackLookup.match(library, "Let's go."))
+        assertNull(PackLookup.match(library, "Rise, Tarnished."))
+        assertNull(library.searchScope)
+        assertNull(library.takeDistinctiveHit())
+
+        // Paketi olan oyun: yalnız o paket, Türkçe de o paketin kendisinden.
+        library.limitToGame("ELDEN RING")
+        assertEquals("Gidelim.", PackLookup.match(library, "Let's go.")?.text)
+        assertEquals("elden-ring", PackLookup.match(library, "Rise, Tarnished.")?.packId)
+        assertNull(PackLookup.match(library, "Easy, girl."))
+        assertEquals("elden-ring", library.searchScope)
+        assertEquals("elden-ring", library.takeDistinctiveHit()?.id)
+
+        // Seçim kalkınca yine bütün paketler.
+        library.limitToGame(null)
+        assertEquals("Sakin ol kızım.", PackLookup.match(library, "Easy, girl.")?.text)
+    }
+
     @Test
     fun libraryMergesBundledAndUserPacks() {
         val user = Files.createTempDirectory("packs").toFile()
         val library = GamePackLibrary({
             listOf(
-                "a.json.gz" to Fixtures.bytes("pack-bare.json.gz"),
-                "b.json.gz" to Fixtures.bytes("pack-wrapped.json.gz"),
-                "c.json.gz" to "bozuk".toByteArray(),
+                "a.json.gz" to { Fixtures.bytes("pack-bare.json.gz") },
+                "b.json.gz" to { Fixtures.bytes("pack-wrapped.json.gz") },
+                "c.json.gz" to { "bozuk".toByteArray() },
             )
         }, user)
         assertEquals(listOf("a", "Test Game"), library.infos.map { it.title })
@@ -129,21 +165,86 @@ class GamePackTest {
         assertEquals("a", library.findWithPack("Get Down!")?.packId)
     }
 
+    /** Paketteki aynı anahtarın sonraki satırı kazanır, boş satır alınmaz; çok satırlı pakette her satır bulunur. */
+    @Test
+    fun duplicateKeysKeepLastAndAllLinesAreFound() {
+        val down = PackKey.key("Get Down!")
+        val lines = (0 until 5000).map { "Line number $it" }
+        val body = lines.joinToString(",") { "\"${PackKey.key(it)}\":\"Satır ${it.substringAfterLast(' ')}\"" }
+        val json = "{\"format\":1,\"id\":\"g\",\"entries\":{\"$down\":\"Eğil!\",$body,\"$down\":\"Yere yat!\",\"${PackKey.key("Empty")}\":\" \"}}"
+        val pack = GamePack.decode(json.toByteArray(), "g")
+        assertEquals(5001, pack.size)
+        assertEquals("Yere yat!", pack[PackKey.number(down!!)!!])
+        assertNull(pack[PackKey.number(PackKey.key("Empty")!!)!!])
+        for (index in listOf(0, 1, 2499, 4999)) assertEquals("Satır $index", pack[PackKey.number(PackKey.key(lines[index])!!)!!])
+        assertNull(pack.segment(PackKey.number(down)!!))
+    }
+
+    /**
+     * Uygulamayla gelen paketler ilk aramada ve teker teker okunur: bir paket çözülmeden sonrakinin baytları belleğe
+     * alınmaz (dokuz paketin hepsi birden okununca zayıf telefonda bellek yetmiyor, çeviri başlarken uygulama kapanıyordu).
+     * Okunamayan dosya atlanır.
+     */
+    @Test
+    fun bundledPacksAreReadOneAtATime() {
+        val events = mutableListOf<String>()
+        val wrapped = Fixtures.bytes("pack-wrapped.json.gz")
+        val bare = Fixtures.bytes("pack-bare.json.gz")
+        val library = GamePackLibrary({
+            events.add("liste")
+            listOf(
+                "b.json.gz" to { events.add("oku b"); wrapped },
+                "a.json.gz" to { events.add("oku a"); bare },
+                "c.json.gz" to { events.add("oku c"); throw java.io.IOException("okunamadı") },
+            )
+        }, null)
+        assertEquals(emptyList<String>(), events)
+        assertEquals(listOf("a", "Test Game"), library.infos.map { it.title })
+        assertEquals(listOf("liste", "oku a", "oku b", "oku c"), events)
+        assertEquals("Yere yat!", library.find("Get Down!"))
+    }
+
     /** Uygulamayla gelen paketler (core/Sources/CouchSubsCore/Resources/packs) yüklenir ve hızlı aranır. */
     @Test
     fun embeddedPacksLoad() {
         val directory = File(System.getProperty("couchsubs.packs") ?: return)
         val started = System.nanoTime()
-        val library = GamePackLibrary({ directory.listFiles()!!.map { it.name to it.readBytes() } }, null)
+        val library = GamePackLibrary({ directory.listFiles()!!.map { file -> file.name to { file.readBytes() } } }, null)
         val ids = library.infos.map { it.id }
         val elapsedMs = (System.nanoTime() - started) / 1_000_000
         assertTrue(ids.contains("gta-v"))
         assertTrue(ids.contains("mafia-the-old-country"))
         assertTrue("paketler $elapsedMs ms'de yüklendi", elapsedMs < 10_000)
-        val mafia = GamePackLibrary({ listOf("mafia-the-old-country.json.gz" to File(directory, "mafia-the-old-country.json.gz").readBytes()) }, null)
+        val mafia = GamePackLibrary({ listOf("mafia-the-old-country.json.gz" to { File(directory, "mafia-the-old-country.json.gz").readBytes() }) }, null)
         assertEquals("MARIA: Yere yat!", PackLookup.match(mafia, "MARIA: Get Down!")?.text)
         assertEquals("Yere yat!\nMinchia! Sana at sürmeyi yasaklamak lazım!",
             PackLookup.match(mafia, "Get Down!\nMinchia! You shouldn't be allowed to ride!")?.text)
+    }
+}
+
+/** Dokuz gömülü paketin bellekte kalan boyu (bulanık imzalar dahil); zayıf telefonda çeviri başlarken bellek yetmeli. */
+class PackMemoryTest {
+    private fun used(): Long {
+        val runtime = Runtime.getRuntime()
+        repeat(3) {
+            System.gc()
+            Thread.sleep(100)
+        }
+        return runtime.totalMemory() - runtime.freeMemory()
+    }
+
+    @Test
+    fun embeddedPacksStaySmall() {
+        val directory = File(System.getProperty("couchsubs.packs") ?: return)
+        val before = used()
+        val library = GamePackLibrary({ directory.listFiles()!!.sortedBy { it.name }.map { file -> file.name to { file.readBytes() } } }, null)
+        val started = System.nanoTime()
+        assertEquals(9, library.infos.size)
+        println("PAKET YÜKLEME: ${(System.nanoTime() - started) / 1_000_000} ms")
+        val retainedMb = (used() - before) / (1 shl 20)
+        println("PAKET BELLEK: $retainedMb MB (${library.infos.sumOf { it.entries }} satır)")
+        assertTrue("paketler bellekte $retainedMb MB", retainedMb < 80)
+        assertEquals(9, library.infos.size)
     }
 }
 

@@ -122,6 +122,87 @@ struct AreaTile: View {
     }
 }
 
+/// Ayarlar › Ek alanlar: altyazının yanında sürekli okunan en çok üç küçük alan (görev, bildirim, telefon mesajı). Her biri
+/// adlandırılır, açılıp kapatılır; çerçevesi canlı önizlemede sürüklenir (Mac'teki ExtraAreasCard ile aynı).
+struct ExtraAreasTile: View {
+    @EnvironmentObject private var model: PhoneModel
+
+    var body: some View {
+        Tile {
+            Text("Extra areas").font(Mobile.TypeScale.headline)
+            Text("Besides the subtitle, Nino can keep reading up to three small areas, like a quest, a phone message or a notification. Each area is read about once a second and translated again only when its text changes. The translation shows on the TV next to the original text.")
+                .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(model.settings.extraAreas) { area in
+                ExtraAreaEditor(id: area.id, settings: $model.settings, preview: model.framePreview)
+            }
+            if model.settings.canAddExtraArea {
+                Menu {
+                    ForEach(ExtraAreaPreset.allCases, id: \.self) { preset in
+                        Button(preset.title) { model.settings.addExtraArea(preset, name: preset.defaultName) }
+                    }
+                } label: {
+                    Label("Add extra area", systemImage: "plus")
+                }
+                .buttonStyle(.mobileSecondary)
+            }
+        }
+    }
+}
+
+private struct ExtraAreaEditor: View {
+    let id: String
+    @Binding var settings: UserSettings
+    @ObservedObject var preview: PhoneFramePreview
+
+    var body: some View {
+        if let area = settings.extraAreas.first(where: { $0.id == id }) {
+            VStack(alignment: .leading, spacing: Mobile.Space.inline) {
+                HStack(spacing: Mobile.Space.inline) {
+                    TextField("Area name", text: Binding(get: { area.name }, set: { name in settings.updateExtraArea(id: id) { $0.name = name } }))
+                        .font(Mobile.TypeScale.headline.weight(.regular))
+                    Toggle("Read this area", isOn: Binding(get: { area.enabled },
+                                                           set: { on in settings.updateExtraArea(id: id) { $0.enabled = on } }))
+                        .labelsHidden()
+                        .tint(Mobile.Palette.accent)
+                    Button { settings.removeExtraArea(id: id) } label: { Image(systemName: "trash") }
+                        .foregroundStyle(Mobile.Palette.secondary)
+                        .accessibilityLabel(Text("Remove"))
+                }
+                SegmentedTabs(options: [ExtraAreaPreset.quest: "Quest", .notification: "Notification", .phone: "Phone"],
+                              selection: Binding(get: { ExtraAreaPreset.matching(area.region) ?? .quest },
+                                                 set: { preset in settings.updateExtraArea(id: id) { $0.region = preset.region } }))
+                RegionPreview(region: area.region, frame: preview.image) { region in
+                    settings.updateExtraArea(id: id) { $0.region = region }
+                }
+                .opacity(area.enabled ? 1 : 0.5)
+            }
+            .padding(Mobile.Space.gap)
+            .background(Mobile.Palette.surface2, in: RoundedRectangle(cornerRadius: Mobile.Radius.control))
+        }
+    }
+}
+
+extension ExtraAreaPreset {
+    /// Seçimin ekrandaki adı.
+    var title: LocalizedStringKey {
+        switch self {
+        case .quest: "Quest (top right)"
+        case .notification: "Notification (bottom left)"
+        case .phone: "Phone (bottom right)"
+        }
+    }
+
+    /// Yeni alanın adı (kullanıcı değiştirebilir).
+    var defaultName: String {
+        switch self {
+        case .quest: String(localized: "Quest")
+        case .notification: String(localized: "Notification")
+        case .phone: String(localized: "Phone")
+        }
+    }
+}
+
 /// Önizleme son kareyi izler; kare değişince yalnız bu görünüm yeniden çizilir.
 private struct PhoneRegionPreview: View {
     @Binding var settings: UserSettings

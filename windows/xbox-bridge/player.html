@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>CouchSubs Xbox reader</title>
+<style>html,body,#stream{margin:0;width:100%;height:100%;background:#000}video{width:100%;height:100%}</style>
+<div id="stream"></div>
+<script src="player.js"></script>
+<script>
+// SPDX-License-Identifier: AGPL-3.0-only
+(() => {
+  const pending = new Map();
+  let nextId = 0;
+  let player;
+  let frameTimer = 0;
+  let lastFrame = 0;
+  // Varsayılan 66 ms kısa altyazıyı daha hızlı yakalar; Xbox ayarından #244 öncesindeki 200 ms'ye dönülebilir.
+  // Uygulama önceki kareyi bitirmeden yenisi gönderilmez:
+  // kareler ileti kuyruğunda birikip eski kare okunmasın (en çok FRAME_WAIT_MS beklenir, yanıt kaybolursa akış durmasın).
+  let frameMs = 66;
+  const FRAME_WAIT_MS = 1000;
+  let frameSentAt = 0;
+  let frameWaiting = false;
+  let keepalive;
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  function send(message) { window.chrome.webview.postMessage(message); }
+  function rpc(command, args) {
+    const id = ++nextId;
+    send({ kind: 'rpc', id, command, args });
+    return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+  }
+  function fail(error) { send({ kind: 'state', state: 'error', detail: String(error?.message || error) }); }
+  function capture(video) {
+    if (!video || !video.videoWidth || !video.videoHeight) return;
+    const now = performance.now();
+    if (now - lastFrame < frameMs) return;
+    if (frameWaiting && now - frameSentAt < FRAME_WAIT_MS) return;
+    lastFrame = now;
+    frameSentAt = now;
+    frameWaiting = true;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0);
+    // JPEG keeps the WebView2 message bounded while preserving OCR legibility.
+    send({ kind: 'frame', image: canvas.toDataURL('image/jpeg', 0.94) });
+  }
+  async function start() {
+    if (player) return;
+    player = new xCloudPlayer.default('stream', {
+      ui_systemui: [], input_touch: false, input_mousekeyboard: false,
+      input_legacykeyboard: false,
+    });
+    player.bind();
+    player.setControllerRumble(false);
+    player.setSdpHandler(async (_, offer) => {
+      try {
+        const answer = await rpc('chatSdp', { sdp: offer.sdp });
+        player?.setRemoteOffer(answer.sdp);
+      } catch (error) { fail(error); }
+    });
+    player.getEventBus().on('connectionstate', event => {
+      send({ kind: 'state', state: event.state });
+      if (event.state === 'connected') {
+        if (player?._audioComponent?._audioRender) player._audioComponent._audioRender.muted = true;
+        const attach = () => {
+          const video = document.querySelector('#stream video');
+          if (!video) return false;
+          video.muted = true;
+          video.play().catch(fail);
+          video.addEventListener('loadeddata', () => capture(video));
+          frameTimer = setInterval(() => capture(video), frameMs);
+          return true;
+        };
+        if (!attach()) {
+          const observer = new MutationObserver(() => { if (attach()) observer.disconnect(); });
+          observer.observe(document.getElementById('stream'), { childList: true, subtree: true });
+        }
+        keepalive = setInterval(() => rpc('keepalive').catch(fail), 30_000);
+      }
+    });
+    try {
+      const offer = await player.createOffer();
+      const answer = await rpc('sdp', { sdp: offer.sdp });
+      player.setRemoteOffer(answer.sdp);
+      // Wait for local ICE gathering, including candidates on slower adapters.
+      await Promise.race([
+        new Promise(resolve => {
+          if (player._webrtcClient.iceGatheringState === 'complete') return resolve();
+          player._webrtcClient.addEventListener('icegatheringstatechange', () => {
+            if (player?._webrtcClient?.iceGatheringState === 'complete') resolve();
+          });
+        }),
+        new Promise(resolve => setTimeout(resolve, 5000)),
+      ]);
+      const candidates = player.getIceCandidates().map(candidate => ({
+        candidate: candidate.candidate, sdpMLineIndex: candidate.sdpMLineIndex,
+        sdpMid: candidate.sdpMid,
+      }));
+      player.setIceCandidates(await rpc('ice', { candidates }));
+    } catch (error) { fail(error); }
+  }
+  function stop() {
+    clearInterval(frameTimer);
+    clearInterval(keepalive);
+    for (const item of pending.values()) item.reject(new Error('Xbox stream stopped'));
+    pending.clear();
+    player?.close();
+    player = undefined;
+  }
+  window.chrome.webview.addEventListener('message', event => {
+    const message = event.data;
+    if (message.kind === 'reply') {
+      const item = pending.get(message.id);
+      if (!item) return;
+      pending.delete(message.id);
+      if (message.error) item.reject(new Error(message.error)); else item.resolve(message.value);
+    } else if (message.kind === 'frameDone') frameWaiting = false;
+    else if (message.kind === 'start') {
+      frameMs = message.legacyFrameRate ? 200 : 66;
+      start();
+    }
+    else if (message.kind === 'stop') stop();
+  });
+  window.addEventListener('error', event => fail(event.error || event.message));
+})();
+</script></html>

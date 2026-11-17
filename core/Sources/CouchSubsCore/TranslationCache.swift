@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import CryptoKit
 import Foundation
 
 /// Çevrilmiş satır ve cümlelerin kalıcı önbelleği (Windows'taki `TranslationCache` ile aynı dosya biçimi).
@@ -35,8 +36,21 @@ public final class TranslationCache: @unchecked Sendable {
 
     /// Motor ve dil çiftine göre dosya: `v1-apple-en-tr.jsonl`.
     public static func file(in directory: URL, engine: String, source: String, target: String) -> URL {
-        let name = ["v\(formatVersion)", engine, source, target].map(safe).joined(separator: "-")
-        return directory.appendingPathComponent(name + ".jsonl")
+        // Basit motor adlarında önceki dosya yolu korunur.
+        if [engine, source, target].allSatisfy(legacySafe) {
+            let name = ["v\(formatVersion)", engine, source, target].map(safe).joined(separator: "-")
+            return directory.appendingPathComponent(name + ".jsonl")
+        }
+        // Noktalama karakterlerini '_' yapmak farklı modellerin aynı çeviriyi paylaşmasına yol açıyordu.
+        let key = [engine, source, target].joined(separator: "\0")
+        let digest = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
+        return directory.appendingPathComponent("v\(formatVersion)h-\(digest).jsonl")
+    }
+
+    private static func legacySafe(_ part: String) -> Bool {
+        !part.isEmpty && part.unicodeScalars.allSatisfy {
+            ("a"..."z").contains($0) || ("0"..."9").contains($0) || $0 == "-"
+        }
     }
 
     private static let openLock = NSLock()

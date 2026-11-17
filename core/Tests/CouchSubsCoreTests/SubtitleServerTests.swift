@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import CoreText
 import XCTest
 @testable import CouchSubsCore
 
@@ -76,6 +77,27 @@ final class SubtitleServerTests: XCTestCase {
         XCTAssertTrue(lines.contains { $0.hasPrefix("data:") && $0.contains("\"duration\":12000")
             && $0.contains("{\"box\":{\"bottom\":0.4,\"left\":0.05,\"right\":0.2,\"top\":0.3},\"line\":0.03,\"paragraphs\":true,\"text\":\"Harita\\nAyarlar\"}")
             && $0.contains("\"line\":0.04,\"text\":\"Kapıyı aç.\"}") })
+    }
+
+    /// Ek alanın çevirisi kendi olayıyla gider (eski TV uygulamaları tanımadığı olayı yok sayar).
+    func testStreamsRegionTranslationsAndTheirClear() async throws {
+        let server = SubtitleServer(port: 0)
+        let port = try await server.start()
+        defer { server.stop() }
+        let received = LockedEvents()
+        server.onEvent = { received.append($0) }
+        let (bytes, _) = try await URLSession.shared.bytes(from: URL(string: "http://127.0.0.1:\(port)/events")!)
+        try await waitUntil { server.connectedClients == 1 }
+        let box = TextBox(left: 0.7, top: 0.05, right: 0.95, bottom: 0.12)
+        server.sendRegion(id: "q", text: "Demirciyi bul", box: box, lineHeight: 0.03)
+        server.sendRegion(id: "q", text: "", box: nil)
+        server.clearRegions()
+
+        let lines = try await readLines(bytes, until: "event: region-clear")
+        XCTAssertTrue(lines.contains("event: region"))
+        XCTAssertTrue(lines.contains(#"data: {"box":{"bottom":0.12,"left":0.7,"right":0.95,"top":0.05},"id":"q","line":0.03,"text":"Demirciyi bul"}"#), "\(lines)")
+        XCTAssertTrue(lines.contains(#"data: {"id":"q","text":""}"#), "\(lines)")
+        XCTAssertEqual(received.all, [.region(id: "q", text: "Demirciyi bul", box: box), .region(id: "q", text: "", box: nil), .regionClear])
     }
 
     func testSpeechIsAnnouncedAndServed() async throws {
@@ -162,6 +184,32 @@ final class SubtitleServerTests: XCTestCase {
         XCTAssertTrue(lines.contains("event: subtitle"))
     }
 
+    /// Şeffaflık tanımayan yayın programları için düz zemin (?bg=green) ve OBS'te kapalı ipucu; adresteki
+    /// parametreler sayfayı değiştirmez, aynı dosya gelir.
+    func testObsOverlayOffersSolidBackgroundAndHint() async throws {
+        let server = SubtitleServer(port: 0)
+        let port = try await server.start()
+        defer { server.stop() }
+
+        let (data, response) = try await URLSession.shared.data(from: URL(string: "http://127.0.0.1:\(port)/obs?bg=green&hint=1")!)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        let page = String(decoding: data, as: UTF8.self)
+        for background in StreamBackground.allCases {
+            XCTAssertTrue(page.contains("\(background.rawValue): '#"), "sayfada \(background.rawValue) zemini yok")
+        }
+        XCTAssertTrue(page.contains("window.obsstudio"))
+        XCTAssertTrue(page.contains("-webkit-font-smoothing: antialiased"))
+    }
+
+    func testStreamBackgroundDefaultsToGreenAndOpaqueBox() {
+        XCTAssertEqual(StreamBackground(stored: nil), .green)
+        XCTAssertEqual(StreamBackground(stored: "bozuk"), .green)
+        XCTAssertEqual(StreamBackground(stored: "magenta"), .magenta)
+        XCTAssertEqual(StreamBackground.green.rgb.green, 0xFF)
+        XCTAssertEqual(StreamBackground.boxOpacity(background: 60), 1)
+        XCTAssertEqual(StreamBackground.boxOpacity(background: 0), 0)
+    }
+
     /// Altyazı yalnız bilgisayar ekranındayken TV'ye altyazı gitmez; OBS katmanı ve dublaj sesi gitmeye devam eder.
     func testSubtitlesSkipTVsWhenTVOutputIsOff() async throws {
         let server = SubtitleServer(port: 0)
@@ -192,6 +240,18 @@ final class SubtitleServerTests: XCTestCase {
         XCTAssertEqual(received.all, [.subtitle(text: "Merhaba", durationMs: 4000, paragraphs: false), .clear])
     }
 
+    /// "Ekranı çevir" sonuçları da pencereye gider: altyazı yalnız bilgisayardayken (TV yok) hiçbir yerde görünmüyordu.
+    func testLocalListenerGetsScreenTranslations() {
+        let server = SubtitleServer(port: 0)
+        let received = LockedEvents()
+        server.onEvent = { received.append($0) }
+        let box = TextBox(left: 0.1, top: 0.1, right: 0.4, bottom: 0.2)
+        server.sendScreen([ScreenTranslation.Item(source: "Map\nInventory", translation: "Harita\nEnvanter", box: box, lineHeight: 0.03),
+                           ScreenTranslation.Item(source: "Leave", translation: "Ayrıl", box: box, lineHeight: 0.03)], durationMs: 12000)
+        server.clearScreen()
+        XCTAssertEqual(received.all, [.screen(text: "Harita\nEnvanter\nAyrıl", durationMs: 12000), .screenClear])
+    }
+
     func testHelloIdentifiesTheApp() async throws {
         let server = SubtitleServer(port: 0)
         let port = try await server.start()
@@ -217,12 +277,67 @@ final class SubtitleServerTests: XCTestCase {
                                              textColor: .white, displayMode: .inApp))
     }
 
+    func testBackgroundShapeIsSentAndOldStyleDefaultsToFit() throws {
+        var style = SubtitleStyle(background: 100)
+        XCTAssertEqual(style.backgroundShape, .fit)
+        XCTAssertEqual(style.json["backgroundShape"] as? String, "fit")
+        style.backgroundShape = .band
+        let decoded = try JSONDecoder().decode(SubtitleStyle.self, from: JSONEncoder().encode(style))
+        XCTAssertEqual(decoded.backgroundShape, .band)
+        XCTAssertEqual(style.json["background"] as? Int, 100)
+        XCTAssertEqual(style.json["backgroundShape"] as? String, "band")
+        let unknown = try JSONDecoder().decode(SubtitleStyle.self, from: Data(#"{"backgroundShape":"yeni"}"#.utf8))
+        XCTAssertEqual(unknown.backgroundShape, .fit)
+    }
+
     func testDisplayModeIsSavedAndRestored() throws {
         var style = SubtitleStyle()
         style.displayMode = .overlay
         let decoded = try JSONDecoder().decode(SubtitleStyle.self, from: JSONEncoder().encode(style))
         XCTAssertEqual(decoded.displayMode, .overlay)
         XCTAssertEqual(style.json["displayMode"] as? String, "overlay")
+    }
+
+    /// "Hızlı konuşmada önceki satırları üstte tut": varsayılan açık, TV'ye `stackPrevious` olarak gider, eski ayar dosyasında yoksa açık kalır.
+    func testStackPreviousIsSentSavedAndDefaultsOn() throws {
+        var style = SubtitleStyle()
+        XCTAssertEqual(style.json["stackPrevious"] as? Bool, true)
+        style.stackPrevious = false
+        XCTAssertEqual(style.json["stackPrevious"] as? Bool, false)
+        let decoded = try JSONDecoder().decode(SubtitleStyle.self, from: JSONEncoder().encode(style))
+        XCTAssertFalse(decoded.stackPrevious)
+        XCTAssertTrue(try JSONDecoder().decode(SubtitleStyle.self, from: Data("{}".utf8)).stackPrevious)
+    }
+
+    /// Yazı tipi: varsayılan Dar/Aksiyon, TV'ye `font` olarak gider; eski ayar dosyasında yoksa ya da bilinmiyorsa Dar/Aksiyon.
+    func testFontIsSentSavedAndDefaultsToCondensed() throws {
+        var style = SubtitleStyle()
+        XCTAssertEqual(style.font, .condensed)
+        XCTAssertEqual(style.json["font"] as? String, "condensed")
+        style.font = .rounded
+        XCTAssertEqual(style.json["font"] as? String, "rounded")
+        XCTAssertEqual(try JSONDecoder().decode(SubtitleStyle.self, from: JSONEncoder().encode(style)).font, .rounded)
+        XCTAssertEqual(try JSONDecoder().decode(SubtitleStyle.self, from: Data(#"{"fontSize":58}"#.utf8)).font, .condensed)
+        XCTAssertEqual(try JSONDecoder().decode(SubtitleStyle.self, from: Data(#"{"font":"yeni"}"#.utf8)).font, .condensed)
+    }
+
+    /// Uygulamaların çizdiği altyazı, TV sayfasıyla aynı dosyalardan (tv-webos/fonts) gelir; adlar gerçekten çözülmeli,
+    /// yoksa SwiftUI sessizce sistem yazı tipine düşer.
+    func testBundledSubtitleFontNamesResolve() throws {
+        let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("tv-webos/fonts")
+        for name in SubtitleFontRegistry.fileNames {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent(name).path), name)
+        }
+        SubtitleFontRegistry.register(folder: folder)
+        XCTAssertNil(SubtitleFont.system.postScriptName(bold: false))
+        for font in SubtitleFont.allCases {
+            for bold in [false, true] {
+                guard let name = font.postScriptName(bold: bold) else { continue }
+                let resolved = CTFontCopyPostScriptName(CTFontCreateWithName(name as CFString, 20, nil)) as String
+                XCTAssertEqual(resolved, name)
+            }
+        }
     }
 }
 

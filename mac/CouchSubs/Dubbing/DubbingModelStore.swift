@@ -82,7 +82,7 @@ enum DubbingModelStore {
 }
 
 /// İlerlemesi izlenebilen tek dosya indirmesi.
-private final class Downloader: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+final class Downloader: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     private let onProgress: @Sendable (Int64) -> Void
     private var continuation: CheckedContinuation<URL, Error>?
     /// İlerleme her 2 MB'de bir bildirilir; her küçük parçada arayüz güncellenmesin.

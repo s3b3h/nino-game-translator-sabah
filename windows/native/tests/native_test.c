@@ -314,6 +314,25 @@ static void test_discover_returns_after_timeout(void)
 	CHECK(cs_discover(NULL, 0, 100, count_console, &found) != 0);
 }
 
+static void count_console_ex(const char *host, const char *name, int awake, const char *titleid, const char *app, void *user)
+{
+	(void)host;
+	(void)name;
+	(void)awake;
+	(void)titleid;
+	(void)app;
+	(*(int *)user)++;
+}
+
+static void test_discover_ex_returns_after_timeout(void)
+{
+	const char *targets[] = { "127.0.0.1" };
+	int found = 0;
+	CHECK(cs_discover_ex(targets, 1, 600, count_console_ex, &found) == 0);
+	CHECK(found == 0);
+	CHECK(cs_discover_ex(targets, 1, 100, NULL, &found) != 0);
+}
+
 int main(int argc, char **argv)
 {
 	if(argc < 2)
@@ -329,6 +348,7 @@ int main(int argc, char **argv)
 	test_fixture_decodes(argv[1]);
 	test_garbage_does_not_crash();
 	test_discover_returns_after_timeout();
+	test_discover_ex_returns_after_timeout();
 	test_session_to_closed_port_quits_and_stops();
 	test_stop_right_after_start();
 	if(failures)

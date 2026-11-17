@@ -45,6 +45,9 @@ private final class FakeDeepL: URLProtocol {
 }
 
 private final class FakeLocal: TextTranslator {
+    private(set) var warmUpCalls = 0
+
+    func warmUp() async { warmUpCalls += 1 }
     func translate(_ text: String) async throws -> String { "yerel: " + text }
 }
 
@@ -67,6 +70,21 @@ final class DeepLTranslatorTests: XCTestCase {
     }
 
     private func context(_ index: Int) -> String? { FakeDeepL.bodies[index]["context"] as? String }
+
+    func testWarmUpDoesNotSendPlaceholderOrSeedFirstRequestContext() async throws {
+        let fallback = FakeLocal()
+        let translator = DeepLTranslator(key: "abc:fx", fallback: fallback, session: FakeDeepL.session())
+
+        await translator.warmUp()
+        XCTAssertEqual(FakeDeepL.bodies.count, 0)
+        XCTAssertEqual(fallback.warmUpCalls, 1)
+
+        _ = try await translator.translate("First real subtitle.")
+
+        XCTAssertEqual(FakeDeepL.bodies.count, 1)
+        XCTAssertNil(context(0))
+        XCTAssertEqual(FakeDeepL.bodies[0]["text"] as? [String], ["First real subtitle."])
+    }
 
     func testContextIsTheLastThreeShownLines() async throws {
         let translator = make()

@@ -458,3 +458,92 @@ final class FreeLineTranslatorTests: XCTestCase {
         XCTAssertEqual(engine.calls, [])
     }
 }
+
+/// Oyun terimleri örnek seti (Windows: GameTermsTests, Android: GameTermsTest; aynı satırlar). Kullanıcı şikâyetleri:
+/// "Toss a smoke" → "sigara at", ünlem satırları ve büyük harfli satırlar sözcük sözcük çevriliyordu.
+/// Gerçek motor (Apple Translation / ML Kit / OPUS-MT) burada çağrılmaz: motora giden metin ve hazır satırlar sınanır.
+final class GameTermsTests: XCTestCase {
+    private final class Engine: @unchecked Sendable {
+        var calls: [String] = []
+        let map: (String) -> String
+        init(_ map: @escaping (String) -> String) { self.map = map }
+        func run(_ input: String) -> String { calls.append(input); return map(input) }
+    }
+
+    private func translate(_ sentence: String, _ engine: Engine) async -> String {
+        await FreeTranslation.translate(sentence, context: nil, glossary: .builtIn,
+                                        normalize: { SubtitleSegmenter.normalizeCase($0, names: Glossary.builtIn.capitalWords) },
+                                        engine: { engine.run($0) })
+    }
+
+    /// Ünlem satırları motora gitmeden hazır Türkçesini alır; büyük harf, noktalama ve kıvrık kesme fark etmez.
+    func testCalloutsUseTheirTurkishLine() async {
+        let samples = [
+            ("Toss a smoke!", "Sis bombası at!"),
+            ("Reloading!", "Şarjör değiştiriyorum!"),
+            ("RELOADING!", "Şarjör değiştiriyorum!"),
+            ("Frag out!", "Bomba atıyorum!"),
+            ("Cover me, I’m reloading!", "Şarjör değiştiriyorum, koru beni!"),
+            ("Man down!", "Yaralı var!"),
+            ("Get down!", "Yere yat!"),
+            ("Move up.", "İlerleyin."),
+            ("- Contact!", "Düşman var!"),
+        ]
+        for (english, turkish) in samples {
+            let engine = Engine { _ in "?" }
+            let result = await translate(english, engine)
+            XCTAssertEqual(result, turkish, english)
+            XCTAssertEqual(engine.calls, [], english)
+        }
+    }
+
+    /// Uzun cümlede argo düz İngilizceye, silah adı yer tutucuya döner; Türkçe terim ekiyle geri konur.
+    func testSlangAndWeaponTermsInLongerLines() async {
+        let samples: [(english: String, sent: String, engineSays: String, turkish: String)] = [
+            ("Toss a smoke and move up.", "Throw a Zarmon and move up.", "Bir Zarmon at ve ilerle.", "Bir sis bombası at ve ilerle."),
+            ("THROW A FLASHBANG IN THERE!", "Throw a Zarmon in there!", "Oraya bir Zarmon at!", "Oraya bir flaş bombası at!"),
+            ("Pop smoke, we're leaving.", "Throw a Zarmon, we're leaving.", "Bir Zarmon at, gidiyoruz.", "Bir sis bombası at, gidiyoruz."),
+            ("Hostiles on the bridge.", "Enemies on the bridge.", "Köprüde düşmanlar.", "Köprüde düşmanlar."),
+            ("Grab the medkit before you go.", "Grab the Zarmon before you go.", "Gitmeden Zarmon'u al.", "Gitmeden ilk yardım çantasını al."),
+        ]
+        for sample in samples {
+            let engine = Engine { _ in sample.engineSays }
+            let result = await translate(sample.english, engine)
+            XCTAssertEqual(engine.calls.first, sample.sent, sample.english)
+            XCTAssertEqual(result, sample.turkish, sample.english)
+        }
+    }
+
+    /// Sıradan cümlelere dokunulmaz: "smoke" tek başına sis bombası değildir, "flashlight" flaş değildir.
+    func testOrdinarySentencesAreUnchanged() async {
+        for english in ["I smell smoke.", "Turn on your flashlight.", "Where is the grenade launcher?", "I'm covering you."] {
+            let engine = Engine { $0 }
+            _ = await translate(english, engine)
+            XCTAssertEqual(engine.calls, [english], english)
+        }
+    }
+
+    func testUserGlossaryCanAddLinesAndPhrases() throws {
+        let user = try Glossary.parse(#"{ "phrases": { "nerf": "weaken" }, "lines": { "GG!": "İyi oyundu" } }"#)
+        let merged = Glossary.merge([.builtIn, user])
+        XCTAssertEqual(merged.line("gg"), "İyi oyundu")
+        XCTAssertEqual(merged.plain("Nerf the boss"), "Weaken the boss")
+        XCTAssertNotEqual(merged.fingerprint, Glossary.builtIn.fingerprint)
+        XCTAssertTrue(merged.rewrites("They nerf it."))
+        XCTAssertFalse(merged.rewrites("Nerfed."))
+        // Bozuk düzenli ifade alınmaz.
+        XCTAssertEqual(try Glossary.parse(#"{ "phrases": { "(": "x" } }"#).plain("( a"), "( a")
+    }
+
+    func testCacheKeyFollowsLinesAndPhrases() {
+        let glossary = Glossary.builtIn
+        XCTAssertTrue(FreeTranslation.cacheKey("Reloading!", context: nil, glossary: glossary).hasPrefix(glossary.fingerprint))
+        XCTAssertTrue(FreeTranslation.cacheKey("Toss a smoke and go.", context: nil, glossary: glossary).hasPrefix(glossary.fingerprint))
+        XCTAssertEqual(FreeTranslation.cacheKey("I smell it.", context: nil, glossary: glossary), "I smell it.")
+    }
+
+    /// Windows ve Android'le aynı iz: üç platformun önbellek anahtarları aynı kalır.
+    func testFingerprintMatchesTheOtherPlatforms() {
+        XCTAssertEqual(Glossary.builtIn.fingerprint, "g978a414e")
+    }
+}

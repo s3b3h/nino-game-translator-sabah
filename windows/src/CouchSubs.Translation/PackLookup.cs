@@ -46,7 +46,13 @@ public static class PackLookup
             var all = true;
             foreach (var line in lines)
             {
-                if (Single(line, find) is not { } found) { all = false; break; }
+                if (Single(line, find) is not { } found)
+                {
+                    // Altyazıyla aynı bloğa düşen köşe yazısı ("San Andreas", "First Person • zoom") atlanır.
+                    if (IsOverlay(line)) continue;
+                    all = false;
+                    break;
+                }
                 if (pieces.Count > 0)
                 {
                     pieces.Add(new SubtitleSegmenter.Piece("\n", false));
@@ -55,7 +61,7 @@ public static class PackLookup
                 pieces.AddRange(found.Pieces);
                 translations.AddRange(found.Translations);
             }
-            if (all) return Result(pieces, translations);
+            if (all && pieces.Count > 0) return Result(pieces, translations);
         }
 
         // Cümle cümle (etiket, tire ve ayraçlar olduğu gibi kalır).
@@ -88,6 +94,24 @@ public static class PackLookup
         if (find(line) is { } whole) return ([new(line, true)], [whole]);
         if (LooseLabel(line) is not { } loose || find(loose.Body) is not { } found) return null;
         return ([new(loose.Label, false), new(loose.Body, true)], [null, found]);
+    }
+
+    /// <summary>
+    /// Altyazı olmayan köşe yazısı satırı: en çok dört sözcük; "•" içerir ("First Person • zoom") ya da noktalama yok ve
+    /// her sözcük büyük harfle başlar ("San Andreas", "Mirror Park", "LOSNN"). Yalnız başka satırlar pakette bulunduysa
+    /// atlanır. Uzun satırdaki "•" OCR lekesidir ("…with a colieague• Not that…"): o satır altyazıdır; atlanınca iki
+    /// satırlık altyazının yalnız ikinci satırının Türkçesi ("Seninle.") gösteriliyordu (#245).
+    /// </summary>
+    internal static bool IsOverlay(string line)
+    {
+        var words = line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0 || words.Length > 4) return false;
+        if (line.Contains('•')) return true;
+        return words.All(word =>
+        {
+            var runes = word.EnumerateRunes().ToList();
+            return Rune.IsUpper(runes[0]) && runes.All(rune => Rune.IsLetter(rune) || Rune.IsDigit(rune));
+        });
     }
 
     /// <summary>

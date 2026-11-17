@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <!-- 22621 SDK'sı GraphicsCaptureSession.IsBorderRequired'ı (sarı yakalama çerçevesi) getirir; uygulama yine 19041'de çalışır,
+         yeni API'ler ApiInformation ile denetlenir. -->
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -21,16 +23,33 @@
     <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
+  <!-- Paket sunucusu (server/packs): `dotnet publish -p:CouchSubsPacksUrl=https://…` ile verilir; boşsa paket indirme kapalı (PackUpdater). -->
+  <ItemGroup>
+    <AssemblyMetadata Include="CouchSubsPacksUrl" Value="$(CouchSubsPacksUrl)" />
+  </ItemGroup>
+
   <ItemGroup>
     <Resource Include="Assets\logo.png" />
     <Resource Include="Assets\living-room.png" />
     <!-- ShellWindow.xaml pencere simgesi olarak bunu okur; ApplicationIcon yalnız exe simgesidir. -->
     <Resource Include="Assets\CouchSubs.ico" />
+    <!-- Nino: altyazı yazı tipleri (Barlow, Barlow Condensed, Nunito; OFL). Lisans metinleri uygulamanın yanına kopyalanır. -->
+    <Resource Include="Fonts\*.ttf" />
+    <Content Include="Fonts\OFL-*.txt" Link="Fonts\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- TV uygulaması paketleri (scripts/package-tv.sh, package-tizen.sh ve Android derlemesi üretir); geliştirici modu açık TV'ye kurulur. -->
   <ItemGroup>
     <Content Include="..\..\..\dist\tv-app\*.ipk;..\..\..\dist\tv-app\*.wgt;..\..\..\dist\tv-app\*.apk" Link="tv-app\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\xbox-bridge\dist\bridge.cjs;..\..\xbox-bridge\dist\player.html;..\..\xbox-bridge\dist\player.js"
+             Link="xbox-bridge\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\xbox-bridge\dist\node.exe" Condition="Exists('..\..\xbox-bridge\dist\node.exe')"
+             Link="xbox-bridge\node.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\xbox-bridge\dist\licenses\*" Link="xbox-bridge\licenses\%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -17,23 +17,31 @@ public sealed class Localizer
 
     private Localizer(string language) => this.language = language;
 
-    /// <summary>Türkçe, Arapça (Nino), değilse İngilizce.</summary>
+    /// <summary>Nino'nun arayüz dilleri (Mac'in Localizable.xcstrings dosyasındakiler); Filipince Apple gibi "fil".</summary>
+    private static readonly string[] Interfaces = ["tr", "ar", "hi", "id", "th", "vi", "ur", "bn", "ms", "fil", "nl"];
+
+    /// <summary>Listedeki dillerden biri (Türkçe, Arapça, Hintçe…), değilse İngilizce.</summary>
     public static Localizer ForLanguage(string language)
     {
         var code = language.ToLowerInvariant();
-        return new(code.StartsWith("tr") ? "tr" : code.StartsWith("ar") ? "ar" : "en");
+        if (code.StartsWith("fil") || code == "tl") return new("fil");
+        var two = code.Length >= 2 ? code[..2] : code;
+        return new(Interfaces.Contains(two) ? two : "en");
     }
 
-    /// <summary>Windows'un arayüz diline göre: Türkçe, Arapça, değilse İngilizce.</summary>
+    /// <summary>Windows'un arayüz diline göre: listedeki dillerden biri, değilse İngilizce.</summary>
     public static Localizer Current { get; } = ForLanguage(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
     public string Language => language;
 
-    /// <summary>Arayüz sağdan sola mı (Arapça).</summary>
-    public bool IsRightToLeft => language == "ar";
+    /// <summary>Arayüz sağdan sola mı (Arapça, Urduca).</summary>
+    public bool IsRightToLeft => language is "ar" or "ur";
 
     public string this[string key] =>
-        Catalog.Value.TryGetValue(key, out var values) && values.TryGetValue(language, out var value) ? value : key;
+        // Nino: bu dilde çevirisi olmayan metin İngilizcesiyle gösterilir.
+        !Catalog.Value.TryGetValue(key, out var values) ? key
+        : values.TryGetValue(language, out var value) ? value
+        : values.TryGetValue("en", out var english) ? english : key;
 
     /// <summary>xcstrings biçim belirteçlerini (%@, %lld, %1$@ …) verilen değerlerle doldurur.</summary>
     public string Format(string key, params object[] args) => Fill(this[key], args);

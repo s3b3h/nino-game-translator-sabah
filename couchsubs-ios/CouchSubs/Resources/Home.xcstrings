@@ -5,10 +5,58 @@
     "lang.tr": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التركية"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "তুর্কি"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Turkish"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turkish"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तुर्की"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turki"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bahasa Turki"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turks"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตุรกี"
           }
         },
         "tr": {
@@ -17,10 +65,16 @@
             "value": "Türkçe"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "التركية"
+            "value": "ترکی"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếng Thổ Nhĩ Kỳ"
           }
         }
       }
@@ -28,10 +82,58 @@
     "lang.ar": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "العربية"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আরবি"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Arabic"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arabic"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अरबी"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arab"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bahasa Arab"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arabisch"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "อาหรับ"
           }
         },
         "tr": {
@@ -40,10 +142,16 @@
             "value": "Arapça"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "العربية"
+            "value": "عربی"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếng Ả Rập"
           }
         }
       }
@@ -51,10 +159,58 @@
     "home.status.ready": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جاهز"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রস্তুত"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Ready"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handa na"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तैयार"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siap"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sedia"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klaar"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "พร้อม"
           }
         },
         "tr": {
@@ -63,10 +219,16 @@
             "value": "Hazır"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "جاهز"
+            "value": "تیار"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sẵn sàng"
           }
         }
       }
@@ -74,10 +236,58 @@
     "home.status.connecting": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الاتصال"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সংযোগ হচ্ছে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Connecting"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kumokonekta"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कनेक्ट हो रहा है"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menghubungkan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menyambung"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinden"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังเชื่อมต่อ"
           }
         },
         "tr": {
@@ -86,10 +296,16 @@
             "value": "Bağlanıyor"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "جارٍ الاتصال"
+            "value": "جوڑا جا رہا ہے"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kết nối"
           }
         }
       }
@@ -97,10 +313,58 @@
     "home.status.live": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مباشر"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "লাইভ"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Live"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लाइव"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langsung"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langsung"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สด"
           }
         },
         "tr": {
@@ -109,10 +373,16 @@
             "value": "Canlı"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "مباشر"
+            "value": "لائیو"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trực tiếp"
           }
         }
       }
@@ -120,10 +390,58 @@
     "home.status.tv": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مباشر على التلفاز"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV-তে লাইভ"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Live on TV"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live sa TV"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV पर लाइव"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langsung di TV"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langsung pada TV"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live op TV"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สดบน TV"
           }
         },
         "tr": {
@@ -132,10 +450,16 @@
             "value": "TV'de Canlı"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "مباشر على التلفاز"
+            "value": "TV پر لائیو"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trực tiếp trên TV"
           }
         }
       }
@@ -143,10 +467,58 @@
     "home.status.notPaired": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غير مقترن"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পেয়ার করা নেই"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Not paired"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi naipares"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पेयर नहीं"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belum dipasangkan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak dipasangkan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet gekoppeld"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ยังไม่ได้จับคู่"
           }
         },
         "tr": {
@@ -155,10 +527,16 @@
             "value": "Eşlenmedi"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "غير مقترن"
+            "value": "جُڑا ہوا نہیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa ghép nối"
           }
         }
       }
@@ -166,10 +544,58 @@
     "home.title.ready": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الترجمة إلى %@"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ সাবটাইটেল"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ Subtitles"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga Subtitle sa %@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ सबटाइटल"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle %@"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sari Kata %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ondertitels"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คำบรรยาย%@"
           }
         },
         "tr": {
@@ -178,10 +604,16 @@
             "value": "%@ Altyazı"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "الترجمة إلى %@"
+            "value": "%@ سب ٹائٹلز"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phụ đề %@"
           }
         }
       }
@@ -189,10 +621,58 @@
     "home.title.live": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الترجمة مفعّلة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সাবটাইটেল চালু"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Subtitles On"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naka-on ang mga Subtitle"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सबटाइटल चालू"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle Aktif"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sari Kata Dihidupkan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ondertitels aan"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดคำบรรยายแล้ว"
           }
         },
         "tr": {
@@ -201,10 +681,16 @@
             "value": "Altyazılar Açık"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "الترجمة مفعّلة"
+            "value": "سب ٹائٹلز آن"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phụ đề đang bật"
           }
         }
       }
@@ -212,10 +698,58 @@
     "home.title.pair": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أقرِن جهاز PS5"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার PS5 পেয়ার করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Pair Your PS5"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipares ang Iyong PS5"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपना PS5 पेयर करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasangkan PS5 Anda"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasangkan PS5 Anda"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppel je PS5"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "จับคู่ PS5 ของคุณ"
           }
         },
         "tr": {
@@ -224,10 +758,16 @@
             "value": "PS5'inizi Eşleyin"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "أقرِن جهاز PS5"
+            "value": "اپنا PS5 جوڑیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghép nối PS5 của bạn"
           }
         }
       }
@@ -235,10 +775,58 @@
     "home.stage.idle": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تظهر ترجمة اللعبة هنا"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "গেমের সাবটাইটেল এখানে দেখাবে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Game Subtitles Appear Here"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dito Lalabas ang mga Subtitle ng Laro"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "गेम के सबटाइटल यहाँ दिखते हैं"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle Game Muncul di Sini"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sari Kata Permainan Muncul di Sini"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier verschijnen de ondertitels van de game"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คำบรรยายของเกมจะแสดงที่นี่"
           }
         },
         "tr": {
@@ -247,10 +835,16 @@
             "value": "Oyundaki Altyazılar Burada Belirir"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تظهر ترجمة اللعبة هنا"
+            "value": "گیم کے سب ٹائٹلز یہاں دکھائی دیں گے"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phụ đề game hiện ở đây"
           }
         }
       }
@@ -258,10 +852,58 @@
     "home.stage.waiting": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "في انتظار الترجمة التالية…"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পরবর্তী সাবটাইটেলের অপেক্ষা…"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Waiting for the Next Subtitle…"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinihintay ang Susunod na Subtitle…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अगले सबटाइटल का इंतज़ार…"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menunggu Subtitle Berikutnya…"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menunggu Sari Kata Seterusnya…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wachten op de volgende ondertitel…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังรอคำบรรยายถัดไป…"
           }
         },
         "tr": {
@@ -270,10 +912,16 @@
             "value": "Sıradaki Altyazı Bekleniyor…"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "في انتظار الترجمة التالية…"
+            "value": "اگلے سب ٹائٹل کا انتظار…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ phụ đề tiếp theo…"
           }
         }
       }
@@ -281,10 +929,58 @@
     "home.stage.connecting": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الاتصال…"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সংযোগ হচ্ছে…"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Connecting…"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kumokonekta…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कनेक्ट हो रहा है…"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menghubungkan…"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menyambung…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinden…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังเชื่อมต่อ…"
           }
         },
         "tr": {
@@ -293,10 +989,16 @@
             "value": "Bağlanıyor…"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "جارٍ الاتصال…"
+            "value": "جوڑا جا رہا ہے…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kết nối…"
           }
         }
       }
@@ -304,10 +1006,58 @@
     "home.live": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مباشر"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "লাইভ"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "LIVE"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LIVE"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लाइव"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LIVE"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LANGSUNG"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LIVE"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สด"
           }
         },
         "tr": {
@@ -316,10 +1066,16 @@
             "value": "CANLI"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "مباشر"
+            "value": "لائیو"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TRỰC TIẾP"
           }
         }
       }
@@ -327,10 +1083,58 @@
     "home.fullScreen": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملء الشاشة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পূর্ণ স্ক্রিন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Full Screen"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full Screen"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ुल स्क्रीन"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Layar Penuh"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skrin Penuh"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volledig scherm"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เต็มจอ"
           }
         },
         "tr": {
@@ -339,10 +1143,16 @@
             "value": "Tam Ekran"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "ملء الشاشة"
+            "value": "پوری اسکرین"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toàn màn hình"
           }
         }
       }
@@ -350,10 +1160,58 @@
     "slide.start": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب للبدء"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "শুরু করতে স্লাইড করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Slide to Start"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-slide para Magsimula"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "शुरू करने के लिए स्लाइड करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geser untuk Memulai"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leret untuk Mula"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schuif om te starten"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เลื่อนเพื่อเริ่ม"
           }
         },
         "tr": {
@@ -362,10 +1220,16 @@
             "value": "Başlatmak İçin Kaydırın"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "اسحب للبدء"
+            "value": "شروع کرنے کے لیے سلائیڈ کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trượt để bắt đầu"
           }
         }
       }
@@ -373,10 +1237,58 @@
     "slide.stop": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب للإيقاف"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "থামাতে স্লাইড করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Slide to Stop"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-slide para Ihinto"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रोकने के लिए स्लाइड करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geser untuk Berhenti"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leret untuk Berhenti"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schuif om te stoppen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เลื่อนเพื่อหยุด"
           }
         },
         "tr": {
@@ -385,10 +1297,16 @@
             "value": "Durdurmak İçin Kaydırın"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "اسحب للإيقاف"
+            "value": "روکنے کے لیے سلائیڈ کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trượt để dừng"
           }
         }
       }
@@ -396,10 +1314,58 @@
     "slide.pair": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط للإعداد"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সেট আপ করতে ট্যাপ করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Tap to Set Up"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-tap para I-set Up"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सेट अप करने के लिए टैप करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk untuk Menyiapkan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketik untuk Menyediakan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik om in te stellen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะเพื่อตั้งค่า"
           }
         },
         "tr": {
@@ -408,10 +1374,16 @@
             "value": "Kurulum İçin Dokunun"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "اضغط للإعداد"
+            "value": "سیٹ اپ کے لیے ٹیپ کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm để thiết lập"
           }
         }
       }
@@ -419,10 +1391,58 @@
     "home.rotateHint": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدِر هاتفك أفقيًا لملء الشاشة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পূর্ণ স্ক্রিনের জন্য ফোনটি আড়াআড়ি করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Turn your phone sideways for full screen"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipatagilid ang iyong telepono para sa full screen"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ुल स्क्रीन के लिए फ़ोन को आड़ा करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miringkan ponsel Anda untuk layar penuh"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pusingkan telefon anda ke sisi untuk skrin penuh"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draai je telefoon voor volledig scherm"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หมุนโทรศัพท์เป็นแนวนอนเพื่อดูแบบเต็มจอ"
           }
         },
         "tr": {
@@ -431,10 +1451,16 @@
             "value": "Telefonu yan çevirince tam ekran açılır"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "أدِر هاتفك أفقيًا لملء الشاشة"
+            "value": "پوری اسکرین کے لیے فون کو آڑا کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoay ngang điện thoại để xem toàn màn hình"
           }
         }
       }
@@ -442,10 +1468,58 @@
     "home.output": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإخراج"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আউটপুট"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Output"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Output"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आउटपुट"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Output"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Output"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitvoer"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เอาต์พุต"
           }
         },
         "tr": {
@@ -454,10 +1528,16 @@
             "value": "Çıkış"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "الإخراج"
+            "value": "آؤٹ پٹ"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đầu ra"
           }
         }
       }
@@ -465,10 +1545,58 @@
     "home.output.phone": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الهاتف"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ফোন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Phone"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telepono"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ोन"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponsel"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefoon"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "โทรศัพท์"
           }
         },
         "tr": {
@@ -477,10 +1605,16 @@
             "value": "Telefon"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "الهاتف"
+            "value": "فون"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điện thoại"
           }
         }
       }
@@ -488,10 +1622,58 @@
     "home.packs": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الحزم"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্যাক"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Packs"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga Pack"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पैक"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paket"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pek"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pakketten"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แพ็ก"
           }
         },
         "tr": {
@@ -500,10 +1682,16 @@
             "value": "Paketler"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "الحزم"
+            "value": "پیکس"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gói"
           }
         }
       }
@@ -511,10 +1699,58 @@
     "home.packs.free": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مجانية"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "বিনামূল্যে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Free"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libre"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुफ़्त"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gratis"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Percuma"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gratis"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ฟรี"
           }
         },
         "tr": {
@@ -523,10 +1759,16 @@
             "value": "Ücretsiz"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "مجانية"
+            "value": "مفت"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miễn phí"
           }
         }
       }
@@ -534,10 +1776,58 @@
     "ob.skip": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تخطٍّ"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "বাদ দিন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Skip"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laktawan"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "छोड़ें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lewati"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langkau"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sla over"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้าม"
           }
         },
         "tr": {
@@ -546,10 +1836,16 @@
             "value": "Atla"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تخطٍّ"
+            "value": "چھوڑیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ qua"
           }
         }
       }
@@ -557,10 +1853,58 @@
     "ob.continue": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متابعة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "চালিয়ে যান"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Continue"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magpatuloy"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जारी रखें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lanjutkan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teruskan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ga door"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ดำเนินการต่อ"
           }
         },
         "tr": {
@@ -569,10 +1913,16 @@
             "value": "Devam"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "متابعة"
+            "value": "جاری رکھیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục"
           }
         }
       }
@@ -580,10 +1930,58 @@
     "ob.start": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لنبدأ"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "চলুন শুরু করি"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Let's Start"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magsimula Na Tayo"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चलिए शुरू करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayo Mulai"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jom Mula"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laten we beginnen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เริ่มกันเลย"
           }
         },
         "tr": {
@@ -592,10 +1990,16 @@
             "value": "Başlayalım"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "لنبدأ"
+            "value": "آئیے شروع کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu nào"
           }
         }
       }
@@ -603,10 +2007,58 @@
     "ob.sample": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مثال"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "নমুনা"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "SAMPLE"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SAMPLE"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सैंपल"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CONTOH"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CONTOH"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VOORBEELD"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตัวอย่าง"
           }
         },
         "tr": {
@@ -615,10 +2067,16 @@
             "value": "ÖRNEK"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "مثال"
+            "value": "نمونہ"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MẪU"
           }
         }
       }
@@ -626,10 +2084,58 @@
     "ob.p1.title": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترجمة عربية لألعاب PS5"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 গেমের জন্য সাবটাইটেল"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Subtitles for PS5 Games"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga Subtitle para sa mga PS5 Game"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 गेम्स के लिए सबटाइटल"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle untuk Game PS5"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sari Kata untuk Permainan PS5"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ondertitels voor PS5-games"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คำบรรยายสำหรับเกม PS5"
           }
         },
         "tr": {
@@ -638,10 +2144,16 @@
             "value": "PS5 Oyunlarına Türkçe Altyazı"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "ترجمة عربية لألعاب PS5"
+            "value": "PS5 گیمز کے لیے سب ٹائٹلز"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phụ đề cho game PS5"
           }
         }
       }
@@ -649,10 +2161,58 @@
     "ob.p1.body": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يقرأ هاتفك الترجمة الإنجليزية في اللعبة ويترجمها ويعرضها على التلفاز أو على شاشته، وتواصل اللعب دون أن تترك يد التحكم."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার ফোন গেমের ইংরেজি সাবটাইটেল পড়ে, অনুবাদ করে এবং TV-তে বা নিজের স্ক্রিনে দেখায়। কন্ট্রোলার না নামিয়েই আপনি খেলা চালিয়ে যান।"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Your phone reads the English subtitles in the game, translates them and shows them on the TV or on its own screen. You keep playing without putting the controller down."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Binabasa ng iyong telepono ang mga English na subtitle sa laro, isinasalin ang mga ito at ipinapakita sa TV o sa sarili nitong screen. Patuloy kang naglalaro nang hindi binibitawan ang controller."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका फ़ोन गेम के अंग्रेज़ी सबटाइटल पढ़ता है, उनका अनुवाद करता है और उन्हें TV पर या अपनी स्क्रीन पर दिखाता है। आप कंट्रोलर छोड़े बिना खेलते रहते हैं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponsel Anda membaca subtitle bahasa Inggris di game, menerjemahkannya, dan menampilkannya di TV atau di layarnya sendiri. Anda tetap bermain tanpa melepas kontroler."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefon anda membaca sari kata bahasa Inggeris dalam permainan, menterjemahkannya dan memaparkannya pada TV atau pada skrinnya sendiri. Anda terus bermain tanpa meletakkan alat kawalan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je telefoon leest de Engelse ondertitels in de game, vertaalt ze en toont ze op de TV of op zijn eigen scherm. Je speelt verder zonder de controller neer te leggen."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "โทรศัพท์ของคุณจะอ่านคำบรรยายภาษาอังกฤษในเกม แปล แล้วแสดงบน TV หรือบนหน้าจอโทรศัพท์เอง คุณเล่นต่อได้โดยไม่ต้องวางคอนโทรลเลอร์"
           }
         },
         "tr": {
@@ -661,10 +2221,16 @@
             "value": "Telefonunuz oyundaki İngilizce altyazıyı okur, çevirir ve TV'de ya da kendi ekranında gösterir. Siz kolu bırakmadan oynamaya devam edersiniz."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "يقرأ هاتفك الترجمة الإنجليزية في اللعبة ويترجمها ويعرضها على التلفاز أو على شاشته، وتواصل اللعب دون أن تترك يد التحكم."
+            "value": "آپ کا فون گیم کے انگریزی سب ٹائٹلز پڑھتا ہے، ان کا ترجمہ کرتا ہے اور انہیں TV یا اپنی اسکرین پر دکھاتا ہے۔ آپ کنٹرولر رکھے بغیر کھیلتے رہتے ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điện thoại của bạn đọc phụ đề tiếng Anh trong game, dịch và hiển thị trên TV hoặc trên chính màn hình điện thoại. Bạn vẫn chơi tiếp mà không cần đặt tay cầm xuống."
           }
         }
       }
@@ -672,10 +2238,58 @@
     "ob.p2.title": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فورًا مع الحزم الجاهزة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "তৈরি প্যাকে তাৎক্ষণিক"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Instantly With Ready Packs"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agad-agad Gamit ang mga Handang Pack"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तैयार पैक के साथ तुरंत"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instan dengan Paket Siap Pakai"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serta-merta dengan Pek Siap Sedia"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direct met kant-en-klare pakketten"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ทันทีด้วยแพ็กสำเร็จรูป"
           }
         },
         "tr": {
@@ -684,10 +2298,16 @@
             "value": "Hazır Paketlerle Anında"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "فورًا مع الحزم الجاهزة"
+            "value": "تیار پیکس کے ساتھ فوراً"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tức thì với gói có sẵn"
           }
         }
       }
@@ -695,10 +2315,58 @@
     "ob.p2.body": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نصوص الألعاب الشهيرة مترجمة مسبقًا إلى التركية. وفي الألعاب الأخرى وفي العربية تعمل الترجمة المجانية."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "জনপ্রিয় গেমের পুরো লেখা আগে থেকেই অনুবাদ করা। সাবটাইটেল অপেক্ষা ছাড়াই আসে, অফলাইনেও। অন্য গেমে বিনামূল্যের অনুবাদ কাজ করে।"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "The whole text of popular games is already translated. Subtitles come without waiting, even offline. In other games the free translation works."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naisalin na ang buong text ng mga sikat na laro. Dumarating ang mga subtitle nang walang paghihintay, kahit offline. Sa ibang laro, gumagana ang libreng salin."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लोकप्रिय गेम्स का पूरा टेक्स्ट पहले से अनुवादित है। सबटाइटल बिना इंतज़ार के आते हैं, ऑफ़लाइन भी। दूसरे गेम्स में मुफ़्त अनुवाद काम करता है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seluruh teks game populer sudah diterjemahkan. Subtitle muncul tanpa menunggu, bahkan saat offline. Di game lain, terjemahan gratis yang bekerja."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keseluruhan teks permainan popular sudah diterjemah. Sari kata tiba tanpa menunggu, walaupun di luar talian. Dalam permainan lain, terjemahan percuma digunakan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De hele tekst van populaire games is al vertaald. Ondertitels komen zonder wachten, zelfs offline. In andere games werkt de gratis vertaling."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อความทั้งหมดของเกมยอดนิยมแปลไว้แล้ว คำบรรยายมาทันทีแม้ออฟไลน์ ในเกมอื่นๆ จะใช้การแปลฟรี"
           }
         },
         "tr": {
@@ -707,10 +2375,16 @@
             "value": "Popüler oyunların bütün metni önceden çevrildi. Altyazı beklemeden, internetsiz bile gelir. Diğer oyunlarda ücretsiz çeviri çalışır."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "نصوص الألعاب الشهيرة مترجمة مسبقًا إلى التركية. وفي الألعاب الأخرى وفي العربية تعمل الترجمة المجانية."
+            "value": "مقبول گیمز کا پورا متن پہلے سے ترجمہ شدہ ہے۔ سب ٹائٹلز بغیر انتظار کے آتے ہیں، آف لائن بھی۔ دوسری گیمز میں مفت ترجمہ کام کرتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toàn bộ văn bản của các game phổ biến đã được dịch sẵn. Phụ đề đến ngay, kể cả khi ngoại tuyến. Với game khác, bản dịch miễn phí sẽ hoạt động."
           }
         }
       }
@@ -718,10 +2392,58 @@
     "ob.p2.lines": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ألف سطر"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ হাজার লাইন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%@K Lines"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@K na Linya"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@K लाइनें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Ribu Baris"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@K Baris"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@K regels"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@K บรรทัด"
           }
         },
         "tr": {
@@ -730,10 +2452,16 @@
             "value": "%@ Bin Satır"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ ألف سطر"
+            "value": "%@ ہزار لائنیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@K dòng"
           }
         }
       }
@@ -741,10 +2469,58 @@
     "ob.free": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مجاني"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "বিনামূল্যে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Free"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libre"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुफ़्त"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gratis"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Percuma"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gratis"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ฟรี"
           }
         },
         "tr": {
@@ -753,10 +2529,16 @@
             "value": "Ücretsiz"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "مجاني"
+            "value": "مفت"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miễn phí"
           }
         }
       }
@@ -764,10 +2546,58 @@
     "ob.p3.title": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "على الشاشة التي تريدها"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার পছন্দের স্ক্রিনে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "On the Screen You Want"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sa Screen na Gusto Mo"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जिस स्क्रीन पर आप चाहें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di Layar yang Anda Inginkan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pada Skrin yang Anda Mahu"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Op het scherm dat je wilt"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บนหน้าจอที่คุณต้องการ"
           }
         },
         "tr": {
@@ -776,10 +2606,16 @@
             "value": "İstediğiniz Ekranda"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "على الشاشة التي تريدها"
+            "value": "جس اسکرین پر آپ چاہیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trên màn hình bạn muốn"
           }
         }
       }
@@ -787,10 +2623,58 @@
     "ob.p3.body": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اعرض الترجمة على التلفاز فوق اللعبة أو بخط كبير على هاتفك. يستغرق الإعداد بضع دقائق."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সাবটাইটেল গেমের ওপরে TV-তে দেখান, অথবা ফোনে বড় লেখায়। সেটআপে কয়েক মিনিট লাগে।"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Show the subtitles on the TV over the game, or in large text on your phone. Setup takes a few minutes."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipakita ang mga subtitle sa TV sa ibabaw ng laro, o nang malaki sa iyong telepono. Ilang minuto lang ang setup."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सबटाइटल TV पर गेम के ऊपर दिखाएँ, या अपने फ़ोन पर बड़े टेक्स्ट में। सेटअप में कुछ मिनट लगते हैं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tampilkan subtitle di TV di atas game, atau dengan teks besar di ponsel Anda. Penyiapan hanya butuh beberapa menit."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paparkan sari kata pada TV di atas permainan, atau dalam teks besar pada telefon anda. Persediaan mengambil masa beberapa minit."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon de ondertitels op de TV over de game, of in grote tekst op je telefoon. De configuratie duurt een paar minuten."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แสดงคำบรรยายบน TV ซ้อนทับเกม หรือเป็นตัวอักษรขนาดใหญ่บนโทรศัพท์ การตั้งค่าใช้เวลาเพียงไม่กี่นาที"
           }
         },
         "tr": {
@@ -799,10 +2683,16 @@
             "value": "Altyazıyı oyunun üstünde TV'de ya da telefonunuzda büyük yazıyla gösterin. Kurulum birkaç dakika sürer."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "اعرض الترجمة على التلفاز فوق اللعبة أو بخط كبير على هاتفك. يستغرق الإعداد بضع دقائق."
+            "value": "سب ٹائٹلز TV پر گیم کے اوپر، یا اپنے فون پر بڑے متن میں دکھائیں۔ سیٹ اپ میں چند منٹ لگتے ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiển thị phụ đề trên TV phía trên game, hoặc chữ lớn trên điện thoại. Thiết lập chỉ mất vài phút."
           }
         }
       }
@@ -810,10 +2700,58 @@
     "ob.p3.tv": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "على التلفاز"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV-তে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "On the TV"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sa TV"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV पर"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di TV"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pada TV"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Op de TV"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บน TV"
           }
         },
         "tr": {
@@ -822,10 +2760,16 @@
             "value": "TV'de"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "على التلفاز"
+            "value": "TV پر"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trên TV"
           }
         }
       }
@@ -833,10 +2777,58 @@
     "ob.p3.tv.detail": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فوق اللعبة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "গেমের ওপরে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Over the game"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sa ibabaw ng laro"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "गेम के ऊपर"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di atas game"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di atas permainan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over de game"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ซ้อนทับเกม"
           }
         },
         "tr": {
@@ -845,10 +2837,16 @@
             "value": "Oyunun üstünde"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "فوق اللعبة"
+            "value": "گیم کے اوپر"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trên game"
           }
         }
       }
@@ -856,10 +2854,58 @@
     "ob.p3.phone": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "على الهاتف"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ফোনে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "On the Phone"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sa Telepono"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ोन पर"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di Ponsel"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pada Telefon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Op de telefoon"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บนโทรศัพท์"
           }
         },
         "tr": {
@@ -868,10 +2914,16 @@
             "value": "Telefonda"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "على الهاتف"
+            "value": "فون پر"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trên điện thoại"
           }
         }
       }
@@ -879,10 +2931,58 @@
     "ob.p3.phone.detail": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بجانب التلفاز"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV-র পাশে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Next to the TV"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Katabi ng TV"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV के पास"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di samping TV"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di sebelah TV"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naast de TV"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้าง TV"
           }
         },
         "tr": {
@@ -891,10 +2991,16 @@
             "value": "TV'nin yanında"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "بجانب التلفاز"
+            "value": "TV کے ساتھ"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cạnh TV"
           }
         }
       }
@@ -902,10 +3008,58 @@
     "ob.p3.wifi": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تكفي شبكة Wi-Fi نفسها"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "একই Wi-Fi-ই যথেষ্ট"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "The Same Wi-Fi Is Enough"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sapat na ang Parehong Wi-Fi"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एक ही Wi-Fi काफ़ी है"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wi-Fi yang Sama Sudah Cukup"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wi-Fi yang Sama Sudah Memadai"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hetzelfde wifinetwerk is genoeg"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ใช้ Wi-Fi เดียวกันก็พอ"
           }
         },
         "tr": {
@@ -914,10 +3068,16 @@
             "value": "Aynı Wi-Fi Yeterli"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تكفي شبكة Wi-Fi نفسها"
+            "value": "ایک ہی Wi-Fi کافی ہے"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ cần cùng Wi-Fi"
           }
         }
       }
@@ -925,10 +3085,58 @@
     "ob.p3.wifi.detail": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اجعل PS5 والتلفاز والهاتف على الشبكة نفسها"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5, TV ও ফোন একই নেটওয়ার্কে রাখুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Keep the PS5, TV and phone on the same network"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panatilihin ang PS5, TV at telepono sa parehong network"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5, TV और फ़ोन को एक ही नेटवर्क पर रखें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pastikan PS5, TV, dan ponsel berada di jaringan yang sama"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pastikan PS5, TV dan telefon berada pada rangkaian yang sama"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Houd de PS5, TV en telefoon op hetzelfde netwerk"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ให้ PS5, TV และโทรศัพท์อยู่ในเครือข่ายเดียวกัน"
           }
         },
         "tr": {
@@ -937,10 +3145,16 @@
             "value": "PS5, TV ve telefon aynı ağda olsun"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "اجعل PS5 والتلفاز والهاتف على الشبكة نفسها"
+            "value": "PS5، TV اور فون کو ایک ہی نیٹ ورک پر رکھیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giữ PS5, TV và điện thoại trong cùng một mạng"
           }
         }
       }
@@ -948,10 +3162,58 @@
     "setup.step": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإعداد · الخطوة %d/3"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সেটআপ · ধাপ %d/3"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Setup · Step %d/3"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setup · Hakbang %d/3"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सेटअप · स्टेप %d/3"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Penyiapan · Langkah %d/3"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persediaan · Langkah %d/3"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuratie · Stap %d/3"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การตั้งค่า · ขั้นตอนที่ %d/3"
           }
         },
         "tr": {
@@ -960,10 +3222,16 @@
             "value": "Kurulum · Adım %d/3"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "الإعداد · الخطوة %d/3"
+            "value": "سیٹ اپ · مرحلہ %d/3"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thiết lập · Bước %d/3"
           }
         }
       }
@@ -971,10 +3239,58 @@
     "psn.title": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حساب PSN ثانٍ"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "দ্বিতীয় PSN অ্যাকাউন্ট"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Second PSN Account"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pangalawang PSN Account"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "दूसरा PSN अकाउंट"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akun PSN Kedua"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akaun PSN Kedua"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tweede PSN-account"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บัญชี PSN บัญชีที่สอง"
           }
         },
         "tr": {
@@ -983,10 +3299,16 @@
             "value": "İkinci PSN Hesabı"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "حساب PSN ثانٍ"
+            "value": "دوسرا PSN اکاؤنٹ"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản PSN thứ hai"
           }
         }
       }
@@ -994,10 +3316,58 @@
     "psn.body": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتصل الهاتف بجهاز PS5 عبر Remote Play. سجّل الدخول بحساب PSN ثانٍ مجاني منفصل عن الحساب الذي تلعب به."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ফোন Remote Play দিয়ে PS5-এ সংযোগ করে। আপনি যে অ্যাকাউন্টে খেলেন তা ছাড়া একটি বিনামূল্যের দ্বিতীয় PSN অ্যাকাউন্ট দিয়ে সাইন ইন করুন।"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "The phone connects to the PS5 with Remote Play. Sign in with a free second PSN account, separate from the one you play with."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kumokonekta ang telepono sa PS5 gamit ang Remote Play. Mag-sign in gamit ang libreng pangalawang PSN account, hiwalay sa ginagamit mo sa paglalaro."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ोन Remote Play से PS5 से कनेक्ट होता है। जिस अकाउंट से आप खेलते हैं, उससे अलग एक मुफ़्त दूसरे PSN अकाउंट से साइन इन करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponsel terhubung ke PS5 dengan Remote Play. Masuk dengan akun PSN kedua yang gratis, terpisah dari akun yang Anda gunakan untuk bermain."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefon menyambung ke PS5 dengan Remote Play. Log masuk dengan akaun PSN kedua yang percuma, berasingan daripada akaun yang anda gunakan untuk bermain."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De telefoon verbindt met de PS5 via Remote Play. Log in met een gratis tweede PSN-account, los van het account waarmee je speelt."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "โทรศัพท์จะเชื่อมต่อกับ PS5 ผ่าน Remote Play โปรดลงชื่อเข้าด้วยบัญชี PSN บัญชีที่สองแบบฟรี ซึ่งแยกจากบัญชีที่คุณใช้เล่น"
           }
         },
         "tr": {
@@ -1006,10 +3376,16 @@
             "value": "Telefon PS5'e Remote Play ile bağlanır. Oynadığınız hesaptan ayrı, ücretsiz ikinci bir PSN hesabıyla giriş yapın."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "يتصل الهاتف بجهاز PS5 عبر Remote Play. سجّل الدخول بحساب PSN ثانٍ مجاني منفصل عن الحساب الذي تلعب به."
+            "value": "فون Remote Play کے ذریعے PS5 سے جڑتا ہے۔ ایک مفت دوسرے PSN اکاؤنٹ سے سائن اِن کریں، جو آپ کے کھیلنے والے اکاؤنٹ سے الگ ہو۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điện thoại kết nối với PS5 qua Remote Play. Hãy đăng nhập bằng một tài khoản PSN thứ hai miễn phí, khác với tài khoản bạn dùng để chơi."
           }
         }
       }
@@ -1017,10 +3393,58 @@
     "psn.free": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حساب مجاني"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "বিনামূল্যের অ্যাকাউন্ট"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Free Account"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libreng Account"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुफ़्त अकाउंट"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akun Gratis"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akaun Percuma"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gratis account"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บัญชีฟรี"
           }
         },
         "tr": {
@@ -1029,10 +3453,16 @@
             "value": "Ücretsiz Hesap"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "حساب مجاني"
+            "value": "مفت اکاؤنٹ"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản miễn phí"
           }
         }
       }
@@ -1040,10 +3470,58 @@
     "psn.free.detail": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا حاجة إلى PS Plus"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS Plus লাগবে না"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "No PS Plus needed"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi kailangan ng PS Plus"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS Plus की ज़रूरत नहीं"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak perlu PS Plus"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak perlu PS Plus"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen PS Plus nodig"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่ต้องใช้ PS Plus"
           }
         },
         "tr": {
@@ -1052,10 +3530,16 @@
             "value": "PS Plus gerekmez"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا حاجة إلى PS Plus"
+            "value": "PS Plus کی ضرورت نہیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không cần PS Plus"
           }
         }
       }
@@ -1063,10 +3547,58 @@
     "psn.play": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت تلعب"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনি খেলেন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "You Play"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ikaw ang Naglalaro"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आप खेलते हैं"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda Bermain"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda Bermain"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jij speelt"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณเล่น"
           }
         },
         "tr": {
@@ -1075,10 +3607,16 @@
             "value": "Siz Oynarsınız"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "أنت تلعب"
+            "value": "آپ کھیلتے ہیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn chơi"
           }
         }
       }
@@ -1086,10 +3624,58 @@
     "psn.play.detail": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بحسابك الخاص على التلفاز"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "নিজের অ্যাকাউন্টে, TV-তে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "With your own account, on the TV"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gamit ang sarili mong account, sa TV"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपने अकाउंट से, TV पर"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dengan akun Anda sendiri, di TV"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dengan akaun anda sendiri, pada TV"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Met je eigen account, op de TV"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ด้วยบัญชีของคุณเอง บน TV"
           }
         },
         "tr": {
@@ -1098,10 +3684,16 @@
             "value": "Kendi hesabınızla, TV'de"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "بحسابك الخاص على التلفاز"
+            "value": "اپنے اکاؤنٹ سے، TV پر"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bằng tài khoản của bạn, trên TV"
           }
         }
       }
@@ -1109,10 +3701,58 @@
     "psn.password": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا نحفظ كلمة مرورك"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আমরা আপনার পাসওয়ার্ড রাখি না"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "We Don't Keep Your Password"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi Namin Itinatago ang Iyong Password"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हम आपका पासवर्ड नहीं रखते"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kami Tidak Menyimpan Kata Sandi Anda"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kami Tidak Menyimpan Kata Laluan Anda"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We bewaren je wachtwoord niet"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เราไม่เก็บรหัสผ่านของคุณ"
           }
         },
         "tr": {
@@ -1121,10 +3761,16 @@
             "value": "Şifrenizi Saklamayız"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا نحفظ كلمة مرورك"
+            "value": "ہم آپ کا پاس ورڈ نہیں رکھتے"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chúng tôi không lưu mật khẩu của bạn"
           }
         }
       }
@@ -1132,10 +3778,58 @@
     "psn.password.detail": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تسجّل الدخول في صفحة Sony"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনি Sony-র পেজে সাইন ইন করেন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "You sign in on Sony's page"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sa page ng Sony ka magsa-sign in"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आप Sony के पेज पर साइन इन करते हैं"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda masuk di halaman Sony"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda log masuk pada halaman Sony"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je logt in op de pagina van Sony"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณลงชื่อเข้าบนหน้าของ Sony"
           }
         },
         "tr": {
@@ -1144,10 +3838,16 @@
             "value": "Sony'nin sayfasında giriş yaparsınız"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تسجّل الدخول في صفحة Sony"
+            "value": "آپ Sony کے صفحے پر سائن اِن کرتے ہیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đăng nhập trên trang của Sony"
           }
         }
       }
@@ -1155,10 +3855,58 @@
     "psn.signedIn": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم تسجيل الدخول"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সাইন ইন করা আছে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Signed In"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naka-sign In"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साइन इन है"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sudah Masuk"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telah Log Masuk"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingelogd"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลงชื่อเข้าแล้ว"
           }
         },
         "tr": {
@@ -1167,10 +3915,16 @@
             "value": "Giriş Yapıldı"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تم تسجيل الدخول"
+            "value": "سائن اِن ہو گیا"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đăng nhập"
           }
         }
       }
@@ -1178,10 +3932,58 @@
     "psn.why": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لماذا حساب ثانٍ؟"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "দ্বিতীয় অ্যাকাউন্ট কেন?"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Why a Second Account?"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bakit Pangalawang Account?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "दूसरा अकाउंट क्यों?"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mengapa Akun Kedua?"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mengapa Akaun Kedua?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waarom een tweede account?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ทำไมต้องใช้บัญชีที่สอง"
           }
         },
         "tr": {
@@ -1190,10 +3992,16 @@
             "value": "Neden İkinci Hesap?"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "لماذا حساب ثانٍ؟"
+            "value": "دوسرا اکاؤنٹ کیوں؟"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tại sao cần tài khoản thứ hai?"
           }
         }
       }
@@ -1201,10 +4009,58 @@
     "psn.whyBody": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدام Remote Play بحسابك الخاص يستولي على يد التحكم ويوقف لعبتك. أما مع حساب ثانٍ مجاني فيسمح PS5 للهاتف بمشاهدة الصورة بينما تواصل اللعب على التلفاز. أنشئه على PS5 (إضافة مستخدم) أو في playstation.com."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "নিজের অ্যাকাউন্টে Remote Play করলে তা আপনার কন্ট্রোলার দখল করে গেম থামিয়ে দিত। একটি বিনামূল্যের দ্বিতীয় অ্যাকাউন্ট থাকলে PS5 ফোনকে ছবি দেখতে দেয়, আর আপনি TV-তে খেলা চালিয়ে যান। এটি PS5-এ (Add User) বা playstation.com-এ খুলুন।"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Remote Play with your own account would take over your controller and stop your game. With a second, free account the PS5 lets the phone watch the picture while you keep playing on the TV. Create it on the PS5 (Add User) or at playstation.com."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kung sarili mong account ang gagamitin sa Remote Play, aagawin nito ang iyong controller at ihihinto ang iyong laro. Sa pangalawa at libreng account, hinahayaan ng PS5 na panoorin ng telepono ang larawan habang patuloy kang naglalaro sa TV. Gawin ito sa PS5 (Add User) o sa playstation.com."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपके अपने अकाउंट से Remote Play आपके कंट्रोलर को अपने कब्ज़े में ले लेगा और आपका गेम रोक देगा। एक दूसरे, मुफ़्त अकाउंट के साथ PS5 फ़ोन को तस्वीर देखने देता है, जबकि आप TV पर खेलते रहते हैं। इसे PS5 पर (Add User) या playstation.com पर बनाएँ।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote Play dengan akun Anda sendiri akan mengambil alih kontroler dan menghentikan game Anda. Dengan akun kedua yang gratis, PS5 membiarkan ponsel melihat gambar sementara Anda tetap bermain di TV. Buat akun ini di PS5 (Tambahkan Pengguna) atau di playstation.com."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote Play dengan akaun anda sendiri akan mengambil alih alat kawalan anda dan menghentikan permainan anda. Dengan akaun kedua yang percuma, PS5 membenarkan telefon melihat gambar semasa anda terus bermain pada TV. Ciptanya pada PS5 (Add User) atau di playstation.com."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote Play met je eigen account zou je controller overnemen en je game stoppen. Met een tweede, gratis account laat de PS5 de telefoon het beeld bekijken terwijl jij verder speelt op de TV. Maak het aan op de PS5 (Voeg gebruiker toe) of op playstation.com."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การใช้ Remote Play ด้วยบัญชีของคุณเองจะดึงคอนโทรลเลอร์ไปและหยุดเกมของคุณ เมื่อใช้บัญชีที่สองแบบฟรี PS5 จะให้โทรศัพท์ดูภาพได้ขณะที่คุณเล่นต่อบน TV สร้างบัญชีได้บน PS5 (เพิ่มผู้ใช้) หรือที่ playstation.com"
           }
         },
         "tr": {
@@ -1213,10 +4069,16 @@
             "value": "Kendi hesabınızla Remote Play kolunuzu devralır ve oyununuzu durdurur. Ücretsiz ikinci bir hesapla PS5, siz TV'de oynarken telefonun görüntüyü izlemesine izin verir. Hesabı PS5'te (Kullanıcı Ekle) ya da playstation.com'da açın."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "استخدام Remote Play بحسابك الخاص يستولي على يد التحكم ويوقف لعبتك. أما مع حساب ثانٍ مجاني فيسمح PS5 للهاتف بمشاهدة الصورة بينما تواصل اللعب على التلفاز. أنشئه على PS5 (إضافة مستخدم) أو في playstation.com."
+            "value": "اپنے اکاؤنٹ سے Remote Play آپ کا کنٹرولر سنبھال لیتا اور گیم روک دیتا۔ دوسرے مفت اکاؤنٹ کے ساتھ PS5 فون کو تصویر دیکھنے دیتا ہے جبکہ آپ TV پر کھیلتے رہتے ہیں۔ اسے PS5 پر (Add User) یا playstation.com پر بنائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng Remote Play bằng tài khoản của chính bạn sẽ chiếm tay cầm và dừng game của bạn. Với tài khoản thứ hai miễn phí, PS5 cho phép điện thoại xem hình ảnh trong khi bạn vẫn chơi trên TV. Hãy tạo tài khoản trên PS5 (Thêm người dùng) hoặc tại playstation.com."
           }
         }
       }
@@ -1224,10 +4086,58 @@
     "psn.signIn": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول عبر Sony"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sony দিয়ে সাইন ইন করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Sign In With Sony"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mag-sign In Gamit ang Sony"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sony से साइन इन करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masuk dengan Sony"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log Masuk dengan Sony"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log in met Sony"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลงชื่อเข้าด้วย Sony"
           }
         },
         "tr": {
@@ -1236,10 +4146,16 @@
             "value": "Sony İle Giriş Yapın"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "سجّل الدخول عبر Sony"
+            "value": "Sony سے سائن اِن کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập bằng Sony"
           }
         }
       }
@@ -1247,10 +4163,58 @@
     "psn.again": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول مجددًا"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আবার সাইন ইন করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Sign In Again"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mag-sign In Muli"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फिर से साइन इन करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masuk Lagi"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log Masuk Semula"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log opnieuw in"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลงชื่อเข้าอีกครั้ง"
           }
         },
         "tr": {
@@ -1259,10 +4223,16 @@
             "value": "Yeniden Giriş Yapın"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "سجّل الدخول مجددًا"
+            "value": "دوبارہ سائن اِن کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập lại"
           }
         }
       }
@@ -1270,10 +4240,58 @@
     "pair.title": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أقرِن جهاز PS5"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার PS5 পেয়ার করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Pair Your PS5"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipares ang Iyong PS5"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपना PS5 पेयर करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasangkan PS5 Anda"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasangkan PS5 Anda"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppel je PS5"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "จับคู่ PS5 ของคุณ"
           }
         },
         "tr": {
@@ -1282,10 +4300,16 @@
             "value": "PS5'inizi Eşleyin"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "أقرِن جهاز PS5"
+            "value": "اپنا PS5 جوڑیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghép nối PS5 của bạn"
           }
         }
       }
@@ -1293,10 +4317,58 @@
     "pair.body": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "على PS5 وبالحساب الثاني، اختر الإعدادات › النظام › التشغيل عن بُعد › إقران جهاز، ثم أدخل الرمز الظاهر على الشاشة."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5-এ দ্বিতীয় অ্যাকাউন্টে Settings › System › Remote Play › Pair Device বেছে নিন এবং স্ক্রিনের কোডটি লিখুন।"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "On the PS5, with the second account, choose Settings › System › Remote Play › Pair Device and type the code on the screen."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sa PS5, gamit ang pangalawang account, piliin ang Settings › System › Remote Play › Pair Device at i-type ang code na nasa screen."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 पर, दूसरे अकाउंट से, Settings › System › Remote Play › Pair Device चुनें और स्क्रीन पर दिया कोड टाइप करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di PS5, dengan akun kedua, pilih Pengaturan › Sistem › Remote Play › Pasangkan Perangkat dan ketik kode yang tampil di layar."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pada PS5, dengan akaun kedua, pilih Settings › System › Remote Play › Pair Device dan taipkan kod yang dipaparkan pada skrin."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies op de PS5, met het tweede account, Instellingen › Systeem › Remote Play › Apparaat koppelen en typ de code van het scherm."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บน PS5 ด้วยบัญชีที่สอง ให้เลือก การตั้งค่า › ระบบ › Remote Play › จับคู่อุปกรณ์ แล้วพิมพ์รหัสที่แสดงบนหน้าจอ"
           }
         },
         "tr": {
@@ -1305,10 +4377,16 @@
             "value": "PS5'te ikinci hesapla Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir'i seçin ve ekranda görünen kodu girin."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "على PS5 وبالحساب الثاني، اختر الإعدادات › النظام › التشغيل عن بُعد › إقران جهاز، ثم أدخل الرمز الظاهر على الشاشة."
+            "value": "PS5 پر دوسرے اکاؤنٹ کے ساتھ Settings › System › Remote Play › Pair Device منتخب کریں اور اسکرین والا کوڈ لکھیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trên PS5, với tài khoản thứ hai, chọn Cài đặt › Hệ thống › Remote Play › Ghép nối thiết bị và nhập mã hiển thị trên màn hình."
           }
         }
       }
@@ -1316,10 +4394,58 @@
     "pair.found": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم العثور على %@"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ পাওয়া গেছে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ Found"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahanap ang %@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ मिला"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Ditemukan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Ditemui"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ gevonden"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "พบ %@"
           }
         },
         "tr": {
@@ -1328,10 +4454,16 @@
             "value": "%@ Bulundu"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تم العثور على %@"
+            "value": "%@ مل گیا"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tìm thấy %@"
           }
         }
       }
@@ -1339,10 +4471,58 @@
     "pair.sameWifi": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · نفس شبكة Wi-Fi"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · একই Wi-Fi"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ · same Wi-Fi"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · parehong Wi-Fi"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · वही Wi-Fi"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Wi-Fi yang sama"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Wi-Fi yang sama"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · zelfde wifi"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Wi-Fi เดียวกัน"
           }
         },
         "tr": {
@@ -1351,10 +4531,16 @@
             "value": "%@ · aynı Wi-Fi"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ · نفس شبكة Wi-Fi"
+            "value": "%@ · ایک ہی Wi-Fi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · cùng Wi-Fi"
           }
         }
       }
@@ -1362,10 +4548,58 @@
     "pair.searching": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ البحث عن PS5…"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 খোঁজা হচ্ছে…"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Looking for the PS5…"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinahanap ang PS5…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 खोजा जा रहा है…"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mencari PS5…"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mencari PS5…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoeken naar de PS5…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังค้นหา PS5…"
           }
         },
         "tr": {
@@ -1374,10 +4608,16 @@
             "value": "PS5 Aranıyor…"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "جارٍ البحث عن PS5…"
+            "value": "PS5 تلاش کیا جا رہا ہے…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tìm PS5…"
           }
         }
       }
@@ -1385,10 +4625,58 @@
     "pair.searching.detail": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شغّل PS5 أو اتركه في وضع الراحة على شبكة Wi-Fi نفسها"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 চালু করুন বা রেস্ট মোডে রাখুন, একই Wi-Fi-তে"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Turn the PS5 on or leave it in rest mode, on the same Wi-Fi"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-on ang PS5 o iwan itong naka-rest mode, sa parehong Wi-Fi"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 चालू करें या रेस्ट मोड में छोड़ दें, उसी Wi-Fi पर"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nyalakan PS5 atau biarkan dalam mode istirahat, di Wi-Fi yang sama"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidupkan PS5 atau biarkan dalam mod rehat, pada Wi-Fi yang sama"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zet de PS5 aan of laat hem in de rustmodus, op hetzelfde wifinetwerk"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิด PS5 หรือปล่อยไว้ในโหมดพัก โดยอยู่ใน Wi-Fi เดียวกัน"
           }
         },
         "tr": {
@@ -1397,10 +4685,16 @@
             "value": "PS5'i açın ya da dinlenme modunda bırakın; aynı Wi-Fi'da olsun"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "شغّل PS5 أو اتركه في وضع الراحة على شبكة Wi-Fi نفسها"
+            "value": "PS5 آن کریں یا rest mode میں رہنے دیں، ایک ہی Wi-Fi پر"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật PS5 hoặc để ở chế độ nghỉ, trên cùng Wi-Fi"
           }
         }
       }
@@ -1408,10 +4702,58 @@
     "pair.notFound": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تعثر على PS5؟"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 খুঁজে পাচ্ছেন না?"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Can't Find the PS5?"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi Mahanap ang PS5?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 नहीं मिल रहा?"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak Menemukan PS5?"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak Dapat Mencari PS5?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kun je de PS5 niet vinden?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หา PS5 ไม่เจอใช่ไหม"
           }
         },
         "tr": {
@@ -1420,10 +4762,16 @@
             "value": "PS5'i Bulamadınız Mı?"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "لم تعثر على PS5؟"
+            "value": "PS5 نہیں مل رہا؟"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy PS5?"
           }
         }
       }
@@ -1431,10 +4779,58 @@
     "pair.button": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إقران"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পেয়ার করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Pair"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipares"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पेयर करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasangkan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasangkan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppel"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "จับคู่"
           }
         },
         "tr": {
@@ -1443,10 +4839,16 @@
             "value": "Eşle"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "إقران"
+            "value": "جوڑیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghép nối"
           }
         }
       }
@@ -1454,10 +4856,58 @@
     "pair.code": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رمز الإقران"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পেয়ারিং কোড"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Pairing Code"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pairing Code"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पेयरिंग कोड"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kode Pemasangan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod Pemasangan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppelcode"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รหัสจับคู่"
           }
         },
         "tr": {
@@ -1466,10 +4916,16 @@
             "value": "Eşleme Kodu"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "رمز الإقران"
+            "value": "جوڑنے کا کوڈ"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã ghép nối"
           }
         }
       }
@@ -1477,10 +4933,58 @@
     "pair.code.note": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرمز صالح لمدة 5 دقائق. إذا حدثت مشكلة يظهر سببها هنا."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কোডটি ৫ মিনিট বৈধ থাকে। কোনো সমস্যা হলে কারণ এখানে দেখানো হবে।"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "The code is valid for 5 minutes. If something goes wrong, the reason is shown here."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid ang code nang 5 minuto. Kung may magkamali, ipapakita rito ang dahilan."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कोड 5 मिनट तक मान्य है। अगर कुछ ग़लत होता है, तो कारण यहाँ दिखेगा।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kode berlaku selama 5 menit. Jika ada masalah, penyebabnya ditampilkan di sini."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod sah selama 5 minit. Jika berlaku masalah, sebabnya dipaparkan di sini."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De code is 5 minuten geldig. Als er iets misgaat, zie je hier de reden."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รหัสใช้ได้ 5 นาที หากมีปัญหา สาเหตุจะแสดงที่นี่"
           }
         },
         "tr": {
@@ -1489,10 +4993,16 @@
             "value": "Kod 5 dakika geçerlidir. Bir sorun olursa nedeni burada görünür."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "الرمز صالح لمدة 5 دقائق. إذا حدثت مشكلة يظهر سببها هنا."
+            "value": "کوڈ 5 منٹ تک درست رہتا ہے۔ اگر کچھ غلط ہو تو وجہ یہاں دکھائی جائے گی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã có hiệu lực trong 5 phút. Nếu có lỗi, lý do sẽ hiển thị ở đây."
           }
         }
       }
@@ -1500,10 +5010,58 @@
     "pair.connecting": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الاتصال بجهاز PS5… قد يستغرق ذلك 30 ثانية."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5-এ সংযোগ হচ্ছে… এতে ৩০ সেকেন্ড পর্যন্ত লাগতে পারে।"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Connecting to the PS5… This can take up to 30 seconds."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kumokonekta sa PS5… Maaari itong tumagal nang hanggang 30 segundo."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 से कनेक्ट हो रहा है… इसमें 30 सेकंड तक लग सकते हैं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menghubungkan ke PS5… Ini bisa memakan waktu hingga 30 detik."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menyambung ke PS5… Ini boleh mengambil masa sehingga 30 saat."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinden met de PS5… Dit kan tot 30 seconden duren."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังเชื่อมต่อกับ PS5… อาจใช้เวลาถึง 30 วินาที"
           }
         },
         "tr": {
@@ -1512,10 +5070,16 @@
             "value": "PS5'e bağlanılıyor… Bu 30 saniye sürebilir."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "جارٍ الاتصال بجهاز PS5… قد يستغرق ذلك 30 ثانية."
+            "value": "PS5 سے جوڑا جا رہا ہے… اس میں 30 سیکنڈ تک لگ سکتے ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kết nối với PS5… Việc này có thể mất tới 30 giây."
           }
         }
       }
@@ -1523,10 +5087,58 @@
     "demo.try": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جرّب بدون PS5"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 ছাড়া চেষ্টা করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Try Without a PS5"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subukan Nang Walang PS5"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बिना PS5 के आज़माएँ"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coba Tanpa PS5"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuba Tanpa PS5"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probeer zonder PS5"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลองโดยไม่มี PS5"
           }
         },
         "tr": {
@@ -1535,10 +5147,16 @@
             "value": "PS5'siz Deneyin"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "جرّب بدون PS5"
+            "value": "PS5 کے بغیر آزمائیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử mà không cần PS5"
           }
         }
       }
@@ -1546,10 +5164,58 @@
     "demo.status": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجربة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ডেমো"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Demo"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "डेमो"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เดโม"
           }
         },
         "tr": {
@@ -1558,10 +5224,16 @@
             "value": "Demo"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تجربة"
+            "value": "ڈیمو"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo"
           }
         }
       }
@@ -1569,10 +5241,58 @@
     "demo.badge": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجربة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ডেমো"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "DEMO"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEMO"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "डेमो"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEMO"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEMO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEMO"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เดโม"
           }
         },
         "tr": {
@@ -1581,10 +5301,16 @@
             "value": "DEMO"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تجربة"
+            "value": "ڈیمو"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEMO"
           }
         }
       }
@@ -1592,10 +5318,58 @@
     "target.title": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أين تظهر الترجمة؟"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সাবটাইটেল কোথায় দেখাবে?"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Where Should Subtitles Appear?"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saan Dapat Lumabas ang mga Subtitle?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सबटाइटल कहाँ दिखें?"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di Mana Subtitle Ditampilkan?"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di Mana Sari Kata Patut Dipaparkan?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waar moeten de ondertitels verschijnen?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ให้คำบรรยายแสดงที่ไหน"
           }
         },
         "tr": {
@@ -1604,10 +5378,16 @@
             "value": "Altyazı Nerede Görünsün?"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "أين تظهر الترجمة؟"
+            "value": "سب ٹائٹلز کہاں دکھائی دیں؟"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phụ đề nên hiện ở đâu?"
           }
         }
       }
@@ -1615,10 +5395,58 @@
     "target.body": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك تغيير ذلك لاحقًا من الشاشة الرئيسية."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পরে হোম স্ক্রিনে এটি বদলাতে পারবেন।"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "You can change this later on the home screen."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puwede mo itong baguhin mamaya sa home screen."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आप इसे बाद में होम स्क्रीन पर बदल सकते हैं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda bisa mengubahnya nanti di layar beranda."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda boleh menukarnya kemudian pada skrin utama."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je kunt dit later wijzigen op het beginscherm."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณเปลี่ยนได้ภายหลังที่หน้าโฮม"
           }
         },
         "tr": {
@@ -1627,10 +5455,16 @@
             "value": "Bunu sonra ana ekrandan değiştirebilirsiniz."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "يمكنك تغيير ذلك لاحقًا من الشاشة الرئيسية."
+            "value": "آپ اسے بعد میں ہوم اسکرین پر بدل سکتے ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có thể đổi sau trên màn hình chính."
           }
         }
       }
@@ -1638,10 +5472,58 @@
     "common.done": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সম্পন্ন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Done"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tapos na"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हो गया"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selesai"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selesai"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klaar"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เสร็จสิ้น"
           }
         },
         "tr": {
@@ -1650,10 +5532,16 @@
             "value": "Tamam"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تم"
+            "value": "ہو گیا"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xong"
           }
         }
       }
@@ -1661,10 +5549,58 @@
     "common.close": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إغلاق"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "বন্ধ করুন"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Close"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isara"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बंद करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutup"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutup"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sluit"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ปิด"
           }
         },
         "tr": {
@@ -1673,10 +5609,16 @@
             "value": "Kapat"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "إغلاق"
+            "value": "بند کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng"
           }
         }
       }

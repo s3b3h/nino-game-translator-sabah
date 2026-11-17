@@ -58,6 +58,103 @@ public class ScreenTranslationTests
         Assert.Equal(0.08, groups[0].LineHeight, 6);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FullWidthHeadingDoesNotAbsorbOneOfTwoColumns(bool reversed)
+    {
+        var lines = new[] {
+            Line("Available missions", 0.05, 0.10, 0.95),
+            Line("Find the blacksmith in", 0.05, 0.14, 0.43),
+            Line("Bring the medicine to", 0.57, 0.14, 0.95),
+            Line("the village square.", 0.05, 0.18, 0.40),
+            Line("the northern camp.", 0.57, 0.18, 0.92),
+        };
+        var groups = ScreenTranslation.Groups(new Reading(reversed ? lines.Reverse().ToArray() : lines));
+        Assert.Equal(3, groups.Count);
+        var heading = Assert.Single(groups, g => g.Paragraphs.Contains("Available missions"));
+        Assert.Single(heading.Paragraphs);
+        Assert.Equal(0.13, heading.Box.Bottom, 6);
+        Assert.Contains(groups, g => g.Paragraphs.SequenceEqual(new[] { "Find the blacksmith in the village square." }) && g.Box.Right < 0.5);
+        Assert.Contains(groups, g => g.Paragraphs.SequenceEqual(new[] { "Bring the medicine to the northern camp." }) && g.Box.Left > 0.5);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FullWidthFooterDoesNotJoinEitherColumn(bool reversed)
+    {
+        var lines = new[] {
+            Line("Find the blacksmith in", 0.05, 0.14, 0.43),
+            Line("Bring the medicine to", 0.57, 0.14, 0.95),
+            Line("the village square.", 0.05, 0.18, 0.40),
+            Line("the northern camp.", 0.57, 0.18, 0.92),
+            Line("Choose a destination", 0.05, 0.22, 0.95),
+        };
+        var groups = ScreenTranslation.Groups(new Reading(reversed ? lines.Reverse().ToArray() : lines));
+        Assert.Equal(3, groups.Count);
+        var footer = Assert.Single(groups, g => g.Paragraphs.Contains("Choose a destination"));
+        Assert.Single(footer.Paragraphs);
+        Assert.Equal(0.22, footer.Box.Top, 6);
+        Assert.Contains(groups, g => g.Paragraphs.SequenceEqual(new[] { "Find the blacksmith in the village square." }));
+        Assert.Contains(groups, g => g.Paragraphs.SequenceEqual(new[] { "Bring the medicine to the northern camp." }));
+    }
+
+    [Theory]
+    [InlineData(0.05, 0.4)]
+    [InlineData(0.30, 0.70)]
+    [InlineData(0.60, 0.95)]
+    public void WrappedParagraphKeepsNarrowOrIndentedContinuation(double left, double right)
+    {
+        var groups = ScreenTranslation.Groups(new Reading([
+            Line("Find the blacksmith in", 0.05, 0.10, 0.95),
+            Line("the village square.", left, 0.14, right),
+        ]));
+        Assert.Equal(new[] { "Find the blacksmith in the village square." }, Assert.Single(groups).Paragraphs);
+    }
+
+    [Fact]
+    public void NearbyUnrelatedColumnDoesNotDetachTheLocalHeading()
+    {
+        var groups = ScreenTranslation.Groups(new Reading([
+            Line("Current objective", 0.05, 0.10, 0.43),
+            Line("Find the blacksmith in", 0.05, 0.14, 0.43),
+            Line("Bring the medicine to", 0.57, 0.14, 0.95),
+            Line("the village square.", 0.05, 0.18, 0.40),
+            Line("the northern camp.", 0.57, 0.18, 0.92),
+        ]));
+        Assert.Equal(2, groups.Count);
+        Assert.Contains(groups, g => g.Paragraphs.SequenceEqual(new[] { "Current objective", "Find the blacksmith in the village square." }));
+    }
+
+    [Fact]
+    public void FilteredControllerPromptDoesNotCreateAColumnBoundary()
+    {
+        var groups = ScreenTranslation.Groups(new Reading([
+            Line("Find the blacksmith in", 0.05, 0.10, 0.95),
+            Line("the village square.", 0.05, 0.14, 0.43),
+            Line("R2 Swing", 0.57, 0.14, 0.95),
+        ]));
+        Assert.Equal(new[] { "Find the blacksmith in the village square." }, Assert.Single(groups).Paragraphs);
+    }
+
+    [Fact]
+    public async Task SeparatingTheHeadingKeepsTranslationInputsAndText()
+    {
+        var translator = new InputRecorder();
+        var items = await ScreenTranslation.TranslateAsync(Image, new LinesReader(new Reading([
+            Line("Available missions", 0.05, 0.10, 0.95),
+            Line("Find the blacksmith in", 0.05, 0.14, 0.43),
+            Line("Bring the medicine to", 0.57, 0.14, 0.95),
+            Line("the village square.", 0.05, 0.18, 0.40),
+            Line("the northern camp.", 0.57, 0.18, 0.92),
+        ])), translator);
+        Assert.Equal(3, items.Count);
+        Assert.Equal(new[] { "Available missions", "Find the blacksmith in the village square.", "Bring the medicine to the northern camp." }, items.Select(i => i.Source));
+        Assert.Equal(items.Select(i => i.Source), translator.Requested);
+        Assert.Equal(new[] { "Türkçe sonuç 1", "Türkçe sonuç 2", "Türkçe sonuç 3" }, items.Select(i => i.Translation));
+    }
+
     [Fact]
     public void NumbersAndPromptsAreNotTranslated()
     {
@@ -111,6 +208,16 @@ public class ScreenTranslationTests
     [InlineData(5000, 60000)]
     public void DisplayTimeGrowsWithTextButIsBounded(int length, int expected) =>
         Assert.Equal(expected, ScreenTranslation.DisplayMilliseconds([new("a", new string('a', length), new TextBox(0, 0, 1, 1), 0.03)]));
+
+    private sealed class InputRecorder : ITextTranslator
+    {
+        public List<string> Requested { get; } = [];
+        public Task<string> TranslateAsync(string text, CancellationToken cancellationToken = default)
+        {
+            Requested.Add(text);
+            return Task.FromResult("Türkçe sonuç " + Requested.Count);
+        }
+    }
 
     private sealed class SameNameTranslator : ITextTranslator
     {

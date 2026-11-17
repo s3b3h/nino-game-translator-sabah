@@ -5,10 +5,19 @@
              xmlns:c="clr-namespace:CouchSubs.App.Controls"
              xmlns:t="clr-namespace:CouchSubs.App.Theme">
     <Grid>
-    <c:StepLayout Title="{t:T 'Welcome to Nino'}"
+    <c:StepLayout x:Name="Layout" Title="{t:T 'Welcome to Nino'}"
                   Message="{t:T 'Nino reads the English subtitles of your PS5 or Xbox games and shows a Turkish translation on your TV, on top of the game. You keep playing on the TV with your own controller.'}">
         <StackPanel>
-        <c:Card Title="{t:T 'You will need:'}">
+        <!-- CouchSubs: konsol seçimi. Xbox (Beta): Microsoft hesabıyla evdeki Xbox'tan yayın (xbox-bridge). -->
+        <c:Card Title="{t:T 'Choose your console'}" Margin="0,0,0,16">
+            <StackPanel>
+                <RadioButton x:Name="Ps5" Content="PlayStation 5" GroupName="consoleKind" Margin="0,0,0,12" Checked="OnSelected" />
+                <RadioButton x:Name="Xbox" Content="{t:T 'Xbox Series / Xbox One (Beta)'}" GroupName="consoleKind" Checked="OnSelected" />
+            </StackPanel>
+        </c:Card>
+        <TextBlock x:Name="XboxRequirements" Style="{StaticResource HintText}" TextWrapping="Wrap" Visibility="Collapsed"
+                   Text="{t:T 'You will need: your home Xbox on the same network, a Microsoft account, and a TV or computer to show the subtitles. Remote play must be turned on on the Xbox.'}" />
+        <c:Card x:Name="Ps5Requirements" Title="{t:T 'You will need:'}">
             <StackPanel>
                 <TextBlock Text="{t:T 'A PS5 on the same network as this computer'}" Margin="0,0,0,8" />
                 <TextBlock Text="{t:T 'An LG TV with the Nino TV app'}" Margin="0,0,0,8" />

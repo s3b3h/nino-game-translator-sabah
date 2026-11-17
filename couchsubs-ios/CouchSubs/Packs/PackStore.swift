@@ -40,7 +40,7 @@ struct PackManifest: Codable, Equatable, Sendable {
 }
 
 /// Oyun paketlerini sunucudan indirir (ücretsiz, herkese): liste, eksik ya da değişmiş paketi indirme, SHA-256 denetimi,
-/// haftada bir yenileme. Paketler `files` klasörüne yazılır; `GamePackLibrary` uygulamayla gelenlerden sonra oradan okur,
+/// açılışta, günde bir ve PS5'te yeni oyun başlayınca yenileme. Paketler `files` klasörüne yazılır; `GamePackLibrary` uygulamayla gelenlerden sonra oradan okur,
 /// aynı kimlikli indirilen paket uygulamayla gelenin yerine geçer.
 actor PackStore {
     enum Failure: Error, Equatable {
@@ -51,7 +51,11 @@ actor PackStore {
         case network
     }
 
-    static let refreshInterval: TimeInterval = 7 * 24 * 3600
+    /// Açılışta ve günde bir bakılır (Android'deki PackStore ile aynı); havuzdan her gece üretilen `pool-*` paketleri en
+    /// geç bir gün sonra gelir.
+    static let refreshInterval: TimeInterval = 24 * 3600
+    /// PS5'te yeni bir oyun tanınınca son bakış bundan eskiyse hemen bakılır (o oyunun paketi yeni çıkmış olabilir).
+    static let gameCheckInterval: TimeInterval = 10 * 60
 
     private let baseURL: URL
     private let directory: URL
@@ -72,6 +76,10 @@ actor PackStore {
             .appendingPathComponent("CouchSubs", isDirectory: true).appendingPathComponent("Packs", isDirectory: true)
     }
 
+    /// Ayarlar › Oyun paketleri'nden içe aktarılan topluluk paketleri (`GamePackImporter`). Yalnız bu telefonda kalır,
+    /// sunucuya gitmez; `refresh` yalnız `files` klasörünü temizlediği için güncellemede silinmez.
+    static var importedDirectory: URL { defaultDirectory.appendingPathComponent("imported", isDirectory: true) }
+
     /// `GamePackLibrary`'nin okuduğu klasör.
     nonisolated var filesDirectory: URL { Self.filesDirectory(in: directory) }
 
@@ -88,17 +96,17 @@ actor PackStore {
         (try? FileManager.default.attributesOfItem(atPath: refreshedFile.path)[.modificationDate]) as? Date
     }
 
-    /// Son yenilemeden bu yana bir hafta geçti mi (ya da hiç yenilenmedi mi)?
-    func needsRefresh() -> Bool {
+    /// Son yenilemeden bu yana `maxAge` (varsayılan bir gün) geçti mi (ya da hiç yenilenmedi mi)?
+    func needsRefresh(maxAge: TimeInterval = PackStore.refreshInterval) -> Bool {
         guard let lastRefresh else { return true }
-        return now().timeIntervalSince(lastRefresh) >= Self.refreshInterval
+        return now().timeIntervalSince(lastRefresh) >= maxAge
     }
 
-    /// Listeyi alır, eksik ya da değişmiş paketleri indirir, listede olmayanları siler. `force` false ise haftalık süre
-    /// dolmadan hiçbir şey yapmaz. Dönen değer: indirilen (yeni ya da güncellenen) paket sayısı.
+    /// Listeyi alır, eksik ya da değişmiş paketleri indirir, listede olmayanları siler. `force` false ise son bakıştan
+    /// `maxAge` geçmeden hiçbir şey yapmaz. Dönen değer: indirilen (yeni ya da güncellenen) paket sayısı.
     @discardableResult
-    func refresh(force: Bool = false) async throws -> Int {
-        guard force || needsRefresh() else { return 0 }
+    func refresh(force: Bool = false, maxAge: TimeInterval = PackStore.refreshInterval) async throws -> Int {
+        guard force || needsRefresh(maxAge: maxAge) else { return 0 }
         let manifest: PackManifest = try await fetch(path: "v1/packs").decoded()
         let manager = FileManager.default
         try manager.createDirectory(at: filesDirectory, withIntermediateDirectories: true)

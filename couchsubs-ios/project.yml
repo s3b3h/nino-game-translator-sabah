@@ -29,6 +29,10 @@ packages:
   RemotePlay:
     path: ../remoteplay
   # Nino: Firebase (Analytics, Crashlytics) ve Meta App Events kaldırıldı; Nino hiçbir ölçüm ya da izleme yapmaz.
+  # Xbox ev yayını (Beta): Google libwebrtc'nin hazır iOS derlemesi (BSD-3). Görüntü VideoToolbox'la çözülür.
+  WebRTC:
+    url: https://github.com/stasel/WebRTC
+    exactVersion: 150.0.0
 targets:
   CouchSubs:
     type: application
@@ -45,6 +49,11 @@ targets:
       - path: ../mac/CouchSubs/UI/RegionPreview.swift
       # Nino: Arapça çeviri sağdan sola (Mac'le ortak).
       - path: ../mac/CouchSubs/UI/RightToLeft.swift
+      # Nino: altyazının yazı tipi (Mac'le ortak) ve dosyaları (OFL; TV sayfasıyla aynı, lisanslarıyla).
+      - path: ../mac/CouchSubs/UI/SubtitleFontStyle.swift
+      - path: ../tv-webos/fonts
+        type: folder
+        buildPhase: resources
       # Ekran metinleri Mac uygulamasıyla aynı katalogda (Türkçe).
       - path: ../mac/CouchSubs/Resources/Localizable.xcstrings
         buildPhase: resources
@@ -55,6 +64,15 @@ targets:
     dependencies:
       - package: CouchSubsCore
       - package: RemotePlay
+      - package: WebRTC
+        product: WebRTC
+    postBuildScripts:
+      # Telefondan TV kurulumu: Samsung paketi kaynaktan, Android TV ve LG paketleri son GitHub sürümünden
+      # (scripts/ios-tv-packages.sh; indirilemezse önceki indirilen kullanılır).
+      - name: TV paketleri
+        basedOnDependencyAnalysis: false
+        script: |
+          "${PROJECT_DIR}/../scripts/ios-tv-packages.sh" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
     info:
       path: CouchSubs/Info.plist
       properties:
@@ -62,11 +80,17 @@ targets:
         CFBundleDisplayName: Nino Game Translator
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        CFBundleLocalizations: [en, tr, ar]
+        CFBundleLocalizations: [en, tr, ar, hi, id, th, vi, ur, bn, ms, fil, nl]
         LSApplicationCategoryType: public.app-category.utilities
         # Yalnız standart şifreleme (TLS, Remote Play'in standart AES'i): ihracat beyanı her yüklemede sorulmasın.
         ITSAppUsesNonExemptEncryption: false
-        NSLocalNetworkUsageDescription: Nino connects to your PS5 and TV on the home network to read and send translated subtitles.
+        NSLocalNetworkUsageDescription: Nino connects to your PS5 and TV on the home network to read and send translated subtitles, and installs and updates its TV app on your TV.
+        # WebRTC kitaplığı kamera ve mikrofon arayüzlerini içerir; kamera hiç açılmaz. Xbox oyun sesi çalınırken WebRTC ses birimi mikrofon iznini sorabilir; yerel ses parçası olmadığından ses gönderilmez.
+        NSMicrophoneUsageDescription: Nino never records or sends your voice. To play the Xbox game sound on this iPhone, the streaming library opens the audio system, which may ask for microphone access; you can decline and the sound still plays.
+        NSCameraUsageDescription: Nino does not use the camera. The video library used for Xbox streaming includes camera support, which stays off.
+        # Samsung girişi sayfası jetonu bu telefondaki http://localhost:4794'e gönderir; TV'lerle düz HTTP konuşulur.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
         UIRequiresFullScreen: false

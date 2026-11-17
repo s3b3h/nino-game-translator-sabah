@@ -57,6 +57,9 @@ try
             var installer = new AndroidTvInstaller(Option("--host"), Option("--key-dir"))
             {
                 OnApprovalNeeded = () => Emit("approve"),
+                // CouchSubs TV Play'de ve TV'de Play Store varsa TV'de Play sayfası açılır.
+                PlayListed = AndroidTvInstaller.IsListedOnPlayAsync,
+                OnPlayOpened = () => Emit("progress", ("step", "play")),
             };
             var (version, installed) = await installer.EnsureInstalledAsync(Option("--package"), Option("--version"), cancel.Token);
             Emit("done", ("version", version), ("installed", installed));

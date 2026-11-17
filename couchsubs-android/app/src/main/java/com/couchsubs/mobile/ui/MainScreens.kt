@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Inventory2
@@ -67,6 +68,7 @@ import com.couchsubs.mobile.service.LiveStatus
 import com.couchsubs.mobile.settings.SubtitleTarget
 import com.couchsubs.mobile.settings.HomeStyle
 import androidx.compose.ui.draw.clip
+import com.couchsubs.mobile.tv.InstalledTv
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -112,6 +114,8 @@ fun MainScreen(
     onProfile: () -> Unit,
     onSettings: () -> Unit,
     onSource: () -> Unit = onSettings,
+    onHistory: () -> Unit = {},
+    onTvUpdate: (InstalledTv) -> Unit = {},
 ) {
     val context = LocalContext.current
     val settings = Services.settings
@@ -120,7 +124,7 @@ fun MainScreen(
     // Nino: yakalama kartıyla PS5 eşlemesi gerekmez; kart modu "hazır" sayılır, PS5 kısa yolu kaynak ekranını açar.
     val captureCard = settings.usesCaptureCard
     // Nino: Xbox'ta "eşli" = Microsoft girişi yapılmış ve konsol seçilmiş; kısa yol Xbox ekranını açar.
-    val xbox = settings.usesXbox
+    val xbox = settings.xbox
     val paired = captureCard || if (xbox) settings.xboxReady else settings.console != null
     val sourceName = if (captureCard) stringResource(R.string.capture_card) else if (xbox) settings.xboxConsole?.name else settings.console?.name
     val onSourceTap = if (captureCard) onSource else onPairing
@@ -157,6 +161,8 @@ fun MainScreen(
     fun mark(step: TourStep) = Modifier.onGloballyPositioned { bounds[step] = it.boundsInRoot() }
     val topBar: @Composable () -> Unit = {
         TopBar {
+            // iPhone'daki gibi: geçmiş, ayarlar, profil.
+            IconAction(Icons.Filled.DateRange, stringResource(R.string.history), onHistory)
             SettingsAction(onSettings)
             Box(mark(TourStep.PROFILE)) { ProfileAction(onProfile) }
         }
@@ -166,6 +172,8 @@ fun MainScreen(
         // Nino: Mac ile aynı iki arayüz (Ayarlar › Arayüz). Salon: fişi prize takın. Cam düğme: sağa kaydırın, canlı TV insin.
         ScreenScaffold(top = topBar) {
             val onTv = settings.target == SubtitleTarget.TV
+            // TV'deki uygulama eskiyse güncelleme önerisi (telefondan kurulur).
+            if (!status.running) TvAppUpdateCard(onTvUpdate)
             if (settings.homeStyle == HomeStyle.LIVING_ROOM) {
                 Spacer(Modifier.height(8.dp))
                 // Nino: sahne ve cam düğme Arapça arayüzde aynalanmaz (sürükleme ve görsel soldan sağa).
@@ -205,6 +213,17 @@ fun MainScreen(
     }
 }
 
+/** Son satırın ölçümleri tek satırda; bilinmeyen değer yazılmaz, hiç ölçüm yoksa null. */
+fun metricsText(context: Context, pair: com.couchsubs.mobile.core.ShownPair): String? {
+    val total = pair.totalMs ?: return null
+    val parts = mutableListOf<String>()
+    pair.ocrMs?.let { parts.add(context.getString(R.string.metrics_ocr, it)) }
+    if (pair.origin == "paket") parts.add(context.getString(R.string.metrics_pack))
+    else pair.translationMs?.let { parts.add(context.getString(R.string.metrics_translation, it)) }
+    parts.add(context.getString(R.string.metrics_delay, total))
+    return parts.joinToString(" · ")
+}
+
 fun engineName(context: Context): String = when (Services.settings.engine) {
     com.couchsubs.mobile.settings.EngineChoice.FREE -> context.getString(R.string.engine_free_short)
     com.couchsubs.mobile.settings.EngineChoice.DEEPL -> "DeepL"
@@ -226,6 +245,7 @@ private fun RunningScreen(status: LiveStatus, topBar: @Composable () -> Unit, on
     }
     ScreenScaffold(top = topBar, bottom = {
         SecondaryButton(stringResource(R.string.main_phone_view), onClick = onPhoneView)
+        if (status.phase == stringResource(R.string.phase_streaming)) ScreenTranslateButton(status)
         DestructiveButton(stringResource(R.string.stop), onClick = onStop)
     }) {
         Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap), verticalAlignment = Alignment.CenterVertically) {
@@ -237,18 +257,23 @@ private fun RunningScreen(status: LiveStatus, topBar: @Composable () -> Unit, on
         Text(status.phase, style = Tokens.Type.caption, color = Tokens.Color.secondary)
         status.error?.let { NoteTile(it) }
         val current = status.recent.firstOrNull()
+        // İlk altyazı gelene kadar: kolu açınca PS5'te ana hesap seçilmeli (GitHub #231).
+        if (current == null && !Services.settings.xbox) NoteTile(stringResource(R.string.psn_main_account), Tokens.Color.secondary)
+        GameSection(status)
         Tile(Modifier.fillMaxWidth()) {
             TileLabel(stringResource(R.string.running_now))
             // Son çeviri altyazı sarısında (içerik), altında özgün metin.
             // Nino: Arapça çeviri sağdan sola, satırın sağına yaslı.
             Text(current?.translation?.let(TargetLanguage::displayText) ?: stringResource(R.string.running_waiting),
-                style = Tokens.Type.subtitleCurrent, modifier = Modifier.fillMaxWidth(),
+                style = Tokens.Type.subtitleCurrent.copy(fontFamily = rememberSubtitleFontFamily(Services.settings.subtitleFont)), modifier = Modifier.fillMaxWidth(),
                 color = if (current != null) Tokens.Color.accentText else Tokens.Color.secondary)
             current?.let {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
                     Text(it.source, style = Tokens.Type.caption, color = Tokens.Color.secondary, modifier = Modifier.weight(1f))
                     if (it.origin == "paket") Text(stringResource(R.string.running_ready_translation), style = Tokens.Type.caption, color = Tokens.Color.pro)
                 }
+                // Ölçüm satırı (iPhone ile aynı): "OCR 42 ms · Çeviri 310 ms · Gecikme 520 ms".
+                metricsText(context, it)?.let { line -> Text(line, style = Tokens.Type.caption, color = Tokens.Color.secondary) }
             }
         }
         val previous = status.recent.drop(1).take(4)
@@ -355,6 +380,7 @@ fun PacksScreen(onBack: () -> Unit, packInUse: String?) {
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
+        ImportedPacksSection()
         Tile(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
                 TileIcon(Icons.Filled.Refresh)
@@ -372,4 +398,15 @@ fun open(context: Context, url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     } catch (error: Exception) {
     }
+}
+
+/** "Ekranı çevir": oyun ekranının tamamını çevirir; çeviri sürerken ya da sonuçlar ekrandayken dokununca kaldırır (iPhone ile aynı). */
+@Composable
+fun ScreenTranslateButton(status: LiveStatus, modifier: Modifier = Modifier) {
+    val label = when (status.screenState) {
+        LiveStatus.ScreenState.IDLE -> R.string.screen_translate
+        LiveStatus.ScreenState.WORKING -> R.string.screen_working
+        LiveStatus.ScreenState.SHOWN -> R.string.screen_remove
+    }
+    SecondaryButton(stringResource(label), modifier) { com.couchsubs.mobile.service.TranslationService.translateScreen() }
 }

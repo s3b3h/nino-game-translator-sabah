@@ -55,6 +55,17 @@ public class ReadSchedulerTests
     }
 
     [Fact]
+    public void FastDetectionRefreshesAnUnchangedAreaAfterTwoReusedFrames()
+    {
+        var scheduler = new ReadScheduler(maxReuse: ReadScheduler.FastMaxReuse);
+        Assert.False(scheduler.Plan(Still()).Reuse);
+        scheduler.Record("");
+        Assert.True(scheduler.Plan(Still()).Reuse);
+        Assert.True(scheduler.Plan(Still()).Reuse);
+        Assert.False(scheduler.Plan(Still()).Reuse);
+    }
+
+    [Fact]
     public void SlowerSearchRunsOnlyOnEveryThirdEmptyFrame()
     {
         var scheduler = new ReadScheduler(deepEvery: 3);

@@ -18,16 +18,36 @@ public final class AITranslator: TextTranslator, OnlineTranslating {
     }
 
     /// `server`: yerel modelin (Ollama, LM Studio) sunucusu. `session` verilmezse hizmete uygun zaman aşımıyla kurulur.
+    /// `budget` verilmezse modelin uygulama genelindeki ortak dakikalık hakkı kullanılır.
+    /// `game`: oynanan oyunun adı (ör. eşleşen oyun paketinin başlığı); biliniyorsa modele bağlam olarak gider.
     public init(provider: AIProvider, key: String, model: String?, server: LocalAIServer? = nil, fallback: TextTranslator,
-                session: URLSession? = nil, cache: TranslationCache = TranslationCache(), target: String = "tr") {
+                session: URLSession? = nil, cache: TranslationCache = TranslationCache(), target: String = "tr",
+                budget: RequestBudget? = nil, game: (@Sendable () -> String?)? = nil) {
         core = AITranslationCore(provider: provider, key: key, model: model, server: server, session: session, cache: cache,
-                                 target: target)
+                                 budget: budget, target: target, game: game)
         self.fallback = fallback
     }
 
     public func translate(_ text: String) async throws -> String {
         try await core.translate(text) { [fallback] line in try await fallback.translate(line) }
     }
+
+    /// Yalnız yerel yedeği hazırlar; AI isteği, dakika kotası veya konuşma bağlamı oluşturmaz.
+    public func warmUp() async {
+        await fallback.warmUp()
+    }
+
+    /// Ekran çevirisi: bütün parçalar tek istekte gider; dakikalık hak parça başına harcanmaz.
+    public func translateAll(_ texts: [String]) async throws -> [String] {
+        try await core.translateAll(texts) { [fallback] line in try await fallback.translate(line) }
+    }
+
+    public var translatesTogether: Bool { true }
+
+    /// Son hata; çeviri düzgün gidiyorsa nil.
+    public var lastFailure: OnlineKeyState? { core.lastFailure.map(OnlineKeyState.init) }
+    /// Son istek dakikalık sınır yüzünden gönderilmedi ya da hizmet dakikalık sınırı bildirdi.
+    public var lastLineWasRateLimited: Bool { core.lastLineWasRateLimited }
 
     public func spokenLines(for text: String) -> [SpokenLine] {
         core.spokenLines(for: text) { [fallback] line in fallback.spokenLines(for: line) }

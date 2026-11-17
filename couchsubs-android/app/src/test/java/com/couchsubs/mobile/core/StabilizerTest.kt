@@ -16,6 +16,62 @@ class StabilizerTest {
     private fun tr(text: String) = StabilizerAction.translate(text)
     private fun restore(text: String) = StabilizerAction.restore(text)
 
+    /** Olumsuzluk ya da sayı farkı anlamı tersine çevirir; yeniden okuma sayılmamalı (Windows: TextMatchTests). */
+    @Test
+    fun meaningChangingRereadIsNotSameSubtitle() {
+        for ((reread, sent) in listOf(
+            "I can't do that for you right now." to "I can do that for you right now.",
+            "I said that I would never help you with this." to "I said that I would help you with this.",
+            "He is not coming back tonight." to "He is coming back tonight.",
+            "Meet me at the docks at 6." to "Meet me at the docks at 5.",
+        )) assertFalse(reread, TextMatch.isSameSubtitle(TextMatch.normalize(reread), TextMatch.normalizeRows(sent)))
+    }
+
+    /** Olumsuzluk korunurken yalnız yazımı farklı okunan satır yine aynı altyazıdır. */
+    @Test
+    fun spellingNoiseKeepsNegatedLineSame() {
+        for ((reread, sent) in listOf(
+            "I can’t do that for you right now." to "I can't do that for you right now.",
+            "I dont know what to do." to "I don't know what to do.",
+            "He is n0t coming back tonight." to "He is not coming back tonight.",
+        )) assertTrue(reread, TextMatch.isSameSubtitle(TextMatch.normalize(reread), TextMatch.normalizeRows(sent)))
+    }
+
+    /** Yalnız eklenen işaret sayılır; kesmenin "t"si yalnız bilinen olumsuz kısaltmayı tamamlar. */
+    @Test
+    fun addsMeaningCountsOnlyAddedMarks() {
+        for ((pair, expected) in listOf(
+            ("I can't do that." to "I can do that.") to true,
+            ("I can do that." to "I can't do that.") to false,
+            ("Meet me at 6." to "Meet me at 5.") to true,
+            ("Meet me at" to "Meet me at 5.") to false,
+            ("He is n0t here." to "He is here.") to true,
+            ("I dont know." to "I don't know.") to false,
+            ("Buy a t shirt." to "Buy a shirt.") to false,
+            ("Buy a cotton t shirt." to "Buy a cotton shirt.") to false,
+            ("I won t go." to "I will go.") to true,
+            ("We haven t left." to "We have left.") to true,
+            ("Bring 5 and 5." to "Bring 5.") to true,
+            ("Bring 5." to "Bring 5 and 5.") to false,
+            ("It costs \$500 now." to "It costs \$500.") to false,
+            ("1 can do that." to "I can do that.") to false,
+        )) assertEquals(pair.first, expected, TextMatch.addsMeaning(pair.first, pair.second))
+    }
+
+    /** İlk kare olumsuzluğu ya da sayıyı kaçırıp gönderildiyse doğru okuma yeniden çevrilir (Windows: SubtitleStabilizerTests). */
+    @Test
+    fun correctedReadThatChangesMeaningIsTranslated() {
+        for ((misread, correct) in listOf(
+            "I can do that for you right now." to "I can't do that for you right now.",
+            "I said that I would help you with this." to "I said that I would never help you with this.",
+            "Meet me at the docks at 5." to "Meet me at the docks at 6.",
+        )) {
+            val s = SubtitleStabilizer()
+            assertEquals(misread, tr(misread), s.feed(misread))
+            assertEquals(correct, tr(correct), s.feed(correct))
+        }
+    }
+
     @Test
     fun unfinishedLineIsSentAfterTwoStableFrames() {
         val s = SubtitleStabilizer()
@@ -271,7 +327,7 @@ class OcrNoiseTest {
 class PipelineTest {
     private class Recorder : SubtitleSender {
         val sent = mutableListOf<String>()
-        override fun sendSubtitle(text: String, durationMs: Int, box: TextBox?) {
+        override fun sendSubtitle(text: String, durationMs: Int, box: TextBox?, replaces: Boolean) {
             sent.add(text)
         }
         override fun clear() {

@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: tv-screen-tests
+on:
+  pull_request:
+    paths: ['tv-webos/app.js', 'tv-webos/style.css', 'scripts/tv-screen.test.js', '.github/workflows/tv-screen-tests.yml']
+  push:
+    branches: [main]
+    paths: ['tv-webos/app.js', 'tv-webos/style.css', 'scripts/tv-screen.test.js', '.github/workflows/tv-screen-tests.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  layout:
+    name: TV ekran yerleşimi / Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tarayıcıyı doğrula
+        run: echo "COUCHSUBS_TEST_BROWSER=$(command -v google-chrome)" >> "$GITHUB_ENV"
+      - name: Gerçek çizim testleri
+        run: node --test scripts/tv-screen.test.js

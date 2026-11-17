@@ -252,6 +252,44 @@ public class ComputerScreenTests
         Assert.Empty(received);
     }
 
+    /// <summary>Yayın penceresi altyazı yalnız TV'deyken de satırları alır (yayın ekrandaki seçimden bağımsız).</summary>
+    [Fact]
+    public void StreamWindowReceivesSubtitlesEvenOnTvOnly()
+    {
+        var controller = Make();
+        var received = new List<SubtitleEvent>();
+        controller.StreamEvent += received.Add;
+        controller.SendTestSubtitle();
+        Assert.Equal(SubtitleEventKind.Subtitle, Assert.Single(received).Kind);
+    }
+
+    [Fact]
+    public async Task StopHidesStreamWindow()
+    {
+        var controller = Make();
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Both };
+        await controller.StartAsync();
+        var hidden = 0;
+        controller.StreamHidden += () => hidden++;
+        controller.Stop();
+        Assert.Equal(1, hidden);
+    }
+
+    [Fact]
+    public void StreamBackgroundIsSavedAndDefaultsToGreen()
+    {
+        var store = StoreWithoutTv();
+        var controller = Make(store: store);
+        Assert.Equal(StreamBackground.Green, controller.StreamBackground);
+        controller.StreamBackground = StreamBackground.Magenta;
+        Assert.Equal("magenta", store.Load<string>(StoreKeys.StreamBackground));
+        Assert.Equal(StreamBackground.Magenta, Make(store: store).StreamBackground);
+        Assert.Equal(StreamBackground.Green, StreamBackgrounds.FromStored("bozuk"));
+        Assert.Equal((byte)0xFF, StreamBackground.Green.Rgb().Green);
+        Assert.Equal(1, StreamBackgrounds.BoxOpacity(60));
+        Assert.Equal(0, StreamBackgrounds.BoxOpacity(0));
+    }
+
     [Fact]
     public async Task StopHidesComputerWindow()
     {

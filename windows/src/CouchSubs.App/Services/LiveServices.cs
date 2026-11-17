@@ -17,9 +17,10 @@ namespace CouchSubs.App.Services;
 /// <summary>Uygulama denetleyicisinin gerçek dünya bağlantıları (PS5, PSN, TV, OCR, çeviri).</summary>
 public sealed class LiveServices : IAppServices
 {
+    public IXboxService? Xbox { get; } = new XboxService();
     public ITranslationModel Translation { get; } = new MarianModel();
 
-    // DeepL yalnız İngilizce→Türkçe için açılır; önceki oturumların çevirileri kotadan yemeden yeniden kullanılır.
+    // DeepL yalnız desteklediği dillerde açılır (AppController.OnlineTranslationActive); önceki oturumların çevirileri kotadan yemeden yeniden kullanılır.
     // Nino: önbellek dosyası hedef dile göre ayrıdır (en-tr / en-ar); Türkçe çeviri Arapçaya karışmaz.
     public ITextTranslator? MakeOnlineTranslator(string key, ITextTranslator? fallback, string target = "tr") =>
         new DeepLTranslator(key, fallback, cache: TranslationCache.Shared(AppPaths.Translations, DeepLTranslator.EngineId, "en", target),
@@ -28,16 +29,18 @@ public sealed class LiveServices : IAppServices
     public Task<OnlineKeyCheck> CheckOnlineKeyAsync(string key) => DeepLTranslator.CheckAsync(key);
 
     // Her model kendi önbelleğini kullanır ("gemini:gemini-3.5-flash-lite"); model değişince eski çeviriler karışmaz.
-    public ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback, string target = "tr") =>
+    public ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback, Func<string?>? game,
+                                             string target = "tr") =>
         new AiTranslator(provider, key, model, fallback, cache: TranslationCache.Shared(AppPaths.Translations, provider.EngineId(model), "en", target),
-                         target: target);
+                         game: game, target: target);
 
     public Task<AiTestResult> TestAiKeyAsync(AiProvider provider, string key, string model) => AiTranslator.TestAsync(provider, key, model);
 
     // Yerel model: önbellekte sunucu ve model ayrı tutulur ("local:localhost:11434/qwen2.5:7b").
-    public ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback, string target = "tr") =>
+    public ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback, Func<string?>? game,
+                                                  string target = "tr") =>
         new AiTranslator(AiProvider.Local, key, server.Model, fallback, cache: TranslationCache.Shared(AppPaths.Translations, server.EngineId, "en", target),
-                         server: server, target: target);
+                         server: server, game: game, target: target);
 
     public Task<AiTestResult> TestLocalAiAsync(LocalAiServer server, string key) =>
         AiTranslator.TestAsync(AiProvider.Local, key, server.Model, server: server);
@@ -54,6 +57,12 @@ public sealed class LiveServices : IAppServices
         AppVersion.Current(System.Reflection.Assembly.GetEntryAssembly() ?? typeof(LiveServices).Assembly),
         legacyFile: Path.Combine(AppPaths.Data, "pool.json"));
     public string? HistoryFile { get; } = Path.Combine(AppPaths.Data, "history.json");
+    public Task<RunningGame?> RunningGameAsync(string host) => ConsoleDiscovery.RunningGameAsync(host);
+    // Paket sunucusu yapılandırıldıysa (COUCHSUBS_PACKS_URL ya da derlemedeki CouchSubsPacksUrl) indirilen paketler
+    // kullanıcının paket klasörüne gider; adres yoksa kapalı.
+    public PackUpdater? PackUpdates { get; } = PackUpdater.ConfiguredBaseUrl() is { } url
+        ? new PackUpdater(url, GamePackLibrary.UserDirectory, Path.Combine(AppPaths.Data, "packs-remote.json"))
+        : null;
 
     public async Task<IReadOnlyList<ConsoleInfo>> DiscoverConsolesAsync()
     {
@@ -100,7 +109,13 @@ public sealed class LiveServices : IAppServices
         }
     }
 
-    public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId) => new StreamSession(console, accountId);
+    public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId, string? loginPasscode) =>
+        new StreamSession(console, accountId, loginPasscode);
+
+    public IStreamSession MakeWindowStream(RemotePlayApp app) => new RemotePlayWindowStream(app);
+    public IStreamSession MakeCaptureWindowStream(WindowCaptureTarget target) => new RemotePlayWindowStream(target);
+    public IReadOnlyList<WindowCaptureTarget> CaptureWindows() => RemotePlayWindowStream.ListCaptureWindows();
+    public bool RemotePlayInstalled(RemotePlayApp app) => RemotePlayWindowStream.IsInstalled(app);
 
     public IGameWindowStream? MakeWindowStream(GameConsole console) => new GameWindowCapture(console);
 
@@ -272,6 +287,7 @@ public sealed class LiveServices : IAppServices
         var installer = new AndroidTvInstaller(host, DataDirectory("adb"))
         {
             OnApprovalNeeded = () => onEvent(new TvInstallEvent(TvInstallEventKind.ApproveOnTv)),
+            // Nino: Play yolu kapalı (com.couchsubs.tv Play'de CouchSubs'ındır); Nino TV APK ile kurulur.
         };
         try
         {
@@ -346,42 +362,101 @@ public sealed class LiveServices : IAppServices
         public void Reconnect() => keeper.Reconnect();
     }
 
-    /// <summary>OPUS-MT modelleri; şimdilik yalnız İngilizce→Türkçe.</summary>
+    /// <summary>OPUS-MT modelleri: İngilizce→Türkçe (CTranslate2) ve Nino'nun öteki ücretsiz dilleri (ONNX).</summary>
     private sealed class MarianModel : ITranslationModel
     {
-        // Nino: her hedef dilin kendi modeli ve klasörü (en-tr, en-ar).
-        private readonly Dictionary<string, ModelStore> stores = new()
-        {
-            ["tr"] = new(Path.Combine(AppPaths.Models, "en-tr"), ModelStore.EnglishTurkish),
-            ["ar"] = new(Path.Combine(AppPaths.Models, "en-ar"), ModelStore.EnglishArabic),
-        };
+        // Türkçe: CTranslate2 modeli (isteğe bağlı NVIDIA GPU). Nino: öteki dillerin her birinin kendi ONNX modeli ve klasörü
+        // (en-ar, en-hi…). Modeli olmayan dil (Tayca, Urduca…) desteklenmez sayılır; o dilde yalnız yapay zekâ motoru çevirir.
+        private readonly Ct2ModelStore englishTurkish = new(Path.Combine(AppPaths.Models, "en-tr-ct2"));
+        private readonly Dictionary<string, ModelStore> stores = ModelStore.FreeModels
+            .Where(pair => !TargetLanguage.IsTurkish(pair.Key))
+            .ToDictionary(pair => pair.Key, pair => new ModelStore(Path.Combine(AppPaths.Models, "en-" + pair.Key), pair.Value));
         private readonly Dictionary<string, MarianTranslator> translators = new();
+        private readonly CudaRuntimeStore cuda = new(Path.Combine(AppPaths.Data, "cuda-12.8"));
+        private Task? cudaDownload;
+        private TranslationDevice device = TranslationDevice.Cpu;
+        private int cpuThreads = CpuThreadOptions.Default;
 
+        private bool Supports(string target) =>
+            TargetLanguage.IsTurkish(target) || stores.ContainsKey(TargetLanguage.Code(target));
         private ModelStore? StoreFor(string target) => stores.GetValueOrDefault(TargetLanguage.Code(target));
+        private string DirectoryFor(string target) =>
+            TargetLanguage.IsTurkish(target) ? englishTurkish.InstallDirectory : StoreFor(target)!.InstallDirectory;
+
+        /// <summary>Aygıt ya da iş parçacığı sayısı değişti: açık çevirmenler kapanır, sonraki çeviride yeniden kurulur.</summary>
+        private void ResetTranslators()
+        {
+            foreach (var open in translators.Values) open.Dispose();
+            translators.Clear();
+        }
         private int failed;
 
         public event Action? EngineFailure;
+        public event Action? GpuFallback;
+
+        public void SelectDevice(TranslationDevice selected)
+        {
+            if (device == selected) return;
+            device = selected;
+            // NVIDIA sürücüsü (nvcuda.dll) yoksa ~565 MB indirme boşa gider; doğrudan CPU'ya düşülür.
+            if (selected == TranslationDevice.Gpu && File.Exists(Path.Combine(Environment.SystemDirectory, "nvcuda.dll")))
+            {
+                cudaDownload = cuda.StartDownload();
+                _ = cudaDownload.ContinueWith(task =>
+                    StartupGuard.Log("CUDA çalışma zamanı indirilemedi", task.Exception!),
+                    CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+            }
+            ResetTranslators();
+            Interlocked.Exchange(ref failed, 0);
+        }
+
+        public void SelectCpuThreads(int selected)
+        {
+            selected = CpuThreadOptions.Normalize(selected, Environment.ProcessorCount);
+            if (cpuThreads == selected) return;
+            cpuThreads = selected;
+            ResetTranslators();
+            Interlocked.Exchange(ref failed, 0);
+        }
 
         public bool EngineFailed => Volatile.Read(ref failed) != 0;
 
         /// <summary>
-        /// Motor açılamadı: hata.log'a bir kez yazılır, ana ekran uyarı gösterir. En sık neden: onnxruntime.dll ya da
-        /// yanındaki Visual C++ çalışma zamanı DLL'leri (antivirüs karantinası, eksik kopya) yüklenemedi.
+        /// Motor açılamadı: hata.log'a bir kez yazılır, ana ekran uyarı gösterir. En sık neden: CTranslate2
+        /// çalışma zamanı ya da Visual C++ DLL'leri eksik.
         /// </summary>
         private void Fail(Exception error)
         {
             if (Interlocked.Exchange(ref failed, 1) != 0) return;
-            StartupGuard.Log("Ücretsiz çeviri motoru açılamadı (ONNX Runtime)", error);
+            StartupGuard.Log("Ücretsiz çeviri motoru açılamadı (CTranslate2)", error);
             EngineFailure?.Invoke();
         }
 
-        public bool IsSupported(string source, string target) => source == "en" && StoreFor(target) is not null;
+        public bool IsSupported(string source, string target) => source == "en" && Supports(target);
 
-        public bool IsInstalled(string source, string target) => IsSupported(source, target) && StoreFor(target)!.IsInstalled;
+        public bool IsInstalled(string source, string target) => IsSupported(source, target)
+            && (TargetLanguage.IsTurkish(target) ? englishTurkish.IsInstalled : StoreFor(target)!.IsInstalled);
 
-        public Task DownloadAsync(string source, string target, IProgress<double> progress, CancellationToken cancellationToken) =>
-            StoreFor(target) is { } store ? store.DownloadAsync(progress, cancellationToken)
-                : Task.FromException(new NotSupportedException($"en→{target} is not supported"));
+        public async Task DownloadAsync(string source, string target, IProgress<double> progress, CancellationToken cancellationToken)
+        {
+            if (!TargetLanguage.IsTurkish(target))
+            {
+                if (StoreFor(target) is not { } store) throw new NotSupportedException($"en→{target} is not supported");
+                await store.DownloadAsync(progress, cancellationToken);
+                return;
+            }
+            await englishTurkish.DownloadAsync(progress, cancellationToken);
+            // Önceki sürümlerin ONNX modeli (yaklaşık 530 MB) artık kullanılmaz; yeni model kurulunca silinir.
+            try
+            {
+                var old = Path.Combine(AppPaths.Models, "en-tr");
+                if (Directory.Exists(old)) Directory.Delete(old, recursive: true);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                StartupGuard.Log("Eski ONNX çeviri modeli silinemedi", error);
+            }
+        }
 
         // Model belleğe bir kez yüklenir; dil değişse de aynı çevirmen kullanılır. Yükleme 1–3 sn sürdüğü
         // için hemen arka planda başlar; ilk altyazı beklemez.
@@ -389,12 +464,15 @@ public sealed class LiveServices : IAppServices
         {
             var code = TargetLanguage.Code(target);
             if (translators.TryGetValue(code, out var existing)) return existing;
-            var store = StoreFor(code) ?? throw new NotSupportedException($"en→{target} is not supported");
+            if (!Supports(code)) throw new NotSupportedException($"en→{target} is not supported");
             MarianTranslator created;
             try
             {
-                created = new MarianTranslator(store.InstallDirectory,
-                    cache: TranslationCache.Shared(AppPaths.Translations, MarianTranslator.EngineId, "en", code), target: code);
+                created = new MarianTranslator(DirectoryFor(code),
+                    cache: TranslationCache.Shared(AppPaths.Translations, MarianTranslator.EngineId, "en", code),
+                    useGpu: device == TranslationDevice.Gpu, onGpuFallback: () => GpuFallback?.Invoke(),
+                    cudaReady: cudaDownload, cudaDirectory: cuda.InstallDirectory,
+                    cpuThreads: cpuThreads, target: code);
             }
             catch (Exception error)
             {
@@ -453,6 +531,6 @@ public sealed class FileSettingsStore : ISettingsStore
 
 public sealed class WindowsSleepGuard : ISleepGuard
 {
-    public void Begin() => SleepGuard.Begin();
+    public void Begin(bool keepDisplayOn) => SleepGuard.Begin(keepDisplayOn);
     public void End() => SleepGuard.End();
 }

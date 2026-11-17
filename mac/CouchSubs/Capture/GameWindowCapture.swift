@@ -5,6 +5,7 @@
 import AppKit
 import CoreImage
 import CoreMedia
+import CouchSubsCore
 import ScreenCaptureKit
 
 /// Ekrandaki bir pencerenin özeti (ScreenCaptureKit'ten bağımsız; seçim kuralları bununla sınanır).
@@ -54,13 +55,33 @@ enum GameWindowPicker {
         switch target {
         case .playStation: return pick(windows)
         case .xbox:
-            return largest(windows.filter { w in
+            // Greenlight'ın yayın penceresi menü penceresinden önce gelir ("Greenlight - Streaming <konsol>").
+            if let stream = largest(windows.filter { isGreenlight($0) && GreenlightProbe.isStreamTitle($0.title) }) {
+                return stream
+            }
+            if let app = largest(windows.filter { w in
                 let name = (w.appName + " " + w.bundleID).lowercased()
-                let bundle = w.bundleID.lowercased()
-                return xboxApps.contains { name.contains($0) }
-                    || (browsers.contains { bundle.hasPrefix($0) } && w.title.lowercased().contains("xbox"))
-            })
+                return xboxApps.contains { name.contains($0) } || (isBrowser(w) && isXboxTitle(w.title))
+            }) { return app }
+            // Yayın başlayınca sekmenin başlığı oyunun adı olabilir: Xbox yolunda tam ekran bir tarayıcı penceresi
+            // oyundur.
+            return largest(windows.filter { isBrowser($0) && $0.fillsScreen })
         }
+    }
+
+    static func isGreenlight(_ w: GameWindowInfo) -> Bool {
+        (w.appName + " " + w.bundleID).lowercased().contains("greenlight")
+    }
+
+    static func isBrowser(_ w: GameWindowInfo) -> Bool {
+        let bundle = w.bundleID.lowercased()
+        return browsers.contains { bundle.hasPrefix($0) }
+    }
+
+    /// xbox.com sekmesi: "Xbox.com'da Xbox Uzaktan Oynama", "Play XBOX", "Xbox Cloud Gaming"…
+    static func isXboxTitle(_ title: String) -> Bool {
+        let t = title.lowercased()
+        return t.contains("xbox") || t.contains("uzaktan oynama") || t.contains("remote play")
     }
 
     static func pick(_ windows: [GameWindowInfo], wanted: [String] = wanted) -> GameWindowInfo? {
@@ -205,7 +226,9 @@ final class GameWindowCapture: NSObject, @unchecked Sendable {
         }
         lookups += 1
         let lookup = lookups
-        SCShareableContent.getExcludingDesktopWindows(true, onScreenWindowsOnly: true) { [weak self] content, _ in
+        // Xbox'ta tarayıcı çoğu zaman ayrı bir masaüstünde tam ekrandır; Nino'ya bakarken o pencere "ekranda" sayılmaz.
+        // Bu yüzden Xbox yolunda ekranda olmayan pencereler de aranır (ScreenCaptureKit onları da okuyabilir).
+        SCShareableContent.getExcludingDesktopWindows(true, onScreenWindowsOnly: target == .playStation) { [weak self] content, _ in
             guard let self else { return }
             self.queue.async { self.found(content, lookup: lookup) }
         }
@@ -222,6 +245,7 @@ final class GameWindowCapture: NSObject, @unchecked Sendable {
                            fillsScreen: displays.contains { Self.fills($0, w.frame) })
         }
         guard let pick = GameWindowPicker.pick(infos, target: target), let window = windows.first(where: { $0.windowID == pick.id }) else {
+            logCandidates(infos)
             endStream()
             set(.lookingForWindow)
             return
@@ -293,7 +317,24 @@ final class GameWindowCapture: NSObject, @unchecked Sendable {
         DispatchQueue.main.async { [onGameArea] in onGameArea?(nil) }
     }
 
+    private var lastCandidates = ""
+
+    /// Pencere bulunamayınca tarayıcı ve yayın pencerelerini günlüğe yazar (yalnız liste değişince): neden
+    /// seçilmediği sonradan anlaşılsın.
+    private func logCandidates(_ infos: [GameWindowInfo]) {
+        let line = infos
+            .filter { GameWindowPicker.isBrowser($0) || $0.frame.width >= GameWindowPicker.minimumSize.width }
+            .filter { !$0.title.isEmpty || GameWindowPicker.isBrowser($0) }
+            .prefix(12)
+            .map { "\($0.appName) \"\($0.title)\" \(Int($0.frame.width))x\(Int($0.frame.height))\($0.fillsScreen ? " tam ekran" : "")" }
+            .joined(separator: " · ")
+        guard line != lastCandidates else { return }
+        lastCandidates = line
+        SubtitleLog.write("oyun penceresi aranıyor (\(target == .xbox ? "Xbox" : "PS5")): " + (line.isEmpty ? "uygun pencere yok" : line))
+    }
+
     private func report(_ info: GameWindowInfo) {
+        lastCandidates = ""
         set(.capturing(appName: info.appName))
         let area = GameArea.screenRect(of: info)
         DispatchQueue.main.async { [onGameArea] in onGameArea?(area) }

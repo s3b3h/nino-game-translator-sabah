@@ -31,7 +31,7 @@ public partial class HistoryWindow : Window
     }
 
     public static void Open(Window? owner, AppController controller) =>
-        new HistoryWindow(controller) { Owner = owner }.ShowDialog();
+        OwnedWindow.Show(owner, () => new HistoryWindow(controller));
 
     private void OnChanged(object? sender, PropertyChangedEventArgs e)
     {

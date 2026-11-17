@@ -41,6 +41,9 @@ class Reading(lines: List<TextLine>) {
     companion object {
         val Empty = Reading(emptyList())
 
+        /** [joiningRows]: aynı satırdaki iki parça arasındaki en büyük boşluk (alan genişliğine oranla). */
+        const val ROW_GAP = 0.05
+
         fun fromText(text: String) = Reading(text.replace("\r\n", "\n").split('\n').map { TextLine(it.trim()) })
 
         /** Aynı satırdaki iki sözcük arasındaki boşluk ayrı yazılara mı işaret ediyor (menü ile gösterge gibi). */
@@ -65,6 +68,35 @@ class Reading(lines: List<TextLine>) {
 
     /** Yazı tanımanın uydurduğu sözcük çöpleri ("ou$3e") ayıklanmış hali. */
     fun withoutOcrNoise() = Reading(lines.map { it.copy(text = OcrNoise.clean(it.text)) })
+
+    /**
+     * Aynı satırda yan yana okunan parçalar soldan sağa tek satır olur. Renkli konuşan adını ("Arthur:", RDR2) yazı
+     * tanıma cümleden ayrı okuyabiliyor; parçalar yalnız üst kenarlarına göre dizilince ad cümlenin sonuna düşüyor ya da
+     * ayrı blok sayılıp atılıyordu. Yatayda aralarında en çok [ROW_GAP] (alan genişliğine oranla) olan parçalar
+     * birleşir; uzaktaki köşe yazısı ayrı kalır (Mac: Reading.joiningRows, Windows: Reading.JoiningRows).
+     */
+    fun joiningRows(): Reading {
+        if (lines.size < 2 || lines.any { it.box == null }) return this
+        val rows = mutableListOf<TextLine>()
+        for (line in lines.sortedBy { it.box!!.left }) {
+            val box = line.box!!
+            val index = rows.indexOfFirst { sameRow(box, it.box!!) }
+            if (index >= 0) {
+                val row = rows[index]
+                rows[index] = TextLine(row.text + " " + line.text, row.box!!.union(box))
+            } else {
+                rows.add(line)
+            }
+        }
+        return Reading(rows.sortedBy { it.box!!.top })
+    }
+
+    private fun sameRow(next: TextBox, row: TextBox): Boolean {
+        val overlap = minOf(next.bottom, row.bottom) - maxOf(next.top, row.top)
+        val smaller = minOf(next.bottom - next.top, row.bottom - row.top)
+        if (smaller <= 0 || overlap < smaller * 0.6) return false
+        return next.left - row.right <= ROW_GAP
+    }
 
     /**
      * Alandaki altyazı bloğu: satırlar yerlerine göre bloklara ayrılır; ortalanmış ve menü olmayan en alttaki blok

@@ -8,8 +8,22 @@
     <c:StepLayout Title="{t:T 'Better translation (free)'}"
                   Message="{t:T 'The free translation works without the internet but often sounds stiff. Google\'s Gemini translates much more naturally, and a free Google key is enough.'}">
         <StackPanel>
+            <c:Card>
+                <StackPanel>
+                    <TextBlock Text="{t:T 'Free translation device'}" Margin="0,0,0,8" />
+                    <ComboBox x:Name="TranslationDeviceChoice" SelectionChanged="OnTranslationDevice" Width="240" HorizontalAlignment="Left">
+                        <ComboBoxItem Content="{t:T 'CPU (default)'}" Tag="Cpu" />
+                        <ComboBoxItem Content="{t:T 'GPU (Beta) · NVIDIA CUDA'}" Tag="Gpu" />
+                    </ComboBox>
+                    <TextBlock Style="{StaticResource HintText}" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Text="{t:T 'CPU works on every computer. GPU needs a compatible NVIDIA card; the first time you choose it, Nino downloads about 565 MB of CUDA files from NVIDIA (about 790 MB on disk). If unavailable, Nino uses CPU.'}" />
+                    <TextBlock Foreground="{DynamicResource warningBrush}" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Visibility="{Binding GpuFallbackWarning, Converter={StaticResource VisibleIf}}"
+                               Text="{t:T 'GPU could not be used; free translation is running on CPU.'}" />
+                </StackPanel>
+            </c:Card>
             <TextBlock x:Name="Ready" Text="{t:T 'Gemini is ready. Subtitles will be translated with Gemini.'}" Style="{StaticResource DoneText}"
-                       TextWrapping="Wrap" Margin="0,0,0,16" Visibility="Collapsed" />
+                       TextWrapping="Wrap" Margin="0,16,0,16" Visibility="Collapsed" />
             <StackPanel x:Name="NewKey">
                 <c:Card>
                     <StackPanel>

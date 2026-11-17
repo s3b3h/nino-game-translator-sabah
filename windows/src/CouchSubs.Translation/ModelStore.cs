@@ -16,10 +16,11 @@ public sealed record ModelFile(string Name, Uri Url, long Size, string Sha256);
 /// </summary>
 public sealed class ModelStore
 {
-    public const string EncoderFile = "encoder_model_int8.onnx";
-    public const string DecoderFile = "decoder_model_merged_int8.onnx";
     public const string SourceSpmFile = "source.spm";
     public const string VocabFile = "vocab.json";
+    // Nino: Türkçe dışındaki ücretsiz modeller (Xenova'nın int8 ONNX dönüşümleri) ONNX Runtime ile çalışır.
+    public const string EncoderFile = "encoder_model_int8.onnx";
+    public const string DecoderFile = "decoder_model_merged_int8.onnx";
 
     private const string PartSuffix = ".part";
 
@@ -30,13 +31,9 @@ public sealed class ModelStore
     private const string Revision = "ce128ea834a090aca240e4e113e7756e06cc78e0";
     private static readonly string BaseUrl = $"https://huggingface.co/onnx-community/opus-mt-tc-big-en-tr/resolve/{Revision}/";
 
-    /// <summary>Helsinki-NLP opus-mt-tc-big-en-tr (CC BY 4.0), onnx-community'nin int8 ONNX dönüşümü.</summary>
+    /// <summary>CTranslate2 modelinin belirteçleyicisi için özgün OPUS-MT sözlüğü.</summary>
     public static IReadOnlyList<ModelFile> EnglishTurkish { get; } =
     [
-        new(EncoderFile, new Uri(BaseUrl + "onnx/" + EncoderFile), 135_730_164,
-            "58bfc076347346049a52a8d53b1f6e4664af74e9737aded374d7d1f78805f46e"),
-        new(DecoderFile, new Uri(BaseUrl + "onnx/" + DecoderFile), 395_716_769,
-            "23223bce303d925b119ec905b9422a2814e7ad5f96275407be1d387b13879147"),
         new(SourceSpmFile, new Uri(BaseUrl + SourceSpmFile), 796_953,
             "180d3f94ddfee5585d78b702290ded0f4f9bd40f299349c8383b32a579fefad4"),
         new(VocabFile, new Uri(BaseUrl + VocabFile), 1_501_287,
@@ -64,13 +61,70 @@ public sealed class ModelStore
             "8b74af9e4c1ec122b8d06362db6c38795e10ca2b0156b2110cf08d4716744b76"),
     ];
 
-    /// <summary>Hedef dile göre model dosyaları (Türkçe ya da Arapça).</summary>
-    public static IReadOnlyList<ModelFile> FilesFor(string target) =>
-        target.StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? EnglishArabic : EnglishTurkish;
+    // Nino: Hintçe, Endonezce, Vietnamca ve Felemenkçe. Helsinki-NLP opus-mt-en-hi/id/vi/nl (Apache-2.0), Xenova'nın int8
+    // ONNX dönüşümü; Arapça modelle aynı yapı (en-vi Arapça gibi hedef belirteci ister, ötekiler istemez). Özetler Hugging Face'in LFS kayıtlarından
+    // (onnx) ve dosyaların kendisinden (source.spm, vocab.json) alındı; her depo sürüme sabitlenir. Tayca, Urduca, Bengalce,
+    // Malayca ve Filipince için bu biçimde model yok: o diller yalnız yapay zekâ motoruyla çevrilir.
+    private static IReadOnlyList<ModelFile> Xenova(string pair, string revision, long encoder, string encoderSha,
+        long decoder, string decoderSha, long spm, string spmSha, long vocab, string vocabSha)
+    {
+        var baseUrl = $"https://huggingface.co/Xenova/opus-mt-{pair}/resolve/{revision}/";
+        return
+        [
+            new(EncoderFile, new Uri(baseUrl + "onnx/" + EncoderFile), encoder, encoderSha),
+            new(DecoderFile, new Uri(baseUrl + "onnx/" + DecoderFile), decoder, decoderSha),
+            new(SourceSpmFile, new Uri(baseUrl + SourceSpmFile), spm, spmSha),
+            new(VocabFile, new Uri(baseUrl + VocabFile), vocab, vocabSha),
+        ];
+    }
 
-    /// <summary>Hedef dile göre girdinin başına konacak belirteç (yalnız Arapça modelde).</summary>
+    public static IReadOnlyList<ModelFile> EnglishHindi { get; } = Xenova("en-hi", "7aad72006a1588a9c3485ed6203aed99eebbc872",
+        51_164_441, "8b53ce50ba917cf4b77d6713a01cb767d16a6a92fe4a56bec4d3576fb9d1e4e2",
+        58_438_702, "7c21712321e7a02aa1f0f676b4beeef8cdccd0c295cdc642eea97991ce59b180",
+        812_240, "fd4e951487aed00bae6a6c2ee4ef5d8d1db05fd098b19b608046c9334b58d24d",
+        2_221_738, "be02f5dfb85054d4f25089f6b347b69d32e98ed4c3d181ed0c789904eb1e3d3b");
+
+    public static IReadOnlyList<ModelFile> EnglishIndonesian { get; } = Xenova("en-id", "b3b41f654c2fb3286d007dee1da7b0f47fd27d82",
+        47_501_593, "577591fb62f86b82b9cddd799bae274b8e9b489a7439bb13ea2d5c4510f34f08",
+        54_747_238, "c36b784308b4983be64f076e237332709af48f7e575a9a535fd138d9fbdd468c",
+        795_925, "e88300911c2c573ec5526777a1e84bae698d20925b82dcef9c7248bb0e537ed0",
+        1_366_984, "cda834905a5d478c54a73abc98cc9155dc58217baa130cdf165411265b760d6b");
+
+    public static IReadOnlyList<ModelFile> EnglishVietnamese { get; } = Xenova("en-vi", "30bcd461c0d7338ad106b36314d3eedc2d4e998c",
+        46_932_760, "0aa4c958dc2171312b15d70e2fb1a036feca9ff5e098609ee0ea31ebd21b3c98",
+        54_173_961, "c1ec8c85d68119cb419518d30a504ebf625f8e36d62f588c4e0a1466cd6d6e28",
+        808_612, "fdd9ab486ca8ea060967105e30db7d8928729c78a67448711d2dd7c3153b37cd",
+        1_299_764, "bcc8bbafeb0b6b58fecf244f8da996da9aa45dbea7871164f9c8ce480507f9fe");
+
+    public static IReadOnlyList<ModelFile> EnglishDutch { get; } = Xenova("en-nl", "c3a0541231a7329b4492809fc2bd7ab7d2ceb0bc",
+        53_764_376, "3857b90ec2dd0d5f2f4bb637dbe6f6f9e80d9cbed55391d1aa943cffa0cc628f",
+        61_058_949, "3c6bf76b6711dfc3e73d7bf85b3964bd40f425b35d6b721118233b71b9a1ccd4",
+        789_525, "d05781fde84b8793191528a7a176e1b17f96265388f602379ee6ae3139f59141",
+        1_794_274, "b1fba91c620564d90848c5f77b03f13d17949790f8e7c7741e4a8ea13b8b0d91");
+
+    /// <summary>Ücretsiz modeli olan hedef diller ve dosyaları; listede olmayan dil yalnız yapay zekâyla çevrilir.</summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<ModelFile>> FreeModels { get; } =
+        new Dictionary<string, IReadOnlyList<ModelFile>>
+        {
+            ["tr"] = EnglishTurkish, ["ar"] = EnglishArabic, ["hi"] = EnglishHindi,
+            ["id"] = EnglishIndonesian, ["vi"] = EnglishVietnamese, ["nl"] = EnglishDutch,
+        };
+
+    /// <summary>Hedef dile göre model dosyaları (ücretsiz modeli olmayan dilde Türkçe model döner; önce <see cref="FreeModels"/> denetlenir).</summary>
+    public static IReadOnlyList<ModelFile> FilesFor(string target) =>
+        FreeModels.GetValueOrDefault(target.Length >= 2 ? target[..2].ToLowerInvariant() : target, EnglishTurkish);
+
+    /// <summary>
+    /// Hedef dile göre girdinin başına konacak belirteç: çok hedefli modellerde (en-ar ">>ara<<", en-vi ">>vie<<"; belirteç
+    /// modelin vocab.json'ında bulunur). Tek hedefli modellerde (en-tr, en-hi, en-id, en-nl) belirteç yoktur.
+    /// </summary>
     public static string? TargetPrefixFor(string target) =>
-        target.StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? ArabicTargetPrefix : null;
+        target.StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? ArabicTargetPrefix
+        : target.StartsWith("vi", StringComparison.OrdinalIgnoreCase) ? VietnameseTargetPrefix
+        : null;
+
+    /// <summary>opus-mt-en-vi de çok hedeflidir (Vietnamca ve lehçeleri).</summary>
+    public const string VietnameseTargetPrefix = ">>vie<<";
 
     private static readonly Lazy<HttpClient> SharedClient = new(() =>
         // Büyük dosyada toplam süre sınırı anlamsız; takılmayı StallTimeout yakalar.

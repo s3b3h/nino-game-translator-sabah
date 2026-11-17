@@ -9,3 +9,19 @@ database_name = "couchsubs-pool"
 database_id = "c134a041-8f51-4a29-8195-9c6929e7e529"
 
 # ADMIN_TOKEN is a secret: set it with `wrangler secret put ADMIN_TOKEN`, never commit it.
+
+# Havuzdan kendiliğinden paket (src/autopack.js): yazılan kova paket sunucusunun (server/packs) okuduğu kovadır.
+[[r2_buckets]]
+binding = "PACKS"
+bucket_name = "couchsubs-packs"
+
+# Çeviri: Workers AI (hesabın kendi bağı; ayrı anahtar yok). Free planda günde 10.000 nöron ücretsiz.
+[ai]
+binding = "AI"
+
+# Her gece 03:07'den 04:57'ye (UTC) on dakikada bir: ilk tetikleme plan, sonrakiler çeviri parçaları ve paket.
+[triggers]
+crons = ["7,17,27,37,47,57 3,4 * * *"]
+
+[observability]
+enabled = true

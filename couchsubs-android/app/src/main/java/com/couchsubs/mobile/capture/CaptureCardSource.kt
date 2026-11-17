@@ -18,6 +18,7 @@ import android.os.HandlerThread
 import android.util.Log
 import com.couchsubs.mobile.remoteplay.DisconnectKind
 import com.couchsubs.mobile.remoteplay.FrameSource
+import com.couchsubs.mobile.remoteplay.VideoFrame
 import com.couchsubs.mobile.remoteplay.FrameSourceFactory
 import com.couchsubs.mobile.remoteplay.SessionState
 
@@ -64,7 +65,7 @@ object CaptureCards {
  */
 class CaptureCardSource(
     context: Context,
-    private val onFrame: (Image) -> Unit,
+    private val onFrame: (VideoFrame) -> Unit,
     private val onState: (SessionState) -> Unit,
 ) : FrameSource {
     private companion object {
@@ -204,7 +205,7 @@ class CaptureCardSource(
             framesReceived++
             try {
                 watchPicture(image)
-                onFrame(image)
+                onFrame(lumaFrame(image))
             } catch (error: RuntimeException) {
                 Log.e(TAG, "frame handler", error)
             } finally {
@@ -236,6 +237,18 @@ class CaptureCardSource(
             Log.w(TAG, "oturum", error)
             lost(camera)
         }
+    }
+
+    /**
+     * Okuma hattı (CouchSubs'ın yerel çözücü yolu gibi) yalnız parlaklık düzlemini (Y) okur: YUV_420_888'in Y düzleminde
+     * piksel adımı her zaman 1'dir. Kırpma varsa arabellek kırpılan köşeden başlatılır. Kare çağrı süresince geçerlidir.
+     */
+    private fun lumaFrame(image: Image): VideoFrame {
+        val crop = image.cropRect
+        val plane = image.planes[0]
+        val buffer = plane.buffer.duplicate()
+        buffer.position(crop.top * plane.rowStride + crop.left * plane.pixelStride)
+        return VideoFrame(buffer.slice(), crop.width(), crop.height(), plane.rowStride)
     }
 
     /** İlk karede "akış"; görüntü 4 sn simsiyah kalırsa "siyah görüntü", geri gelince yeniden "akış". */

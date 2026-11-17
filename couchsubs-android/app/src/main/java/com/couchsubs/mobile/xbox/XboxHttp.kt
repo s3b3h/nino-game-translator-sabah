@@ -1,63 +1,48 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Nino: bu dosya Nino için sıfırdan yazıldı (Xbox ev yayını; bkz. docs/nino/xbox-arastirma.md).
 package com.couchsubs.mobile.xbox
 
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** Bir HTTP yanıtı: durum kodu ve gövde (boş olabilir). */
-class HttpReply(val status: Int, val body: String) {
-    val ok get() = status in 200..299
+class XboxHttpResponse(val status: Int, val body: String) {
+    val ok: Boolean get() = status in 200..299
 }
 
-/** Xbox ve Microsoft sunucularıyla konuşan HTTP katmanı; testlerde sahtesi kullanılır. */
+/** Xbox ve Microsoft uçlarına HTTPS isteği (testlerde sahtesi verilir). */
 fun interface XboxHttp {
-    /** Ağ hatasında [IOException] atar; 4xx/5xx yanıtlar hata değildir, [HttpReply.status] ile döner. */
-    fun send(method: String, url: String, headers: Map<String, String>, body: String?): HttpReply
+    /** Bloklar; ağ hatasında [XboxException] (NETWORK) atar. */
+    fun request(method: String, url: String, headers: Map<String, String>, body: String?): XboxHttpResponse
+}
 
-    companion object {
-        /** Android'in kendi HttpURLConnection'ı (ek kitaplık yok). */
-        val system = XboxHttp { method, url, headers, body ->
-            val connection = URL(url).openConnection() as HttpURLConnection
-            try {
-                connection.requestMethod = method
-                connection.connectTimeout = 15_000
-                connection.readTimeout = 20_000
-                connection.useCaches = false
-                headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
-                if (body != null) {
-                    connection.doOutput = true
-                    connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
-                } else if (method == "POST") {
-                    connection.doOutput = true
-                    connection.setFixedLengthStreamingMode(0)
-                }
-                val status = connection.responseCode
-                val stream = if (status >= 400) connection.errorStream else connection.inputStream
-                HttpReply(status, stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: "")
-            } finally {
-                connection.disconnect()
+object UrlConnectionHttp : XboxHttp {
+    override fun request(method: String, url: String, headers: Map<String, String>, body: String?): XboxHttpResponse {
+        val connection = try {
+            URL(url).openConnection() as HttpURLConnection
+        } catch (error: IOException) {
+            throw XboxException(XboxError.NETWORK, "Bağlantı açılamadı: ${error.message}", error)
+        }
+        try {
+            connection.requestMethod = method
+            connection.connectTimeout = 15_000
+            connection.readTimeout = 30_000
+            connection.useCaches = false
+            headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
+            if (body != null) {
+                connection.doOutput = true
+                connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             }
+            val status = connection.responseCode
+            val stream = if (status >= 400) connection.errorStream else connection.inputStream
+            val text = stream?.use { it.readBytes().toString(Charsets.UTF_8) }.orEmpty()
+            return XboxHttpResponse(status, text)
+        } catch (error: IOException) {
+            throw XboxException(XboxError.NETWORK, "Xbox hizmetine ulaşılamadı: ${error.message}", error)
+        } finally {
+            connection.disconnect()
         }
     }
 }
 
-/** Xbox tarafında bir adım başarısız oldu; [step] kullanıcıya hangi aşamada kaldığını anlatmak için. */
-class XboxException(val step: XboxStep, val status: Int? = null, val detail: String? = null) :
-    IOException("Xbox $step failed${status?.let { " (HTTP $it)" } ?: ""}${detail?.let { ": $it" } ?: ""}")
-
-enum class XboxStep {
-    /** Microsoft giriş kodu alınamadı ya da süresi doldu. */
-    SIGN_IN,
-    /** Microsoft girişi geçersiz (çıkış yapılmış, şifre değişmiş); yeniden giriş gerekir. */
-    SIGNED_OUT,
-    /** Xbox Live jetonu alınamadı (hesapta Xbox profili yok olabilir). */
-    XBOX_LIVE,
-    /** Ev yayını (xHome) izni alınamadı. */
-    STREAMING,
-    /** Konsol listesi alınamadı. */
-    CONSOLES,
-    /** Konsolla yayın oturumu kurulamadı. */
-    SESSION,
-}
+internal fun formBody(vararg pairs: Pair<String, String>): String =
+    pairs.joinToString("&") { (k, v) -> java.net.URLEncoder.encode(k, "UTF-8") + "=" + java.net.URLEncoder.encode(v, "UTF-8") }

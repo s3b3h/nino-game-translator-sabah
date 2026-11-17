@@ -665,6 +665,8 @@
     </Style>
     <Style x:Key="SidebarTabs" TargetType="TabControl">
         <Setter Property="TabStripPlacement" Value="Left" />
+        <!-- TabControl'ün Windows varsayılanı sistem yazı rengidir (siyah); kenar çubuğu başlığı koyu zeminde okunmuyordu (#268). -->
+        <Setter Property="Foreground" Value="{DynamicResource textPrimaryBrush}" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource SidebarTab}" />
         <Setter Property="Template">
             <Setter.Value>

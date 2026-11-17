@@ -122,6 +122,62 @@ class PackStoreTest {
     }
 
     @Test
+    fun failedFirstDownloadRetriesWhileAnotherPackIsKept() {
+        val dir = Files.createTempDirectory("packs").toFile()
+        var now = 1_000L
+        val existing = remote("gta-v", gta)
+        val newPack = remote("rdr2", rdr)
+        val server = FakeServer(listOf(existing), mutableMapOf("gta-v" to gta))
+        val store = PackStore(dir, server, { now })
+        store.refresh()
+        val existingMetadata = store.installed().single()
+        val existingFile = File(dir, "gta-v.json.gz")
+        val existingContents = existingFile.readBytes()
+
+        server.packs = listOf(existing, newPack)
+        now += PackStore.REFRESH_INTERVAL_MS
+        assertEquals(emptyList<String>(), store.refresh().downloaded)
+        assertEquals(listOf(existingMetadata), store.installed())
+        assertTrue(existingFile.readBytes().contentEquals(existingContents))
+
+        server.files["rdr2"] = rdr
+        now += 1_000L
+        assertEquals(listOf("rdr2"), store.refresh(maxAgeMs = 5_000L).downloaded)
+        assertEquals(setOf("gta-v", "rdr2"), store.installed().map { it.id }.toSet())
+        assertEquals(existingMetadata, store.installed().first { it.id == "gta-v" })
+        assertTrue(existingFile.readBytes().contentEquals(existingContents))
+        assertEquals(listOf("gta-v", "rdr2", "rdr2"), server.downloads)
+    }
+
+    @Test
+    fun checksumMismatchOnFirstDownloadRetriesWhileAnotherPackIsKept() {
+        val dir = Files.createTempDirectory("packs").toFile()
+        var now = 1_000L
+        val existing = remote("gta-v", gta)
+        val newPack = remote("rdr2", rdr)
+        val server = FakeServer(listOf(existing), mutableMapOf("gta-v" to gta, "rdr2" to "tampered".toByteArray()))
+        val store = PackStore(dir, server, { now })
+        store.refresh()
+        val existingMetadata = store.installed().single()
+        val existingFile = File(dir, "gta-v.json.gz")
+        val existingContents = existingFile.readBytes()
+
+        server.packs = listOf(existing, newPack)
+        now += PackStore.REFRESH_INTERVAL_MS
+        assertEquals(emptyList<String>(), store.refresh().downloaded)
+        assertEquals(listOf(existingMetadata), store.installed())
+        assertTrue(existingFile.readBytes().contentEquals(existingContents))
+        assertFalse(File(dir, "rdr2.json.gz").exists())
+
+        server.files["rdr2"] = rdr
+        now += 1_000L
+        assertEquals(listOf("rdr2"), store.refresh(maxAgeMs = 5_000L).downloaded)
+        assertEquals(existingMetadata, store.installed().first { it.id == "gta-v" })
+        assertTrue(existingFile.readBytes().contentEquals(existingContents))
+        assertEquals(listOf("gta-v", "rdr2", "rdr2"), server.downloads)
+    }
+
+    @Test
     fun downloadedPacksLoadIntoTheLibrary() {
         val dir = Files.createTempDirectory("packs").toFile()
         val pack = com.couchsubs.mobile.core.Fixtures.bytes("pack-wrapped.json.gz")

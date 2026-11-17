@@ -119,7 +119,7 @@ public static class ScreenRenderer
         public Task<RegisteredConsole> RegisterAsync(string host, byte[] accountId, uint pin) => throw new NotSupportedException();
         public Task<IReadOnlyList<LgTv>> DiscoverTvsAsync() => Task.FromResult<IReadOnlyList<LgTv>>([new("[LG] webOS TV", "192.168.1.30")]);
         public Task<TvPairing> PairTvAsync(LgTv tv, string? key, string server) => throw new NotSupportedException();
-        public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId) => throw new NotSupportedException();
+        public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId, string? loginPasscode) => throw new NotSupportedException();
         public IKeeper MakeKeeper(LgTv tv, string? key, IReadOnlyDictionary<string, string> parameters, Func<bool> appConnected, Action<LgTv> onMoved,
                                   Action<string> onKey) => throw new NotSupportedException();
         public string? BundledTvAppVersion => null;
@@ -167,7 +167,7 @@ public static class ScreenRenderer
 
     private sealed class DemoSleep : ISleepGuard
     {
-        public void Begin() { }
+        public void Begin(bool keepDisplayOn) { }
         public void End() { }
     }
 }

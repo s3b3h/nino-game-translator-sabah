@@ -47,7 +47,7 @@ class SubtitleLayoutTest {
     @Test
     fun longLivedTutorialLineIsSkippedWhileDialogueChanges() {
         val sender = object : SubtitleSender {
-            override fun sendSubtitle(text: String, durationMs: Int, box: TextBox?) {}
+            override fun sendSubtitle(text: String, durationMs: Int, box: TextBox?, replaces: Boolean) {}
             override fun clear() {}
         }
         val pipeline = SubtitlePipeline({ it }, sender)

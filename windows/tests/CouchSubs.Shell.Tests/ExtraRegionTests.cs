@@ -28,6 +28,55 @@ public class ExtraRegionTests
     }
 
     [Fact]
+    public void ExtraRegionsAreNotReadContinuouslyByDefault()
+    {
+        var settings = new UserSettings();
+        Assert.Empty(settings.WatchedAreas());
+        for (var slot = 1; slot <= UserSettings.ExtraRegionCount; slot++) Assert.False(settings.ExtraLive(slot));
+    }
+
+    [Fact]
+    public void OnlyConfiguredLiveRegionsAreWatched()
+    {
+        var quest = ExtraAreaPreset.Quest.Region();
+        var settings = new UserSettings()
+            .WithExtraRegion(1, quest).WithExtraLive(1, true)
+            .WithExtraRegion(2, new CropRegion())
+            .WithExtraLive(3, true);
+        var watched = Assert.Single(settings.WatchedAreas());
+        Assert.Equal("area1", watched.Id);
+        Assert.Equal(quest, watched.Region);
+    }
+
+    /// <summary>Sürekli okunan bölge tuşa basmadan okunur ve çevirisi "region" olayıyla pencereye (ve TV'ye) gider.</summary>
+    [Fact]
+    public async Task LiveRegionIsReadWithoutAKeyPress()
+    {
+        var (controller, services) = Ready();
+        services.ReaderLines = new Reading([new TextLine("Find the blacksmith", new TextBox(0.1, 0.2, 0.9, 0.3))]);
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Computer };
+        controller.Settings = controller.Settings.WithExtraRegion(1, ExtraAreaPreset.Quest.Region()).WithExtraLive(1, true);
+        var received = new List<SubtitleEvent>();
+        controller.OverlayEvent += e => { lock (received) received.Add(e); };
+        await controller.StartAsync();
+        // Ek bölgenin kendi okuyucusu vardır (altyazının okumasını bekletmesin).
+        Assert.Equal(2, services.ReaderLanguages.Count);
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        SubtitleEvent? region = null;
+        while (region is null && DateTime.UtcNow < deadline)
+        {
+            services.Streams[0].Emit(Frame.Blank(64, 64));
+            await Task.Delay(100);
+            lock (received) region = received.FirstOrDefault(e => e.Kind == SubtitleEventKind.Region);
+        }
+        Assert.NotNull(region);
+        Assert.Equal("area1", region.Id);
+        Assert.NotEqual("", region.Text);
+        controller.Stop();
+        lock (received) Assert.Contains(received, e => e.Kind == SubtitleEventKind.RegionClear);
+    }
+
+    [Fact]
     public void ExtraRegionIsSetAndClearedBySlot()
     {
         var region = new CropRegion(0.1, 0.3, 0.6, 0.95);
@@ -184,6 +233,43 @@ public class ScreenTranslationControllerTests
         Assert.Equal(ScreenOutcome.Shown, await controller.TranslateScreenAsync());
         Assert.Equal(ScreenOutcome.Cleared, await controller.TranslateScreenAsync());
         Assert.Equal(ScreenOutcome.Shown, await controller.TranslateScreenAsync());
+        controller.Stop();
+    }
+
+    /// <summary>
+    /// Bildirilen hata: altyazı yalnız bilgisayar ekranındayken (TV yok, PS Remote Play monitörde) çeviriler yalnız TV'ye
+    /// giden "screen" olayıyla gidiyor, altyazı penceresine hiç ulaşmıyordu; yalnız "Ekran çevriliyor…" görünüyordu.
+    /// </summary>
+    [Fact]
+    public async Task ComputerOnlyShowsTheTranslationsInTheSubtitleWindow()
+    {
+        var (controller, services) = Ready();
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Computer };
+        services.ReaderLines = new Reading([new TextLine("Open the door.", new TextBox(0.4, 0.8, 0.6, 0.84))]);
+        var received = new List<SubtitleEvent>();
+        controller.OverlayEvent += received.Add;
+        await controller.StartAsync();
+        services.Streams[0].Emit(Frame.Blank(64, 64));
+        Assert.Equal(ScreenOutcome.Shown, await controller.TranslateScreenAsync());
+        var screen = Assert.Single(received, e => e.Kind == SubtitleEventKind.Screen);
+        Assert.NotEqual("", screen.Text);
+        Assert.NotEqual("Open the door.", screen.Text);
+        Assert.Equal(ScreenOutcome.Cleared, await controller.TranslateScreenAsync());
+        Assert.Contains(received, e => e.Kind == SubtitleEventKind.ScreenClear);
+        controller.Stop();
+    }
+
+    /// <summary>Çeviri sürüyor ama PS5'ten görüntü gelmedi: tuş sessizce yok sayılmaz.</summary>
+    [Fact]
+    public async Task NoPictureYetIsSaid()
+    {
+        var (controller, _) = Ready();
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Computer };
+        var received = new List<SubtitleEvent>();
+        controller.OverlayEvent += received.Add;
+        await controller.StartAsync();
+        Assert.Equal(ScreenOutcome.NotRunning, await controller.TranslateScreenAsync());
+        Assert.Contains(received, e => e.Kind == SubtitleEventKind.Subtitle && e.Text.Contains("PS5", StringComparison.Ordinal));
         controller.Stop();
     }
 }

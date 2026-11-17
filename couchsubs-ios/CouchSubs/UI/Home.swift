@@ -10,6 +10,10 @@ import UIKit
 /// Ana ekrandan açılan sayfalar.
 enum Route: Hashable {
     case settings, profile, packs, target, ps5, psn, about, history
+    /// Konsol türü (PlayStation ya da Xbox Beta).
+    case platform
+    /// TV uygulamasını bu telefondan kurmak; `tvUpdate` ana ekrandaki güncellemeyi kendiliğinden başlatır.
+    case tvInstall, tvUpdate
 }
 
 /// Turun vurguladığı öğeler.
@@ -59,8 +63,13 @@ struct LanguagePackTile: View {
         Tile {
             if TargetLanguage.isTurkish(model.settings.targetLanguage) {
                 Text("The English–Turkish language pack is not downloaded yet.").font(Mobile.TypeScale.headline)
-            } else {
+            } else if model.settings.targetLanguage.hasPrefix("ar") {
                 Text("The English–Arabic language pack is not downloaded yet.").font(Mobile.TypeScale.headline)
+            } else {
+                // Nino: öbür diller ("İngilizce–हिन्दी").
+                let english = Locale.current.localizedString(forLanguageCode: "en") ?? "English"
+                Text("The \(english)–\(TargetLanguage.nativeName(model.settings.targetLanguage)) language pack is not downloaded yet.")
+                    .font(Mobile.TypeScale.headline)
             }
             Button("Download") {
                 download = TranslationSession.Configuration(source: Locale.Language(identifier: model.settings.sourceLanguage),
@@ -92,15 +101,17 @@ struct SubtitleScreen: View {
                 // Nino: PS5'siz demoda örnek satır.
                 if model.isDemo, let demo = model.demoLine {
                     Text(verbatim: TargetLanguage.displayText(demo.translation))
-                        .font(Mobile.TypeScale.subtitle(landscape: true, scale: scale))
+                        .font(Mobile.TypeScale.subtitle(landscape: true, scale: scale, font: model.settings.style.font))
                         .foregroundStyle(textColor)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.5)
                         .subtitleDirection(demo.translation)
                 }
                 ForEach(Array(model.phoneLines.enumerated()), id: \.element.id) { index, line in
-                    Text(verbatim: TargetLanguage.displayText(line.text))
-                        .font(Mobile.TypeScale.subtitle(landscape: true, scale: scale))
+                    // Uzun çeviri en çok 3 satıra dengeli bölünür; sığmazsa yazı biraz küçülür (bkz. SubtitleWrap).
+                    let wrapped = line.wrapped
+                    Text(verbatim: TargetLanguage.displayText(wrapped.text))
+                        .font(Mobile.TypeScale.subtitle(landscape: true, scale: scale * CGFloat(wrapped.scale), font: model.settings.style.font))
                         // Önceki satır soldurulmaz, sabit gri olur (#7C7A76).
                         .foregroundStyle(index < model.phoneLines.count - 1 ? Color(hex: 0x7C7A76) : textColor)
                         .opacity(line.fading ? 0.4 : 1)
@@ -111,6 +122,40 @@ struct SubtitleScreen: View {
             }
             .padding(.horizontal, Mobile.Space.screen)
             .padding(.bottom, Mobile.Space.screen * 2)
+            // Ek alanların (görev, telefon, bildirim) çevirisi oyundaki yerinde küçük kutuda (TV'deki gibi).
+            GeometryReader { proxy in
+                ForEach(model.phoneRegions) { region in
+                    let box = region.box ?? TextBox(left: 0.6, top: 0.05, right: 0.95, bottom: 0.2)
+                    Text(verbatim: region.text)
+                        .font(Mobile.TypeScale.caption)
+                        .foregroundStyle(Mobile.Palette.text)
+                        .padding(6)
+                        .background(Color.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 6))
+                        .frame(maxWidth: max(120, proxy.size.width * (box.right - box.left)), alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .position(x: proxy.size.width * (box.left + box.right) / 2, y: proxy.size.height * box.top + 24)
+                }
+            }
+            .allowsHitTesting(false)
+            // "Ekranı çevir" sonuçları: her çeviri kendi yazısının yerinde ve aynı boyda (TV'deki gibi).
+            GeometryReader { proxy in
+                ForEach(Array(model.screenItems.enumerated()), id: \.offset) { _, item in
+                    let box = item.box
+                    let width = max(60, proxy.size.width * (box.right - box.left))
+                    let size = max(10, min(28, proxy.size.height * item.lineHeight * 0.8))
+                    Text(verbatim: item.translation)
+                        .font(.system(size: size, weight: .semibold))
+                        .foregroundStyle(Mobile.Palette.text)
+                        .multilineTextAlignment(.leading)
+                        .padding(4)
+                        .frame(width: width, alignment: .leading)
+                        .background(Color.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 4))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .position(x: proxy.size.width * box.left + width / 2,
+                                  y: proxy.size.height * (box.top + box.bottom) / 2)
+                }
+            }
+            .allowsHitTesting(false)
             Text("The screen stays on · brightness is lowered automatically")
                 .font(Mobile.TypeScale.caption)
                 .foregroundStyle(Color.white.opacity(0.5))
@@ -121,7 +166,16 @@ struct SubtitleScreen: View {
                 .padding(Mobile.Space.screen)
         }
         .overlay(alignment: .topTrailing) {
-            IconButton(symbol: "xmark", label: "Close") { dismiss() }.padding(Mobile.Space.screen)
+            HStack(spacing: Mobile.Space.inline) {
+                if model.sessionState == .streaming {
+                    IconButton(symbol: model.screenState == .idle ? "text.viewfinder" : "xmark.circle",
+                               label: model.screenState == .idle ? "Translate screen" : "Remove screen translations") {
+                        model.translateScreen()
+                    }
+                }
+                IconButton(symbol: "xmark", label: "Close") { dismiss() }
+            }
+            .padding(Mobile.Space.screen)
         }
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
@@ -257,5 +311,24 @@ extension View {
         self.mask {
             Rectangle().overlay { mask().blendMode(.destinationOut) }.compositingGroup()
         }
+    }
+}
+
+/// "Ekranı çevir": oyun ekranının tamamını çevirir; çeviri sürerken ya da sonuçlar ekrandayken dokununca kaldırır.
+struct ScreenTranslateButton: View {
+    @EnvironmentObject private var model: PhoneModel
+
+    var body: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            model.translateScreen()
+        } label: {
+            switch model.screenState {
+            case .idle: Label("Translate screen", systemImage: "text.viewfinder")
+            case .working: Label("Translating the screen…", systemImage: "hourglass")
+            case .shown: Label("Remove screen translations", systemImage: "xmark.circle")
+            }
+        }
+        .buttonStyle(.mobileSecondary)
     }
 }

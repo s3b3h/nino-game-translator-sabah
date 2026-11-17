@@ -46,12 +46,21 @@
       keys: 'OK: bu panel · ◀ ▶: HDMI girişi · 1–4: HDMI girişi · 0: PS5\'i otomatik bul · ▲ ▼: altyazıyı taşı · Kırmızı: deneme altyazısı · Mavi: demo · Yeşil: bu panel',
       localTest: 'Deneme: bu yazıyı oyunun üstünde görüyor musunuz?',
       positionPreview: 'Altyazı burada görünecek',
+      waitingAddress: 'Bu TV\'nin adresi: %1',
+      waitingSearching: 'Ağda Nino aranıyor…',
       demoButton: 'Demoyu izle',
       demoBadge: 'ÖRNEK',
       demoHint: 'Oyundaki İngilizce altyazı burada Türkçe görünür. Çıkmak için Geri\'ye basın.',
       sourceSwitchTitle: 'TV kendi kendine HDMI\'ya geçti.',
       sourceSwitchHint: 'Ayarlar › Tüm Ayarlar › Bağlantı › Harici Cihaz Yöneticisi\'nden Anynet+ (HDMI-CEC) ve Otomatik Kaynak Değiştirme\'yi kapatın.',
-      sourceSwitchClose: 'Kapatmak için Tamam\'a ya da Geri\'ye basın.'
+      sourceSwitchClose: 'Kapatmak için Tamam\'a ya da Geri\'ye basın.',
+      noPictureTitle: 'TV\'nin HDMI görüntüsü alınamadı',
+      noPicture: 'HDMI %1 girişinden görüntü gelmiyor.',
+      noPictureError: 'HDMI %1 girişi bu uygulamada açılamadı.',
+      noPictureChoose: 'PS5 başka girişe bağlıysa aşağıdan seçin (◀▶ ve Tamam, ya da 1–4 sayı tuşları).',
+      noPictureStillBlack: 'Doğru girişte de siyah mı? PS5\'te HDR açıksa kapatın (Ayarlar › Ekran ve Video › Video Çıkışı › HDR: Kapalı): Uzaktan Oynatma açıkken HDR görüntü kararabiliyor. Olmazsa bu TV HDMI görüntüsünü uygulamalara vermiyor ya da HDCP engelliyordur: PS5\'te Ayarlar › Sistem › HDMI › HDCP\'yi Etkinleştir\'i kapatmayı deneyin. Olmazsa Nino\'dan çıkın, TV\'yi kumandadan PS5\'in HDMI girişine alın ve altyazıyı telefon ya da bilgisayar ekranından izleyin.',
+      noPictureExit: 'Çık, TV girişine dön',
+      noPictureClose: 'Kapat'
     },
     en: {
       waiting: 'Open Nino on your Mac, Windows PC or Android phone.',
@@ -95,12 +104,21 @@
       keys: 'OK: this panel · ◀▶: HDMI input (panel open) · 1–4: HDMI input · 0: find console automatically · ▲▼: move subtitles up/down · Red: test subtitle · Blue: demo · Green: this panel',
       localTest: 'Test: is this text shown on top of the game?',
       positionPreview: 'Subtitles will appear here',
+      waitingAddress: 'This TV\'s address: %1',
+      waitingSearching: 'Looking for Nino on the network…',
       demoButton: 'Watch the demo',
       demoBadge: 'DEMO',
       demoHint: 'Example: the game\'s English subtitles appear here in Turkish. Press Back to exit.',
       sourceSwitchTitle: 'The TV switched to HDMI by itself.',
       sourceSwitchHint: 'Turn off Anynet+ (HDMI-CEC) and Auto Source Switching in Settings › All Settings › Connection › External Device Manager.',
-      sourceSwitchClose: 'Press OK or Back to close.'
+      sourceSwitchClose: 'Press OK or Back to close.',
+      noPictureTitle: 'No HDMI picture from the TV',
+      noPicture: 'No picture from HDMI %1.',
+      noPictureError: 'HDMI %1 could not be opened in this app.',
+      noPictureChoose: 'If the PS5 is on another input, choose it below (◀▶ and OK, or number keys 1–4).',
+      noPictureStillBlack: 'Still black on the right input? If HDR is on, turn it off on the PS5 (Settings › Screen and Video › Video Output › HDR: Off): with Remote Play active an HDR picture can turn dark. Otherwise this TV may not hand its HDMI picture to apps, or HDCP blocks it: try turning off Settings › System › HDMI › Enable HDCP on the PS5. Otherwise exit Nino, switch the TV to the PS5\'s HDMI input with the remote and read the subtitles on your phone or computer.',
+      noPictureExit: 'Exit to the TV input',
+      noPictureClose: 'Close'
     },
     ar: {
       waiting: 'افتح Nino على Mac أو كمبيوتر Windows أو هاتف Android.',
@@ -149,7 +167,16 @@
       demoHint: 'مثال: تظهر هنا ترجمة النصوص الإنجليزية في اللعبة. اضغط «رجوع» للخروج.',
       sourceSwitchTitle: 'انتقل التلفاز إلى HDMI من تلقاء نفسه.',
       sourceSwitchHint: 'عطّل Anynet+ (HDMI-CEC) والتبديل التلقائي للمصدر من الإعدادات › كل الإعدادات › الاتصال › إدارة الأجهزة الخارجية.',
-      sourceSwitchClose: 'اضغط OK أو «رجوع» للإغلاق.'
+      sourceSwitchClose: 'اضغط OK أو «رجوع» للإغلاق.',
+      waitingAddress: 'عنوان هذا التلفاز: %1',
+      waitingSearching: 'جارٍ البحث عن Nino على الشبكة…',
+      noPictureTitle: 'تعذّر الحصول على صورة HDMI من التلفاز',
+      noPicture: 'لا تصل صورة من مدخل HDMI %1.',
+      noPictureError: 'تعذّر فتح مدخل HDMI %1 في هذا التطبيق.',
+      noPictureChoose: 'إن كان جهاز PS5 متصلًا بمدخل آخر فاختره أدناه (◀▶ ثم OK، أو أزرار الأرقام 1–4).',
+      noPictureStillBlack: 'هل تبقى الشاشة سوداء على المدخل الصحيح؟ إن كان HDR مفعّلًا فعطّله على PS5 (الإعدادات › الشاشة والفيديو › إخراج الفيديو › HDR: إيقاف)، إذ قد تُظلم صورة HDR أثناء التشغيل عن بُعد. وإلا فقد لا يتيح هذا التلفاز صورة HDMI للتطبيقات، أو يمنعها HDCP: جرّب تعطيل الإعدادات › النظام › HDMI › تمكين HDCP على PS5. وإن لم ينجح ذلك فاخرج من Nino، وانقل التلفاز إلى مدخل HDMI الخاص بـ PS5 بجهاز التحكم، وتابع الترجمة على شاشة الهاتف أو الكمبيوتر.',
+      noPictureExit: 'خروج والعودة إلى مدخل التلفاز',
+      noPictureClose: 'إغلاق'
     }
   };
 

@@ -43,6 +43,12 @@ public partial class OnboardingView : UserControl
     {
         if (e.PropertyName == nameof(AppController.Step)) ShowStep();
         else if (e.PropertyName == nameof(AppController.CardSetupActive)) ShowGuide();
+        else if (e.PropertyName == nameof(AppController.ConsoleKind))
+        {
+            Counter.Text = Localizer.Current.Format("Step %lld of %lld", controller.StepNumber, controller.StepCount);
+            Progress.Value = (double)controller.StepNumber / controller.StepCount;
+            ShowSteps();
+        }
         else if (e.PropertyName == nameof(AppController.UsesFreeGemini)) ShowContinue();
     }
 
@@ -65,15 +71,15 @@ public partial class OnboardingView : UserControl
         {
             OnboardingStep.Welcome => new WelcomeStep(),
             OnboardingStep.SecondAccount => new SecondAccountStep(),
-            OnboardingStep.PsnLogin => new PsnLoginStep(),
-            OnboardingStep.Console => new ConsoleStep(),
+            OnboardingStep.PsnLogin => controller.IsXbox ? new XboxLoginStep() : new PsnLoginStep(),
+            OnboardingStep.Console => controller.IsXbox ? new XboxConsoleStep() : new ConsoleStep(),
             OnboardingStep.Tv => new TvStep(),
             OnboardingStep.Translation => new TranslationStep(),
             OnboardingStep.Test => new TestStep(),
             _ => new BetterTranslationStep(),
         };
-        Counter.Text = Localizer.Current.Format("Step %lld of %lld", controller.StepNumber, AppController.StepCount);
-        Progress.Value = (double)controller.StepNumber / AppController.StepCount;
+        Counter.Text = Localizer.Current.Format("Step %lld of %lld", controller.StepNumber, controller.StepCount);
+        Progress.Value = (double)controller.StepNumber / controller.StepCount;
         ShowSteps();
         BackButton.Visibility = controller.Step == OnboardingStep.Welcome ? Visibility.Hidden : Visibility.Visible;
         ContinueButton.Visibility = controller.Step == OnboardingStep.Test ? Visibility.Hidden : Visibility.Visible;
@@ -81,12 +87,12 @@ public partial class OnboardingView : UserControl
     }
 
     /// <summary>Adımların adları: her adımın kendi başlığı.</summary>
-    private static string StepTitle(OnboardingStep step) => step switch
+    private string StepTitle(OnboardingStep step) => step switch
     {
         OnboardingStep.Welcome => "Welcome to Nino",
         OnboardingStep.SecondAccount => "A second PSN account",
-        OnboardingStep.PsnLogin => "Sign in with the second account",
-        OnboardingStep.Console => "Connect your PS5",
+        OnboardingStep.PsnLogin => controller.IsXbox ? "Sign in to Xbox" : "Sign in with the second account",
+        OnboardingStep.Console => controller.IsXbox ? "Choose your Xbox" : "Connect your PS5",
         OnboardingStep.Tv => "Connect your TV",
         OnboardingStep.Translation => "Download the translation model",
         OnboardingStep.Test => "Let's test it",
@@ -98,13 +104,14 @@ public partial class OnboardingView : UserControl
     {
         StepList.Children.Clear();
         var current = (int)controller.Step;
-        foreach (var step in Enum.GetValues<OnboardingStep>().Where(s => s != OnboardingStep.Done))
+        foreach (var step in Enum.GetValues<OnboardingStep>().Where(s => s != OnboardingStep.Done && !(controller.IsXbox && s == OnboardingStep.SecondAccount)))
         {
             var index = (int)step;
+            var position = index + 1 - (controller.IsXbox && step > OnboardingStep.SecondAccount ? 1 : 0);
             var (done, now) = (index < current, index == current);
             var mark = new TextBlock
             {
-                Text = done ? Glyphs.Check : (index + 1).ToString(), FontWeight = FontWeights.SemiBold,
+                Text = done ? Glyphs.Check : position.ToString(), FontWeight = FontWeights.SemiBold,
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.NoWrap,
             };
             if (done) mark.Style = (Style)FindResource("GlyphText");
@@ -125,12 +132,18 @@ public partial class OnboardingView : UserControl
             };
             row.SetResourceReference(Border.CornerRadiusProperty, "radius.control");
             if (now) row.SetResourceReference(Border.BackgroundProperty, "surface2Brush");
-            System.Windows.Automation.AutomationProperties.SetName(row, $"{index + 1}. {label.Text}");
+            System.Windows.Automation.AutomationProperties.SetName(row, $"{position}. {label.Text}");
             StepList.Children.Add(row);
         }
     }
 
     private void OnBack(object sender, RoutedEventArgs e) => controller.Back();
+
+    private void OnReset(object sender, RoutedEventArgs e)
+    {
+        controller.ResetSetup();
+        ShowStep();
+    }
 
     private void OnContinue(object sender, RoutedEventArgs e) => controller.Advance();
 }

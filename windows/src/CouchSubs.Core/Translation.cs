@@ -21,6 +21,23 @@ public interface ITextTranslator
 
     /// <summary>Satırın çevirisini arka planda başlatır; aynı metin için sonraki <see cref="TranslateAsync"/> onu bekler.</summary>
     void Prefetch(string text) { }
+
+    /// <summary>
+    /// <see cref="TranslateAllAsync"/> bütün metinleri tek istekte çevirir (yapay zekâ); öyleyse "ekranı çevir" parça
+    /// parça istek göndermez.
+    /// </summary>
+    bool TranslatesTogether => false;
+
+    /// <summary>
+    /// Birbirinden bağımsız metinleri ("ekranı çevir"deki menü satırları, görev yazıları) aynı sırada çevirir.
+    /// Varsayılan: sırayla tek tek.
+    /// </summary>
+    async Task<IReadOnlyList<string>> TranslateAllAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
+    {
+        var result = new List<string>(texts.Count);
+        foreach (var text in texts) result.Add(await TranslateAsync(text, cancellationToken).ConfigureAwait(false));
+        return result;
+    }
 }
 
 public enum TranslatorStatus
@@ -31,7 +48,7 @@ public enum TranslatorStatus
     /// <summary>Bu dil çifti desteklenmiyor.</summary>
     Unsupported,
     /// <summary>
-    /// Model kurulu ama cihaz üstü çeviri motoru bu bilgisayarda açılamadı (ör. ONNX Runtime'ın yerel DLL'i
+    /// Model kurulu ama cihaz üstü çeviri motoru bu bilgisayarda açılamadı (ör. CTranslate2 çalışma zamanı
     /// yüklenemedi). Kullanıcı çevrimiçi bir motor seçebilir; oyun paketleri çalışmayı sürdürür.
     /// </summary>
     EngineFailed,

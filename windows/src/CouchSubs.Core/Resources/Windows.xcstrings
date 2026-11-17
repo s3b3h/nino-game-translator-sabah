@@ -5,16 +5,70 @@
     "Start Remote play in the Xbox app or at xbox.com/play. Nino reads that window and shows the translation.": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابدأ التشغيل عن بُعد في تطبيق Xbox أو على xbox.com/play. يقرأ Nino تلك النافذة ويعرض الترجمة."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox অ্যাপে বা xbox.com/play-এ Remote play শুরু করুন। Nino সেই উইন্ডোটি পড়ে অনুবাদ দেখায়।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulan ang Remote play sa Xbox app o sa xbox.com/play. Binabasa ng Nino ang window na iyon at ipinapakita ang salin."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox ऐप में या xbox.com/play पर रिमोट प्ले शुरू करें। Nino वह विंडो पढ़ता है और अनुवाद दिखाता है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mulai Remote play di aplikasi Xbox atau di xbox.com/play. Nino membaca jendela itu dan menampilkan terjemahannya."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mulakan Remote play dalam apl Xbox atau di xbox.com/play. Nino membaca tetingkap itu dan memaparkan terjemahan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Op afstand spelen in de Xbox-app of op xbox.com/play. Nino leest dat venster en toont de vertaling."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เริ่ม Remote play ในแอป Xbox หรือที่ xbox.com/play Nino จะอ่านหน้าต่างนั้นและแสดงคำแปล"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "Xbox uygulamasında ya da xbox.com/play'de Uzaktan oynat'ı başlatın. Nino o pencereyi okur ve çeviriyi gösterir."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "ابدأ التشغيل عن بُعد في تطبيق Xbox أو على xbox.com/play. يقرأ Nino تلك النافذة ويعرض الترجمة."
+            "value": "Xbox ایپ میں یا xbox.com/play پر Remote play شروع کریں۔ Nino وہ ونڈو پڑھ کر ترجمہ دکھاتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu chơi từ xa trong ứng dụng Xbox hoặc tại xbox.com/play. Nino sẽ đọc cửa sổ đó và hiện bản dịch."
           }
         }
       }
@@ -22,16 +76,70 @@
     "Allow camera access in Windows Settings › Privacy & security › Camera, then try again.": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسمح بالوصول إلى الكاميرا في إعدادات Windows › الخصوصية والأمان › الكاميرا، ثم حاول مرة أخرى."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Windows Settings › Privacy & security › Camera-তে ক্যামেরা অ্যাক্সেসের অনুমতি দিন, তারপর আবার চেষ্টা করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payagan ang access sa camera sa Windows Settings › Privacy & security › Camera, saka subukan ulit."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Windows सेटिंग्स › गोपनीयता और सुरक्षा › कैमरा में कैमरा एक्सेस की अनुमति दें, फिर से कोशिश करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Izinkan akses kamera di Pengaturan Windows › Privasi & keamanan › Kamera, lalu coba lagi."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benarkan akses kamera dalam Tetapan Windows › Privasi & keselamatan › Kamera, kemudian cuba lagi."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sta cameratoegang toe in Windows-instellingen › Privacy en beveiliging › Camera en probeer het opnieuw."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "อนุญาตการเข้าถึงกล้องใน การตั้งค่า Windows › ความเป็นส่วนตัวและความปลอดภัย › กล้อง แล้วลองอีกครั้ง"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "Windows Ayarları › Gizlilik ve güvenlik › Kamera'da kamera erişimine izin verin, sonra yeniden deneyin."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "اسمح بالوصول إلى الكاميرا في إعدادات Windows › الخصوصية والأمان › الكاميرا، ثم حاول مرة أخرى."
+            "value": "Windows Settings › Privacy & security › Camera میں کیمرے تک رسائی کی اجازت دیں، پھر دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy cho phép truy cập camera trong Cài đặt Windows › Quyền riêng tư & bảo mật › Camera, rồi thử lại."
           }
         }
       }
@@ -39,16 +147,70 @@
     "Capture cards appear as a camera in Windows. In Settings › Privacy & security › Camera, turn on camera access and Let desktop apps access your camera, then try again.": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تظهر بطاقات الالتقاط في Windows ككاميرا. في الإعدادات › الخصوصية والأمان › الكاميرا، شغّل الوصول إلى الكاميرا والسماح لتطبيقات سطح المكتب بالوصول إليها، ثم حاول مرة أخرى."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Windows-এ ক্যাপচার কার্ড ক্যামেরা হিসেবে দেখায়। Settings › Privacy & security › Camera-তে ক্যামেরা অ্যাক্সেস এবং Let desktop apps access your camera চালু করুন, তারপর আবার চেষ্টা করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumalabas bilang camera sa Windows ang mga capture card. Sa Settings › Privacy & security › Camera, i-on ang Camera access at Let desktop apps access your camera, saka subukan ulit."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Windows में कैप्चर कार्ड कैमरे की तरह दिखते हैं। सेटिंग्स › गोपनीयता और सुरक्षा › कैमरा में कैमरा एक्सेस और डेस्कटॉप ऐप्स को कैमरा एक्सेस करने दें चालू करें, फिर से कोशिश करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture card muncul sebagai kamera di Windows. Di Pengaturan › Privasi & keamanan › Kamera, aktifkan akses kamera dan Izinkan aplikasi desktop mengakses kamera, lalu coba lagi."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kad tangkapan muncul sebagai kamera dalam Windows. Dalam Tetapan › Privasi & keselamatan › Kamera, hidupkan akses kamera dan Benarkan apl desktop mengakses kamera anda, kemudian cuba lagi."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnamekaarten verschijnen in Windows als camera. Zet in Instellingen › Privacy en beveiliging › Camera cameratoegang aan en Bureaublad-apps toegang geven tot je camera, en probeer het opnieuw."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การ์ดจับภาพจะแสดงเป็นกล้องใน Windows ใน การตั้งค่า › ความเป็นส่วนตัวและความปลอดภัย › กล้อง ให้เปิดการเข้าถึงกล้อง และ อนุญาตให้แอปเดสก์ท็อปเข้าถึงกล้องของคุณ แล้วลองอีกครั้ง"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "Capture Card'lar Windows'ta kamera gibi görünür. Ayarlar › Gizlilik ve güvenlik › Kamera'da kamera erişimini ve masaüstü uygulamalarının kameraya erişmesini açın, sonra yeniden deneyin."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تظهر بطاقات الالتقاط في Windows ككاميرا. في الإعدادات › الخصوصية والأمان › الكاميرا، شغّل الوصول إلى الكاميرا والسماح لتطبيقات سطح المكتب بالوصول إليها، ثم حاول مرة أخرى."
+            "value": "کیپچر کارڈز Windows میں کیمرے کے طور پر نظر آتے ہیں۔ Settings › Privacy & security › Camera میں Camera access اور Let desktop apps access your camera آن کریں، پھر دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card ghi hình hiện dưới dạng camera trong Windows. Trong Cài đặt › Quyền riêng tư & bảo mật › Camera, hãy bật quyền truy cập camera và Cho phép ứng dụng máy tính truy cập camera, rồi thử lại."
           }
         }
       }
@@ -56,16 +218,70 @@
     "Plug the card into a USB 3 port on this computer. If you use a hub, try a port on the computer itself.": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وصّل البطاقة بمنفذ USB 3 في هذا الكمبيوتر. إن كنت تستخدم موزّعًا، جرّب منفذ الكمبيوتر نفسه."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কার্ডটি এই কম্পিউটারের একটি USB 3 পোর্টে লাগান। হাব ব্যবহার করলে সরাসরি কম্পিউটারের পোর্টে চেষ্টা করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isaksak ang card sa isang USB 3 port ng computer na ito. Kung gumagamit ka ng hub, subukan ang port sa mismong computer."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कार्ड को इस कंप्यूटर के USB 3 पोर्ट में लगाएँ। अगर आप हब इस्तेमाल करते हैं, तो सीधे कंप्यूटर का पोर्ट आज़माएँ।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colokkan card ke port USB 3 di komputer ini. Jika Anda memakai hub, coba port yang ada di komputer itu sendiri."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palamkan kad ke port USB 3 pada komputer ini. Jika anda menggunakan hab, cuba port pada komputer itu sendiri."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sluit de kaart aan op een USB 3-poort van deze computer. Gebruik je een hub, probeer dan een poort op de computer zelf."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เสียบการ์ดเข้ากับพอร์ต USB 3 ของคอมพิวเตอร์เครื่องนี้ หากใช้ฮับ ให้ลองเสียบพอร์ตบนตัวคอมพิวเตอร์โดยตรง"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "Capture Card'ı bu bilgisayardaki bir USB 3 girişine takın. Çoklayıcı kullanıyorsanız doğrudan bilgisayarın kendi girişini deneyin."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "وصّل البطاقة بمنفذ USB 3 في هذا الكمبيوتر. إن كنت تستخدم موزّعًا، جرّب منفذ الكمبيوتر نفسه."
+            "value": "کارڈ کو اس کمپیوٹر کے USB 3 پورٹ میں لگائیں۔ اگر آپ ہب استعمال کرتے ہیں تو براہِ راست کمپیوٹر کا پورٹ آزمائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cắm card vào cổng USB 3 trên máy tính này. Nếu bạn dùng hub, hãy thử cổng ngay trên máy tính."
           }
         }
       }
@@ -73,16 +289,70 @@
     "A capture card takes the PS5 picture over HDMI and gives it to this computer over USB. No second PSN account or Remote Play needed.": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تأخذ بطاقة الالتقاط صورة PS5 عبر HDMI وتسلّمها لهذا الكمبيوتر عبر USB. لا حاجة إلى حساب PSN ثانٍ أو Remote Play."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "একটি ক্যাপচার কার্ড HDMI দিয়ে PS5-এর ছবি নেয় এবং USB দিয়ে এই কম্পিউটারে দেয়। দ্বিতীয় PSN অ্যাকাউন্ট বা Remote Play লাগে না।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kinukuha ng capture card ang larawan ng PS5 sa HDMI at ibinibigay ito sa computer na ito sa USB. Hindi kailangan ng pangalawang PSN account o Remote Play."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कैप्चर कार्ड HDMI से PS5 की तस्वीर लेता है और USB से इस कंप्यूटर को देता है। दूसरे PSN अकाउंट या Remote Play की ज़रूरत नहीं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture card mengambil gambar PS5 lewat HDMI dan meneruskannya ke komputer ini lewat USB. Tidak perlu akun PSN kedua atau Remote Play."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kad tangkapan mengambil gambar PS5 melalui HDMI dan memberikannya kepada komputer ini melalui USB. Akaun PSN kedua atau Remote Play tidak diperlukan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een opnamekaart neemt het PS5-beeld via HDMI op en geeft het via USB door aan deze computer. Geen tweede PSN-account of Remote Play nodig."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การ์ดจับภาพรับภาพ PS5 ผ่าน HDMI แล้วส่งให้คอมพิวเตอร์เครื่องนี้ผ่าน USB ไม่ต้องใช้บัญชี PSN บัญชีที่สองหรือ Remote Play"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "Capture Card, PS5 görüntüsünü HDMI'dan alır, USB ile bu bilgisayara verir. İkinci PSN hesabı ya da Remote Play gerekmez."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "تأخذ بطاقة الالتقاط صورة PS5 عبر HDMI وتسلّمها لهذا الكمبيوتر عبر USB. لا حاجة إلى حساب PSN ثانٍ أو Remote Play."
+            "value": "کیپچر کارڈ HDMI کے ذریعے PS5 کی تصویر لے کر USB کے ذریعے اس کمپیوٹر کو دیتا ہے۔ نہ دوسرے PSN اکاؤنٹ کی ضرورت ہے نہ Remote Play کی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card ghi hình nhận hình ảnh PS5 qua HDMI và truyền vào máy tính này qua USB. Không cần tài khoản PSN phụ hay Remote Play."
           }
         }
       }
@@ -90,16 +360,70 @@
     "Nino shows the game full screen on this computer with its sound, and the translation on top. Connect the computer to the screen with HDMI.": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعرض Nino اللعبة بملء الشاشة على هذا الكمبيوتر مع صوتها والترجمة فوقها. وصّل الكمبيوتر بالشاشة عبر HDMI."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino এই কম্পিউটারে গেমটি সাউন্ডসহ ফুল স্ক্রিনে দেখায়, আর ওপরে অনুবাদ। কম্পিউটারটি HDMI দিয়ে স্ক্রিনে সংযোগ করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipinapakita ng Nino ang laro nang full screen sa computer na ito kasama ang tunog nito, at ang salin sa ibabaw. Ikonekta ang computer sa screen gamit ang HDMI."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino इस कंप्यूटर पर गेम को उसकी आवाज़ के साथ फ़ुल स्क्रीन दिखाता है, और ऊपर अनुवाद। कंप्यूटर को HDMI से स्क्रीन से जोड़ें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino menampilkan game layar penuh di komputer ini beserta suaranya, dengan terjemahan di atasnya. Hubungkan komputer ke layar dengan HDMI."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino memaparkan permainan dalam skrin penuh pada komputer ini bersama bunyinya, dan terjemahan di atasnya. Sambungkan komputer ke skrin dengan HDMI."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino toont de game schermvullend op deze computer met geluid, met de vertaling erbovenop. Verbind de computer via HDMI met het scherm."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino แสดงเกมเต็มหน้าจอบนคอมพิวเตอร์เครื่องนี้พร้อมเสียง และแสดงคำแปลทับด้านบน เชื่อมต่อคอมพิวเตอร์กับจอด้วย HDMI"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "Nino oyunu sesiyle birlikte bu bilgisayarda tam ekran gösterir, çeviri üstünde olur. Bilgisayarı ekrana HDMI ile bağlayın."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "يعرض Nino اللعبة بملء الشاشة على هذا الكمبيوتر مع صوتها والترجمة فوقها. وصّل الكمبيوتر بالشاشة عبر HDMI."
+            "value": "Nino اس کمپیوٹر پر گیم کو آواز کے ساتھ فل اسکرین دکھاتا ہے، اور ترجمہ اوپر۔ کمپیوٹر کو HDMI سے اسکرین سے جوڑیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino hiện game toàn màn hình trên máy tính này kèm âm thanh, và bản dịch nằm phía trên. Hãy nối máy tính với màn hình bằng HDMI."
           }
         }
       }
@@ -107,16 +431,70 @@
     "Connect PS5 → card HDMI in, card HDMI out → TV, and the card's USB → this computer.": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 ← مدخل HDMI في البطاقة، مخرج HDMI في البطاقة ← التلفاز، وUSB البطاقة ← هذا الكمبيوتر."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সংযোগ করুন PS5 → কার্ডের HDMI in, কার্ডের HDMI out → TV, এবং কার্ডের USB → এই কম্পিউটার।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ikonekta ang PS5 → HDMI in ng card, HDMI out ng card → TV, at ang USB ng card → computer na ito."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 → कार्ड का HDMI in, कार्ड का HDMI out → TV, और कार्ड का USB → यह कंप्यूटर जोड़ें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hubungkan PS5 → HDMI in card, HDMI out card → TV, dan USB card → komputer ini."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sambungkan PS5 → HDMI masuk kad, HDMI keluar kad → TV, dan USB kad → komputer ini."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbind PS5 → HDMI-ingang van de kaart, HDMI-uitgang van de kaart → TV, en de USB van de kaart → deze computer."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อ PS5 → HDMI in ของการ์ด, HDMI out ของการ์ด → TV และ USB ของการ์ด → คอมพิวเตอร์เครื่องนี้"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "PS5 → Capture Card'ın HDMI girişi, HDMI çıkışı → TV, USB'si → bu bilgisayar."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "PS5 ← مدخل HDMI في البطاقة، مخرج HDMI في البطاقة ← التلفاز، وUSB البطاقة ← هذا الكمبيوتر."
+            "value": "جوڑیں: PS5 → کارڈ کا HDMI in، کارڈ کا HDMI out → TV، اور کارڈ کا USB → یہ کمپیوٹر۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nối PS5 → cổng HDMI vào của card, cổng HDMI ra của card → TV, và USB của card → máy tính này."
           }
         }
       }
@@ -124,16 +502,70 @@
     "Connect PS5 → card HDMI in, and the card's USB → this computer. Then connect this computer to your screen.": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 ← مدخل HDMI في البطاقة، وUSB البطاقة ← هذا الكمبيوتر. ثم وصّل هذا الكمبيوتر بشاشتك."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সংযোগ করুন PS5 → কার্ডের HDMI in, এবং কার্ডের USB → এই কম্পিউটার। তারপর এই কম্পিউটারটি আপনার স্ক্রিনে সংযোগ করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ikonekta ang PS5 → HDMI in ng card, at ang USB ng card → computer na ito. Saka ikonekta ang computer na ito sa iyong screen."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 → कार्ड का HDMI in, और कार्ड का USB → यह कंप्यूटर जोड़ें। फिर इस कंप्यूटर को अपनी स्क्रीन से जोड़ें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hubungkan PS5 → HDMI in card, dan USB card → komputer ini. Lalu hubungkan komputer ini ke layar Anda."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sambungkan PS5 → HDMI masuk kad, dan USB kad → komputer ini. Kemudian sambungkan komputer ini ke skrin anda."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbind PS5 → HDMI-ingang van de kaart, en de USB van de kaart → deze computer. Verbind daarna deze computer met je scherm."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อ PS5 → HDMI in ของการ์ด และ USB ของการ์ด → คอมพิวเตอร์เครื่องนี้ จากนั้นเชื่อมต่อคอมพิวเตอร์เครื่องนี้กับจอ"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "PS5 → Capture Card'ın HDMI girişi, USB'si → bu bilgisayar. Sonra bu bilgisayarı ekranınıza bağlayın."
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "PS5 ← مدخل HDMI في البطاقة، وUSB البطاقة ← هذا الكمبيوتر. ثم وصّل هذا الكمبيوتر بشاشتك."
+            "value": "جوڑیں: PS5 → کارڈ کا HDMI in، اور کارڈ کا USB → یہ کمپیوٹر۔ پھر اس کمپیوٹر کو اپنی اسکرین سے جوڑیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nối PS5 → cổng HDMI vào của card, và USB của card → máy tính này. Sau đó nối máy tính này với màn hình."
           }
         }
       }
@@ -141,16 +573,70 @@
     "Esc: full screen on or off · Closing this window stops the translation": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: تشغيل ملء الشاشة أو إيقافه · إغلاق هذه النافذة يوقف الترجمة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: ফুল স্ক্রিন চালু বা বন্ধ · এই উইন্ডো বন্ধ করলে অনুবাদ থেমে যায়"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: i-on o i-off ang full screen · Ang pagsara sa window na ito ay nagpapahinto sa pagsasalin"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: फ़ुल स्क्रीन चालू या बंद · यह विंडो बंद करने से अनुवाद रुक जाता है"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: layar penuh aktif atau nonaktif · Menutup jendela ini menghentikan terjemahan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: skrin penuh hidup atau mati · Menutup tetingkap ini menghentikan terjemahan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: schermvullend aan of uit · Als je dit venster sluit, stopt de vertaling"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: เปิดหรือปิดเต็มหน้าจอ · การปิดหน้าต่างนี้จะหยุดการแปล"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "Esc: tam ekranı açar ya da kapatır · Bu pencereyi kapatmak çeviriyi durdurur"
           }
         },
-        "ar": {
+        "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esc: تشغيل ملء الشاشة أو إيقافه · إغلاق هذه النافذة يوقف الترجمة"
+            "value": "Esc: فل اسکرین آن یا آف · یہ ونڈو بند کرنے سے ترجمہ رک جاتا ہے"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc: bật hoặc tắt toàn màn hình · Đóng cửa sổ này sẽ dừng dịch"
           }
         }
       }
@@ -158,16 +644,2058 @@
     "The live preview is off while translating.": {
       "extractionState": "manual",
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المعاينة المباشرة متوقفة أثناء الترجمة."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অনুবাদ চলার সময় লাইভ প্রিভিউ বন্ধ থাকে।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naka-off ang live preview habang nagsasalin."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अनुवाद के दौरान लाइव प्रीव्यू बंद रहता है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pratinjau langsung nonaktif saat menerjemahkan."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pratonton langsung dimatikan semasa menterjemah."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De live voorvertoning staat uit tijdens het vertalen."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ภาพตัวอย่างสดจะปิดระหว่างแปล"
+          }
+        },
         "tr": {
           "stringUnit": {
             "state": "translated",
             "value": "Çeviri sürerken canlı önizleme kapalıdır."
           }
         },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترجمے کے دوران لائیو پیش نظارہ بند رہتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem trước trực tiếp bị tắt khi đang dịch."
+          }
+        }
+      }
+    },
+    "Nino needs Windows Firewall permission for incoming connections from the TV.": {
+      "extractionState": "manual",
+      "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "المعاينة المباشرة متوقفة أثناء الترجمة."
+            "value": "يحتاج Nino إلى إذن من جدار حماية Windows للاتصالات الواردة من TV."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV থেকে আসা সংযোগের জন্য Nino-র Windows Firewall অনুমতি দরকার।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kailangan ng Nino ng pahintulot ng Windows Firewall para sa mga papasok na koneksyon mula sa TV."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV से आने वाले कनेक्शन के लिए Nino को Windows Firewall की अनुमति चाहिए।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino memerlukan izin Windows Firewall untuk koneksi masuk dari TV."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino memerlukan kebenaran Windows Firewall untuk sambungan masuk daripada TV."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino heeft toestemming van Windows Firewall nodig voor inkomende verbindingen van de TV."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino ต้องได้รับอนุญาตจากไฟร์วอลล์ Windows สำหรับการเชื่อมต่อขาเข้าจาก TV"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino'nun TV'den gelen bağlantılar için Windows güvenlik duvarı iznine ihtiyacı var."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino کو TV سے آنے والے کنکشنز کے لیے Windows Firewall کی اجازت درکار ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino cần quyền của Windows Firewall cho các kết nối đến từ TV."
+          }
+        }
+      }
+    },
+    "Nino is not affiliated with Microsoft. Xbox is a trademark of Microsoft Corporation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino غير تابع لـ Microsoft. Xbox علامة تجارية لشركة Microsoft Corporation."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino-র সাথে Microsoft-এর কোনো সম্পর্ক নেই। Xbox হলো Microsoft Corporation-এর ট্রেডমার্ক।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walang kaugnayan ang Nino sa Microsoft. Ang Xbox ay trademark ng Microsoft Corporation."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino का Microsoft से कोई संबंध नहीं है। Xbox, Microsoft Corporation का ट्रेडमार्क है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino tidak berafiliasi dengan Microsoft. Xbox adalah merek dagang Microsoft Corporation."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino tidak bergabung dengan Microsoft. Xbox ialah tanda dagangan Microsoft Corporation."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino is niet gelieerd aan Microsoft. Xbox is een handelsmerk van Microsoft Corporation."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino ไม่มีส่วนเกี่ยวข้องกับ Microsoft Xbox เป็นเครื่องหมายการค้าของ Microsoft Corporation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino, Microsoft ile bağlantılı değildir. Xbox, Microsoft Corporation'ın ticari markasıdır."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino کا Microsoft سے کوئی تعلق نہیں۔ Xbox، Microsoft Corporation کا ٹریڈ مارک ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino không liên kết với Microsoft. Xbox là thương hiệu của Microsoft Corporation."
+          }
+        }
+      }
+    },
+    "If the TV cannot connect: Windows Firewall may be blocking Nino. Allow it in Settings › Windows Firewall, and set this network to Private in Windows.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إذا تعذّر اتصال TV: قد يكون جدار حماية Windows يحظر Nino. اسمح به من الإعدادات › جدار حماية Windows، واجعل هذه الشبكة «خاصة» في Windows."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV সংযোগ করতে না পারলে: হয়তো Windows Firewall Nino-কে আটকাচ্ছে। সেটিংস › Windows Firewall-এ অনুমতি দিন, এবং Windows-এ এই নেটওয়ার্কটি Private করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kung hindi makakonekta ang TV: baka hinaharangan ng Windows Firewall ang Nino. Payagan ito sa Mga Setting › Windows Firewall, at itakda ang network na ito sa Private sa Windows."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अगर TV कनेक्ट नहीं हो पाता: हो सकता है Windows Firewall Nino को रोक रहा हो। सेटिंग्स › Windows Firewall में इसकी अनुमति दें, और Windows में इस नेटवर्क को प्राइवेट पर सेट करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jika TV tidak dapat terhubung: Windows Firewall mungkin memblokir Nino. Izinkan di Pengaturan › Windows Firewall, dan atur jaringan ini ke Pribadi di Windows."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jika TV tidak dapat menyambung: Windows Firewall mungkin menyekat Nino. Benarkannya dalam Tetapan › Windows Firewall, dan tetapkan rangkaian ini kepada Peribadi dalam Windows."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kan de TV geen verbinding maken? Misschien blokkeert Windows Firewall Nino. Sta het toe via Instellingen › Windows Firewall en stel dit netwerk in Windows in op Privé."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หาก TV เชื่อมต่อไม่ได้: ไฟร์วอลล์ Windows อาจบล็อก Nino อยู่ อนุญาตได้ที่ การตั้งค่า › ไฟร์วอลล์ Windows และตั้งเครือข่ายนี้เป็นส่วนตัวใน Windows"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV bağlanamıyorsa: Windows Güvenlik Duvarı Nino'yu engelliyor olabilir. Ayarlar › Windows Güvenlik Duvarı'ndan izin verin ve bu ağı Windows'ta \"Özel\" yapın."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اگر TV جڑ نہ سکے: ہو سکتا ہے Windows Firewall، Nino کو روک رہا ہو۔ سیٹنگز › Windows Firewall میں اجازت دیں، اور Windows میں اس نیٹ ورک کو Private پر سیٹ کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nếu TV không kết nối được: Windows Firewall có thể đang chặn Nino. Hãy cho phép trong Cài đặt › Windows Firewall, và đặt mạng này thành Riêng tư trong Windows."
+          }
+        }
+      }
+    },
+    "Draw the area to translate, for example a quest panel. While you play, press its shortcut (%@) to read and translate it once. Choose where the result shows. It works even when Nino is in the background.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ارسم المنطقة المراد ترجمتها، مثل لوحة المهام. أثناء اللعب، اضغط اختصارها (%@) لقراءتها وترجمتها مرة واحدة. اختر مكان ظهور النتيجة. يعمل ذلك حتى عندما يكون Nino في الخلفية."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অনুবাদ করার এলাকাটি আঁকুন, যেমন একটি কোয়েস্ট প্যানেল। খেলার সময় এর শর্টকাট (%@) চাপলে এটি একবার পড়ে অনুবাদ করা হবে। ফলাফল কোথায় দেখাবে তা বেছে নিন। Nino ব্যাকগ্রাউন্ডে থাকলেও এটি কাজ করে।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iguhit ang area na isasalin, halimbawa ang panel ng quest. Habang naglalaro, pindutin ang shortcut nito (%@) para basahin at isalin ito nang isang beses. Piliin kung saan lalabas ang resulta. Gumagana ito kahit nasa background ang Nino."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अनुवाद के लिए क्षेत्र बनाएँ, जैसे कोई क्वेस्ट पैनल। खेलते समय उसका शॉर्टकट (%@) दबाएँ, वह एक बार पढ़कर अनुवाद हो जाएगा। चुनें कि नतीजा कहाँ दिखे। Nino बैकग्राउंड में होने पर भी यह काम करता है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gambar area yang ingin diterjemahkan, misalnya panel misi. Saat bermain, tekan pintasannya (%@) untuk membaca dan menerjemahkannya sekali. Pilih tempat hasilnya ditampilkan. Ini berfungsi meski Nino berjalan di latar belakang."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lukis kawasan untuk diterjemah, contohnya panel misi. Semasa bermain, tekan pintasannya (%@) untuk membaca dan menterjemahnya sekali. Pilih tempat hasilnya dipaparkan. Ia berfungsi walaupun Nino berada di latar belakang."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teken het gebied dat je wilt vertalen, bijvoorbeeld een questpaneel. Druk tijdens het spelen op de sneltoets (%@) om het één keer te lezen en te vertalen. Kies waar het resultaat verschijnt. Het werkt ook als Nino op de achtergrond draait."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "วาดพื้นที่ที่ต้องการแปล เช่น แผงภารกิจ ระหว่างเล่น ให้กดปุ่มลัดของพื้นที่นั้น (%@) เพื่ออ่านและแปลหนึ่งครั้ง เลือกได้ว่าจะให้ผลลัพธ์แสดงที่ใด ใช้ได้แม้ Nino จะทำงานอยู่เบื้องหลัง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çevrilecek alanı çizin (ör. görev paneli). Oynarken bu alanın kısayoluna (%@) basınca alan bir kez okunup çevrilir. Sonucun nerede görüneceğini seçin. Nino arka plandayken de çalışır."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترجمے کے لیے حصہ بنائیں، مثلاً کوئسٹ پینل۔ کھیلتے ہوئے اس کا شارٹ کٹ (%@) دبائیں تاکہ اسے ایک بار پڑھ کر ترجمہ کیا جائے۔ نتیجہ کہاں دکھے، یہ منتخب کریں۔ یہ Nino کے پس منظر میں ہونے پر بھی کام کرتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vẽ vùng cần dịch, ví dụ bảng nhiệm vụ. Khi đang chơi, nhấn phím tắt của vùng (%@) để đọc và dịch một lần. Chọn nơi hiển thị kết quả. Tính năng vẫn hoạt động khi Nino chạy nền."
+          }
+        }
+      }
+    },
+    "Xbox support is in beta. Nino reads the subtitles in the game picture and shows the translation on your TV or computer. You keep playing with your own controller.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دعم Xbox تجريبي. يقرأ Nino الترجمة النصية في صورة اللعبة ويعرض الترجمة على TV أو الكمبيوتر. وتواصل اللعب بيد التحكم الخاصة بك."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox সাপোর্ট বেটাতে আছে। Nino গেমের ছবিতে সাবটাইটেল পড়ে এবং অনুবাদটি আপনার TV বা কম্পিউটারে দেখায়। আপনি নিজের কন্ট্রোলার দিয়েই খেলতে থাকেন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nasa beta pa ang suporta sa Xbox. Binabasa ng Nino ang mga subtitle sa larawan ng laro at ipinapakita ang salin sa iyong TV o computer. Tuloy ang paglalaro mo gamit ang sarili mong controller."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox सपोर्ट बीटा में है। Nino गेम की तस्वीर में सबटाइटल पढ़ता है और अनुवाद आपके TV या कंप्यूटर पर दिखाता है। आप अपने कंट्रोलर से खेलते रहते हैं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dukungan Xbox masih beta. Nino membaca subtitle di gambar game dan menampilkan terjemahan di TV atau komputer Anda. Anda tetap bermain dengan controller sendiri."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sokongan Xbox dalam beta. Nino membaca sari kata dalam gambar permainan dan memaparkan terjemahan pada TV atau komputer anda. Anda terus bermain dengan alat kawalan anda sendiri."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox-ondersteuning is in bèta. Nino leest de ondertitels in het gamebeeld en toont de vertaling op je TV of computer. Je blijft spelen met je eigen controller."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การรองรับ Xbox อยู่ในช่วงเบต้า Nino อ่านคำบรรยายจากภาพเกมและแสดงคำแปลบน TV หรือคอมพิวเตอร์ คุณยังเล่นด้วยจอยของคุณเองได้ตามปกติ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox desteği beta aşamasındadır. Nino oyun görüntüsündeki altyazıları okur ve çeviriyi TV'de ya da bilgisayarda gösterir. Oynamaya kendi kumandanızla devam edersiniz."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox سپورٹ بیٹا میں ہے۔ Nino گیم کی تصویر میں سب ٹائٹلز پڑھ کر ترجمہ آپ کے TV یا کمپیوٹر پر دکھاتا ہے۔ آپ اپنے کنٹرولر سے کھیلتے رہتے ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hỗ trợ Xbox đang ở bản beta. Nino đọc phụ đề trong hình ảnh game và hiện bản dịch trên TV hoặc máy tính. Bạn vẫn chơi bằng tay cầm của mình."
+          }
+        }
+      }
+    },
+    "Report a Problem": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإبلاغ عن مشكلة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সমস্যা জানান"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mag-ulat ng Problema"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समस्या बताएँ"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporkan Masalah"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporkan Masalah"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meld een probleem"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายงานปัญหา"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorun Bildir"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مسئلہ رپورٹ کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo sự cố"
+          }
+        }
+      }
+    },
+    "What happened? Which game, what did you expect?": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ماذا حدث؟ في أي لعبة، وماذا كنت تتوقع؟"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কী হয়েছে? কোন গেম, আপনি কী আশা করেছিলেন?"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ano ang nangyari? Anong laro, ano ang inaasahan mo?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्या हुआ? कौन सा गेम, आप क्या उम्मीद कर रहे थे?"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apa yang terjadi? Game apa, dan apa yang Anda harapkan?"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apa yang berlaku? Permainan apa, apa yang anda jangkakan?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wat is er gebeurd? Welke game, wat verwachtte je?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เกิดอะไรขึ้น เกมอะไร และคุณคาดว่าจะเป็นอย่างไร"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne oldu? Hangi oyunda, ne bekliyordunuz?"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کیا ہوا؟ کون سی گیم تھی، آپ کیا توقع کر رہے تھے؟"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xảy ra chuyện gì? Game nào, bạn mong đợi điều gì?"
+          }
+        }
+      }
+    },
+    "Add photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إضافة صورة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ছবি যোগ করুন"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magdagdag ng larawan"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ोटो जोड़ें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tambah foto"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tambah foto"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto toevoegen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เพิ่มรูปภาพ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf ekle"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصویر شامل کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm ảnh"
+          }
+        }
+      }
+    },
+    "Remove photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة الصورة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ছবি সরান"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alisin ang larawan"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ोटो हटाएँ"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hapus foto"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buang foto"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto verwijderen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "นำรูปภาพออก"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğrafı kaldır"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصویر ہٹائیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa ảnh"
+          }
+        }
+      }
+    },
+    "Images": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الصور"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ছবি"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga larawan"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इमेज"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gambar"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imej"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afbeeldingen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รูปภาพ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görüntüler"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصاویر"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hình ảnh"
+          }
+        }
+      }
+    },
+    "Up to 3 photos. You can also drag images here or paste a screenshot with Ctrl+V.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حتى 3 صور. يمكنك أيضًا سحب الصور إلى هنا أو لصق لقطة شاشة باستخدام Ctrl+V."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সর্বোচ্চ ৩টি ছবি। এখানে ছবি টেনে আনতে বা Ctrl+V দিয়ে স্ক্রিনশট পেস্ট করতেও পারেন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hanggang 3 larawan. Puwede ka ring mag-drag ng mga larawan dito o mag-paste ng screenshot gamit ang Ctrl+V."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ज़्यादा से ज़्यादा 3 फ़ोटो। आप इमेज यहाँ ड्रैग भी कर सकते हैं या Ctrl+V से स्क्रीनशॉट पेस्ट कर सकते हैं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hingga 3 foto. Anda juga bisa menyeret gambar ke sini atau menempel tangkapan layar dengan Ctrl+V."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sehingga 3 foto. Anda juga boleh menyeret imej ke sini atau menampal tangkapan skrin dengan Ctrl+V."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximaal 3 foto's. Je kunt ook afbeeldingen hierheen slepen of een screenshot plakken met Ctrl+V."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สูงสุด 3 รูป คุณยังลากรูปมาวางที่นี่ หรือวางภาพหน้าจอด้วย Ctrl+V ได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En çok 3 fotoğraf. Görüntüleri buraya sürükleyebilir ya da ekran görüntüsünü Ctrl+V ile yapıştırabilirsiniz."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زیادہ سے زیادہ 3 تصاویر۔ آپ تصاویر یہاں گھسیٹ بھی سکتے ہیں یا Ctrl+V سے اسکرین شاٹ پیسٹ کر سکتے ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tối đa 3 ảnh. Bạn cũng có thể kéo ảnh vào đây hoặc dán ảnh chụp màn hình bằng Ctrl+V."
+          }
+        }
+      }
+    },
+    "How can we reach you? (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كيف يمكننا التواصل معك؟ (اختياري)"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আমরা কীভাবে আপনার সাথে যোগাযোগ করব? (ঐচ্ছিক)"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paano ka namin makokontak? (opsyonal)"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हम आपसे कैसे संपर्क करें? (वैकल्पिक)"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bagaimana kami bisa menghubungi Anda? (opsional)"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bagaimana kami boleh menghubungi anda? (pilihan)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoe kunnen we je bereiken? (optioneel)"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เราจะติดต่อคุณได้อย่างไร (ไม่บังคับ)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size nasıl ulaşabiliriz? (isteğe bağlı)"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ہم آپ سے کیسے رابطہ کریں؟ (اختیاری)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chúng tôi liên hệ với bạn bằng cách nào? (không bắt buộc)"
+          }
+        }
+      }
+    },
+    "Include app log": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تضمين سجل التطبيق"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অ্যাপ লগ যুক্ত করুন"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isama ang app log"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ऐप लॉग शामिल करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sertakan log aplikasi"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sertakan log apl"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-log meesturen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แนบบันทึกของแอป"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama günlüğünü ekle"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ایپ لاگ شامل کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đính kèm nhật ký ứng dụng"
+          }
+        }
+      }
+    },
+    "Helps us find the problem. No passwords or keys are included.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يساعدنا في العثور على المشكلة. لا يتضمن أي كلمات مرور أو مفاتيح."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সমস্যা খুঁজে পেতে আমাদের সাহায্য করে। কোনো পাসওয়ার্ড বা কী যুক্ত থাকে না।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nakakatulong ito sa amin na mahanap ang problema. Walang kasamang password o key."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समस्या ढूँढने में हमारी मदद करता है। इसमें कोई पासवर्ड या कुंजी शामिल नहीं होती।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membantu kami menemukan masalah. Tidak ada kata sandi atau kunci yang disertakan."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membantu kami mencari masalah. Tiada kata laluan atau kunci disertakan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Helpt ons het probleem te vinden. Wachtwoorden of sleutels worden niet meegestuurd."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ช่วยให้เราหาปัญหาเจอ ไม่มีรหัสผ่านหรือคีย์รวมอยู่"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorunu bulmamıza yardımcı olur. Parola ya da anahtar eklenmez."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مسئلہ ڈھونڈنے میں مدد کرتا ہے۔ اس میں کوئی پاس ورڈ یا کی شامل نہیں ہوتی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giúp chúng tôi tìm ra sự cố. Không bao gồm mật khẩu hay khóa."
+          }
+        }
+      }
+    },
+    "Your description, photos and (if on) the app log are sent to Nino's server so we can fix the problem. Don't include passwords.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتم إرسال وصفك وصورك وسجل التطبيق (إذا كان مفعّلًا) إلى خادم Nino حتى نتمكن من إصلاح المشكلة. لا تكتب كلمات المرور."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সমস্যাটি ঠিক করতে আপনার বিবরণ, ছবি এবং (চালু থাকলে) অ্যাপ লগ Nino-র সার্ভারে পাঠানো হয়। পাসওয়ার্ড দেবেন না।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipinapadala sa server ng Nino ang iyong paglalarawan, mga larawan at (kung naka-on) ang app log para maayos namin ang problema. Huwag maglagay ng password."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका विवरण, फ़ोटो और (चालू हो तो) ऐप लॉग Nino के सर्वर पर भेजे जाते हैं ताकि हम समस्या ठीक कर सकें। पासवर्ड शामिल न करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deskripsi, foto, dan (jika aktif) log aplikasi Anda dikirim ke server Nino agar kami bisa memperbaiki masalahnya. Jangan sertakan kata sandi."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Penerangan, foto dan (jika dihidupkan) log apl anda dihantar ke pelayan Nino supaya kami boleh membaiki masalah. Jangan sertakan kata laluan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je beschrijving, foto's en (indien aan) de app-log worden naar de server van Nino gestuurd, zodat we het probleem kunnen oplossen. Voeg geen wachtwoorden toe."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คำอธิบาย รูปภาพ และบันทึกของแอป (หากเปิดไว้) จะถูกส่งไปยังเซิร์ฟเวอร์ของ Nino เพื่อให้เราแก้ปัญหาได้ อย่าใส่รหัสผ่าน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorunu giderebilmemiz için açıklamanız, fotoğraflarınız ve (açıksa) uygulama günlüğü Nino'nun sunucusuna gönderilir. Parola yazmayın."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آپ کی تفصیل، تصاویر اور (اگر آن ہو) ایپ لاگ Nino کے سرور پر بھیجے جاتے ہیں تاکہ ہم مسئلہ ٹھیک کر سکیں۔ پاس ورڈ شامل نہ کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mô tả, ảnh và (nếu bật) nhật ký ứng dụng sẽ được gửi đến máy chủ của Nino để chúng tôi sửa sự cố. Đừng ghi mật khẩu."
+          }
+        }
+      }
+    },
+    "Send": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرسال"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পাঠান"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipadala"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "भेजें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kirim"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hantar"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verstuur"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ส่ง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönder"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بھیجیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi"
+          }
+        }
+      }
+    },
+    "Sending…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الإرسال…"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পাঠানো হচ্ছে…"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipinapadala…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "भेजा जा रहा है…"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mengirim…"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menghantar…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versturen…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังส่ง…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderiliyor…"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بھیجا جا رہا ہے…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang gửi…"
+          }
+        }
+      }
+    },
+    "Thanks! We received your report.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شكرًا! لقد تلقينا بلاغك."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ধন্যবাদ! আমরা আপনার রিপোর্ট পেয়েছি।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salamat! Natanggap namin ang iyong ulat."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "धन्यवाद! हमें आपकी रिपोर्ट मिल गई।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terima kasih! Laporan Anda sudah kami terima."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terima kasih! Kami telah menerima laporan anda."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bedankt! We hebben je melding ontvangen."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ขอบคุณ! เราได้รับรายงานของคุณแล้ว"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teşekkürler! Bildiriminizi aldık."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شکریہ! ہمیں آپ کی رپورٹ مل گئی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cảm ơn bạn! Chúng tôi đã nhận được báo cáo."
+          }
+        }
+      }
+    },
+    "You've sent many reports today. Please try again tomorrow.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقد أرسلت بلاغات كثيرة اليوم. يُرجى المحاولة مرة أخرى غدًا."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আজ আপনি অনেক রিপোর্ট পাঠিয়েছেন। অনুগ্রহ করে আগামীকাল আবার চেষ্টা করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marami ka nang naipadalang ulat ngayong araw. Pakisubukan ulit bukas."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपने आज बहुत सारी रिपोर्ट भेजी हैं। कृपया कल फिर से कोशिश करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda sudah mengirim banyak laporan hari ini. Silakan coba lagi besok."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda telah menghantar banyak laporan hari ini. Sila cuba lagi esok."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je hebt vandaag veel meldingen gestuurd. Probeer het morgen opnieuw."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "วันนี้คุณส่งรายงานไปหลายครั้งแล้ว โปรดลองอีกครั้งพรุ่งนี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün çok sayıda bildirim gönderdiniz. Lütfen yarın yeniden deneyin."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آپ آج بہت سی رپورٹس بھیج چکے ہیں۔ براہِ کرم کل دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hôm nay bạn đã gửi nhiều báo cáo. Hãy thử lại vào ngày mai."
+          }
+        }
+      }
+    },
+    "The report could not be sent. Check your internet connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر إرسال البلاغ. تحقق من اتصالك بالإنترنت وحاول مرة أخرى."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রিপোর্টটি পাঠানো যায়নি। আপনার ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi maipadala ang ulat. Suriin ang iyong koneksyon sa internet at subukan ulit."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रिपोर्ट भेजी नहीं जा सकी। अपना इंटरनेट कनेक्शन जाँचें और फिर से कोशिश करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan tidak dapat dikirim. Periksa koneksi internet Anda dan coba lagi."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan tidak dapat dihantar. Semak sambungan internet anda dan cuba lagi."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De melding kon niet worden verstuurd. Controleer je internetverbinding en probeer het opnieuw."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ส่งรายงานไม่ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim gönderilemedi. İnternet bağlantınızı denetleyip yeniden deneyin."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رپورٹ نہیں بھیجی جا سکی۔ اپنا انٹرنیٹ کنکشن چیک کر کے دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không gửi được báo cáo. Hãy kiểm tra kết nối internet và thử lại."
+          }
+        }
+      }
+    },
+    "The report is too large. Remove a photo and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البلاغ كبير جدًا. أزل صورة وحاول مرة أخرى."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রিপোর্টটি খুব বড়। একটি ছবি সরিয়ে আবার চেষ্টা করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masyadong malaki ang ulat. Mag-alis ng isang larawan at subukan ulit."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रिपोर्ट बहुत बड़ी है। एक फ़ोटो हटाएँ और फिर से कोशिश करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan terlalu besar. Hapus satu foto lalu coba lagi."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan terlalu besar. Buang satu foto dan cuba lagi."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De melding is te groot. Verwijder een foto en probeer het opnieuw."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายงานมีขนาดใหญ่เกินไป นำรูปภาพออกหนึ่งรูปแล้วลองอีกครั้ง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim çok büyük. Bir fotoğrafı kaldırıp yeniden deneyin."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رپورٹ بہت بڑی ہے۔ ایک تصویر ہٹا کر دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo quá lớn. Hãy bớt một ảnh và thử lại."
+          }
+        }
+      }
+    },
+    "The report was not accepted. Please check the description and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يتم قبول البلاغ. يُرجى التحقق من الوصف والمحاولة مرة أخرى."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রিপোর্টটি গ্রহণ করা হয়নি। অনুগ্রহ করে বিবরণটি দেখে আবার চেষ্টা করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi tinanggap ang ulat. Pakisuri ang paglalarawan at subukan ulit."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रिपोर्ट स्वीकार नहीं हुई। कृपया विवरण जाँचें और फिर से कोशिश करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan tidak diterima. Periksa deskripsinya dan coba lagi."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan tidak diterima. Sila semak penerangan dan cuba lagi."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De melding is niet geaccepteerd. Controleer de beschrijving en probeer het opnieuw."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายงานไม่ได้รับการยอมรับ โปรดตรวจสอบคำอธิบายแล้วลองอีกครั้ง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim kabul edilmedi. Lütfen açıklamayı denetleyip yeniden deneyin."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رپورٹ قبول نہیں ہوئی۔ براہِ کرم تفصیل چیک کر کے دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo không được chấp nhận. Hãy kiểm tra phần mô tả và thử lại."
+          }
+        }
+      }
+    },
+    "This image could not be opened.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر فتح هذه الصورة."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই ছবিটি খোলা যায়নি।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi mabuksan ang larawang ito."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह इमेज खोली नहीं जा सकी।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gambar ini tidak dapat dibuka."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imej ini tidak dapat dibuka."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze afbeelding kon niet worden geopend."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดรูปภาพนี้ไม่ได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu görüntü açılamadı."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "یہ تصویر کھولی نہیں جا سکی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không mở được hình ảnh này."
+          }
+        }
+      }
+    },
+    "Font": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخط"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ফন্ট"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फ़ॉन्ट"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lettertype"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แบบอักษร"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yazı tipi"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فونٹ"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phông chữ"
+          }
+        }
+      }
+    },
+    "Action (GTA style)": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حركة (بأسلوب GTA)"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অ্যাকশন (GTA স্টাইল)"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aksyon (estilong GTA)"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एक्शन (GTA स्टाइल)"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aksi (gaya GTA)"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aksi (gaya GTA)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actie (GTA-stijl)"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แอ็กชัน (สไตล์ GTA)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aksiyon (GTA tarzı)"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ایکشن (GTA انداز)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hành động (kiểu GTA)"
+          }
+        }
+      }
+    },
+    "Modern": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عصري"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মডার্ন"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moderno"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मॉडर्न"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modern"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moden"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modern"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "โมเดิร์น"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modern"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ماڈرن"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện đại"
+          }
+        }
+      }
+    },
+    "Rounded": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مستدير"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "গোলাকার"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilugan"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "गोल"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membulat"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulat"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afgerond"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "มน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yuvarlak"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "گول"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bo tròn"
+          }
+        }
+      }
+    },
+    "System": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بسيط"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সিস্টেম"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सिस्टम"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistem"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistem"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systeem"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ระบบ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sade"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سسٹم"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hệ thống"
           }
         }
       }

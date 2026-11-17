@@ -2,90 +2,349 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
 <!-- CouchSubs OBS katmanı: OBS'de "Tarayıcı kaynağı" olarak eklenir, Türkçe altyazıyı şeffaf zemin üstünde gösterir.
      Mac ve Windows uygulaması bu dosyayı /obs adresinden verir (aynı dosya). Adres parametreleri:
-     ?size=48 (yazı boyu, 1080p'de piksel), ?bottom=8 (alttan uzaklık, %), ?bg=60 (zemin koyuluğu, 0-100). -->
+     ?size=48 (yazı boyu, 1080p'de piksel), ?bottom=8 (alttan uzaklık, %), ?bg=60 (altyazı kutusunun koyuluğu, 0-100),
+     ?bg=green | black | magenta (tüm sayfanın zemini; şeffaflık tanımayan yayın programlarında chroma key ile silinir),
+     ?hint=1 / ?hint=0 (altyazı gelene kadar kısa "Altyazı bekleniyor" ipucu; OBS'te varsayılan kapalı, başka yerde açık). -->
 <html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CouchSubs OBS</title>
+<title>Nino OBS</title>
+<!-- Nino: altyazı yazı tipleri (OFL; TV sayfasındakilerin aynısı). OBS'in bilgisayarı internete bağlıdır; yazı tipi
+     inmezse sistem yazı tipi kullanılır. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@600;700&family=Barlow+Condensed:wght@600;700&family=Nunito:wght@600;700&display=swap">
 <style>
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  /* Yazı keskin çizilsin: gri tonlu kenar yumuşatma (renkli alt piksel yumuşatma video kaynağında kenarda renk
+     saçağı bırakır), tam piksele yuvarlanmış yazı boyu ve yarım piksele düşen kaydırma yok (bkz. #wrap). */
+  body {
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    text-rendering: geometricPrecision; font-kerning: normal;
+  }
+  #wrap {
+    position: absolute; left: 0; right: 0; bottom: 7%;
+    display: flex; justify-content: center; pointer-events: none;
+    /* Kap tüm sayfayı kaplasa da (örtme) kutu yazı kadar kalır; tam yüksekliğe uzayıp siyah sütun olmaz. */
+    align-items: flex-start;
+  }
   #line {
-    position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
     max-width: 84vw; padding: 0.25em 0.6em; border-radius: 0.3em;
-    font: 600 4.4vh/1.3 -apple-system, "Segoe UI", system-ui, sans-serif;
+    font: 600 48px/1.3 -apple-system, "Segoe UI", system-ui, sans-serif;
     color: #fff; text-align: center; white-space: pre-line;
     text-shadow: 0 0 0.12em #000, 0 0.06em 0.12em #000;
     background: rgba(0, 0, 0, 0.6);
-    opacity: 0; transition: opacity 0.15s;
+    opacity: 0; visibility: hidden; transition: opacity 0.15s, visibility 0s linear 0.15s;
   }
-  #line.on { opacity: 1; }
+  #line.on { opacity: 1; visibility: visible; transition: opacity 0.15s; }
   /* İngilizce altyazının yeri biliniyorsa çeviri onu örter (TV'deki "örtme" ile aynı). */
-  #line.cover { transform: translate(-50%, -50%); }
+  #line.cover { position: absolute; transform: translate(-50%, -50%); }
+  #hint {
+    position: absolute; left: 0; right: 0; bottom: 7%; text-align: center;
+    font: 600 28px/1.3 -apple-system, "Segoe UI", system-ui, sans-serif;
+    color: rgba(255, 255, 255, 0.85); text-shadow: 0 0 0.15em #000;
+    display: none;
+  }
+  /* Ek alanların (görev, telefon mesajı, bildirim) çevirisi: oyundaki yazının yerinde, altyazıdan küçük koyu kutu. */
+  #regions { position: absolute; inset: 0; pointer-events: none; }
+  .region {
+    position: absolute; box-sizing: border-box; padding: 0.3em 0.6em; border-radius: 0.3em;
+    font: 600 26px/1.25 -apple-system, "Segoe UI", system-ui, sans-serif;
+    color: #fff; white-space: pre-line; background: rgba(0, 0, 0, 0.85);
+  }
 </style>
 </head>
 <body>
-<div id="line"></div>
+<div id="wrap"><div id="line"></div></div>
+<div id="hint"></div>
+<div id="regions"></div>
 <script>
 (function () {
+  var wrap = document.getElementById('wrap');
   var line = document.getElementById('line');
+  var hintBox = document.getElementById('hint');
+  var regionsBox = document.getElementById('regions');
+  var regions = {};
+  var FONTS = { modern: '"Barlow", ', condensed: '"Barlow Condensed", ', rounded: '"Nunito", ', system: '' };
   var params = new URLSearchParams(location.search);
-  var fixed = { size: params.get('size'), bottom: params.get('bottom'), bg: params.get('bg') };
+  // Sayfa zemini (chroma key için): adla verilen renkler. Sayı verilirse eskisi gibi altyazı kutusunun koyuluğudur.
+  var PAGE_COLORS = { green: '#00FF00', black: '#000000', magenta: '#FF00FF', blue: '#0000FF' };
+  var rawBg = (params.get('bg') || '').toLowerCase();
+  var pageColor = PAGE_COLORS[rawBg] || null;
+  var fixed = { size: params.get('size'), bottom: params.get('bottom'), bg: pageColor ? null : params.get('bg') };
   var timer = null;
+  var hintTimer = null;
   var placement = 'cover';
+  // Son altyazının yerleşimi: 'fixed' (sabit yükseklik), 'cover', 'above' ya da 'below'.
+  var shownMode = 'fixed';
   var lastStyle = {};
   var TEXT_COLORS = { white: '#FFFFFF', yellow: '#FFE135' };
+  var turkish = (navigator.language || 'tr').toLowerCase().indexOf('tr') === 0;
+  var TEXTS = turkish
+    ? { waiting: 'Nino: altyazı bekleniyor', offline: 'Nino uygulamasına bağlanılamadı' }
+    : { waiting: 'Nino: waiting for subtitles', offline: 'Cannot reach the Nino app' };
+
+  if (pageColor) document.documentElement.style.background = document.body.style.background = pageColor;
+
+  // İpucu OBS'te (yayında görünmesin diye) varsayılan kapalı; OBS tarayıcısı window.obsstudio'yu tanımlar.
+  var inObs = !!window.obsstudio || /\bOBS\//.test(navigator.userAgent);
+  var hintParam = params.get('hint');
+  var hintOn = hintParam === null ? !inObs : hintParam !== '0';
+
+  function showHint(text, seconds) {
+    if (!hintOn) return;
+    clearTimeout(hintTimer);
+    hintBox.textContent = text;
+    hintBox.style.display = 'block';
+    hintTimer = setTimeout(hideHint, seconds * 1000);
+  }
+
+  function hideHint() {
+    clearTimeout(hintTimer);
+    hintBox.style.display = 'none';
+  }
+
+  // Uzun çeviri tek uzun satır olarak taşmasın: satır başına en çok 42 karakter, en çok 3 satır, kelime sınırından ve
+  // dengeli bölünür; 3 satıra sığmazsa yazı biraz küçülür (en çok %75). Konuşan adı ("ARTHUR:") hep ilk satırdadır.
+  // Mac, Windows, Android ve TV (SubtitleWrap / tv-webos/app.js) aynı kuralları uygular.
+  var WRAP_MAX_CHARS = 42, WRAP_MAX_LINES = 3, WRAP_MIN_SCALE = 0.75;
+  var baseSize = 48, textScale = 1;
+
+  function wrapTokens(text) {
+    var words = text.split(/\s+/).filter(function (w) { return w; });
+    for (var i = 0; i < Math.min(3, words.length); i++) {
+      var last = words[i].charAt(words[i].length - 1);
+      if (last === ':' || last === '\uFF1A') {
+        if (i + 1 < words.length) words.splice(0, i + 2, words.slice(0, i + 2).join(' '));
+        break;
+      }
+    }
+    return words;
+  }
+
+  function wrapWidth(words, from, to) {
+    var sum = to - from - 1;
+    for (var i = from; i < to; i++) sum += words[i].length;
+    return sum;
+  }
+
+  function wrapBalance(words, lines) {
+    var count = words.length, best = null, a, b;
+    function consider(cuts) {
+      var edges = [0].concat(cuts, [count]), longest = 0, spread = 0;
+      for (var i = 0; i < edges.length - 1; i++) {
+        var width = wrapWidth(words, edges[i], edges[i + 1]);
+        longest = Math.max(longest, width);
+        spread += width * width;
+      }
+      if (!best || longest < best.longest || (longest === best.longest && spread < best.spread)) {
+        best = { longest: longest, spread: spread, cuts: cuts };
+      }
+    }
+    if (lines === 2 || count < 3) {
+      for (a = 1; a < count; a++) consider([a]);
+    } else {
+      for (a = 1; a < count - 1; a++) for (b = a + 1; b < count; b++) consider([a, b]);
+    }
+    if (!best) return words.join(' ');
+    var all = [0].concat(best.cuts, [count]), out = [];
+    for (var i = 0; i < all.length - 1; i++) out.push(words.slice(all[i], all[i + 1]).join(' '));
+    return out.join('\n');
+  }
+
+  function wrapSubtitle(text) {
+    var length = Array.from ? Array.from(text).length : text.length;
+    if (length <= WRAP_MAX_CHARS || text.indexOf('\n') >= 0) return { text: text, scale: 1 };
+    var words = wrapTokens(text);
+    if (words.length < 2) return { text: text, scale: 1 };
+    var scale = Math.min(1, Math.max(WRAP_MIN_SCALE, WRAP_MAX_CHARS * WRAP_MAX_LINES / length));
+    var cap = Math.floor(WRAP_MAX_CHARS / scale);
+    var lines = Math.min(WRAP_MAX_LINES, Math.max(2, Math.ceil(length / cap)));
+    return { text: wrapBalance(words, Math.min(lines, words.length)), scale: scale };
+  }
+
+  /// Yazı boyu 1080 satırlık ekrana göredir; sayfanın gerçek yüksekliğinde tam piksele yuvarlanır (keskin yazı).
+  function pixels(size) {
+    return Math.max(8, Math.round(size * (window.innerHeight || 1080) / 1080)) + 'px';
+  }
+
+  /// Sayfa renkli zeminliyse yarı saydam kutu zeminle karışıp chroma key'i bozar; kutu ya tam koyu ya hiç yoktur.
+  function boxColor(percent) {
+    var alpha = Math.max(0, Math.min(100, percent)) / 100;
+    if (pageColor) alpha = alpha > 0 ? 1 : 0;
+    return 'rgba(0, 0, 0, ' + alpha + ')';
+  }
 
   function apply(style) {
     style = style || {};
     lastStyle = style;
-    var size = Number(fixed.size || style.fontSize);
-    if (size > 0) line.style.fontSize = (size / 10.8) + 'vh';
+    var size = Number(fixed.size || style.fontSize || 48);
+    if (size > 0) { baseSize = size; line.style.fontSize = pixels(size * textScale); }
+    hintBox.style.fontSize = pixels(Math.max(20, Math.round((size > 0 ? size : 48) * 0.6)));
     var bottom = Number(fixed.bottom || style.bottomPercent);
-    if (bottom >= 0 && bottom <= 85) line.style.bottom = bottom + '%';
+    if (bottom >= 0 && bottom <= 85) {
+      hintBox.style.bottom = bottom + '%';
+      // İngilizce satıra göre yerleşen altyazının kabı ayar gelince sabit yüksekliğe kaymasın.
+      if (shownMode === 'fixed') wrap.style.bottom = bottom + '%';
+    }
     var bg = fixed.bg !== null ? Number(fixed.bg) : style.background;
-    if (typeof bg === 'number' && !isNaN(bg)) line.style.background = 'rgba(0, 0, 0, ' + Math.max(0, Math.min(100, bg)) / 100 + ')';
+    if (typeof bg === 'number' && !isNaN(bg)) line.style.background = boxColor(bg);
+    else if (pageColor) line.style.background = boxColor(60);
     if (typeof style.bold === 'boolean') line.style.fontWeight = style.bold ? '700' : '600';
     if (TEXT_COLORS[style.textColor]) line.style.color = TEXT_COLORS[style.textColor];
+    // Nino: yazı tipi.
+    if (typeof style.font === 'string') line.style.fontFamily = (FONTS[style.font] || '') + '-apple-system, "Segoe UI", system-ui, sans-serif';
     if (style.placement) placement = style.placement;
+    for (var id in regions) styleRegion(regions[id]);
   }
 
+  /// Ek alanın kutusu yazının karedeki yerine (box: 0-1 kesirler) oturur; yeri bilinmiyorsa üstte ortadadır.
+  function styleRegion(node) {
+    var box = node.box;
+    node.style.fontSize = pixels(Math.max(12, baseSize * 0.55));
+    node.style.color = line.style.color || '#fff';
+    if (pageColor) node.style.background = '#000';
+    if (box) {
+      node.style.left = (box.left * 100) + '%';
+      node.style.top = (box.top * 100) + '%';
+      node.style.transform = '';
+      node.style.minWidth = ((box.right - box.left) * 100) + 'vw';
+      node.style.maxWidth = (Math.max(box.right - box.left, Math.min(0.45, 1 - box.left)) * 100) + 'vw';
+    } else {
+      node.style.left = '50%';
+      node.style.top = '4%';
+      node.style.transform = 'translateX(-50%)';
+      node.style.minWidth = '';
+      node.style.maxWidth = '60vw';
+    }
+  }
+
+  /// Ek alan olayı: metin boşsa alanın kutusu kalkar (TV ve uygulama pencereleriyle aynı).
+  function showRegion(id, text, box) {
+    if (!id) return;
+    var node = regions[id];
+    if (!text) {
+      if (node) { regionsBox.removeChild(node); delete regions[id]; }
+      return;
+    }
+    hideHint();
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'region';
+      regionsBox.appendChild(node);
+      regions[id] = node;
+    }
+    node.textContent = text;
+    node.box = box || null;
+    styleRegion(node);
+  }
+
+  function clearRegions() {
+    for (var id in regions) regionsBox.removeChild(regions[id]);
+    regions = {};
+  }
+
+  // Kalkarken yalnız "on" gider; "cover" ve metin solma bitene kadar yerinde kalır. "cover" gidince opak kutu
+  // kapın içinde tam yüksekliğe uzayıp OBS'te kısa süre siyah pencere olarak görünürdü.
   function hide() {
     clearTimeout(timer);
-    line.className = '';
+    line.classList.remove('on');
   }
 
   function show(text, duration, box) {
     clearTimeout(timer);
-    line.textContent = text;
+    if (!text) return hide();
+    hideHint();
+    var wrapped = wrapSubtitle(text);
+    textScale = wrapped.scale;
+    line.textContent = wrapped.text;
+    line.style.fontSize = pixels(baseSize * textScale);
     // Nino: Arapça çeviri sağdan sola (satır Latin harfli konuşmacı adıyla başlasa da).
     if (/[\u0620-\u064A\u066E-\u06D3\u06FA-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(String(text))) line.setAttribute('dir', 'rtl');
     else line.removeAttribute('dir');
-    var cover = box && placement === 'cover' && !fixed.bottom;
-    if (cover) {
-      line.style.left = ((box.left + box.right) / 2 * 100) + '%';
+    // Çevirinin yeri TV ile aynı: İngilizce satırı örterek (cover), üstünde (above) ya da altında (below);
+    // ekranın kenarında yer yoksa öbür yana geçer. Satırın yeri bilinmiyorsa ya da ?bottom verildiyse sabit yükseklik.
+    var mode = box && !fixed.bottom ? placement : 'fixed';
+    if (mode !== 'cover' && mode !== 'above' && mode !== 'below') mode = 'fixed';
+    wrap.style.left = '';
+    wrap.style.right = '';
+    wrap.style.top = '';
+    wrap.style.bottom = '';
+    if (mode === 'cover') {
+      shownMode = mode;
+      // Kutu sayfanın tamamına göre yerleşir: kap tüm sayfayı kaplar.
+      wrap.style.top = '0';
+      wrap.style.bottom = '0';
+      var band = lastStyle && lastStyle.backgroundShape === 'band';
+      line.style.left = band ? '50%' : ((box.left + box.right) / 2 * 100) + '%';
+      line.style.maxWidth = band ? '100vw' : '';
       line.style.top = ((box.top + box.bottom) / 2 * 100) + '%';
-      line.style.bottom = 'auto';
-      line.style.minWidth = ((box.right - box.left) * 100) + 'vw';
-      line.style.background = 'rgba(0, 0, 0, 0.97)';
+      // Bant: zemin sayfanın tüm genişliğini kaplar (eski sürümler alanı göndermez, yazı kadar kalır).
+      line.style.minWidth = band ? '100vw' : ((box.right - box.left) * 100) + 'vw';
+      // Örtü de "Arka plan koyuluğu"na uyar (eskiden hep %97'ydi, kaydırıcı örtüde işe yaramıyordu); %100 tamamen
+      // opaktır. Koyuluğu göndermeyen eski sürümlerde örtü %97 kalır.
+      var bg = fixed.bg !== null ? Number(fixed.bg) : (lastStyle && lastStyle.background);
+      line.style.background = typeof bg === 'number' && !isNaN(bg) ? (bg >= 100 ? '#000' : boxColor(bg)) : 'rgba(0, 0, 0, 0.97)';
+      if (pageColor) line.style.background = '#000';
+      line.className = 'on cover';
     } else {
-      line.style.left = '50%';
-      line.style.top = 'auto';
+      line.style.left = '';
+      line.style.top = '';
       line.style.minWidth = '';
+      line.style.maxWidth = '';
+      line.className = 'on';
       apply(lastStyle);
+      // apply() may restore a fixed bottom from the previous subtitle. Pick the new mode first,
+      // then position the wrapper without carrying stale vertical coordinates forward.
+      wrap.style.top = '';
+      wrap.style.bottom = '';
+      var gap = 1.2;
+      if (mode !== 'fixed') {
+        // Kap İngilizce satırın hemen üstüne ya da altına oturur, yatayda satırın ortasına hizalanır.
+        var center = (box.left + box.right) / 2;
+        var half = Math.max(0.3, Math.min(center, 1 - center));
+        wrap.style.left = (Math.max(0.02, center - half) * 100) + '%';
+        wrap.style.right = (Math.max(0.02, 1 - center - half) * 100) + '%';
+        var viewportHeight = window.innerHeight || 1080;
+        var subtitleHeight = line.getBoundingClientRect().height;
+        var gapPixels = viewportHeight * gap / 100;
+        var fitsAbove = subtitleHeight <= box.top * viewportHeight - gapPixels;
+        var fitsBelow = subtitleHeight <= (1 - box.bottom) * viewportHeight - gapPixels;
+        if (mode === 'above' && !fitsAbove) mode = fitsBelow ? 'below' : 'fixed';
+        else if (mode === 'below' && !fitsBelow) mode = fitsAbove ? 'above' : 'fixed';
+      }
+      shownMode = mode;
+      if (mode === 'above') {
+        wrap.style.bottom = ((1 - box.top) * 100 + gap) + '%';
+      } else if (mode === 'below') {
+        wrap.style.top = (box.bottom * 100 + gap) + '%';
+      } else {
+        wrap.style.left = '';
+        wrap.style.right = '';
+        var bottom = Number(fixed.bottom || lastStyle.bottomPercent);
+        if (bottom >= 0 && bottom <= 85) wrap.style.bottom = bottom + '%';
+      }
     }
-    line.className = text ? (cover ? 'on cover' : 'on') : '';
     timer = setTimeout(hide, Math.max(1000, duration || 8000));
   }
 
   apply({});
+  window.addEventListener('resize', function () { apply(lastStyle); });
+  showHint(TEXTS.waiting, 12);
   // "obs" parametresi uygulamaya bunun TV olmadığını söyler; "TV bağlı" sayısına katılmaz.
   var events = new EventSource('/events?viewer=obs');
+  var everOpen = false;
+  events.onopen = function () { everOpen = true; };
+  events.onerror = function () { if (!everOpen) showHint(TEXTS.offline, 12); };
   events.addEventListener('style', function (e) { try { apply(JSON.parse(e.data)); } catch (err) {} });
   events.addEventListener('subtitle', function (e) {
     try { var d = JSON.parse(e.data); show(d.text, d.duration, d.box); } catch (err) {}
   });
   events.addEventListener('clear', hide);
+  // Sürekli okunan ek alanlar (Ayarlar > Altyazı alanı > Alan 1-3 > "Sürekli oku").
+  events.addEventListener('region', function (e) {
+    try { var d = JSON.parse(e.data); showRegion(d.id, d.text, d.box); } catch (err) {}
+  });
+  events.addEventListener('region-clear', clearRegions);
 })();
 </script>
 </body>

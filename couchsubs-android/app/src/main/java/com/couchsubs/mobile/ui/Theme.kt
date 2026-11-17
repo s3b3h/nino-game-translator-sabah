@@ -302,10 +302,12 @@ fun StatusLabel(text: String, ok: Boolean = true, live: Boolean = false) {
 fun Field(
     value: String, onChange: (String) -> Unit, label: String, modifier: Modifier = Modifier,
     secret: Boolean = false, keyboard: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default,
+    /** 1'den büyükse çok satırlı alan (ör. Sorun Bildir açıklaması); en az bu kadar satır yüksekliğinde. */
+    lines: Int = 1,
 ) {
     OutlinedTextField(
-        value, onChange, modifier.fillMaxWidth(), label = { Text(label, style = Tokens.Type.caption) }, singleLine = true,
-        textStyle = Tokens.Type.headline, shape = RoundedCornerShape(Tokens.Radius.control), keyboardOptions = keyboard,
+        value, onChange, modifier.fillMaxWidth(), label = { Text(label, style = Tokens.Type.caption) }, singleLine = lines <= 1,
+        minLines = lines, textStyle = if (lines > 1) Tokens.Type.body else Tokens.Type.headline, shape = RoundedCornerShape(Tokens.Radius.control), keyboardOptions = keyboard,
         visualTransformation = if (secret) androidx.compose.ui.text.input.PasswordVisualTransformation() else VisualTransformation.None,
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = Tokens.Color.raised, unfocusedContainerColor = Tokens.Color.raised,

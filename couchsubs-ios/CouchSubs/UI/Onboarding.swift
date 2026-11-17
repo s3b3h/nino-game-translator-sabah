@@ -149,6 +149,8 @@ private struct SubtitleDemoStage: View {
 struct SetupHeader: View {
     let step: Int
     let onBack: (() -> Void)?
+    /// Kurulumda "Şimdilik geç" (PSN ve PS5 adımları); ana ekrandan açılınca nil.
+    var onSkip: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Mobile.Space.gap) {
@@ -159,6 +161,7 @@ struct SetupHeader: View {
                         Capsule().fill(index <= step ? Mobile.Palette.accent : Mobile.Palette.borderStrong).frame(height: 4)
                     }
                 }
+                if let onSkip { Button("Skip for now", action: onSkip).buttonStyle(.mobileGhost).fixedSize() }
             }
             .frame(height: Mobile.Control.icon)
         }
@@ -171,6 +174,7 @@ struct PSNScreen: View {
     @State private var showDemo = false
     private var t: L10n { L10n(locale: locale) }
     var onBack: (() -> Void)?
+    var onSkip: (() -> Void)?
     var onDone: () -> Void
     @State private var showLogin = false
     @State private var showWhy = false
@@ -180,7 +184,7 @@ struct PSNScreen: View {
 
     var body: some View {
         MobileScreen {
-            SetupHeader(step: 1, onBack: onBack)
+            SetupHeader(step: 1, onBack: onBack, onSkip: onSkip)
         } content: {
             NinoTitle(step: String(format: t("setup.step"), 1), title: t("psn.title"), message: t("psn.body"))
             NinoStage {
@@ -192,6 +196,8 @@ struct PSNScreen: View {
                 .padding(16)
             }
             .padding(.top, 6)
+            // Kol ikinci hesaba atanırsa ana hesapla açılan oyun onu kendi kolu saymaz (GitHub #231).
+            MobileNote(text: String(localized: "When you turn on the controller to play, choose your MAIN account on the PS5. Don't play with the second account Nino signs in with, or the controller won't work in the game."))
             if model.accountId != nil { MobilePill(text: t("psn.signedIn"), dot: true) }
             if working { ProgressView().tint(Mobile.Palette.accent) }
             if let error { MobileNote(text: error) }
@@ -263,6 +269,7 @@ struct PS5PairScreen: View {
     @State private var showDemo = false
     private var t: L10n { L10n(locale: locale) }
     var onBack: (() -> Void)?
+    var onSkip: (() -> Void)?
     var onDone: () -> Void
     @State private var consoles: [ConsoleInfo] = []
     @State private var manualHost = ""
@@ -280,7 +287,7 @@ struct PS5PairScreen: View {
 
     var body: some View {
         MobileScreen {
-            SetupHeader(step: 2, onBack: onBack)
+            SetupHeader(step: 2, onBack: onBack, onSkip: onSkip)
         } content: {
             NinoTitle(step: String(format: t("setup.step"), 2), title: t("pair.title"), message: t("pair.body"))
             NinoStage {
@@ -426,6 +433,9 @@ struct TargetScreen: View {
     @State private var showManual = false
     @State private var manualHost = ""
     @State private var manualBrand = TVBrand.lg
+    /// Elle yazılan adres geçersizse sayfada gösterilen ileti.
+    @State private var manualError: String?
+    @State private var showInstall = false
 
     var body: some View {
         MobileScreen {
@@ -465,9 +475,12 @@ struct TargetScreen: View {
                 }
                 .buttonStyle(.plain)
             }
-            if model.tvAppMissing {
-                MobileNote(text: String(localized: "To install the TV app for the first time, use Nino on a computer once. After that this phone is enough."))
+            // TV uygulaması yoksa ya da eskiyse bu telefondan kurulur (ilk kurulumda da).
+            Button { showInstall = true } label: {
+                InfoTile(symbol: "arrow.down.app", title: "Install the TV app from this phone", caption: "Samsung · LG · Android TV",
+                         emphasis: model.tvAppMissing ? .selected : .none)
             }
+            .buttonStyle(.plain)
             if let error { MobileNote(text: error) }
         } bottom: {
             Button(setup ? t("ob.continue") : t("common.done"), action: onDone)
@@ -476,6 +489,13 @@ struct TargetScreen: View {
         }
         .task { await search() }
         .sheet(isPresented: $showManual) { manualSheet }
+        .sheet(isPresented: $showInstall, onDismiss: { Task { await search() } }) {
+            // Kurulum bitince sayfa kapanır ve TV eşlendiyse bu adım da geçilir (Android'de ana ekrana geçilir, #113).
+            TVInstallScreen(onDone: {
+                showInstall = false
+                if !setup || model.canAdvance { onDone() }
+            }).environmentObject(model)
+        }
     }
 
     private var allTVs: [LGTV] {
@@ -501,7 +521,7 @@ struct TargetScreen: View {
             } else if ready == true {
                 MobilePill(text: String(localized: "Ready"), dot: true)
             } else if ready == false {
-                MobilePill(text: String(localized: "Install with a computer"))
+                MobilePill(text: String(localized: "Not installed"))
             }
         }
         .frame(minHeight: Mobile.Control.row)
@@ -526,9 +546,21 @@ struct TargetScreen: View {
                     .textFieldStyle(MobileFieldStyle())
                     .keyboardType(.decimalPad)
             }
+            if manualBrand != .androidTV, let manualError { MobileNote(text: manualError) }
             Link("Supported TVs", destination: AppIdentity.tvGuideURL).font(Mobile.TypeScale.caption).tint(Mobile.Palette.accent)
             Button("Connect") {
-                let host = manualHost.trimmingCharacters(in: .whitespaces)
+                // Adres temizlenir ("192.168.1.5:3000", "http://…", virgüllü yazım); geçersizse sayfa açık kalır ve
+                // söylenir. Eskiden olduğu gibi bağlanmaya gönderilen bozuk adres uygulamayı kapatıyordu.
+                let host: String
+                if manualBrand == .androidTV {
+                    host = ""
+                } else if let valid = ManualAddress.normalize(manualHost) {
+                    host = valid
+                } else {
+                    manualError = String(localized: "This is not a valid IP address. Type it like 192.168.1.20, without http:// or a port number.")
+                    return
+                }
+                manualError = nil
                 showManual = false
                 Task { await pair(LGTV(name: manualBrand == .androidTV ? "Android TV" : host, host: host, brand: manualBrand)) }
             }

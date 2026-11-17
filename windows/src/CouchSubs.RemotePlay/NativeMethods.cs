@@ -39,6 +39,12 @@ internal static unsafe partial class NativeMethods
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int cs_discover(nint* targets, int targetCount, int timeoutMs, nint callback, nint user);
 
+    /// <param name="callback">void (*)(const char *host, const char *name, int awake, const char *running_app_titleid,
+    /// const char *running_app_name, void *user)</param>
+    [LibraryImport(Library)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int cs_discover_ex(nint* targets, int targetCount, int timeoutMs, nint callback, nint user);
+
     [LibraryImport(Library, StringMarshalling = StringMarshalling.Utf8)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int cs_wake(string host, ulong credential);
@@ -59,6 +65,11 @@ internal static unsafe partial class NativeMethods
     [LibraryImport(Library)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial void cs_session_stop(nint session);
+
+    /// <summary>PS5'in istediği giriş şifresi (ASCII rakamlar). Olay geri çağrısından çağrılmamalı.</summary>
+    [LibraryImport(Library)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int cs_session_set_login_pin(nint session, byte* pin, nuint pinSize);
 
     private static readonly Lock InitLock = new();
     private static bool initialized;

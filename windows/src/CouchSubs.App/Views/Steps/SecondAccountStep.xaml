@@ -5,12 +5,44 @@
              xmlns:c="clr-namespace:CouchSubs.App.Controls"
              xmlns:t="clr-namespace:CouchSubs.App.Theme">
     <c:StepLayout Title="{t:T 'A second PSN account'}"
-                  Message="{t:T 'CouchSubs watches the game through Remote Play. If it used your own account, the PS5 would turn off your controller. With a second account you keep playing undisturbed.'}">
+                  Message="{t:T 'Nino watches the game through Remote Play. If it used your own account, the PS5 would turn off your controller. With a second account you keep playing undisturbed.'}">
         <StackPanel>
             <c:NumberedRow Number="1" Text="{t:T 'Create a free account at playstation.com with a different email address.'}" />
             <c:NumberedRow Number="2" Text="{t:T 'On the PS5, choose Add User and sign in once with the new account.'}" />
             <c:NumberedRow Number="3" Text="{t:T 'Still as the new user, go to Settings › System › Remote Play and turn on Enable Remote Play.'}" />
             <c:NumberedRow Number="4" Text="{t:T 'Switch back to your own user. You only do this once.'}" />
+            <!-- Kol ikinci hesaba atanırsa ana hesapla açılan oyun onu kendi kolu saymaz (GitHub #231). -->
+            <TextBlock Style="{StaticResource HintText}" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Text="{t:T 'When you turn on the controller to play, choose your MAIN account on the PS5. Don\'t play with the second account Nino signs in with, or the controller won\'t work in the game.'}" />
+            <!-- İkinci hesabı olmayanlar: görüntü bu bilgisayardaki Remote Play penceresinden okunur, PSN girişi ve PS5 eşleştirmesi atlanır. -->
+            <c:Card Margin="0,16,0,0">
+                <StackPanel>
+                    <Grid>
+                        <TextBlock Text="{t:T 'No second account? Read the Remote Play window'}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <Button Content="{t:T 'Select'}" HorizontalAlignment="Right" Click="OnUseRemotePlayWindow" />
+                    </Grid>
+                    <TextBlock Style="{StaticResource HintText}" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="{t:T 'Nino reads the subtitles from PS Remote Play or chiaki-ng on this PC. No second account or PS5 pairing is needed. You can connect a TV later.'}" />
+                    <!-- İkisi de kurulu değilse resmi indirme sayfaları (ikisi de denenebilir). -->
+                    <StackPanel x:Name="DownloadPanel" Margin="0,12,0,0" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource HintText}" TextWrapping="Wrap" Text="{t:T 'PS Remote Play and chiaki-ng aren\'t installed on this PC.'}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="{t:T 'Download PS Remote Play'}" Margin="0,0,8,0" Click="OnDownloadSony" />
+                            <Button Content="{t:T 'Download chiaki-ng'}" Click="OnDownloadChiaki" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </c:Card>
+            <c:Card Margin="0,12,0,0">
+                <StackPanel>
+                    <Grid>
+                        <TextBlock Text="{t:T 'Have OBS or a game window on this PC?'}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <Button Content="{t:T 'Select'}" HorizontalAlignment="Right" Click="OnUseCaptureWindow" />
+                    </Grid>
+                    <TextBlock Style="{StaticResource HintText}" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="{t:T 'Nino can read only the OBS projector or game window you select in Settings › Picture source. No second PSN account or additional capture app is needed.'}" />
+                </StackPanel>
+            </c:Card>
         </StackPanel>
     </c:StepLayout>
 </UserControl>

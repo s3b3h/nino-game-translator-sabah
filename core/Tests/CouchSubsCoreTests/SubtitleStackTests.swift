@@ -42,6 +42,15 @@ final class SubtitleStackTests: XCTestCase {
         XCTAssertEqual(texts(stack, at: 1.5), ["İkinci", "Üçüncü", "Dördüncü"])
     }
 
+    /// Ayarlarda "önceki satırları üstte tut" kapalıyken hızlı konuşmada da yeni satır eskisinin yerine geçer.
+    func testFastSpeechReplacesTheLineWhenStackingIsOff() {
+        var stack = SubtitleStack()
+        stack.stackPrevious = false
+        stack.show("Birinci", durationMs: 8000, now: 0)
+        stack.show("İkinci", durationMs: 8000, now: 0.5)
+        XCTAssertEqual(texts(stack, at: 0.5), ["İkinci"])
+    }
+
     func testSlowSpeechReplacesTheLine() {
         var stack = SubtitleStack()
         stack.show("Birinci", durationMs: 8000, now: 0)
@@ -114,11 +123,24 @@ final class SubtitleStackTests: XCTestCase {
         XCTAssertTrue(stack.isEmpty(at: 0.5))
     }
 
+    func testDistinctShortSentencesAreStacked() {
+        for (first, next) in [("No!", "Not now!"), ("Go!", "Going home."), ("No!", "I know!")] {
+            var stack = SubtitleStack()
+            stack.show(first, durationMs: 4000, now: 0)
+            stack.show(next, durationMs: 4000, now: 0.5)
+            XCTAssertEqual(texts(stack, at: 0.5), [first, next])
+        }
+    }
+
     func testSameLineIgnoresCaseAndPunctuation() {
         XCTAssertTrue(SubtitleStack.sameLine("Kapıyı aç!", "kapıyı aç."))
         XCTAssertTrue(SubtitleStack.sameLine("Kapı", "Kapı daha fazla…"))
         XCTAssertFalse(SubtitleStack.sameLine("Evet", "Hayır"))
         XCTAssertTrue(SubtitleStack.sameLine("أين المخيم؟", "أين المخيم"))
         XCTAssertTrue(SubtitleStack.sameLine("آرثر، انتظر", "آرثر انتظر"))
+        // OCR'ın boşluk farkı ve yazılırken okunan satır (birden çok sözcük) yine aynı satırdır.
+        XCTAssertTrue(SubtitleStack.sameLine("Kapıyı aç!", "Kapıyıaç"))
+        XCTAssertTrue(SubtitleStack.sameLine("Kapıyı a", "Kapıyı aç!"))
+        XCTAssertFalse(SubtitleStack.sameLine("No!", "Not now!"))
     }
 }

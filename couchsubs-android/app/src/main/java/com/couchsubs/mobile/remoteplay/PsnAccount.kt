@@ -64,6 +64,15 @@ object PsnAccount {
 
     fun isRedirect(url: String) = url.startsWith(REDIRECT_PREFIX)
 
+    /**
+     * Sony'nin "Google ile giriş" seçeneği Google'ın giriş sayfasına gider. Google uygulama içi tarayıcıda (WebView)
+     * girişi reddeder ("disallowed_useragent", 403); bu adreste giriş telefonun tarayıcısına taşınır.
+     */
+    fun isGoogleSignIn(url: String): Boolean {
+        val host = try { java.net.URI(url).host } catch (_: java.net.URISyntaxException) { null } ?: return false
+        return host.equals("accounts.google.com", ignoreCase = true)
+    }
+
     /** Giriş bitince tarayıcının gittiği yönlendirme adresinden tek kullanımlık kod. */
     fun codeFromRedirect(url: String): String? = if (isRedirect(url)) queryValue(url, "code") else null
 

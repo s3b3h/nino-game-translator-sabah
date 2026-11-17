@@ -94,6 +94,45 @@ public sealed class Reading
     public Reading WithoutOcrNoise() => new(Lines.Select(line => line with { Text = OcrNoise.Clean(line.Text) }));
 
     /// <summary>
+    /// Aynı satırda yan yana okunan parçalar soldan sağa tek satır olur. Renkli konuşan adını ("Arthur:", RDR2) yazı
+    /// tanıma cümleden ayrı okuyabiliyor; parçalar yalnız üst kenarlarına göre dizilince ad cümlenin sonuna düşüyor ya da
+    /// ayrı blok sayılıp atılıyordu. Yatayda aralarında en çok <see cref="RowGap"/> (alan genişliğine oranla) olan
+    /// parçalar birleşir; uzaktaki köşe yazısı ayrı kalır (Mac: Reading.joiningRows, Android: Reading.joiningRows).
+    /// </summary>
+    public Reading JoiningRows()
+    {
+        if (Lines.Count < 2 || Lines.Any(line => line.Box is null)) return this;
+        var rows = new List<TextLine>();
+        foreach (var line in Lines.OrderBy(line => line.Box!.Value.Left))
+        {
+            var box = line.Box!.Value;
+            var index = rows.FindIndex(row => SameRow(box, row.Box!.Value));
+            if (index >= 0)
+            {
+                var row = rows[index];
+                double? confidence = row.Confidence is { } a && line.Confidence is { } b ? Math.Min(a, b) : row.Confidence ?? line.Confidence;
+                rows[index] = new TextLine(row.Text + " " + line.Text, row.Box!.Value.Union(box), confidence);
+            }
+            else
+            {
+                rows.Add(line);
+            }
+        }
+        return new Reading(rows.OrderBy(row => row.Box!.Value.Top));
+    }
+
+    /// <summary><see cref="JoiningRows"/>: aynı satırdaki iki parça arasındaki en büyük boşluk (alan genişliğine oranla).</summary>
+    public const double RowGap = 0.05;
+
+    private static bool SameRow(TextBox next, TextBox row)
+    {
+        var overlap = Math.Min(next.Bottom, row.Bottom) - Math.Max(next.Top, row.Top);
+        var smaller = Math.Min(next.Bottom - next.Top, row.Bottom - row.Top);
+        if (smaller <= 0 || overlap < smaller * 0.6) return false;
+        return next.Left - row.Right <= RowGap;
+    }
+
+    /// <summary>
     /// Alandaki altyazı bloğu. Seçilen alanda altyazının yanında menü ("MAP / HELP / SETTINGS" alt alta), köşedeki
     /// gösterge ("9", "PHOTO MODE") da okunuyordu; hepsi tek cümle gibi çevrilip TV'de bütün alanı kaplayan kutuyla
     /// gösteriliyordu. Satırlar yerlerine göre bloklara ayrılır; ortalanmış ve menü olmayan en alttaki blok altyazıdır.

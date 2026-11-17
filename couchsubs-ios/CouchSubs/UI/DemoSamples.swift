@@ -22,6 +22,12 @@ enum DemoSamples {
     static var count: Int { samples.count }
 
     static func line(_ index: Int, target: String) -> Line {
+        // Nino: Türkçe ve Arapça dışındaki dillerin üç satırı çekirdekte.
+        let other = TargetLanguage.sampleLines(target)
+        if !other.isEmpty {
+            let sample = other[index % other.count]
+            return Line(source: sample.source, translation: sample.translation)
+        }
         let sample = samples[index % samples.count]
         return Line(source: sample.en, translation: TargetLanguage.isTurkish(target) ? sample.tr : sample.ar)
     }

@@ -89,6 +89,30 @@ public class SubtitleServerTests
             l.Contains("{\"box\":{\"bottom\":0.84,\"left\":0.4,\"right\":0.6,\"top\":0.8},\"line\":0.04,\"text\":\"Kapıyı aç.\"}"));
     }
 
+    /// <summary>Ek alanın çevirisi kendi olayıyla gider (eski TV uygulamaları tanımadığı olayı yok sayar; Mac ile aynı).</summary>
+    [Fact]
+    public async Task StreamsRegionTranslationsAndTheirClear()
+    {
+        using var server = new SubtitleServer(0);
+        var received = new List<SubtitleEvent>();
+        server.EventSent += received.Add;
+        var port = await server.StartAsync();
+        using var response = await Http.GetAsync($"http://127.0.0.1:{port}/events", HttpCompletionOption.ResponseHeadersRead);
+        await WaitUntil(() => server.ConnectedClients == 1);
+        var box = new TextBox(0.7, 0.05, 0.95, 0.12);
+        server.SendRegion("q", "Demirciyi bul", box, 0.03);
+        server.SendRegion("q", "", null);
+        server.ClearRegions();
+
+        using var reader = new StreamReader(await response.Content.ReadAsStreamAsync());
+        var lines = await ReadLines(reader, "event: region-clear");
+        Assert.Contains("event: region", lines);
+        Assert.Contains("data: {\"box\":{\"bottom\":0.12,\"left\":0.7,\"right\":0.95,\"top\":0.05},\"id\":\"q\",\"line\":0.03,\"text\":\"Demirciyi bul\"}", lines);
+        Assert.Contains("data: {\"id\":\"q\",\"text\":\"\"}", lines);
+        Assert.Equal([new SubtitleEvent(SubtitleEventKind.Region, "Demirciyi bul", Id: "q", Box: box), new SubtitleEvent(SubtitleEventKind.Region, "", Id: "q"),
+                      new SubtitleEvent(SubtitleEventKind.RegionClear)], received);
+    }
+
     [Fact]
     public async Task ObsOverlayIsServedAndNotCountedAsTv()
     {
@@ -142,6 +166,19 @@ public class SubtitleServerTests
         Assert.Equal([new SubtitleEvent(SubtitleEventKind.Subtitle, "Merhaba", 4000, true), SubtitleEvent.Cleared], received);
     }
 
+    /// <summary>"Ekranı çevir" sonuçları da pencereye gider: altyazı yalnız bilgisayardayken (TV yok) hiçbir yerde görünmüyordu.</summary>
+    [Fact]
+    public void LocalListenerGetsScreenTranslations()
+    {
+        using var server = new SubtitleServer(0);
+        var received = new List<SubtitleEvent>();
+        server.EventSent += received.Add;
+        var box = new TextBox(0.1, 0.1, 0.4, 0.2);
+        server.SendScreen([new ScreenTranslation.Item("Map\nInventory", "Harita\nEnvanter", box, 0.03), new ScreenTranslation.Item("Leave", "Ayrıl", box, 0.03)], 12000);
+        server.ClearScreen();
+        Assert.Equal([new SubtitleEvent(SubtitleEventKind.Screen, "Harita\nEnvanter\nAyrıl", 12000, Paragraphs: true), new SubtitleEvent(SubtitleEventKind.ScreenClear)], received);
+    }
+
     [Fact]
     public async Task TurkishTextIsSentAsUtf8()
     {
@@ -161,7 +198,7 @@ public class SubtitleServerTests
     {
         using var server = new SubtitleServer(0);
         var port = await server.StartAsync();
-        server.SendStyle(new SubtitleStyle(58, 10, SubtitlePlacement.Above, 40, true, SubtitleTextColor.Yellow, TvDisplayMode.Overlay));
+        server.SendStyle(new SubtitleStyle(58, 10, SubtitlePlacement.Above, 40, true, SubtitleTextColor.Yellow, TvDisplayMode.Overlay, true, SubtitleBackgroundShape.Band));
 
         using var response = await Http.GetAsync($"http://127.0.0.1:{port}/events", HttpCompletionOption.ResponseHeadersRead);
         using var reader = new StreamReader(await response.Content.ReadAsStreamAsync());
@@ -177,6 +214,41 @@ public class SubtitleServerTests
         Assert.Contains("\"displayMode\":\"overlay\"", data);
         // Varsayılan: önceki satırlar üstte kalır (eski davranış); ayar TV'ye gider.
         Assert.Contains("\"stackPrevious\":true", data);
+        // Tam genişlik bandı TV'ye gider; eski kayıtta alan yoksa yazı kadar kalır.
+        Assert.Contains("\"backgroundShape\":\"band\"", data);
+        Assert.Equal(SubtitleBackgroundShape.Fit, System.Text.Json.JsonSerializer.Deserialize<SubtitleStyle>("{\"FontSize\":58}")!.BackgroundShape);
+    }
+
+    [Fact]
+    public async Task StyleCarriesFontAndDefaultsToCondensed()
+    {
+        using var server = new SubtitleServer(0);
+        var port = await server.StartAsync();
+        server.SendStyle(new SubtitleStyle());
+        Assert.Contains("\"font\":\"condensed\"", await FirstStyleData(port));
+        server.SendStyle(new SubtitleStyle() with { Font = SubtitleFont.Rounded });
+        Assert.Contains("\"font\":\"rounded\"", await FirstStyleData(port));
+        server.SendStyle(new SubtitleStyle() with { Font = SubtitleFont.System });
+        Assert.Contains("\"font\":\"system\"", await FirstStyleData(port));
+    }
+
+    private static async Task<string?> FirstStyleData(int port)
+    {
+        using var response = await Http.GetAsync($"http://127.0.0.1:{port}/events", HttpCompletionOption.ResponseHeadersRead);
+        using var reader = new StreamReader(await response.Content.ReadAsStreamAsync());
+        while (await reader.ReadLineAsync() is { } line)
+            if (line.StartsWith("data:")) return line;
+        return null;
+    }
+
+    [Fact]
+    public void FontIsSavedAndOldSettingsGetCondensed()
+    {
+        var old = System.Text.Json.JsonSerializer.Deserialize<SubtitleStyle>("{\"FontSize\":58}");
+        Assert.Equal(SubtitleFont.Condensed, old!.Font);
+        var saved = System.Text.Json.JsonSerializer.Serialize(old with { Font = SubtitleFont.Modern });
+        Assert.Contains("\"Modern\"", saved);
+        Assert.Equal(SubtitleFont.Modern, System.Text.Json.JsonSerializer.Deserialize<SubtitleStyle>(saved)!.Font);
     }
 
     [Fact]

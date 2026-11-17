@@ -4,6 +4,8 @@
 package com.couchsubs.mobile.ui
 
 import androidx.compose.animation.AnimatedContent
+import com.couchsubs.mobile.core.TargetLanguage
+import com.couchsubs.mobile.Services
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -322,9 +324,9 @@ private fun Shortcut(icon: ImageVector, title: String, value: String, modifier: 
 @Composable
 private fun FlagGlass(modifier: Modifier) {
     Box(modifier.clip(CircleShape), contentAlignment = Alignment.Center) {
-        if (targetIsArabic()) {
+        if (!targetIsTurkish()) {
             // Bayrak emojisi dikdörtgendir; daireyi doldursun diye büyütülüp kırpılır.
-            Text("\uD83C\uDDF8\uD83C\uDDE6", fontSize = 64.sp, modifier = Modifier.wrapContentSize(unbounded = true))
+            Text(TargetLanguage.flag(Services.settings.targetLanguage), fontSize = 64.sp, modifier = Modifier.wrapContentSize(unbounded = true))
         } else {
             Box(Modifier.fillMaxSize().background(FlagRed))
             androidx.compose.foundation.Canvas(Modifier.size(34.dp)) { drawCrescentStar(FlagRed) }

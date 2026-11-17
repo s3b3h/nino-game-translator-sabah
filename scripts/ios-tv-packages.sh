@@ -1,0 +1,112 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-only
+# iPhone uygulamasının telefondan TV kurulumu için TV paketlerini uygulama paketine (<çıktı>/tv) koyar; Android'deki
+# build.gradle samsungTvPackage + tvReleasePackages'ın aynısı:
+#  - Samsung (.wgt): kaynaktan (tv-webos + tv-tizen, package-tizen.sh gibi), sıkıştırmasız zip; kurulurken telefonda
+#    TV'ye özel sertifikayla imzalanır.
+#  - Android TV (.apk) ve LG (.ipk): Nino: dist/tv-app'ten (masaüstünün kurduğu ve TV'lerde duran kopyayla aynı imza).
+#    Yoksa önceki kopya (önbellek) kullanılır.
+#  - tv-packages.properties: hangi sürümden geldikleri ve sürümleri.
+# Kullanım: scripts/ios-tv-packages.sh <çıktı klasörü>   (Xcode derleme adımı; COUCHSUBS_REQUIRE_TV_PACKAGES=1 indirmeyi şart koşar)
+set -e
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+OUT="$1/tv"
+CACHE="${HOME}/Library/Caches/Nino/ios-tv-release"
+PY=$(command -v python3 || command -v python)
+mkdir -p "$OUT/samsung-ca" "$CACHE"
+
+# Samsung: sıkıştırmasız (telefondaki imzalayıcı yalnız "stored" kayıtları okur).
+"$PY" - "$ROOT" "$OUT/couchsubs-samsung.wgt" <<'PYEOF'
+import sys, zipfile
+root, dst = sys.argv[1], sys.argv[2]
+web, tizen = root + '/tv-webos/', root + '/tv-tizen/'
+files = [(web + n, n) for n in ['app.js', 'i18n.js', 'config.js', 'style.css', 'largeIcon.png']]
+# Nino: altyazı yazı tipleri (fonts/).
+import os
+files += [(web + 'fonts/' + n, 'fonts/' + n) for n in sorted(os.listdir(web + 'fonts'))]
+files.append((web + 'icon.png', 'panel-icon.png'))
+files += [(tizen + n, n) for n in ['platform.js', 'config.xml', 'icon.png']]
+with open(web + 'index.html', encoding='utf-8') as f:
+    lines = []
+    for line in f.read().split('\n'):
+        if line == '  <script src="platform.js"></script>':
+            lines.append('  <script src="$WEBAPIS/webapis/webapis.js"></script>')
+            lines.append(line)
+        else:
+            lines.append(line.replace('src="icon.png"', 'src="panel-icon.png"'))
+with zipfile.ZipFile(dst, 'w', zipfile.ZIP_STORED) as z:
+    for path, name in sorted(files, key=lambda item: item[1]):
+        info = zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0))
+        with open(path, 'rb') as f:
+            z.writestr(info, f.read())
+    z.writestr(zipfile.ZipInfo('index.html', (1980, 1, 1, 0, 0, 0)), '\n'.join(lines).encode('utf-8'))
+PYEOF
+cp "$ROOT"/couchsubs-android/app/src/main/resources/samsung-ca/*.pem "$OUT/samsung-ca/"
+SAMSUNG_VERSION=$(sed -n 's/.* version="\([0-9.]*\)" viewmodes.*/\1/p' "$ROOT/tv-tizen/config.xml" | head -1)
+
+# Nino: Android TV ve LG paketleri Nino'nun kendi TV uygulamasıdır; CouchSubs'ın GitHub sürümünden İNDİRİLMEZ (orası
+# CouchSubs TV uygulamasını kurardı). Mac ve Windows'un kurduğu paketlerle aynı yerden, dist/tv-app'ten alınır:
+# couchsubs-androidtv_<sürüm>.apk ve com.couchsubs.tv_<sürüm>_all.ipk. Yoksa önceki kopya (önbellek) kullanılır.
+DIST="${NINO_TV_DIST:-$ROOT/dist/tv-app}"
+APK_SRC=$(ls "$DIST"/couchsubs-androidtv_*.apk 2>/dev/null | sort -V | tail -1)
+IPK_SRC=$(ls "$DIST"/com.couchsubs.tv_*_all.ipk 2>/dev/null | sort -V | tail -1)
+if [ -n "$APK_SRC" ] && [ -n "$IPK_SRC" ]; then
+  cp "$APK_SRC" "$CACHE/couchsubs-androidtv.apk"
+  cp "$IPK_SRC" "$CACHE/couchsubs-lg.ipk"
+  printf 'release=nino-%s\ncouchsubs-androidtv.apk=%s\ncouchsubs-lg.ipk=%s\n' \
+    "$(basename "$APK_SRC" .apk | sed 's/couchsubs-androidtv_//')" "$(basename "$APK_SRC")" "$(basename "$IPK_SRC")" > "$CACHE/release.properties"
+  echo "TV paketleri: $(basename "$APK_SRC"), $(basename "$IPK_SRC")"
+else
+  if [ -n "$COUCHSUBS_REQUIRE_TV_PACKAGES" ]; then echo "error: dist/tv-app'te Nino TV paketleri yok"; exit 1; fi
+  if [ -f "$CACHE/release.properties" ]; then echo "warning: dist/tv-app'te TV paketleri yok, önceki kopya kullanılıyor"
+  else echo "warning: dist/tv-app'te TV paketleri yok, telefondan Android TV ve LG kurulumu bu derlemede çalışmaz"; fi
+fi
+
+{
+  echo "couchsubs-samsung.wgt.version=$SAMSUNG_VERSION"
+  [ -f "$CACHE/release.properties" ] && cat "$CACHE/release.properties"
+  # APK'nın sürümü (versionName) ikili AndroidManifest.xml'den okunur.
+  if [ -f "$CACHE/couchsubs-androidtv.apk" ]; then
+    APK_VERSION=$("$PY" - "$CACHE/couchsubs-androidtv.apk" <<'PYEOF'
+import struct, sys, zipfile
+data = zipfile.ZipFile(sys.argv[1]).read('AndroidManifest.xml')
+def u16(o): return struct.unpack_from('<H', data, o)[0]
+def u32(o): return struct.unpack_from('<I', data, o)[0]
+strings, resources, offset = [], [], 8
+while offset < len(data):
+    kind, header, size = u16(offset), u16(offset + 2), u32(offset + 4)
+    if kind == 0x0001:
+        count, flags, start = u32(offset + 8), u32(offset + 16), u32(offset + 20)
+        utf8 = flags & 0x100
+        for i in range(count):
+            p = offset + start + u32(offset + header + i * 4)
+            if utf8:
+                p += 2 if data[p] & 0x80 else 1
+                n = data[p]; p += 1
+                if n & 0x80: n = ((n & 0x7f) << 8) | data[p]; p += 1
+                strings.append(data[p:p + n].decode('utf-8', 'replace'))
+            else:
+                n = u16(p); p += 2
+                if n & 0x8000: n = ((n & 0x7fff) << 16) | u16(p); p += 2
+                strings.append(data[p:p + n * 2].decode('utf-16-le', 'replace'))
+    elif kind == 0x0180:
+        resources = [u32(offset + 8 + i * 4) for i in range((size - 8) // 4)]
+    elif kind == 0x0102:
+        start, count = u16(offset + 24), u16(offset + 28)
+        for i in range(count):
+            a = offset + 16 + start + i * 20
+            name, raw = u32(a + 4), u32(a + 8)
+            if (name < len(resources) and resources[name] == 0x0101021c) or (name < len(strings) and strings[name] == 'versionName'):
+                if raw != 0xffffffff: print(strings[raw]); raise SystemExit(0)
+                if data[a + 15] == 0x03: print(strings[u32(a + 16)]); raise SystemExit(0)
+    offset += size
+PYEOF
+) || APK_VERSION=""
+    [ -n "$APK_VERSION" ] && echo "couchsubs-androidtv.apk.version=$APK_VERSION"
+  fi
+} > "$OUT/tv-packages.properties"
+for name in couchsubs-androidtv.apk couchsubs-lg.ipk; do
+  [ -f "$CACHE/$name" ] && cp "$CACHE/$name" "$OUT/$name"
+done
+echo "TV paketleri uygulamada: $OUT"
+cat "$OUT/tv-packages.properties"

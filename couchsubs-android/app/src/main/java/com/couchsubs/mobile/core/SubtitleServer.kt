@@ -22,28 +22,61 @@ enum class TvDisplayMode { IN_APP, OVERLAY }
 
 enum class SubtitleTextColor { WHITE, YELLOW }
 
+/**
+ * Altyazının yazı tipi (Mac/iPhone: SubtitleFont, Windows: SubtitleFont; TV'ye `font` alanıyla gider). [wire] TV'deki adı.
+ * Varsayılan CONDENSED (Barlow Condensed, GTA tarzı dar yazı); tanınmayan ya da eksik ad da CONDENSED olur.
+ */
+enum class SubtitleFont(val wire: String) {
+    CONDENSED("condensed"), MODERN("modern"), ROUNDED("rounded"), SYSTEM("system");
+
+    companion object {
+        fun from(raw: String?): SubtitleFont =
+            entries.firstOrNull { it.wire.equals(raw, ignoreCase = true) || it.name.equals(raw, ignoreCase = true) } ?: CONDENSED
+    }
+}
+
+/** Altyazı kutusunun kapladığı alan: yazı kadar ya da tam genişlikte bant (eski TV uygulamaları alanı tanımaz, FIT gibi davranır). */
+enum class SubtitleBackgroundShape { FIT, BAND }
+
 /** TV'de altyazının görünümü (Windows: SubtitleStyle). fontSize: 36 küçük, 46 orta, 58 büyük, 72 çok büyük. */
 data class SubtitleStyle(
     val fontSize: Int = 46,
     val bottomPercent: Int = 7,
     val placement: SubtitlePlacement = SubtitlePlacement.COVER,
     val background: Int = 100,
+    val backgroundShape: SubtitleBackgroundShape = SubtitleBackgroundShape.FIT,
     val bold: Boolean = false,
     val textColor: SubtitleTextColor = SubtitleTextColor.WHITE,
     val displayMode: TvDisplayMode = TvDisplayMode.IN_APP,
+    /** Hızlı konuşmada önceki satır(lar) yeni satırın üstünde kısa süre soluk kalsın mı; kapalıysa yeni satır eskisinin yerine geçer. */
+    val stackPrevious: Boolean = true,
+    val font: SubtitleFont = SubtitleFont.CONDENSED,
 )
 
 /** Altyazıları TV'ye ileten taraf. */
 interface SubtitleSender {
-    /** [box]: oyundaki İngilizce altyazının ekrandaki yeri (kenarlara oranla); TV çeviriyi buna göre yerleştirir. */
-    fun sendSubtitle(text: String, durationMs: Int = 15000, box: TextBox? = null)
+    /**
+     * [box]: oyundaki İngilizce altyazının ekrandaki yeri (kenarlara oranla); TV çeviriyi buna göre yerleştirir.
+     * [replaces]: satır az önce gösterilenin uzamış ya da düzelmiş okumasıdır ([TextMatch.isRevision]); TV onu öncekinin
+     * üstüne yığmaz, yerine koyar (`replace` alanı; eski TV uygulamaları yok sayar).
+     */
+    fun sendSubtitle(text: String, durationMs: Int = 15000, box: TextBox? = null, replaces: Boolean = false)
     fun clear()
 }
 
 /** Sunucudan geçen ve telefon ekranındaki altyazı görünümünün de gösterdiği olay. */
 sealed class SubtitleEvent {
-    data class Subtitle(val text: String, val durationMs: Int) : SubtitleEvent()
+    /** [replaces]: satır öncekinin uzamış ya da düzelmiş okumasıdır; öncekinin üstüne yığılmaz, yerine geçer. */
+    data class Subtitle(val text: String, val durationMs: Int, val replaces: Boolean = false) : SubtitleEvent()
     data object Cleared : SubtitleEvent()
+    /** Ek alanın (görev, telefon, bildirim) çevirisi; [text] boşsa o alanın kutusu kalkar. */
+    data class Region(val id: String, val text: String, val box: TextBox?) : SubtitleEvent()
+    /** Bütün ek alan kutuları kalktı (çeviri durdu). */
+    data object RegionsCleared : SubtitleEvent()
+    /** "Ekranı çevir" sonuçları: her çeviri yazının yerinde gösterilir. */
+    data class Screen(val items: List<ScreenTranslation.Item>, val durationMs: Int) : SubtitleEvent()
+    /** "Ekranı çevir" çevirileri kaldırıldı. */
+    data object ScreenCleared : SubtitleEvent()
 }
 
 /**
@@ -55,7 +88,7 @@ class SubtitleServer(
     private val port: Int = DEFAULT_PORT,
     private val pingIntervalMs: Long = 15_000,
     private val clock: () -> Long = System::currentTimeMillis,
-) : SubtitleSender {
+) : SubtitleSender, RegionSender {
     companion object {
         const val DEFAULT_PORT = 8787
 
@@ -69,23 +102,54 @@ class SubtitleServer(
             "right" to Json.Decimal(box.right), "top" to Json.Decimal(box.top),
         )
 
-        fun subtitleFrame(text: String, durationMs: Int, box: TextBox?, at: Long, paragraphs: Boolean = false): String {
+        fun subtitleFrame(text: String, durationMs: Int, box: TextBox?, at: Long, paragraphs: Boolean = false, replaces: Boolean = false): String {
             val json = mutableMapOf<String, Any?>("at" to at, "duration" to durationMs, "text" to text)
             if (paragraphs) json["paragraphs"] = true
+            if (replaces) json["replace"] = true
             if (box != null) json["box"] = boxJson(box)
             return frame("subtitle", json)
         }
 
         fun clearFrame() = frame("clear", emptyMap())
 
+        /**
+         * Ek alanın çevirisi: alanın kimliği (`id`), çeviri (`text`; boşsa kutu kalkar), yazının karedeki yeri (`box`) ve
+         * satır yüksekliği (`line`, ekrana oranla). TV çeviriyi o yerde küçük bir kutuda gösterir (Mac/iPhone ile aynı).
+         */
+        fun regionFrame(id: String, text: String, box: TextBox?, lineHeight: Double?): String {
+            val json = mutableMapOf<String, Any?>("id" to id, "text" to text)
+            if (box != null) json["box"] = boxJson(box)
+            if (lineHeight != null) json["line"] = Json.Decimal(Math.round(lineHeight.coerceIn(0.0, 1.0) * 10000) / 10000.0)
+            return frame("region", json)
+        }
+
+        /**
+         * "Ekranı çevir" sonuçları: her çeviri yazının yeri (`box`), tipik satır yüksekliği (`line`, ekrana oranla) ve
+         * çok parçalıysa `paragraphs` ile gider (Mac/iPhone `screen` olayı ile aynı). TV öncekinin yerine bunları koyar.
+         */
+        fun screenFrame(items: List<ScreenTranslation.Item>, durationMs: Int): String {
+            val list = items.map { item ->
+                val json = mutableMapOf<String, Any?>(
+                    "box" to boxJson(item.box), "line" to Json.Decimal(Math.round(item.lineHeight.coerceIn(0.0, 1.0) * 10000) / 10000.0),
+                    "text" to item.translation,
+                )
+                if (item.paragraphs) json["paragraphs"] = true
+                json
+            }
+            return frame("screen", mapOf("duration" to durationMs, "items" to list))
+        }
+
         fun styleFrame(style: SubtitleStyle) = frame(
             "style", mapOf(
                 "background" to style.background.coerceIn(0, 100),
+                "backgroundShape" to style.backgroundShape.name.lowercase(Locale.ROOT),
                 "bold" to style.bold,
                 "bottomPercent" to style.bottomPercent,
                 "displayMode" to if (style.displayMode == TvDisplayMode.OVERLAY) "overlay" else "inApp",
+                "font" to style.font.wire,
                 "fontSize" to style.fontSize,
                 "placement" to style.placement.name.lowercase(Locale.ROOT),
+                "stackPrevious" to style.stackPrevious,
                 "textColor" to style.textColor.name.lowercase(Locale.ROOT),
             )
         )
@@ -137,14 +201,36 @@ class SubtitleServer(
         sender.shutdown()
     }
 
-    override fun sendSubtitle(text: String, durationMs: Int, box: TextBox?) {
-        broadcast(subtitleFrame(text, durationMs, box, clock()), subtitle = true)
-        onEvent?.invoke(SubtitleEvent.Subtitle(text, durationMs))
+    override fun sendSubtitle(text: String, durationMs: Int, box: TextBox?, replaces: Boolean) {
+        broadcast(subtitleFrame(text, durationMs, box, clock(), replaces = replaces), subtitle = true)
+        onEvent?.invoke(SubtitleEvent.Subtitle(text, durationMs, replaces))
     }
 
     override fun clear() {
         broadcast(clearFrame(), subtitle = true)
         onEvent?.invoke(SubtitleEvent.Cleared)
+    }
+
+    override fun sendRegion(id: String, text: String, box: TextBox?, lineHeight: Double?) {
+        broadcast(regionFrame(id, text, box, lineHeight), subtitle = true)
+        onEvent?.invoke(SubtitleEvent.Region(id, text, box))
+    }
+
+    override fun clearRegions() {
+        broadcast(frame("region-clear", emptyMap()), subtitle = true)
+        onEvent?.invoke(SubtitleEvent.RegionsCleared)
+    }
+
+    /** "Ekranı çevir" sonuçlarını TV'ye (ve telefon ekranına) gönderir. */
+    fun sendScreen(items: List<ScreenTranslation.Item>, durationMs: Int) {
+        broadcast(screenFrame(items, durationMs), subtitle = true)
+        onEvent?.invoke(SubtitleEvent.Screen(items, durationMs))
+    }
+
+    /** TV'deki ve telefondaki "ekranı çevir" çevirilerini kaldırır (altyazıya dokunmaz). */
+    fun clearScreen() {
+        broadcast(frame("screen-clear", emptyMap()), subtitle = true)
+        onEvent?.invoke(SubtitleEvent.ScreenCleared)
     }
 
     fun sendStyle(style: SubtitleStyle) {

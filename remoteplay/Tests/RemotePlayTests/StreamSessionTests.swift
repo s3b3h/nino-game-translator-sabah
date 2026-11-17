@@ -62,6 +62,68 @@ final class ReconnectPolicyTests: XCTestCase {
     }
 }
 
+final class PictureWatchdogTests: XCTestCase {
+    private let start = Date(timeIntervalSince1970: 0)
+
+    /// Hata: istenen IDR karesi de bozuk gelince libchiaki yeniden istemiyor, bağlantı açık kalıp hiç kare gelmiyordu;
+    /// oturum hiç yeniden kurulmuyor, altyazı ancak uygulamayı kapatıp açınca dönüyordu.
+    func testConnectedWithoutPictureForEightSecondsIsStalled() {
+        var watchdog = PictureWatchdog()
+        watchdog.connected(at: start)
+        for second in 1...120 { watchdog.picture(at: start.addingTimeInterval(Double(second))) }
+        // İki dakika görüntü geldi, sonra kesildi.
+        XCTAssertNil(watchdog.stalled(at: start.addingTimeInterval(127)))
+        XCTAssertEqual(watchdog.stalled(at: start.addingTimeInterval(128)), PictureWatchdog.stallAfter)
+    }
+
+    /// Olağan FEC duraklaması (IDR bir saniyeden kısa sürede gelir) oturumu yeniden kurdurmaz.
+    func testShortGapIsNotAStall() {
+        var watchdog = PictureWatchdog()
+        watchdog.connected(at: start)
+        watchdog.picture(at: start.addingTimeInterval(1))
+        watchdog.picture(at: start.addingTimeInterval(2.5))
+        XCTAssertNil(watchdog.stalled(at: start.addingTimeInterval(9)))
+    }
+
+    /// Bağlandıktan sonra ilk kare hiç gelmezse de yakalanır.
+    func testNoFirstPictureIsStalled() {
+        var watchdog = PictureWatchdog()
+        watchdog.connected(at: start)
+        XCTAssertNotNil(watchdog.stalled(at: start.addingTimeInterval(PictureWatchdog.stallAfter)))
+    }
+
+    /// Hata: hiç görüntü gelmeyen oturum sonsuza dek yeniden kuruluyordu ("Yeniden bağlanılıyor…"). Art arda 3
+    /// görüntüsüz oturumdan sonra durulur; görüntü gelirse sayaç sıfırlanır (Android'deki eşi ile aynı).
+    func testNoPictureSessionsGiveUpAfterThree() {
+        var watchdog = PictureWatchdog()
+        watchdog.connected(at: start)
+        XCTAssertEqual(watchdog.afterStall(), .reconnect)
+        watchdog.ended()
+        watchdog.connected(at: start)
+        watchdog.picture(at: start.addingTimeInterval(1))
+        XCTAssertEqual(watchdog.noPictureSessions, 0)
+        XCTAssertEqual(watchdog.afterStall(), .reconnect)
+        for _ in 1..<PictureWatchdog.maxNoPictureSessions {
+            watchdog.connected(at: start)
+            XCTAssertEqual(watchdog.afterStall(), .reconnect)
+        }
+        watchdog.connected(at: start)
+        XCTAssertEqual(watchdog.afterStall(), .giveUp)
+        watchdog.reset()
+        XCTAssertEqual(watchdog.noPictureSessions, 0)
+    }
+
+    /// Bağlı değilken (bağlanıyor, koptu, durduruldu) görüntü beklenmez; geç gelen eski kare de bekçiyi kurmaz.
+    func testNotConnectedIsNeverStalled() {
+        var watchdog = PictureWatchdog()
+        watchdog.picture(at: start)
+        XCTAssertNil(watchdog.stalled(at: start.addingTimeInterval(600)))
+        watchdog.connected(at: start)
+        watchdog.ended()
+        XCTAssertNil(watchdog.stalled(at: start.addingTimeInterval(600)))
+    }
+}
+
 final class RegisteredConsoleTests: XCTestCase {
     func testWakeCredentialIsHexOfRegistKey() {
         let console = RegisteredConsole(host: "192.168.1.253", name: "PS5", registKey: Data("1a2b3c4d".utf8) + Data(repeating: 0, count: 8),
@@ -206,7 +268,8 @@ final class DisconnectReasonTests: XCTestCase {
                        .registrationInvalid)
         XCTAssertEqual(DisconnectReason.sessionRequestHint(fromLog: "Reported Application Reason: 0x80108B02 (Invalid PSN ID)"),
                        .registrationInvalid)
-        XCTAssertNil(DisconnectReason.sessionRequestHint(fromLog: "Reported Application Reason: 0x80108b33 (unknown)"))
+        XCTAssertEqual(DisconnectReason.sessionRequestHint(fromLog: "Reported Application Reason: 0x80108bff (unknown)"),
+                       .rejected(0x80108bff))
         XCTAssertNil(DisconnectReason.sessionRequestHint(fromLog: "Reported Application Reason: garbage"))
         XCTAssertEqual(DisconnectReason.sessionRequestHint(fromLog: "Session request connect failed eventually."), .network)
         XCTAssertEqual(DisconnectReason.sessionRequestHint(fromLog: "Failed to receive session request response"), .network)
@@ -220,8 +283,11 @@ final class DisconnectReasonTests: XCTestCase {
         XCTAssertEqual(DisconnectReason(quit: CHIAKI_QUIT_REASON_SESSION_REQUEST_UNKNOWN, sessionRequestHint: .registrationInvalid),
                        .registrationInvalid)
         XCTAssertEqual(DisconnectReason(quit: CHIAKI_QUIT_REASON_SESSION_REQUEST_UNKNOWN, sessionRequestHint: .network), .network)
-        XCTAssertEqual(DisconnectReason(quit: CHIAKI_QUIT_REASON_SESSION_REQUEST_UNKNOWN, sessionRequestHint: nil),
-                       .other("Unknown Session Request Error"))
+        XCTAssertEqual(DisconnectReason(quit: CHIAKI_QUIT_REASON_SESSION_REQUEST_UNKNOWN, sessionRequestHint: .rejected(0x80108bff)),
+                       .rejected(0x80108bff))
+        XCTAssertEqual(DisconnectReason(quit: CHIAKI_QUIT_REASON_SESSION_REQUEST_UNKNOWN, sessionRequestHint: nil), .rejected(nil))
+        // PS5 oturum isteğine yanıt verdi: reddetmesi "bulunamadı" değildir.
+        XCTAssertEqual(DisconnectReason.classify(.rejected(nil), searchAnswered: false, host: "192.168.1.70"), .rejected(nil))
         XCTAssertEqual(DisconnectReason(quit: CHIAKI_QUIT_REASON_SESSION_REQUEST_RP_IN_USE, sessionRequestHint: .network), .inUse)
         // PS5 aramaya yanıt vermediyse bağlanamama "bulunamadı"dır; geçersiz kayıt öyle kalır.
         XCTAssertEqual(DisconnectReason.classify(.registrationInvalid, searchAnswered: false, host: "192.168.1.70"), .registrationInvalid)
@@ -243,5 +309,33 @@ final class DisconnectReasonTests: XCTestCase {
         XCTAssertEqual(StreamSession.pickMoved([a, b], name: "PS5-B"), b)
         XCTAssertNil(StreamSession.pickMoved([a, b], name: "other"))
         XCTAssertNil(StreamSession.pickMoved([], name: "PS5-A"))
+    }
+}
+
+/// PS5 giriş şifresi: kayıtlıysa ilk istekte gönderilir; yoksa ya da yanlışsa oturum kapanır (döngü yok).
+final class LoginPasscodeTests: XCTestCase {
+    func testOnlyFourDigitsAreKept() {
+        XCTAssertEqual(LoginPasscode.normalized(" 1234 "), "1234")
+        XCTAssertEqual(LoginPasscode.normalized("0007"), "0007")
+        XCTAssertNil(LoginPasscode.normalized(nil))
+        XCTAssertNil(LoginPasscode.normalized(""))
+        XCTAssertNil(LoginPasscode.normalized("123"))
+        XCTAssertNil(LoginPasscode.normalized("12345"))
+        XCTAssertNil(LoginPasscode.normalized("12a4"))
+        XCTAssertNil(LoginPasscode.normalized("١٢٣٤"))
+    }
+
+    func testSavedPasscodeIsSentAsAsciiOnFirstRequest() {
+        XCTAssertEqual(LoginPasscode.reply(saved: "1234", incorrect: false), .send(Data([0x31, 0x32, 0x33, 0x34])))
+    }
+
+    func testMissingPasscodeStopsTheSession() {
+        XCTAssertEqual(LoginPasscode.reply(saved: nil, incorrect: false), .stop(.loginPasscode))
+        XCTAssertEqual(LoginPasscode.reply(saved: "12", incorrect: false), .stop(.loginPasscode))
+    }
+
+    /// PS5 şifreyi yeniden istiyorsa önceki yanlıştı: aynı şifre tekrar gönderilmez.
+    func testIncorrectPasscodeIsNotResent() {
+        XCTAssertEqual(LoginPasscode.reply(saved: "1234", incorrect: true), .stop(.loginPasscodeIncorrect))
     }
 }

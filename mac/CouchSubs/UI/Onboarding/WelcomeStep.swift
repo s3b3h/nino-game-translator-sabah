@@ -27,12 +27,15 @@ struct WelcomeStep: View {
     }
 
     private var arabic: Bool { model.settings.targetLanguage == "ar" }
+    private var turkish: Bool { TargetLanguage.isTurkish(model.settings.targetLanguage) }
 
     private var ps5Welcome: some View {
         StepLayout(title: "Welcome to Nino",
                    // Nino: Arapça seçilince karşılama da "Arapça çevirisini" der.
                    message: arabic
                        ? "Nino reads the English subtitles of your PS5 games and shows an Arabic translation on your TV, on top of the game. You keep playing on the TV with your own controller."
+                       : !turkish
+                       ? "Nino reads the English subtitles of your PS5 games and shows them in your language on your TV, on top of the game. You keep playing on the TV with your own controller."
                        : "Nino reads the English subtitles of your PS5 games and shows a Turkish translation on your TV, on top of the game. You keep playing on the TV with your own controller.") {
             requirements {
                 RequirementTile(symbol: "gamecontroller.fill", title: "PS5", detail: "On the same Wi-Fi as this Mac")
@@ -57,34 +60,27 @@ struct WelcomeStep: View {
         }
     }
 
-    /// Nino: Xbox seçilince karşılama yerine iş gören sayfa: Xbox'ı bu Mac'e getirmenin üç adımı. Nino konsola kendisi
-    /// bağlanmaz; Xbox bu Mac'te xbox.com/play ya da Greenlight ile açılır, Nino o pencereyi okur. Devam, TV adımına geçer
-    /// (`AppModel.advance`).
+    /// Nino: Xbox seçilince karşılama yerine iş gören sayfa: "Xbox'ı Bağla" listesi. Görüntü Greenlight ile gelir
+    /// (1080p, tarayıcı süsü yok; altyazı en doğru böyle okunur). Nino her adımı kendisi denetler ve yeşile çevirir.
+    /// Tarayıcı ve yakalama kartı yedek yollardır. Devam, TV adımına geçer (`AppModel.advance`).
     private var xboxWelcome: some View {
-        StepLayout(title: "Bring Your Xbox to This Mac",
-                   message: "Nino reads your Xbox picture from a window on this Mac. You only set this up once.") {
-            VStack(spacing: Theme.space("l")) {
-                HStack(alignment: .top, spacing: Theme.space("m")) {
-                    XboxStepCard(number: 1, symbol: "antenna.radiowaves.left.and.right", title: "Turn On Remote Features",
-                                 detail: "On the Xbox: Settings › Devices & connections › Remote features")
-                    XboxStepCard(number: 2, symbol: "safari.fill", title: "Open xbox.com/play",
-                                 detail: "On this Mac, in Safari or Chrome. Sign in with your Microsoft account.")
-                    XboxStepCard(number: 3, symbol: "play.rectangle.fill", title: "Start Remote Play",
-                                 detail: "My consoles › your Xbox › Remote play. Nino reads that window.")
-                }
-                Button {
-                    if let url = URL(string: "https://www.xbox.com/play") { openURL(url) }
-                } label: {
-                    Label("Open xbox.com/play", systemImage: "arrow.up.right.square").frame(minWidth: 240)
-                }
-                .buttonStyle(CSButtonStyle(kind: .primary, height: "buttonLarge"))
+        StepLayout(title: "Connect Your Xbox",
+                   message: "Nino checks each step by itself and moves on. You only set this up once.") {
+            VStack(spacing: Theme.space("m")) {
+                XboxConnectChecklist()
                 HStack(spacing: Theme.space("l")) {
-                    Text("You can also use the free Greenlight app.")
-                        .font(.csCallout)
-                        .foregroundStyle(Color.csSecondary)
+                    Button {
+                        if let url = URL(string: "https://www.xbox.com/play/consoles") { openURL(url) }
+                    } label: {
+                        Label("Try in the browser without installing", systemImage: "safari")
+                            .font(.csCallout.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.csAccentText)
                     captureCardButton
                 }
             }
+            .frame(maxWidth: 640)
             .frame(maxWidth: .infinity)
         }
         .environment(\.onboardingSymbol, "gamecontroller.fill")
@@ -221,29 +217,34 @@ private struct ConsoleCard<Art: View>: View {
 private struct TranslationLanguageFlags: View {
     @Binding var selection: String
 
-    private static let flags = ["tr": "🇹🇷", "ar": "🇸🇦"]
-
+    /// Nino: sağ üstte seçili dilin bayrağı; basınca bayraklı dil listesi açılır (Türkçe en başta).
     var body: some View {
-        HStack(spacing: 6) {
+        Menu {
             ForEach(TargetLanguage.choices, id: \.code) { choice in
-                let selected = selection == choice.code
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) { selection = choice.code }
                 } label: {
-                    Text(verbatim: Self.flags[choice.code] ?? choice.name)
-                        .font(.system(size: 18))
-                        .frame(width: 34, height: 34)
-                        .background(Circle().fill(Color.white.opacity(selected ? 0.10 : 0)))
-                        .overlay(Circle().strokeBorder(Color.csAccent.opacity(selected ? 0.9 : 0), lineWidth: 1.5))
-                        .opacity(selected ? 1 : 0.45)
-                        .contentShape(Circle())
+                    Text(verbatim: TargetLanguage.flag(choice.code) + "  " + choice.name
+                         + (selection == choice.code ? "  ✓" : ""))
                 }
-                .buttonStyle(.plain)
-                .help(Text(verbatim: choice.name))
-                .accessibilityLabel(Text(verbatim: choice.name))
-                .accessibilityAddTraits(selected ? .isSelected : [])
             }
+        } label: {
+            HStack(spacing: 6) {
+                Text(verbatim: TargetLanguage.flag(selection)).font(.system(size: 18))
+                Text(verbatim: TargetLanguage.nativeName(selection)).font(.csCallout.weight(.semibold))
+                Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold)).foregroundStyle(Color.csSecondary)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 34)
+            .background(Capsule().fill(Color.white.opacity(0.08)))
+            .overlay(Capsule().strokeBorder(Color.csAccent.opacity(0.6), lineWidth: 1))
+            .contentShape(Capsule())
         }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(Text("Translation language"))
+        .accessibilityLabel(Text("Translation language"))
     }
 }
 

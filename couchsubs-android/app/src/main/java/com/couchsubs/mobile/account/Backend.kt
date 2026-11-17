@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.couchsubs.mobile.account
 
+import android.app.ActivityManager
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import com.google.firebase.FirebaseApp
@@ -45,6 +47,7 @@ object Backend {
             )
         )
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(flags.crashReports)
+        flagsAllowCrashReports = flags.crashReports
     }
 
     private fun status(granted: Boolean) =
@@ -52,9 +55,49 @@ object Backend {
 
     internal fun analyticsOrNull() = analytics
 
+    /** Çökme raporunda görünecek iz satırı (çeviri başlarken hangi adımda kalındığı). */
+    fun breadcrumb(message: String) {
+        Log.i(TAG, message)
+        if (available) FirebaseCrashlytics.getInstance().log(message)
+    }
+
     fun recordError(error: Throwable) {
         if (available) FirebaseCrashlytics.getInstance().recordException(error)
     }
+
+    /**
+     * Android'in kaydettiği önceki kapanışlardan Crashlytics'in göremediklerini (yerel çökme, bellek yetmedi, ANR)
+     * raporlar (bkz. [ExitReport]). [lastSeen] son raporlanan kapanışın anı; dönen değer yenisi. [duringTranslation]:
+     * en son kapanış çeviri sürerken mi oldu. Ağır değil ama IPC'dir; ana iş parçacığında çağrılmamalı.
+     */
+    fun reportPreviousExits(context: Context, lastSeen: Long, duringTranslation: Boolean): Long {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return lastSeen
+        val records = try {
+            context.getSystemService(ActivityManager::class.java).getHistoricalProcessExitReasons(null, 0, 10).map {
+                ExitRecord(it.reason, it.timestamp, it.description, it.importance, it.pss, it.rss)
+            }
+        } catch (error: Exception) {
+            Log.w(TAG, "kapanış nedenleri", error)
+            return lastSeen
+        }
+        val reportable = ExitReport.reportable(records, lastSeen)
+        val newest = reportable.lastOrNull()
+        for (record in reportable) {
+            val translating = duringTranslation && record === newest
+            Log.w(TAG, "önceki kapanış: ${ExitReport.message(record, translating)}")
+            if (available && flagsAllowCrashReports) {
+                val crashlytics = FirebaseCrashlytics.getInstance()
+                crashlytics.setCustomKey("exit_reason", ExitReport.reasonName(record.reason))
+                crashlytics.setCustomKey("exit_during_translation", translating)
+                crashlytics.recordException(PreviousExitException(ExitReport.message(record, translating)))
+            }
+            Telemetry.event("app_exit", "reason" to ExitReport.reasonName(record.reason), "during_translation" to translating)
+        }
+        return ExitReport.newestTimestamp(records, lastSeen)
+    }
+
+    /** Kullanım verisi kapalıysa Crashlytics'e elle de bir şey gönderilmez. */
+    @Volatile private var flagsAllowCrashReports = false
 }
 
 /**

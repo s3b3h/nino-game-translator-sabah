@@ -23,14 +23,26 @@ public enum SubtitlePlacement
     Fixed,
 }
 
+/// <summary>Altyazı kutusunun kapladığı alan.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<SubtitleBackgroundShape>))]
+public enum SubtitleBackgroundShape
+{
+    /// <summary>Kutu yazı kadar (örtüyse okunan altyazı bölgesi kadar) yer kaplar.</summary>
+    Fit,
+    /// <summary>Kutu tam genişlikte bir bant: oyundaki İngilizce altyazı yan yana taşsa da görünmez.</summary>
+    Band,
+}
+
 /// <summary>TV'de altyazının görünümü. Eski sürümün kaydettiği ayarlarda olmayan alanlar varsayılanla dolar.</summary>
 /// <param name="FontSize">36 (küçük), 46 (orta), 58 (büyük), 72 (çok büyük)</param>
 /// <param name="BottomPercent">Sabit yerleşimde altyazının ekranın altından uzaklığı, yüzde.</param>
 /// <param name="Background">Yazının arkasındaki siyah zeminin koyuluğu, yüzde (0: zemin yok).</param>
+/// <param name="BackgroundShape">Zeminin kapladığı alan; eski TV uygulamaları alanı tanımaz, yazı kadar gibi davranır.</param>
 /// <param name="StackPrevious">
 /// Hızlı konuşmada önceki satır(lar) yeni satırın üstünde kısa süre soluk kalsın mı; kapalıysa yeni satır eskisinin
 /// yerine geçer. TV uygulaması 0.9.16 ve sonrası tanır.
 /// </param>
+/// <param name="Font">Nino: altyazının yazı tipi; eski kayıtta yoksa Dar/Aksiyon (Mac'teki SubtitleStyle.font ile aynı).</param>
 public sealed record SubtitleStyle(
     int FontSize = 46,
     int BottomPercent = 7,
@@ -39,7 +51,27 @@ public sealed record SubtitleStyle(
     bool Bold = false,
     SubtitleTextColor TextColor = SubtitleTextColor.White,
     TvDisplayMode DisplayMode = TvDisplayMode.InApp,
-    bool StackPrevious = true);
+    bool StackPrevious = true,
+    SubtitleBackgroundShape BackgroundShape = SubtitleBackgroundShape.Fit,
+    SubtitleFont Font = SubtitleFont.Condensed);
+
+/// <summary>
+/// Nino: altyazının yazı tipi. <c>System</c> cihazın kendi yazı tipi (eskisi gibi); öbürleri uygulamaya ve TV sayfasına
+/// gömülü OFL lisanslı yazı tipleridir (Barlow, Barlow Condensed, Nunito). Arapça, Tayca, Hintçe harfler bunlarda yoktur,
+/// o harfler sistemin yazı tipiyle çizilir. TV'ye küçük harfle gider ("condensed"), Mac ile aynı.
+/// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<SubtitleFont>))]
+public enum SubtitleFont
+{
+    /// <summary>Barlow Condensed: dar ve kalın, aksiyon oyunlarının altyazısına benzer (varsayılan).</summary>
+    Condensed,
+    /// <summary>Barlow: sade, modern.</summary>
+    Modern,
+    /// <summary>Nunito: yuvarlak hatlı, yumuşak.</summary>
+    Rounded,
+    /// <summary>Cihazın kendi yazı tipi.</summary>
+    System,
+}
 
 /// <summary>
 /// Android TV'de PS5 görüntüsünün nasıl gösterildiği. Yalnız Android TV uygulaması kullanır; diğer TV'ler ve OBS
@@ -72,11 +104,18 @@ public interface ISubtitleSender
     void Clear();
 }
 
-public enum SubtitleEventKind { Subtitle, Clear }
+/// <summary>
+/// <c>Screen</c>: "ekranı çevir" sonuçları (metin: grupların çevirisi, yukarıdan aşağı, her biri ayrı satırda);
+/// <c>ScreenClear</c>: onların kaldırılması. Bilgisayardaki altyazı penceresi bunları da gösterir.
+/// </summary>
+public enum SubtitleEventKind { Subtitle, Clear, Screen, ScreenClear, Region, RegionClear }
 
 /// <summary>Sunucudan geçen ve bilgisayar ekranındaki altyazı penceresinin de gösterdiği olay.</summary>
 /// <param name="Replaces">Satır öncekinin uzamış ya da düzelmiş okumasıdır; öncekinin üstüne yığılmaz, yerine geçer.</param>
-public sealed record SubtitleEvent(SubtitleEventKind Kind, string Text = "", int DurationMs = 0, bool Paragraphs = false, bool Replaces = false)
+/// <param name="Id">Ek alan olayında alanın kimliği (<see cref="SubtitleEventKind.Region"/>; metin boşsa kutu kalkar).</param>
+/// <param name="Box">Ek alan olayında yazının karedeki yeri.</param>
+public sealed record SubtitleEvent(SubtitleEventKind Kind, string Text = "", int DurationMs = 0, bool Paragraphs = false, bool Replaces = false,
+                                   string? Id = null, TextBox? Box = null)
 {
     public static readonly SubtitleEvent Cleared = new(SubtitleEventKind.Clear);
 }
@@ -85,7 +124,7 @@ public sealed record SubtitleEvent(SubtitleEventKind Kind, string Text = "", int
 /// TV uygulamasının bağlandığı yerel Server-Sent Events sunucusu.
 /// <c>GET /events</c> akışında <c>subtitle</c>, <c>clear</c> ve <c>style</c> olaylarını yayınlar.
 /// </summary>
-public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = null) : ISubtitleSender, IDisposable
+public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = null) : ISubtitleSender, IRegionSender, IDisposable
 {
     private sealed class Client(TcpClient tcp, bool viewer = false)
     {
@@ -225,10 +264,39 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
             return json;
         }).ToList();
         Broadcast(Frame("screen", new SortedDictionary<string, object> { ["duration"] = durationMs, ["items"] = list }), subtitle: true);
+        // Altyazı yalnız bilgisayardaysa (TV yok) çeviriler başka hiçbir yere gitmiyordu: tuşa basınca yalnız
+        // "Ekran çevriliyor…" görünüyordu.
+        EventSent?.Invoke(new SubtitleEvent(SubtitleEventKind.Screen, string.Join('\n', items.Select(item => item.Translation)), durationMs,
+                                            Paragraphs: true));
+    }
+
+    /// <summary>
+    /// Ek alanın çevirisi: <c>region</c> olayı alanın kimliğini (<c>id</c>), çeviriyi (<c>text</c>; boşsa kutu kalkar),
+    /// yazının karedeki yerini (<c>box</c>) ve satır yüksekliğini (<c>line</c>) taşır. TV çeviriyi o yerde küçük bir kutuda
+    /// gösterir; ana altyazıya dokunmaz. Olayı tanımayan eski TV uygulamaları yok sayar (Mac ile aynı).
+    /// </summary>
+    public void SendRegion(string id, string text, TextBox? box, double? lineHeight = null)
+    {
+        var json = new SortedDictionary<string, object> { ["id"] = id, ["text"] = text };
+        if (box is { } b) json["box"] = BoxJson(b);
+        if (lineHeight is { } line) json["line"] = Round(line);
+        Broadcast(Frame("region", json), subtitle: true);
+        EventSent?.Invoke(new SubtitleEvent(SubtitleEventKind.Region, text, Id: id, Box: box));
+    }
+
+    /// <summary>Bütün ek alan kutularını kaldırır.</summary>
+    public void ClearRegions()
+    {
+        Broadcast(Frame("region-clear", new SortedDictionary<string, object>()), subtitle: true);
+        EventSent?.Invoke(new SubtitleEvent(SubtitleEventKind.RegionClear));
     }
 
     /// <summary>TV'deki "ekranı çevir" çevirilerini kaldırır (altyazıya dokunmaz).</summary>
-    public void ClearScreen() => Broadcast(Frame("screen-clear", new SortedDictionary<string, object>()), subtitle: true);
+    public void ClearScreen()
+    {
+        Broadcast(Frame("screen-clear", new SortedDictionary<string, object>()), subtitle: true);
+        EventSent?.Invoke(new SubtitleEvent(SubtitleEventKind.ScreenClear));
+    }
 
     private static SortedDictionary<string, object> BoxJson(TextBox b) => new()
     {
@@ -437,9 +505,11 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
         Frame("style", new SortedDictionary<string, object>
         {
             ["background"] = Math.Clamp(style.Background, 0, 100),
+            ["backgroundShape"] = style.BackgroundShape.ToString().ToLowerInvariant(),
             ["bold"] = style.Bold,
             ["bottomPercent"] = style.BottomPercent,
             ["displayMode"] = style.DisplayMode == TvDisplayMode.Overlay ? "overlay" : "inApp",
+            ["font"] = style.Font.ToString().ToLowerInvariant(),
             ["fontSize"] = style.FontSize,
             ["placement"] = style.Placement.ToString().ToLowerInvariant(),
             ["stackPrevious"] = style.StackPrevious,

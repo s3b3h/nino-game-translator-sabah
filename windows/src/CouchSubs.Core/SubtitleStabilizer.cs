@@ -141,6 +141,12 @@ public sealed class SubtitleStabilizer(double similarity = 0.85, int stableFrame
         if (TextMatch.IsSimilar(text, candidate, similarity))
         {
             candidateCount++;
+            // İlk aday anlam işaretini kaçırdıysa temiz hızlı yol da düzeltilen metni göndermeli.
+            if (cleanFastPathOnly && TextMatch.AddsMeaning(rawText, candidateRaw))
+            {
+                candidate = text;
+                candidateRaw = rawText.Trim();
+            }
         }
         else
         {

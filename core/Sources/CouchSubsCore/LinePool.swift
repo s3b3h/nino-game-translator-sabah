@@ -4,8 +4,9 @@ import Foundation
 
 /// Ortak havuz (varsayılan açık, ayarlardan kapatılabilir; ayarlarda ve kurulumun son adımında açıkça söylenir): hiçbir pakette bulunmayan İngilizce oyun satırları biriktirilir ve
 /// beş dakikada bir (ve uygulama kapanırken) sunucuya gönderilir; yeni paketler bunlardan hazırlanır. Yalnız satırın
-/// metni, anahtarı ve ilk görüldüğü an gider; kimlik olarak kuruluma özgü rastgele bir UUID kullanılır (IP, kullanıcı adı,
-/// PSN bilgisi yok). Sunucuya ulaşılamazsa kuyruk diskte bekler, sonra sessizce yeniden denenir.
+/// metni, anahtarı, ilk görüldüğü an ve biliniyorsa PS5'te o an çalışan oyunun kimliğiyle adı (`RunningGame`) gider;
+/// kimlik olarak kuruluma özgü rastgele bir UUID kullanılır (IP, kullanıcı adı, PSN bilgisi yok). Sunucuya ulaşılamazsa
+/// kuyruk diskte bekler, sonra sessizce yeniden denenir.
 /// Windows'taki CouchSubs.Core/LinePool.cs ile aynı kurallar.
 public actor LinePool {
     /// Açık; ayarlarda kullanıcı kapatabilir (kapatınca kuyruk da silinir).
@@ -26,6 +27,17 @@ public actor LinePool {
         public let text: String
         public let key: String
         public let firstSeen: String
+        /// Satır okunurken PS5'te çalışan oyun (bilinmiyorsa yok; JSON'a hiç yazılmaz, eski sunucu da okur).
+        public var titleId: String?
+        public var game: String?
+
+        public init(text: String, key: String, firstSeen: String, titleId: String? = nil, game: String? = nil) {
+            self.text = text
+            self.key = key
+            self.firstSeen = firstSeen
+            self.titleId = titleId
+            self.game = game
+        }
     }
 
     public typealias Send = @Sendable (URLRequest) async throws -> (Data, URLResponse)
@@ -64,6 +76,8 @@ public actor LinePool {
     private var lastSave = Date.distantPast
     private var dirty = false
     public private(set) var isEnabled: Bool
+    /// PS5'te o an çalışan oyun (keşif yanıtından; bağlantı yokken nil). Yeni satırlara eklenir.
+    public private(set) var game: RunningGame?
 
     public init(file: URL, endpoint: URL = LinePool.endpoint, app: String, platform: String = "mac",
                 enabled: Bool = LinePool.enabledByDefault,
@@ -98,12 +112,17 @@ public actor LinePool {
         save()
     }
 
+    /// PS5'te çalışan oyun değişti (bilinmiyorsa nil); bundan sonra kuyruğa giren satırlar bu oyunla gider.
+    public func setGame(_ game: RunningGame?) {
+        self.game = game
+    }
+
     /// Okunan (pakette bulunmayan) satırı kuyruğa ekler; kapalıysa, filtreye takılırsa ya da zaten varsa bir şey yapmaz.
     public func offer(_ text: String) {
         guard isEnabled else { return }
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard Self.accepts(text), let key = PackKey.key(text), !queuedKeys.contains(key), !sentKeys.contains(key) else { return }
-        state.queue.append(Line(text: text, key: key, firstSeen: Self.timestamp(clock())))
+        state.queue.append(Line(text: text, key: key, firstSeen: Self.timestamp(clock()), titleId: game?.titleId, game: game?.name))
         queuedKeys.insert(key)
         // Sınır aşılırsa en eski satırlar düşer.
         if state.queue.count > Self.maxQueue {

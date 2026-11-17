@@ -3,6 +3,7 @@ package com.couchsubs.mobile.ui
 
 import com.couchsubs.mobile.withInterfaceLanguage
 import com.couchsubs.mobile.core.TargetLanguage
+import com.couchsubs.mobile.core.SubtitleWrap
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -19,8 +20,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.sp
+import com.couchsubs.mobile.service.LiveStatus
+import com.couchsubs.mobile.service.TranslationService
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.heightIn
@@ -91,6 +101,10 @@ class PhoneSubtitleActivity : ComponentActivity() {
         // Nino: zemin her zaman siyah; uygulamanın (açık temalı) yazı renkleri burada okunmaz, altyazı renkleri sabittir.
         val color = if (settings.textColor == SubtitleTextColor.YELLOW) SUBTITLE_YELLOW else SUBTITLE_WHITE
         val scale = settings.subtitleScale / 100f
+        // "Hızlı konuşmada önceki satırları üstte tut" kapalıysa soluk önceki satır gösterilmez (TV ve Windows ile aynı).
+        val stackPrevious = settings.stackPrevious
+        // Ayarlar'daki yazı tipi (TV ile aynı); bu yazı tiplerinde olmayan harfler sistemin yazı tipinden gelir.
+        val subtitleFont = settings.subtitleFont
         val streaming = getString(R.string.phase_streaming)
         setContent {
             CouchSubsTheme {
@@ -118,26 +132,63 @@ class PhoneSubtitleActivity : ComponentActivity() {
                         }
                         status.packInUse?.let { Pill(stringResource(R.string.running_pack, it), pro = true) }
                         Spacer(Modifier.weight(1f))
+                        if (connected) IconAction(
+                            if (status.screenState == LiveStatus.ScreenState.IDLE) Icons.Filled.Search else Icons.Filled.Delete,
+                            stringResource(if (status.screenState == LiveStatus.ScreenState.IDLE) R.string.screen_translate else R.string.screen_remove),
+                        ) { TranslationService.translateScreen() }
                         IconAction(Icons.Filled.Close, stringResource(R.string.close)) { finish() }
                     }
                     BoxWithConstraints(Modifier.fillMaxSize().padding(vertical = Tokens.Space.screen * 2)) {
                         val room = maxHeight
                         Column(Modifier.align(Alignment.Center).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
-                            val style = Tokens.Type.subtitleLandscape
-                            val previous = status.recent.getOrNull(1)?.translation
+                            val style = Tokens.Type.subtitleLandscape.copy(fontFamily = rememberSubtitleFontFamily(subtitleFont))
+                            val previous = status.previous
                             val current = status.current.ifEmpty { if (status.running) "" else "Nino" }
-                            // Önceki satır yalnız yer varsa ve kısa bir satırken gösterilir; asıl satıra yer açılır.
-                            if (previous != null && status.current.isNotEmpty() && previous != status.current && current.length < 90) Text(TargetLanguage.displayText(previous),
-                                style = style.copy(fontSize = style.fontSize * scale * 0.8f, lineHeight = style.lineHeight * scale * 0.8f),
-                                color = color.copy(alpha = 0.4f), textAlign = TextAlign.Center, maxLines = 2,
-                                overflow = TextOverflow.Ellipsis)
-                            FittingText(TargetLanguage.displayText(current), style.copy(fontSize = style.fontSize * scale, lineHeight = style.lineHeight * scale),
+                            // Önceki satır (Ayarlar'da açıksa) yalnız yer varsa ve kısa bir satırken gösterilir; asıl satıra yer açılır.
+                            // Uzun çeviri en çok 3 satıra dengeli bölünür; sığmazsa yazı biraz küçülür (bkz. SubtitleWrap).
+                            if (stackPrevious && previous.isNotEmpty() && status.current.isNotEmpty() && previous != status.current && current.length < 90) {
+                                val wrapped = SubtitleWrap.fit(previous)
+                                Text(TargetLanguage.displayText(wrapped.text),
+                                    style = style.copy(fontSize = style.fontSize * scale * 0.8f * wrapped.scale, lineHeight = style.lineHeight * scale * 0.8f * wrapped.scale),
+                                    color = color.copy(alpha = 0.4f), textAlign = TextAlign.Center, maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis)
+                            }
+                            val wrapped = SubtitleWrap.fit(current)
+                            FittingText(TargetLanguage.displayText(wrapped.text),
+                                style.copy(fontSize = style.fontSize * scale * wrapped.scale, lineHeight = style.lineHeight * scale * wrapped.scale),
                                 color, Modifier.fillMaxWidth().heightIn(max = room))
                         }
                     }
                     Text(stringResource(R.string.subtitle_screen_note), style = Tokens.Type.caption, color = Color.White.copy(alpha = 0.45f),
                         modifier = Modifier.align(Alignment.BottomCenter))
+                    // "Ekranı çevir" sonuçları: her çeviri kendi yazısının yerinde ve aynı boyda (TV'deki gibi).
+                    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+                        status.screen.forEach { item ->
+                            val box = item.box
+                            val width = maxOf(60.dp, maxWidth * (box.right - box.left).toFloat())
+                            val size = (maxHeight.value * item.lineHeight * 0.8).coerceIn(10.0, 28.0).toFloat()
+                            Text(item.translation, style = Tokens.Type.caption.copy(fontSize = size.sp, lineHeight = (size * 1.2f).sp),
+                                color = Tokens.Color.text, textAlign = TextAlign.Start,
+                                modifier = Modifier
+                                    .offset(x = maxWidth * box.left.toFloat(), y = maxHeight * ((box.top + box.bottom) / 2).toFloat() - (size * 0.8f).dp)
+                                    .width(width)
+                                    .background(Color.Black.copy(alpha = 0.85f), androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                                    .padding(4.dp))
+                        }
+                    }
+                    // Ek alanların (görev, telefon, bildirim) çevirisi oyundaki yerinde küçük kutuda (TV ve iPhone'daki gibi).
+                    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+                        status.regions.forEach { region ->
+                            val box = region.box ?: com.couchsubs.mobile.core.TextBox(0.6, 0.05, 0.95, 0.2)
+                            Text(region.text, style = Tokens.Type.caption, color = Tokens.Color.text,
+                                modifier = Modifier
+                                    .offset(x = maxWidth * box.left.toFloat(), y = maxHeight * box.top.toFloat())
+                                    .widthIn(min = 120.dp, max = maxOf(120.dp, maxWidth * (box.right - box.left).toFloat()))
+                                    .background(Color.Black.copy(alpha = 0.8f), androidx.compose.foundation.shape.RoundedCornerShape(6.dp))
+                                    .padding(6.dp))
+                        }
+                    }
                 }
             }
         }

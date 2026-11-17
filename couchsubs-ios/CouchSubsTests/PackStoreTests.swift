@@ -115,17 +115,20 @@ final class PackStoreTests: XCTestCase {
         XCTAssertEqual(library.match("Hello there, my friend.")?.text, "Merhaba dostum.")
     }
 
-    func testRefreshIsWeekly() async throws {
+    func testRefreshIsDaily() async throws {
         StubProtocol.responses["/v1/packs"] = (200, Data(#"{"packs":[]}"#.utf8))
         let start = Date()
         try await store(now: start).refresh(force: true)
-        let soon = await store(now: start.addingTimeInterval(3 * 24 * 3600)).needsRefresh()
+        let soon = await store(now: start.addingTimeInterval(6 * 3600)).needsRefresh()
         XCTAssertFalse(soon)
-        let later = await store(now: start.addingTimeInterval(8 * 24 * 3600)).needsRefresh()
+        let later = await store(now: start.addingTimeInterval(25 * 3600)).needsRefresh()
         XCTAssertTrue(later)
+        // Yeni oyun: on dakikadan eski bakış yenilenir.
+        let forGame = await store(now: start.addingTimeInterval(11 * 60)).needsRefresh(maxAge: PackStore.gameCheckInterval)
+        XCTAssertTrue(forGame)
         StubProtocol.requests = []
-        try await store(now: start.addingTimeInterval(24 * 3600)).refresh()
-        XCTAssertTrue(StubProtocol.requests.isEmpty, "hafta dolmadan istek yok")
+        try await store(now: start.addingTimeInterval(6 * 3600)).refresh()
+        XCTAssertTrue(StubProtocol.requests.isEmpty, "gün dolmadan istek yok")
     }
 
     func testRemovedPackIsDeletedFromCache() async throws {

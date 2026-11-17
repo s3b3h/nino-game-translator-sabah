@@ -1,11 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.couchsubs.mobile.remoteplay
 
+import com.couchsubs.mobile.core.RunningGame
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
-/** Ağda bulunan PS5. */
-data class ConsoleInfo(val host: String, val name: String, val isAwake: Boolean)
+/**
+ * Ağda bulunan PS5. [runningAppTitleId] ve [runningAppName]: o an çalışan uygulama (keşif yanıtındaki
+ * `running-app-titleid`, `running-app-name`); ana ekranda ya da dinlenme modunda null.
+ */
+data class ConsoleInfo(
+    val host: String,
+    val name: String,
+    val isAwake: Boolean,
+    val runningAppTitleId: String? = null,
+    val runningAppName: String? = null,
+)
 
 /** PS5'e kaydedilmiş bu telefonun bağlantı bilgileri (Windows: RegisteredConsole). Şifreli saklanır. */
 class RegisteredConsole(val host: String, val name: String, val registKey: ByteArray, val morning: ByteArray) {
@@ -112,10 +122,20 @@ object ConsoleDiscovery {
         val targets = if (host != null) listOf(host) else subnetAddresses()
         if (targets.isEmpty()) return emptyList()
         return NativeBridge.discover(targets.toTypedArray(), timeoutMs)?.mapNotNull { line ->
-            val parts = line.split('\t')
-            if (parts.size < 3) null else ConsoleInfo(parts[0], parts[1], parts[2] == "1")
+            parseLine(line)
         } ?: emptyList()
     }
+
+    /** "adres\tad\tuyanık(0/1)[\toyun kimliği\toyun adı]" (yerel kütüphanenin yanıt satırı). */
+    fun parseLine(line: String): ConsoleInfo? {
+        val parts = line.split('\t')
+        if (parts.size < 3) return null
+        return ConsoleInfo(parts[0], parts[1], parts[2] == "1", parts.getOrNull(3)?.ifEmpty { null }, parts.getOrNull(4)?.ifEmpty { null })
+    }
+
+    /** PS5'te o an çalışan oyun: yalnız bağlı PS5'in adresine sorulur (bloklar; ortak havuz için). */
+    fun runningGame(host: String): RunningGame? =
+        discover(host, 2000).firstOrNull()?.let { RunningGame.create(it.runningAppTitleId, it.runningAppName) }
 
     fun wake(console: RegisteredConsole) {
         val credential = console.wakeCredential ?: throw IllegalStateException("Registration key is not a wake credential")

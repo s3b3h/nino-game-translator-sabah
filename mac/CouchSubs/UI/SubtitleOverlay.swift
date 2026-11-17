@@ -230,6 +230,7 @@ struct SubtitleOverlayView: View {
                 resizeHandles
             }
             VStack(spacing: 14 * scale) {
+                ForEach(model.overlayRegions) { regionBox($0) }
                 Spacer(minLength: 0)
                 if lines.isEmpty, adjusting {
                     line(SubtitleStack.Line(id: 0, text: String(localized: "Subtitles appear here."), role: .current,
@@ -237,7 +238,7 @@ struct SubtitleOverlayView: View {
                 }
                 ForEach(lines) { line($0) }
             }
-            .padding(.horizontal, 24 * scale)
+            .padding(.horizontal, model.settings.style.backgroundShape == .band ? 0 : 24 * scale)
             .padding(.bottom, 8 * scale)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -309,7 +310,9 @@ struct SubtitleOverlayView: View {
     private func classicLine(_ line: SubtitleStack.Line) -> some View {
         let style = model.settings.style
         let current = line.role == .current
-        let size = CGFloat(style.fontSize) * scale * (current ? 1 : 0.8)
+        // Uzun çeviri en çok 3 satıra dengeli bölünür; 3 satıra sığmazsa yazı biraz küçülür (bkz. SubtitleWrap).
+        let wrapped = line.wrapped
+        let size = CGFloat(style.fontSize) * scale * (current ? 1 : 0.8) * CGFloat(wrapped.scale)
         let alpha = Double(max(0, min(100, style.background))) / 100 * (current ? 1 : 0.83)
         let opacity: Double = switch line.role {
         case .current: 1
@@ -322,10 +325,12 @@ struct SubtitleOverlayView: View {
         let shadowRadius: CGFloat = 2 * scale
         let vertical: CGFloat = (current ? 10 : 6) * scale
         let horizontal: CGFloat = (current ? 26 : 20) * scale
-        let corner: CGFloat = 10 * scale
+        // Bant: kutu pencerenin tüm genişliğini kaplar, oyundaki İngilizce yazıyı yan yana da gizler.
+        let band = style.backgroundShape == .band
+        let corner: CGFloat = band ? 0 : 10 * scale
         let shown: Double = line.fading ? 0 : opacity
-        let text = Text(verbatim: TargetLanguage.displayText(line.text))
-            .font(.system(size: size, weight: weight))
+        let text = Text(verbatim: TargetLanguage.displayText(wrapped.text))
+            .subtitleFont(style.font, size: size, weight: weight)
             .foregroundStyle(Self.color(style.textColor))
         return text
             .multilineTextAlignment(alignment)
@@ -335,9 +340,32 @@ struct SubtitleOverlayView: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(.vertical, vertical)
             .padding(.horizontal, horizontal)
+            .frame(maxWidth: band ? .infinity : nil)
             .background(Color.black.opacity(alpha), in: RoundedRectangle(cornerRadius: corner))
             .opacity(shown)
             .animation(.linear(duration: SubtitleStack.previousFade), value: line.fading)
+            .contentShape(Rectangle())
+            .gesture(moveGesture)
+    }
+
+    /// Ek alanın çevirisi: altyazıdan küçük, koyu zeminli kutu; oyundaki yazının bulunduğu yana yaslı.
+    private func regionBox(_ region: OverlayRegion) -> some View {
+        let style = model.settings.style
+        let size = max(12, CGFloat(style.fontSize) * scale * 0.55)
+        let alignment: Alignment = switch region.side {
+        case .leading: .leading
+        case .center: .center
+        case .trailing: .trailing
+        }
+        return Text(verbatim: region.text)
+            .font(.system(size: size, weight: .semibold))
+            .foregroundStyle(Self.color(style.textColor))
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.vertical, 6 * scale)
+            .padding(.horizontal, 14 * scale)
+            .background(Color.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 8 * scale))
+            .frame(maxWidth: .infinity, alignment: alignment)
             .contentShape(Rectangle())
             .gesture(moveGesture)
     }

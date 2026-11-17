@@ -211,6 +211,63 @@ public class PackPipelineTests
         Assert.Equal(["But you can always buy another boat."], translator.Requested);
     }
 
+    /// <summary>
+    /// İlk kare olumsuzluğu ya da sayıyı kaçırıp çevrildiyse, puanı daha yüksek olmasa da düzelen okuma yeniden
+    /// okuma sayılmaz, çevrilir; TV'de anlamı ters çeviri kalmaz.
+    /// </summary>
+    [Theory]
+    [InlineData("Meet me at the docks at 5.", "Meet me at the docks at 6.")]
+    [InlineData("I can do that for you right now.", "I can't do that for you right now.")]
+    [InlineData("I said that I would help you with this.", "I said that I would never help you with this.")]
+    public async Task CorrectionThatChangesMeaningIsTranslated(string misread, string correct)
+    {
+        var sender = new FakeSender();
+        var translator = new FakeTranslator();
+        long clock = 0;
+        var frames = new[] { misread }.Concat(Enumerable.Repeat(correct, 6)).ToArray();
+        var pipeline = new SubtitlePipeline(new FakeReader(frames), translator, sender, clock: () => clock)
+            { HoldWithoutPacks = true, ReadingScore = _ => 10, LooksMisread = _ => false };
+        await RunTimed(pipeline, 7, () => clock += 100);
+        Assert.Equal([misread, correct], translator.Requested);
+    }
+
+    /// <summary>Olumsuzluğu kaçıran yeniden okuma ise gösterilen doğru satırı bozmaz (yalnız eklenen işaret sayılır).</summary>
+    [Fact]
+    public async Task RereadThatDropsANegationIsNotTranslated()
+    {
+        var sender = new FakeSender();
+        var translator = new FakeTranslator();
+        long clock = 0;
+        var frames = Enumerable.Repeat("I can't do that for you right now.", 3).Concat(Enumerable.Repeat("I can do that for you right now.", 3)).ToArray();
+        var pipeline = new SubtitlePipeline(new FakeReader(frames), translator, sender, clock: () => clock)
+            { HoldWithoutPacks = true, ReadingScore = _ => 10, LooksMisread = _ => false };
+        await RunTimed(pipeline, 6, () => clock += 100);
+        Assert.Equal(["I can't do that for you right now."], translator.Requested);
+    }
+
+    /// <summary>Bekleme sırasında gelen anlam düzeltmesi, okuma puanı eşit olsa da kaybolmaz.</summary>
+    [Theory]
+    [InlineData("I can do that for you right now", "I can't do that for you right now", 2)]
+    [InlineData("Meet me at the docks at 5", "Meet me at the docks at 6", 2)]
+    [InlineData("I can do that for you right now", "I can't do that for you right now", 4)]
+    [InlineData("Meet me at the docks at 5", "Meet me at the docks at 6", 4)]
+    public async Task HeldMeaningCorrectionReplacesEarlierReading(string misread, string correct, int initialFrames)
+    {
+        var sender = new FakeSender();
+        var translator = new FakeTranslator();
+        long clock = 0;
+        var frames = Enumerable.Repeat(misread, initialFrames).Concat(Enumerable.Repeat(correct, 8)).ToArray();
+        var pipeline = new SubtitlePipeline(new FakeReader(frames), translator, sender, clock: () => clock)
+            { HoldWithoutPacks = true, ReadingScore = _ => 10, LooksMisread = _ => false };
+        await RunTimed(pipeline, 4, () => clock += 100);
+        Assert.Empty(translator.Requested);
+        // İlk aday 100 ms'de beklemeye girdi: düzeltme, 400 ms olan son tarihi ileri atmamalı.
+        await RunTimed(pipeline, 1, () => clock += 100);
+        Assert.Equal([correct], translator.Requested);
+        await RunTimed(pipeline, frames.Length - 5, () => clock += 100);
+        Assert.Equal([correct], translator.Requested);
+    }
+
     /// <summary>Temiz ve tam cümle (büyük harfle başlıyor, noktalamayla bitiyor) beklemeden çevrilir; gecikme olmaz.</summary>
     [Fact]
     public async Task CompleteCleanLineIsNotDelayed()

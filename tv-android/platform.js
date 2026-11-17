@@ -157,7 +157,7 @@
     // Bekleme kutusu ve demo kumandayla kapatılamaz; oyunun üstünde asılı kalmasın.
     style.textContent = 'body.overlay #waiting, body.overlay #demo-badge { display: none !important; }' +
       '#overlay-dot { position: absolute; top: 32px; right: 32px; width: 14px; height: 14px; border-radius: 50%;' +
-      ' background: #E5484D; opacity: 0.8; z-index: 50; }' +
+      ' background: #F28B82; opacity: 0.8; z-index: 50; }' +
       '#overlay-dot.hidden { display: none; }';
     document.head.appendChild(style);
     document.body.className += ' overlay';
@@ -198,11 +198,8 @@
     speechElement: true,
 
     init: function () {
-      // Android TV'nin güvenli alanı (yanlarda 48dp, üstte 27dp: 1080p'de 96 ve 54 piksel): panel ve demo notu kenara
-      // taşan (overscan) TV'lerde kesilmesin (TV-OV).
-      var safe = document.createElement('style');
-      safe.textContent = '#panel { top: 54px; left: 96px; } #demo-badge { top: 54px; right: 96px; }';
-      document.head.appendChild(safe);
+      // Android TV'nin güvenli alanı (yanlarda 48dp, üstte 27dp: 1080p'de 96 ve 54 piksel, TV-OV) artık ortak
+      // style.css'in varsayılanıdır; burada ayrıca kurulmaz.
       if (overlay) setupOverlay();
       else if (homeMode) {
         if (document.body) setupHome(); else window.addEventListener('DOMContentLoaded', setupHome);

@@ -26,8 +26,9 @@ internal sealed class MemorySettings : ISettingsStore
 internal sealed class FakeSleep : ISleepGuard
 {
     public bool Active { get; private set; }
-    public void Begin() => Active = true;
-    public void End() => Active = false;
+    public bool DisplayOn { get; private set; }
+    public void Begin(bool keepDisplayOn) => (Active, DisplayOn) = (true, keepDisplayOn);
+    public void End() => (Active, DisplayOn) = (false, false);
 }
 
 internal sealed class FakeStream : IStreamSession
@@ -106,6 +107,10 @@ internal sealed class FakeKeeper : IKeeper
 
 internal sealed class FakeTranslation : ITranslationModel
 {
+    public TranslationDevice SelectedDevice { get; private set; } = TranslationDevice.Cpu;
+    public event Action? GpuFallback;
+    public void SelectDevice(TranslationDevice device) => SelectedDevice = device;
+    public void FallBackToCpu() => GpuFallback?.Invoke();
     public bool Installed { get; set; } = true;
     public int Downloads { get; private set; }
     public TaskCompletionSource? DownloadGate { get; set; }
@@ -119,7 +124,7 @@ internal sealed class FakeTranslation : ITranslationModel
         Installed = true;
         progress.Report(1);
     }
-    /// <summary>Verilirse Create bunu fırlatır (ör. onnxruntime.dll yüklenemedi).</summary>
+    /// <summary>Verilirse Create bunu fırlatır (ör. CTranslate2 çalışma zamanı eksik).</summary>
     public Exception? CreateError { get; set; }
     public ITextTranslator Create(string source, string target) => CreateError is { } error ? throw error : new EchoTranslator();
 
@@ -147,6 +152,10 @@ internal sealed class FakeReader(Reading? lines = null) : ITextReader
 
 internal sealed class FakeServices : IAppServices
 {
+    public IXboxService? Xbox { get; set; }
+    /// <summary>PS Remote Play / chiaki-ng bu bilgisayarda kurulu mu (Ayarlar'daki indirme satırları, ana ekran uyarısı).</summary>
+    public bool RemotePlayIsInstalled { get; set; } = true;
+    public bool RemotePlayInstalled(RemotePlayApp app) => RemotePlayIsInstalled;
     public List<ConsoleInfo> Consoles { get; } = [new("192.168.1.253", "PS5-789", true)];
     public List<LgTv> Tvs { get; } = [new("LG TV", "192.168.1.153")];
     public RegisteredConsole? Registered { get; private set; }
@@ -164,6 +173,7 @@ internal sealed class FakeServices : IAppServices
     public bool HasOcrLanguage(string language) => HasOcrPack;
     public IDubbingModel? Dubbing { get; set; }
     public IDubbingModel? FastDubbing { get; set; }
+    public GamePackLibrary? GamePacks { get; set; }
     public FakeTranslation Translation { get; } = new();
     public IFirewall? Firewall { get; set; }
     ITranslationModel IAppServices.Translation => Translation;
@@ -191,7 +201,8 @@ internal sealed class FakeServices : IAppServices
         AiTests.Add((provider, key, model));
         return Task.FromResult(AiTest);
     }
-    public ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback, string target = "tr")
+    public ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback, Func<string?>? game,
+                                             string target = "tr")
     {
         AiTranslators.Add((provider, key, model));
         OnlineTargets.Add(target);
@@ -204,7 +215,8 @@ internal sealed class FakeServices : IAppServices
         LocalTests.Add((server, key));
         return Task.FromResult(AiTest);
     }
-    public ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback, string target = "tr")
+    public ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback, Func<string?>? game,
+                                                  string target = "tr")
     {
         LocalTranslators.Add((server, key));
         OnlineTargets.Add(target);
@@ -259,9 +271,29 @@ internal sealed class FakeServices : IAppServices
         WindowStreams.Add(stream);
         return stream;
     }
-    public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId)
+    /// <summary>Her oturuma verilen PS5 giriş şifresi.</summary>
+    public List<string?> StreamPasscodes { get; } = [];
+    public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId, string? loginPasscode)
     {
+        StreamPasscodes.Add(loginPasscode);
         if (StreamError is not null) throw StreamError;
+        var stream = new FakeStream();
+        Streams.Add(stream);
+        return stream;
+    }
+    /// <summary>Her pencere kaynağına verilen Remote Play uygulaması.</summary>
+    public List<RemotePlayApp> RemotePlayWindowApps { get; } = [];
+    public IStreamSession MakeWindowStream(RemotePlayApp app)
+    {
+        RemotePlayWindowApps.Add(app);
+        var stream = new FakeStream();
+        Streams.Add(stream);
+        return stream;
+    }
+    public List<WindowCaptureTarget> CaptureWindowStreams { get; } = [];
+    public IStreamSession MakeCaptureWindowStream(WindowCaptureTarget target)
+    {
+        CaptureWindowStreams.Add(target);
         var stream = new FakeStream();
         Streams.Add(stream);
         return stream;
@@ -369,6 +401,37 @@ public class AppControllerTests
 
     [Fact]
     public void FreshInstallStartsAtWelcome() => Assert.Equal(OnboardingStep.Welcome, Make().Step);
+
+    [Fact]
+    public async Task ReloadGamePacksRefreshesInstalledPacksAfterWritingAUserPack()
+    {
+        var directory = Directory.CreateTempSubdirectory("couchsubs-pack-");
+        try
+        {
+            var library = new GamePackLibrary(null, directory.FullName);
+            var startup = new TaskCompletionSource<Action>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var controller = new AppController(new FakeServices { GamePacks = library }, new MemoryStore(),
+                new MemorySettings(), new FakeSleep(), Localizer.ForLanguage("en"), action => startup.TrySetResult(action));
+            var publishStartupList = await startup.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Empty(controller.InstalledPacks);
+
+            File.WriteAllText(Path.Combine(directory.FullName, "community-test-game.json"),
+                """{"format":1,"id":"community-test-game","title":"Test Game","entries":{"ebf811f2fee9a8cc":"Yere yat!"}}""");
+            controller.ReloadGamePacks();
+
+            var pack = Assert.Single(controller.InstalledPacks);
+            Assert.Equal("Test Game", pack.Title);
+            Assert.Equal(1, pack.Entries);
+
+            // A startup update already queued on the dispatcher must not restore the cached empty list.
+            publishStartupList();
+            Assert.Equal(pack, Assert.Single(controller.InstalledPacks));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
 
     [Fact]
     public void CompleteSetupOpensMainScreen()
@@ -483,6 +546,44 @@ public class AppControllerTests
         {
             RemotePlayLog.MessageLogged -= Collect;
         }
+    }
+
+    /// Eski sürüm Xbox adını bozuk kaydettiyse (#223) liste sorulunca kayıtlı ad düzelir; konsol yeniden seçilmez.
+    [Fact]
+    public async Task XboxDiscoveryRepairsSavedConsoleName()
+    {
+        var store = new MemoryStore();
+        store.Save(StoreKeys.XboxToken, "{}");
+        store.Save(StoreKeys.XboxConsole, new XboxConsole("F4", "Oturma OdasA+ Xbox", "XboxSeriesX", true));
+        var xbox = new FakeXbox([new XboxConsole("F4", "Oturma Odası Xbox", "XboxSeriesX", true)]);
+        var controller = new AppController(new FakeServices { Xbox = xbox }, store, new MemorySettings(), new FakeSleep(), Localizer.ForLanguage("tr"), action => action());
+        await controller.DiscoverXboxConsolesAsync();
+        Assert.Equal("Oturma Odası Xbox", controller.SelectedXboxConsole?.Name);
+        Assert.Equal("Oturma Odası Xbox", store.Load<XboxConsole>(StoreKeys.XboxConsole)?.Name);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task XboxFrameRateSettingIsPassedToStreamAndPersisted(bool legacyFrameRate)
+    {
+        var store = new MemoryStore();
+        store.Save(StoreKeys.ConsoleKind, GameConsoleKind.Xbox);
+        store.Save(StoreKeys.XboxToken, "{}");
+        store.Save(StoreKeys.XboxConsole, new XboxConsole("F4", "Xbox", "XboxSeriesX", true));
+        var savedSettings = new MemorySettings();
+        savedSettings.Save(new UserSettings { Output = SubtitleOutput.Computer });
+        var xbox = new FakeXbox([]);
+        var controller = Make(new FakeServices { Xbox = xbox }, store, savedSettings);
+        try
+        {
+            Assert.False(controller.Settings.XboxLegacyFrameRate);
+            controller.Settings = controller.Settings with { XboxLegacyFrameRate = legacyFrameRate };
+            await controller.StartAsync();
+            Assert.Equal([legacyFrameRate], xbox.LegacyFrameRateRequests);
+            Assert.Equal(legacyFrameRate, savedSettings.Load().XboxLegacyFrameRate);
+        }
+        finally { controller.Dispose(); }
     }
 
     [Fact]
@@ -861,6 +962,214 @@ public class AppControllerRunTests
     }
 
     [Fact]
+    public void FreeTranslationDeviceDefaultsToCpuAndReportsGpuFallback()
+    {
+        var (controller, services, _) = Ready();
+        Assert.Equal(TranslationDevice.Cpu, controller.Settings.TranslationDevice);
+        Assert.Equal(TranslationDevice.Cpu, services.Translation.SelectedDevice);
+
+        controller.Settings = controller.Settings with { TranslationDevice = TranslationDevice.Gpu };
+        Assert.Equal(TranslationDevice.Gpu, services.Translation.SelectedDevice);
+        services.Translation.FallBackToCpu();
+        Assert.True(controller.GpuFallbackWarning);
+
+        controller.Settings = controller.Settings with { TranslationDevice = TranslationDevice.Cpu };
+        Assert.False(controller.GpuFallbackWarning);
+        controller.Dispose();
+    }
+
+    /// <summary>Ayarlar'daki PS5 giriş şifresi oturuma verilir; yalnız 4 hane kaydedilir, kurulum sıfırlanınca silinir.</summary>
+    [Fact]
+    public async Task LoginPasscodeIsSavedAndPassedToTheSession()
+    {
+        var (controller, services, _) = Ready();
+        Assert.False(controller.HasLoginPasscode);
+        Assert.False(controller.SetLoginPasscode("12a4"));
+        Assert.True(controller.SetLoginPasscode(" 4321 "));
+        Assert.True(controller.HasLoginPasscode);
+        await controller.StartAsync();
+        Assert.Equal(["4321"], services.StreamPasscodes);
+        controller.Stop();
+        controller.RemoveLoginPasscode();
+        Assert.False(controller.HasLoginPasscode);
+        await controller.StartAsync();
+        Assert.Equal(["4321", null], services.StreamPasscodes);
+        controller.Stop();
+        Assert.True(controller.SetLoginPasscode("1111"));
+        controller.ResetSetup();
+        Assert.False(controller.HasLoginPasscode);
+        controller.Dispose();
+    }
+
+    /// <summary>
+    /// X'te bildirildi: Remote Play penceresinden okurken altyazı ~10 dakikada bir kesiliyordu. Kullanıcı TV'de oynayıp
+    /// bilgisayara dokunmayınca ekran kendi ayarıyla kapanıyor, kapalı ekranda pencere yakalama kare vermiyordu. Pencereden
+    /// okunurken ya da altyazı bu ekrandayken ekran açık tutulur; PS5'ten okunup yalnız TV'ye gidiyorsa tutulmaz.
+    /// </summary>
+    [Fact]
+    public async Task DisplayStaysOnWhileReadingAWindowOrShowingOnComputer()
+    {
+        var (controller, _, sleep) = Ready();
+        Assert.Equal(FrameSource.Ps5, controller.Settings.FrameSource);
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Tv };
+        await controller.StartAsync();
+        Assert.True(sleep.Active);
+        Assert.False(sleep.DisplayOn);
+        // Çeviri sürerken altyazı bilgisayar ekranına da alınırsa ekran açık kalır, geri alınınca yine kapanabilir.
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Both };
+        Assert.True(sleep.DisplayOn);
+        controller.Settings = controller.Settings with { Output = SubtitleOutput.Tv };
+        Assert.False(sleep.DisplayOn);
+        controller.Stop();
+        Assert.False(sleep.Active);
+
+        controller.Settings = controller.Settings with { FrameSource = FrameSource.RemotePlayWindow };
+        await controller.StartAsync();
+        Assert.True(sleep.DisplayOn);
+        controller.Stop();
+        Assert.False(sleep.DisplayOn);
+        controller.Dispose();
+    }
+
+    /// "İkinci hesap yok mu?": PSN girişi ve PS5 olmadan kurulum biter; görüntü Remote Play penceresinden, altyazı
+    /// bilgisayar ekranında. Yeniden açılınca sihirbaz çıkmaz.
+    [Fact]
+    public void NoSecondAccountReadsRemotePlayWindowAndCompletesSetup()
+    {
+        var store = new MemoryStore();
+        var settings = new MemorySettings();
+        var controller = AppControllerTests.Make(store: store, settings: settings);
+        controller.Advance();
+        Assert.Equal(OnboardingStep.SecondAccount, controller.Step);
+        controller.UseRemotePlayWindow();
+        Assert.Equal(OnboardingStep.Done, controller.Step);
+        Assert.Equal(FrameSource.RemotePlayWindow, controller.Settings.FrameSource);
+        Assert.Equal(SubtitleOutput.Computer, controller.Settings.Output);
+        Assert.False(controller.HasAccount);
+        Assert.True(controller.CanStart);
+        Assert.Equal(OnboardingStep.Done, AppControllerTests.Make(store: store, settings: settings).Step);
+    }
+
+    /// Pencere modunda kurulmuş, sonra Ayarlar'da PS5 seçilmiş: "Hesabı bağla" görünür, sihirbaz ikinci hesap adımından açılır.
+    [Fact]
+    public void LinkAccountOpensWizardAtSecondAccount()
+    {
+        var settings = new MemorySettings();
+        settings.Save(new UserSettings { FrameSource = FrameSource.RemotePlayWindow, Output = SubtitleOutput.Computer });
+        var controller = AppControllerTests.Make(settings: settings);
+        Assert.Equal(OnboardingStep.Done, controller.Step);
+        Assert.False(controller.NeedsPs5Link);
+        controller.Settings = controller.Settings with { FrameSource = FrameSource.Ps5 };
+        Assert.True(controller.NeedsPs5Link);
+        Assert.False(controller.CanStart);
+        controller.LinkPs5Account();
+        Assert.Equal(OnboardingStep.SecondAccount, controller.Step);
+    }
+
+    /// Remote Play uygulaması kurulu değilse ana ekran bunu ve nereden indirileceğini söyler.
+    [Fact]
+    public void MissingRemotePlayAppIsReported()
+    {
+        var settings = new MemorySettings();
+        settings.Save(new UserSettings { FrameSource = FrameSource.RemotePlayWindow, Output = SubtitleOutput.Computer });
+        var services = new FakeServices { RemotePlayIsInstalled = false };
+        var controller = AppControllerTests.Make(services, settings: settings);
+        Assert.True(controller.RemotePlayMissing);
+        Assert.Equal("The Remote Play app isn't installed on this PC. Download it in Settings › Picture source.", controller.Ps5StatusText);
+        services.RemotePlayIsInstalled = true;
+        Assert.False(controller.RemotePlayMissing);
+        Assert.Equal("Reads the Remote Play window on this PC when you start translating.", controller.Ps5StatusText);
+    }
+
+    [Fact]
+    public void SelectedWindowSetupSkipsPsnPairingButRequiresExplicitTarget()
+    {
+        var store = new MemoryStore();
+        var settings = new MemorySettings();
+        var controller = AppControllerTests.Make(store: store, settings: settings);
+        controller.Advance();
+        Assert.Equal(OnboardingStep.SecondAccount, controller.Step);
+
+        controller.UseCaptureWindow();
+        Assert.Equal(OnboardingStep.Done, controller.Step);
+        Assert.Equal(FrameSource.CaptureWindow, controller.Settings.FrameSource);
+        Assert.Equal(SubtitleOutput.Computer, controller.Settings.Output);
+        Assert.False(controller.HasAccount);
+        Assert.False(controller.CanStart); // Never fall back to scanning the entire desktop.
+
+        var target = new WindowCaptureTarget("obs64", "Fullscreen Projector (Scene)");
+        controller.Settings = controller.Settings with { CaptureWindow = target };
+        Assert.True(controller.CanStart);
+        Assert.Equal(OnboardingStep.Done, AppControllerTests.Make(store: store, settings: settings).Step);
+        controller.Dispose();
+    }
+
+    [Fact]
+    public async Task SelectedWindowStartsAndSwitchesTargetsWithoutOpeningPs5Session()
+    {
+        var first = new WindowCaptureTarget("obs64", "Fullscreen Projector (Scene)");
+        var second = new WindowCaptureTarget("game", "Gameplay");
+        var settings = new MemorySettings();
+        settings.Save(new UserSettings
+        {
+            FrameSource = FrameSource.CaptureWindow,
+            CaptureWindow = first,
+            Output = SubtitleOutput.Computer,
+        });
+        var services = new FakeServices { RemotePlayIsInstalled = false };
+        var controller = AppControllerTests.Make(services: services, settings: settings);
+
+        await controller.StartAsync();
+        Assert.Equal([first], services.CaptureWindowStreams);
+        Assert.Empty(services.StreamPasscodes);
+        Assert.Empty(services.RemotePlayWindowApps);
+        Assert.True(controller.IsRunning);
+
+        controller.Settings = controller.Settings with { CaptureWindow = second };
+        for (var i = 0; i < 200 && services.CaptureWindowStreams.Count < 2; i++) await Task.Delay(10);
+        Assert.Equal([first, second], services.CaptureWindowStreams);
+        Assert.Equal(2, services.Streams.Count);
+        Assert.True(controller.IsRunning);
+        controller.Dispose();
+    }
+
+    /// Remote Play penceresinden okurken PS5 kaydı gerekmez: sihirbaz açılmaz, kurulum kaydı değişmez, çeviri pencere
+    /// kaynağıyla (PS5'e bağlanmadan) başlar.
+    [Fact]
+    public async Task WindowSourceStartsWithoutPairedPs5()
+    {
+        var settings = new MemorySettings();
+        settings.Save(new UserSettings { FrameSource = FrameSource.RemotePlayWindow, RemotePlayApp = RemotePlayApp.Chiaki, Output = SubtitleOutput.Computer });
+        var services = new FakeServices();
+        var store = new MemoryStore();
+        var controller = AppControllerTests.Make(services, store, settings);
+        Assert.Equal(OnboardingStep.Done, controller.Step);
+        Assert.Null(store.Load<bool?>(StoreKeys.SetupComplete));
+        Assert.True(controller.CanStart);
+        Assert.Equal("Reads the Remote Play window on this PC when you start translating.", controller.Ps5StatusText);
+        await controller.StartAsync();
+        Assert.Equal([RemotePlayApp.Chiaki], services.RemotePlayWindowApps);
+        Assert.Empty(services.StreamPasscodes);
+        Assert.True(controller.IsRunning);
+        controller.Dispose();
+    }
+
+    /// Görüntü kaynağı çeviri sürerken değişince çeviri yeni kaynakla yeniden başlar.
+    [Fact]
+    public async Task ChangingFrameSourceRestartsTranslation()
+    {
+        var (controller, services, _) = Ready();
+        await controller.StartAsync();
+        Assert.Single(services.Streams);
+        controller.Settings = controller.Settings with { FrameSource = FrameSource.RemotePlayWindow };
+        for (var i = 0; i < 200 && services.RemotePlayWindowApps.Count == 0; i++) await Task.Delay(10);
+        Assert.Equal([RemotePlayApp.Automatic], services.RemotePlayWindowApps);
+        Assert.Equal(2, services.Streams.Count);
+        Assert.True(controller.IsRunning);
+        controller.Dispose();
+    }
+
+    [Fact]
     public async Task DoubleStartCreatesOneSession()
     {
         var (controller, services, _) = Ready();
@@ -1012,13 +1321,12 @@ public class AppControllerRunTests
         controller.Dispose();
     }
 
-    /// Ücretsiz motor açılamazsa (onnxruntime.dll yüklenemedi) çeviri yine başlar ve ana ekranda uyarı çıkar.
+    /// Ücretsiz motor açılamazsa çeviri yine başlar ve ana ekranda uyarı çıkar.
     [Fact]
     public async Task StartSurvivesFreeEngineThatCannotBeCreated()
     {
         var services = new FakeServices();
-        services.Translation.CreateError = new TypeInitializationException("Microsoft.ML.OnnxRuntime.NativeMethods",
-            new DllNotFoundException("Unable to load DLL 'onnxruntime'"));
+        services.Translation.CreateError = new FileNotFoundException("CTranslate2 runtime is missing");
         var (controller, _, _) = Ready(services);
 
         await controller.StartAsync();
@@ -1164,8 +1472,12 @@ public class AppControllerRunTests
     public void LoginPasscodeIsExplained()
     {
         var text = Localizer.ForLanguage("en");
-        Assert.Equal("The second user has a login passcode on the PS5. Turn it off in Settings › Users and Accounts.",
+        Assert.Equal("The PS5 asks for this account's login passcode. Enter it in Settings, or turn off this account's login passcode on the PS5.",
             AppController.StatusText(SessionState.Disconnected(DisconnectKind.LoginPasscode), true, text));
+        Assert.Equal("The PS5 didn't accept the login passcode in Settings. Correct it, or turn off this account's login passcode on the PS5.",
+            AppController.StatusText(SessionState.Disconnected(DisconnectKind.LoginPasscodeIncorrect), true, text));
+        Assert.Equal("PS5 bu hesap için giriş şifresi istiyor. Ayarlar'dan şifreyi girin ya da PS5'te bu hesabın giriş şifresini kapatın.",
+            AppController.StatusText(SessionState.Disconnected(DisconnectKind.LoginPasscode), true, Localizer.ForLanguage("tr")));
     }
 
     [Fact]
@@ -1184,6 +1496,11 @@ public class AppControllerRunTests
             AppController.StatusText(SessionState.Disconnected(DisconnectKind.Other, "Session Request RP Version Mismatch"), true, text));
         Assert.Equal("Reconnecting…", AppController.StatusText(SessionState.Disconnected(DisconnectKind.Other), true, text));
         Assert.Equal("Not connected", AppController.StatusText(SessionState.Disconnected(DisconnectKind.Stopped), false, text));
+        // PS5 oturum isteğini reddetti: libchiaki'nin "Unknown Session Request Error"u yerine anlamlı metin ve kod.
+        Assert.Equal("PS5 bağlantıyı reddetti (kod 0x80108bff). Başka bir Uzaktan Oynatma (PS Remote Play) açık olabilir ya da PS5 başka bir oturumda olabilir. PS Remote Play'i kapatın, PS5'i yeniden başlatıp tekrar deneyin.",
+            AppController.StatusText(SessionState.Disconnected(DisconnectKind.Rejected, "0x80108bff"), true, Localizer.ForLanguage("tr")));
+        Assert.Equal("The PS5 didn't start the session. Another Remote Play app (PS Remote Play) may be open, or the PS5 may be in another session. Close PS Remote Play, restart the PS5, then try again.",
+            AppController.StatusText(SessionState.Disconnected(DisconnectKind.Rejected), true, text));
     }
 
     /// Eşleştirme başarılıyken çeviri başlamadan ana ekran "Bağlı değil" demez (kullanıcı PS5'i bağlanmamış sanıyordu).
@@ -1559,4 +1876,19 @@ internal sealed class FakeDubbingModel(bool installed) : IDubbingModel
     public Task DownloadAsync(IProgress<double> progress, CancellationToken cancellationToken) => Task.CompletedTask;
     public byte[] VoiceFile(DubbingVoice voice) => [];
     public ISpeechSynthesizer CreateSynthesizer() => throw new NotSupportedException();
+}
+
+internal sealed class FakeXbox(IReadOnlyList<XboxConsole> consoles) : IXboxService
+{
+    public List<bool> LegacyFrameRateRequests { get; } = [];
+    public event Action<string>? TokenUpdated { add { } remove { } }
+    public void Clear() { }
+    public Task<XboxLoginChallenge> BeginLoginAsync() => throw new NotSupportedException();
+    public Task<string> CompleteLoginAsync() => throw new NotSupportedException();
+    public Task<IReadOnlyList<XboxConsole>> DiscoverAsync(string token) => Task.FromResult(consoles);
+    public IStreamSession MakeStream(XboxConsole console, string token, bool legacyFrameRate)
+    {
+        LegacyFrameRateRequests.Add(legacyFrameRate);
+        return new FakeStream();
+    }
 }

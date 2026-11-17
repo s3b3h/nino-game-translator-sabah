@@ -2,6 +2,7 @@
 // Mobil tasarım sistemi. Nino: Mac ve Android'deki Nino görünümü (açık buz mavisi zemin, beyaz cam karolar, mavi-lacivert
 // birincil düğme; renkler Android'in Tokens.Color'ıyla aynı). Ekranlar sabit değer kullanmaz, hepsi buradan alır.
 
+import CouchSubsCore
 import SwiftUI
 import UIKit
 
@@ -69,8 +70,9 @@ enum Mobile {
         static let body = Font.system(size: 15, weight: .regular)
         static let caption = Font.system(size: 13, weight: .medium)
         /// Altyazı içeriği: dikeyde canlı satır 28, yatay altyazı ekranında 36; kullanıcı %80–%160 ölçekler.
-        static func subtitle(landscape: Bool, scale: Double) -> Font {
-            .system(size: (landscape ? 36 : 28) * min(1.6, max(0.8, scale)), weight: .semibold)
+        /// Nino: yazı tipi kullanıcının seçtiği (varsayılan Dar/Aksiyon), TV'deki gibi.
+        static func subtitle(landscape: Bool, scale: Double, font: SubtitleFont) -> Font {
+            .subtitle(font, size: (landscape ? 36 : 28) * min(1.6, max(0.8, scale)), weight: .semibold)
         }
     }
 }
@@ -395,6 +397,41 @@ struct SegmentedTabs<Value: Hashable>: View {
                 }
                 .buttonStyle(.plain)
                 .selectionFeedback(trigger: selected)
+            }
+        }
+        .padding(Mobile.Space.hair)
+        .background(Mobile.Palette.surface2, in: RoundedRectangle(cornerRadius: Mobile.Radius.control))
+    }
+}
+
+/// Nino: altyazı yazı tipi seçimi, 2×2; her seçeneğin adı kendi yazı tipiyle (SegmentedTabs'ın görünümünde).
+struct SubtitleFontGrid: View {
+    @Binding var selection: SubtitleFont
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: Mobile.Space.hair), GridItem(.flexible(), spacing: Mobile.Space.hair)],
+                  spacing: Mobile.Space.hair) {
+            ForEach(SubtitleFont.pickerOrder, id: \.self) { font in
+                let selected = font == selection
+                Button { selection = font } label: {
+                    Text(font.title)
+                        .font(.subtitle(font, size: 16, weight: .semibold))
+                        .foregroundStyle(selected ? Mobile.Palette.text : Mobile.Palette.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .padding(.horizontal, Mobile.Space.inline)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background {
+                            if selected {
+                                RoundedRectangle(cornerRadius: Mobile.Radius.inner).fill(Color.white)
+                                    .shadow(color: Mobile.Palette.pro.opacity(0.10), radius: 4, y: 2)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .selectionFeedback(trigger: selected)
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
         .padding(Mobile.Space.hair)

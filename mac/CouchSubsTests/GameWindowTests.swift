@@ -60,6 +60,19 @@ final class GameWindowTests: XCTestCase {
         XCTAssertEqual(GameWindowPicker.pick(windows, target: .playStation)?.id, 3)
     }
 
+    /// Nino: Chrome'daki "Xbox.com'da Xbox Uzaktan Oynama" sekmesi; başlıkta Xbox yoksa tam ekran tarayıcı oyundur.
+    func testPicksXboxBrowserTabOrFullScreenBrowser() {
+        func win(_ title: String, full: Bool, id: CGWindowID) -> GameWindowInfo {
+            GameWindowInfo(id: id, appName: "Google Chrome", bundleID: "com.google.Chrome", title: title,
+                           frame: CGRect(x: 0, y: 0, width: 1512, height: 945), fillsScreen: full)
+        }
+        XCTAssertEqual(GameWindowPicker.pick([win("Apple Hesabı", full: false, id: 1),
+                                              win("Xbox.com'da Xbox Uzaktan Oynama", full: false, id: 2)], target: .xbox)?.id, 2)
+        XCTAssertEqual(GameWindowPicker.pick([win("Apple Hesabı", full: false, id: 1),
+                                              win("Forza Horizon 5", full: true, id: 3)], target: .xbox)?.id, 3)
+        XCTAssertNil(GameWindowPicker.pick([win("Apple Hesabı", full: false, id: 1)], target: .xbox))
+    }
+
     /// Nino: "Xbox'ta oynuyorum": PS5 adımları atlanır, pencere yolu Xbox'la açılır; eski kayıtlar PS5 kalır.
     func testXboxWindowSetup() {
         let defaults = UserDefaults.isolated()
@@ -148,5 +161,44 @@ final class GameWindowTests: XCTestCase {
         XCTAssertEqual(GameWindowStream.sessionState(for: .capturing(appName: "PS Remote Play")), .streaming)
         XCTAssertEqual(GameWindowStream.sessionState(for: .lookingForWindow), .connecting)
         XCTAssertEqual(GameWindowStream.sessionState(for: .needsPermission), .connecting)
+    }
+
+    /// Nino: Greenlight kurucusu GitHub yanıtından Mac dosyasını ve SHA-256 özetini seçer.
+    func testGreenlightReleaseParsing() {
+        let json = """
+        {"assets":[{"name":"Greenlight-2.4.2-win.zip","size":1,"browser_download_url":"https://x/win.zip"},
+        {"name":"Greenlight-2.4.2-universal.dmg","size":222606842,"digest":"sha256:ABC123",
+        "browser_download_url":"https://x/Greenlight-2.4.2-universal.dmg"}]}
+        """
+        let release = GreenlightInstaller.release(fromJSON: Data(json.utf8))
+        XCTAssertEqual(release?.url.lastPathComponent, "Greenlight-2.4.2-universal.dmg")
+        XCTAssertEqual(release?.size, 222606842)
+        XCTAssertEqual(release?.sha256, "abc123")
+        XCTAssertNil(GreenlightInstaller.release(fromJSON: Data(#"{"assets":[]}"#.utf8)))
+    }
+
+    /// Nino: "Xbox'ı Bağla" adımları Greenlight'ın durumundan çıkar; yayın penceresi menüden önce seçilir.
+    func testXboxConnectStepsAndGreenlightStreamWindow() {
+        XCTAssertEqual(GreenlightProbe.step(installed: false, signedIn: false, streaming: false), .install)
+        XCTAssertEqual(GreenlightProbe.step(installed: true, signedIn: false, streaming: false), .signIn)
+        XCTAssertEqual(GreenlightProbe.step(installed: true, signedIn: true, streaming: false), .stream)
+        XCTAssertEqual(GreenlightProbe.step(installed: true, signedIn: true, streaming: true), .done)
+
+        XCTAssertTrue(GreenlightProbe.signedIn(configJSON: Data(#"{"user":{"tokenstore":"{\"userToken\":1}"}}"#.utf8)))
+        XCTAssertFalse(GreenlightProbe.signedIn(configJSON: Data(#"{"user":{"tokenstore":"{}"}}"#.utf8)))
+        XCTAssertFalse(GreenlightProbe.signedIn(configJSON: Data(#"{"settings":{}}"#.utf8)))
+
+        XCTAssertTrue(GreenlightProbe.isStreamTitle("Greenlight - Streaming F4000F1E2D3C4B5A"))
+        XCTAssertTrue(GreenlightProbe.isStreamTitle("Greenlight - Akış F4000F1E2D3C4B5A"))
+        XCTAssertFalse(GreenlightProbe.isStreamTitle("Greenlight - My consoles"))
+        XCTAssertFalse(GreenlightProbe.isStreamTitle("Greenlight"))
+
+        func gl(_ title: String, _ w: CGFloat, id: CGWindowID) -> GameWindowInfo {
+            GameWindowInfo(id: id, appName: "Greenlight", bundleID: "com.unknownskl.greenlight", title: title,
+                           frame: CGRect(x: 0, y: 0, width: w, height: w * 9 / 16), fillsScreen: false)
+        }
+        XCTAssertEqual(GameWindowPicker.pick([gl("Greenlight - My consoles", 1600, id: 1),
+                                              gl("Greenlight - Streaming F4000F1E2D3C4B5A", 1280, id: 2)], target: .xbox)?.id, 2)
+        XCTAssertEqual(GameWindowPicker.pick([gl("Greenlight - My consoles", 1600, id: 1)], target: .xbox)?.id, 1)
     }
 }

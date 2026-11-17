@@ -39,7 +39,9 @@ object DemoSession {
 
     fun start() {
         if (active) return
-        val lines = if (TargetLanguage.code(Services.settings.targetLanguage) == "ar") arabic else turkish
+        val target = Services.settings.targetLanguage
+        val lines = TargetLanguage.sampleLines(target).takeIf { it.isNotEmpty() }
+            ?: if (TargetLanguage.code(target) == "ar") arabic else turkish
         LiveState.update {
             it.copy(running = true, streaming = true, demo = true, current = "", error = null, recent = emptyList(),
                 startedAt = System.currentTimeMillis(), shownLines = 0, packLines = 0, packInUse = null)

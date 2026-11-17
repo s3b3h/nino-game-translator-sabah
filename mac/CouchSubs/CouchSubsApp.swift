@@ -12,6 +12,8 @@ struct CouchSubsApp: App {
     @StateObject private var model = Self.makeModel()
     /// Bilgisayar ekranındaki altyazı penceresi.
     @State private var overlay = SubtitleOverlayController()
+    /// Yayın programlarının yakaladığı düz zeminli altyazı penceresi (Ayarlar > OBS'ten açılır).
+    @State private var stream = StreamWindowController()
     #if !APP_STORE
     /// Sparkle: her açılışta ve uygulama açıkken saatte bir GitHub'daki son sürüme bakar; testlerde başlamaz.
     /// Nino: Nino'nun kendi appcast'i ve anahtarıyla (bkz. project.yml SUFeedURL, SUPublicEDKey). Yeni sürüm arka planda
@@ -19,7 +21,8 @@ struct CouchSubsApp: App {
     private let updater = AppUpdater.controller
     #endif
 
-    static func uiLanguage(_ target: String) -> String { TargetLanguage.isTurkish(target) ? "tr" : "ar" }
+    /// Nino: arayüz çeviri dilinde (Türkçe, Arapça, Hintçe, Endonezce…); listede olmayan dilde İngilizce.
+    static func uiLanguage(_ target: String) -> String { TargetLanguage.interfaceLanguage(target) }
 
     /// Testler uygulamanın içinde çalışır. Gerçek Anahtarlığa dokunmazlar: imza farklı olunca macOS parola sorar ve test takılır.
     private static func makeModel() -> AppModel {
@@ -35,13 +38,14 @@ struct CouchSubsApp: App {
                 // satırları gibi) sistem dilinden okunduğu için seçim AppleLanguages'a da yazılır: sonraki açılışta onlar da
                 // aynı dilde olur.
                 .environment(\.locale, Locale(identifier: Self.uiLanguage(model.settings.targetLanguage)))
-                .environment(\.layoutDirection, Self.uiLanguage(model.settings.targetLanguage) == "ar" ? .rightToLeft : .leftToRight)
+                .environment(\.layoutDirection, TargetLanguage.isRightToLeft(model.settings.targetLanguage) ? .rightToLeft : .leftToRight)
                 .onChange(of: model.settings.targetLanguage) { target in
                     UserDefaults.standard.set([Self.uiLanguage(target)], forKey: "AppleLanguages")
                 }
                 // Sparkle kendi takviminde günde bir bakar; yeni sürüm her açılışta fark edilsin diye açılışta da sessizce bakılır.
                 .task {
                     overlay.attach(model)
+                    stream.attach(model)
                 }
                 .appSurface()
                 .frame(minWidth: Theme.size("windowWidth"), idealWidth: Theme.size("windowWidth"), maxWidth: Theme.size("windowWidth") * 1.25,

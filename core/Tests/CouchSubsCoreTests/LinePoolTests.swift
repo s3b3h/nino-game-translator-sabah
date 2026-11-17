@@ -134,6 +134,44 @@ final class LinePoolTests: XCTestCase {
         XCTAssertEqual(again, [])
     }
 
+    /// PS5'te çalışan oyun bilinince satırla gider; bilinmiyorsa alanlar hiç yazılmaz (eski sunucu ve eski kuyruk dosyası).
+    func testRunningGameTravelsWithTheLine() async throws {
+        let pool = makePool()
+        await pool.offer("Who is that over there?")
+        await pool.setGame(RunningGame(titleId: "ppsa12345", name: "  Grand Theft Auto VI\n"))
+        await pool.offer("Get in the car, Lucia.")
+        await pool.setGame(nil)
+        await pool.offer("Keep your head down, Jason.")
+        await pool.flush()
+        let lines = server.batches[0]
+        XCTAssertEqual(Set(lines[0].keys), ["text", "key", "firstSeen"])
+        XCTAssertEqual(lines[1]["titleId"] as? String, "PPSA12345")
+        XCTAssertEqual(lines[1]["game"] as? String, "Grand Theft Auto VI")
+        XCTAssertNil(lines[2]["titleId"])
+    }
+
+    func testQueuedGameSurvivesRestart() async {
+        server.fallback = nil
+        let pool = makePool()
+        await pool.setGame(RunningGame(titleId: "PPSA12345", name: "Grand Theft Auto VI"))
+        await pool.offer("Get in the car, Lucia.")
+        await pool.save()
+        let reopened = makePool()
+        let queued = await reopened.queued
+        XCTAssertEqual(queued.first?.titleId, "PPSA12345")
+        XCTAssertEqual(queued.first?.game, "Grand Theft Auto VI")
+    }
+
+    func testRunningGameValidatesTheTitleId() {
+        XCTAssertEqual(RunningGame(titleId: "CUSA00419_00", name: nil)?.titleId, "CUSA00419_00")
+        XCTAssertNil(RunningGame(titleId: "PPSA1234", name: "x"))
+        XCTAssertNil(RunningGame(titleId: "PPSA01234_0", name: "x"))
+        XCTAssertNil(RunningGame(titleId: "", name: "x"))
+        XCTAssertNil(RunningGame(titleId: nil, name: "x"))
+        XCTAssertNil(RunningGame(titleId: "PPSA01234", name: " \u{0} ")?.name)
+        XCTAssertEqual(RunningGame(titleId: "PPSA01234", name: String(repeating: "x", count: 300))?.name?.count, 120)
+    }
+
     func testQueueSurvivesRestartAndUnreachableServer() async {
         server.fallback = nil
         let pool = makePool()

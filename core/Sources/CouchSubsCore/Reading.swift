@@ -102,6 +102,36 @@ public struct Reading: Equatable, Sendable {
         Reading(lines: lines.map { TextLine(OcrNoise.clean($0.text), box: $0.box, confidence: $0.confidence) })
     }
 
+    /// Aynı satırda yan yana okunan parçalar soldan sağa tek satır olur. Renkli konuşan adını ("Arthur:", RDR2) yazı
+    /// tanıma cümleden ayrı okuyor; parçalar yalnız üst kenarlarına göre dizilince ad cümlenin sonuna düşüyor ya da ayrı
+    /// blok sayılıp atılıyordu. Yatayda aralarında en çok `rowGap` (alan genişliğine oranla) olan parçalar birleşir;
+    /// uzaktaki köşe yazısı ayrı kalır (Android: Reading.joiningRows, Windows: Reading.JoiningRows).
+    public func joiningRows() -> Reading {
+        guard lines.count > 1, lines.allSatisfy({ $0.box != nil }) else { return self }
+        var rows: [TextLine] = []
+        for line in lines.sorted(by: { $0.box!.left < $1.box!.left }) {
+            let box = line.box!
+            if let index = rows.firstIndex(where: { Self.sameRow(box, $0.box!) }) {
+                let row = rows[index]
+                let confidence = [row.confidence, line.confidence].compactMap { $0 }.min()
+                rows[index] = TextLine(row.text + " " + line.text, box: row.box!.union(box), confidence: confidence)
+            } else {
+                rows.append(line)
+            }
+        }
+        return Reading(lines: rows.sorted { $0.box!.top < $1.box!.top })
+    }
+
+    static let rowGap = 0.05
+
+    /// `next` (solda başlayan `row`'un sağında) aynı satırda mı: dikeyde küçük yüksekliğin en az %60'ı örtüşür.
+    private static func sameRow(_ next: TextBox, _ row: TextBox) -> Bool {
+        let overlap = min(next.bottom, row.bottom) - max(next.top, row.top)
+        let smaller = min(next.bottom - next.top, row.bottom - row.top)
+        guard smaller > 0, overlap >= smaller * 0.6 else { return false }
+        return next.left - row.right <= rowGap
+    }
+
     /// Alandaki altyazı bloğu. Seçilen alanda altyazının yanında menü ("MAP / HELP / SETTINGS" alt alta), köşedeki
     /// gösterge ("9", "PHOTO MODE") da okunuyordu; hepsi tek cümle gibi çevrilip TV'de bütün alanı kaplayan kutuyla
     /// gösteriliyordu. Satırlar yerlerine göre bloklara ayrılır; ortalanmış ve menü olmayan en alttaki blok altyazıdır.

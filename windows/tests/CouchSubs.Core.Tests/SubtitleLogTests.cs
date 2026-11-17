@@ -65,6 +65,21 @@ public class SubtitleLogTests
         Assert.Null(tracker.Note("[chiaki info] StreamConnection requesting IDR frame"));
     }
 
+    /// <summary>İstenen IDR hiç gelmeyince oturum yeniden kurulur; altyazı günlüğünde duraklamanın neden bitmediği görünür.</summary>
+    [Fact]
+    public void VideoStallTrackerNotesTheSessionRebuiltForNoPicture()
+    {
+        var clock = new TestClock();
+        var tracker = new VideoStallTracker(clock.Read);
+        tracker.Note("[chiaki info] FEC failed, waiting for IDR frame");
+        Assert.Null(tracker.Note("[chiaki warning] Video FEC failure, already waiting for requested IDR"));
+        clock.Now += 8000;
+        Assert.Equal("görüntü gelmedi, IDR karesi gelmeyecek: PS5 oturumu yeniden kuruluyor (8000 ms boşluk)",
+            tracker.Note("[couchsubs] PS5'ten 8 sn'dir görüntü gelmiyor (bağlantı açık); oturum yeniden kuruluyor"));
+        // Yeni oturumun ilk duraklaması yeniden yazılır.
+        Assert.Equal("görüntü durdu: FEC hatası, IDR karesi bekleniyor", tracker.Note("[chiaki info] FEC failed, waiting for IDR frame"));
+    }
+
     /// <summary>Önbellekten dönen satır "önbellek", motorun yeni çevirdiği satır o motorun adıyla görünür.</summary>
     [Fact]
     public async Task ProbeTellsCacheHitsFromFreshTranslations()

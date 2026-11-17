@@ -122,6 +122,7 @@ CS_API int cs_init(void)
 
 typedef struct {
 	cs_console_cb cb;
+	cs_console_ex_cb ex_cb;
 	void *user;
 } cs_discover_ctx;
 
@@ -130,14 +131,34 @@ static void cs_discovery_cb(ChiakiDiscoveryHost *host, void *user)
 	cs_discover_ctx *ctx = user;
 	if(!host || !host->host_addr || !chiaki_discovery_host_is_ps5(host))
 		return;
-	ctx->cb(host->host_addr, host->host_name ? host->host_name : "PS5",
-			host->state == CHIAKI_DISCOVERY_HOST_STATE_READY ? 1 : 0, ctx->user);
+	const char *name = host->host_name ? host->host_name : "PS5";
+	int awake = host->state == CHIAKI_DISCOVERY_HOST_STATE_READY ? 1 : 0;
+	if(ctx->ex_cb)
+		ctx->ex_cb(host->host_addr, name, awake, host->running_app_titleid, host->running_app_name, ctx->user);
+	else
+		ctx->cb(host->host_addr, name, awake, ctx->user);
 }
+
+static int cs_discover_run(const char *const *targets, int target_count, int timeout_ms, cs_discover_ctx ctx);
 
 CS_API int cs_discover(const char *const *targets, int target_count, int timeout_ms, cs_console_cb callback, void *user)
 {
 	if(!targets || target_count <= 0 || !callback)
 		return 1;
+	cs_discover_ctx ctx = { callback, NULL, user };
+	return cs_discover_run(targets, target_count, timeout_ms, ctx);
+}
+
+CS_API int cs_discover_ex(const char *const *targets, int target_count, int timeout_ms, cs_console_ex_cb callback, void *user)
+{
+	if(!targets || target_count <= 0 || !callback)
+		return 1;
+	cs_discover_ctx ctx = { NULL, callback, user };
+	return cs_discover_run(targets, target_count, timeout_ms, ctx);
+}
+
+static int cs_discover_run(const char *const *targets, int target_count, int timeout_ms, cs_discover_ctx ctx)
+{
 
 	/* Hedefsiz günlük: satırlar düşürülür (libchiaki'nin varsayılanı stdout'a yazardı). */
 	ChiakiLog log;
@@ -157,7 +178,6 @@ CS_API int cs_discover(const char *const *targets, int target_count, int timeout
 	}
 #endif
 
-	cs_discover_ctx ctx = { callback, user };
 	ChiakiDiscoveryThread thread;
 	if(chiaki_discovery_thread_start(&thread, &discovery, cs_discovery_cb, &ctx) != CHIAKI_ERR_SUCCESS)
 	{
@@ -570,7 +590,7 @@ static void cs_session_event(ChiakiEvent *event, void *user)
 			session->event(CS_EVENT_CONNECTED, 0, NULL, session->user);
 			break;
 		case CHIAKI_EVENT_LOGIN_PIN_REQUEST:
-			session->event(CS_EVENT_LOGIN_PIN, 0, NULL, session->user);
+			session->event(CS_EVENT_LOGIN_PIN, event->login_pin_request.pin_incorrect ? 1 : 0, NULL, session->user);
 			break;
 		case CHIAKI_EVENT_QUIT:
 		{
@@ -605,6 +625,15 @@ static bool cs_session_video_sample(uint8_t *buf, size_t buf_size, int32_t frame
 		session->frame(decoder->bgra, decoder->width, decoder->height, decoder->stride, session->user);
 	av_frame_unref(decoder->frame);
 	return true;
+}
+
+/* PS5 "bu görüntü yayınlanamaz" (korumalı içerik) ya da "yeniden yayınlanabilir" dediğinde libchiaki'nin ctrl iş parçacığı bu
+ * geri çağrıyı koşulsuz çağırır (ctrl.c: displaya/displayb iletileri ve ctrl yanıtı). Atanmazsa NULL işlev çağrılır ve
+ * uygulama SIGSEGV ile kapanır. Altyazı için yapılacak bir şey yok: yalnız günlüğe yazılır, akış sürer. */
+static void cs_session_cant_display(void *user, bool cant_display)
+{
+	cs_session *session = user;
+	CHIAKI_LOGI(&session->log, "PS5 stream %s", cant_display ? "can't display (protected content)" : "can display again");
 }
 
 CS_API cs_session *cs_session_start(const char *host, const uint8_t regist_key[0x10], const uint8_t morning[0x10],
@@ -662,6 +691,8 @@ CS_API cs_session *cs_session_start(const char *host, const uint8_t regist_key[0
 	}
 	chiaki_session_set_event_cb(&session->session, cs_session_event, session);
 	chiaki_session_set_video_sample_cb(&session->session, cs_session_video_sample, session);
+	ChiakiCtrlDisplaySink display_sink = { .user = session, .cantdisplay_cb = cs_session_cant_display };
+	chiaki_session_ctrl_set_display_sink(&session->session, &display_sink);
 
 	err = chiaki_session_start(&session->session);
 	if(err != CHIAKI_ERR_SUCCESS)
@@ -674,6 +705,13 @@ CS_API cs_session *cs_session_start(const char *host, const uint8_t regist_key[0
 		return NULL;
 	}
 	return session;
+}
+
+CS_API int cs_session_set_login_pin(cs_session *session, const uint8_t *pin, size_t pin_size)
+{
+	if(!session || !pin || !pin_size)
+		return CHIAKI_ERR_INVALID_DATA;
+	return chiaki_session_set_login_pin(&session->session, pin, pin_size);
 }
 
 CS_API void cs_session_stop(cs_session *session)

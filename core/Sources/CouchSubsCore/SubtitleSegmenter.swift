@@ -23,7 +23,7 @@ public enum SubtitleSegmenter {
     private static let dash = try! NSRegularExpression(pattern: #"^[-–—]+\s*"#)
 
     /// Büyük harfle başlayıp iki noktayla biten ama ad olmayan oyun başlıkları; bunlar çevrilir.
-    private static let notNames: Set<String> = [
+    static let notNames: Set<String> = [
         "note", "warning", "tip", "hint", "objective", "objectives", "quest", "goal", "new", "reward", "rewards",
         "location", "chapter", "mission", "task", "tutorial", "update", "info", "status", "level", "controls",
         "press", "hold", "tap", "remember", "example", "question", "answer", "result", "results", "time",

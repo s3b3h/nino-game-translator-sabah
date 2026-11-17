@@ -57,6 +57,19 @@ final class SubtitleLogTests: XCTestCase {
         XCTAssertNil(tracker.note("[chiaki info] StreamConnection requesting IDR frame"))
     }
 
+    /// İstenen IDR hiç gelmeyince oturum yeniden kurulur; altyazı günlüğünde duraklamanın neden bitmediği görünür.
+    func testVideoStallTrackerNotesTheSessionRebuiltForNoPicture() {
+        let clock = TestClock()
+        let tracker = VideoStallTracker(clock: clock.read)
+        _ = tracker.note("[chiaki info] FEC failed, waiting for IDR frame")
+        XCTAssertNil(tracker.note("[chiaki warning] Video FEC failure, already waiting for requested IDR"))
+        clock.now += 8000
+        XCTAssertEqual(tracker.note("PS5'ten 8 sn'dir görüntü gelmiyor (bağlantı açık); oturum yeniden kuruluyor"),
+                       "görüntü gelmedi, IDR karesi gelmeyecek: PS5 oturumu yeniden kuruluyor (8000 ms boşluk)")
+        // Yeni oturumun ilk duraklaması yeniden yazılır.
+        XCTAssertEqual(tracker.note("[chiaki info] FEC failed, waiting for IDR frame"), "görüntü durdu: FEC hatası, IDR karesi bekleniyor")
+    }
+
     /// Önbellekten dönen satır "önbellek", motorun yeni çevirdiği satır o motorun adıyla görünür.
     func testProbeTellsCacheHitsFromFreshTranslations() async {
         let cache = TranslationCache(engine: "deepl")

@@ -17,6 +17,15 @@
 		<string>en</string>
 		<string>tr</string>
 		<string>ar</string>
+		<string>hi</string>
+		<string>id</string>
+		<string>th</string>
+		<string>vi</string>
+		<string>ur</string>
+		<string>bn</string>
+		<string>ms</string>
+		<string>fil</string>
+		<string>nl</string>
 	</array>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
@@ -32,8 +41,17 @@
 	<false/>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Nino does not use the camera. The video library used for Xbox streaming includes camera support, which stays off.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Nino connects to your PS5 and TV on the home network to read and send translated subtitles.</string>
+	<string>Nino connects to your PS5 and TV on the home network to read and send translated subtitles, and installs and updates its TV app on your TV.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Nino never records or sends your voice. To play the Xbox game sound on this iPhone, the streaming library opens the audio system, which may ask for microphone access; you can decline and the sound still plays.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchScreen</key>

@@ -84,6 +84,32 @@
                         </StackPanel>
                     </c:Card>
 
+                    <!-- Oynanan oyun ("Oynanan oyun: X · Değiştir") ve iki dakika sonra çıkan "Hangi oyunu oynuyorsunuz?" kartı -->
+                    <c:Card x:Name="GameCard" Margin="0,16,0,0" Visibility="Collapsed">
+                        <StackPanel>
+                            <DockPanel x:Name="GameRow">
+                                <Button x:Name="GameChangeButton" DockPanel.Dock="Right" Padding="16,0" VerticalAlignment="Center" Click="OnChangeGame" />
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{t:T 'Played game'}" Style="{StaticResource CaptionText}" />
+                                    <TextBlock x:Name="PlayedGameText" Style="{StaticResource HeadlineText}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DockPanel>
+                            <StackPanel x:Name="GameAsk" Visibility="Collapsed">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Content="{t:T 'Don\'t ask'}" Padding="12,0" Click="OnDontAskGame" />
+                                    <TextBlock Text="{t:T 'Which game are you playing?'}" Style="{StaticResource HeadlineText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource HintText}" TextWrapping="Wrap" Margin="0,8,0,12"
+                                           Text="{t:T 'Lines that are not in a pack go to the shared pool with the game\'s name, so its ready translation comes sooner.'}" />
+                                <TextBlock Text="{t:T 'Search games'}" Style="{StaticResource CaptionText}" Margin="0,0,0,4" />
+                                <TextBox x:Name="GameSearch" TextChanged="OnGameSearch" KeyDown="OnGameSearchKey"
+                                         AutomationProperties.Name="{t:T 'Search games'}" />
+                                <StackPanel x:Name="GameList" Margin="0,8,0,0" />
+                                <Button x:Name="GameCustom" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="16,0" Visibility="Collapsed" Click="OnCustomGame" />
+                            </StackPanel>
+                        </StackPanel>
+                    </c:Card>
+
                     <!-- PS5 ya da TV uzun süredir bağlanamıyor ve güvenlik duvarında izin yok -->
                     <local:FirewallCard Margin="0,16,0,0" />
 
@@ -100,7 +126,22 @@
                         </StackPanel>
                     </c:Card>
 
-                    <!-- Ücretsiz çeviri motoru (ONNX Runtime) bu bilgisayarda açılamadı: çevrimiçi motor önerilir -->
+                    <!-- Nino: seçili dilin ücretsiz modeli yok (Tayca, Urduca…): yapay zekâ motoru gerekir -->
+                    <c:Card x:Name="LanguageCard" Margin="0,16,0,0" Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Text="{t:T 'The free translation does not support this language yet.'}" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource warningBrush}" TextWrapping="Wrap" />
+                            <TextBlock Text="{t:T 'Choose Gemini (free) in Settings › Translation.'}" Style="{StaticResource HintText}"
+                                       Margin="0,8,0,12" TextWrapping="Wrap" />
+                            <Button Content="{t:T 'Settings'}" HorizontalAlignment="Left" Click="OnSettings" />
+                        </StackPanel>
+                    </c:Card>
+
+                                        <c:Card Margin="0,16,0,0" Visibility="{Binding GpuFallbackWarning, Converter={StaticResource VisibleIf}}">
+                        <TextBlock Foreground="{DynamicResource warningBrush}" TextWrapping="Wrap"
+                                   Text="{t:T 'GPU could not be used; free translation is running on CPU.'}" />
+                    </c:Card>
+                    <!-- Ücretsiz çeviri motoru bu bilgisayarda açılamadı: çevrimiçi motor önerilir -->
                     <c:Card x:Name="EngineCard" Margin="0,16,0,0" Visibility="Collapsed">
                         <StackPanel>
                             <TextBlock Text="{t:T 'The free translation engine could not start on this computer.'}" FontWeight="SemiBold"

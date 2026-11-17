@@ -151,7 +151,7 @@ internal static class Panel
         language = Program.Text.Language,
         step = c.Step,
         stepNumber = c.StepNumber,
-        stepCount = AppController.StepCount,
+        stepCount = c.StepCount,
         canAdvance = c.CanAdvance,
         hasAccount = c.HasAccount,
         psnLoginUrl = PsnAccount.AuthorizeUrl.AbsoluteUri,

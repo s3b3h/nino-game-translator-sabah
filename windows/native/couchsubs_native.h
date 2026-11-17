@@ -5,6 +5,7 @@
 #ifndef COUCHSUBS_NATIVE_H
 #define COUCHSUBS_NATIVE_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef _WIN32
@@ -32,6 +33,13 @@ typedef void (*cs_console_cb)(const char *host, const char *name, int awake, voi
  * aramayı 500 ms'de bir tekrarlar; aynı PS5 birden çok kez bildirilebilir. Bloklar. */
 CS_API int cs_discover(const char *const *targets, int target_count, int timeout_ms, cs_console_cb callback, void *user);
 
+/* cs_console_cb'nin genişletilmişi: PS5'te çalışan uygulamanın kimliği ve adı da gelir (yoksa NULL). */
+typedef void (*cs_console_ex_cb)(const char *host, const char *name, int awake, const char *running_app_titleid,
+		const char *running_app_name, void *user);
+
+/* cs_discover ile aynı; yanıtlar cs_console_ex_cb ile bildirilir. */
+CS_API int cs_discover_ex(const char *const *targets, int target_count, int timeout_ms, cs_console_ex_cb callback, void *user);
+
 /* Kayıtlı PS5'i dinlenme modundan uyandırır. credential: kayıt anahtarının onaltılık değeri. */
 CS_API int cs_wake(const char *host, uint64_t credential);
 
@@ -57,7 +65,7 @@ typedef void (*cs_frame_cb)(const uint8_t *bgra, int width, int height, int stri
 enum {
     CS_EVENT_CONNECTED = 0,
     CS_EVENT_QUIT = 1,            /* quit_reason: aşağıdaki CS_QUIT_* değerlerinden biri */
-    CS_EVENT_LOGIN_PIN = 2        /* ikinci kullanıcının PS5 giriş şifresi var */
+    CS_EVENT_LOGIN_PIN = 2        /* PS5 giriş şifresi istiyor; quit_reason 1 ise önceki şifre yanlıştı */
 };
 enum {
     CS_QUIT_STOPPED = 0,
@@ -76,6 +84,10 @@ typedef struct cs_session cs_session;
 CS_API cs_session *cs_session_start(const char *host, const uint8_t regist_key[0x10], const uint8_t morning[0x10],
                                     const uint8_t account_id[8], int max_fps,
                                     cs_frame_cb frame, cs_event_cb event, cs_log_cb log, void *user);
+
+/* PS5'in istediği giriş şifresini (ASCII rakamlar) gönderir. Olay geri çağrısı içinden çağrılmamalı (libchiaki olayı
+ * kilit tutarken verir). Dönüş: 0 başarı. */
+CS_API int cs_session_set_login_pin(cs_session *session, const uint8_t *pin, size_t pin_size);
 
 /* Oturumu durdurur, iş parçacıklarını bekler ve belleği bırakır. Geri çağrı içinden çağrılmamalı. */
 CS_API void cs_session_stop(cs_session *session);

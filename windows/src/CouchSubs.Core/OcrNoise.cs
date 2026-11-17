@@ -25,11 +25,12 @@ public static partial class OcrNoise
             var token = tokens[index];
             var (lead, core, trail) = Split(token);
             // Tek başına "l" ya da "|" çoğu zaman yanlış okunmuş "I"dır ("l don't know", "|'ll go"); ardından küçük
-            // harfle süren sözcük gelmiyorsa altyazı kutusunun kenarıdır ("| Get in the car."), atılır.
+            // harfle başlayan sözcük yoksa ve token ?/! ile bitmiyorsa altyazı kutusunun kenarı olabilir.
             if (MisreadI(core) is { } pronoun)
             {
                 var next = index + 1 < tokens.Length ? tokens[index + 1].FirstOrDefault(char.IsLetter) : '\0';
-                if (pronoun != "I" || char.IsLower(next)) kept.Add(lead + pronoun + trail);
+                var endsQuestionOrExclamation = trail.IndexOfAny(['?', '!']) >= 0;
+                if (pronoun != "I" || char.IsLower(next) || endsQuestionOrExclamation) kept.Add(lead + pronoun + trail);
                 continue;
             }
             // Yalnız "?!", ".", "," gibi işaretlerden oluşan parça: satır başında ya da cümle bittikten sonra yazı
@@ -64,11 +65,11 @@ public static partial class OcrNoise
         foreach (var token in text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
         {
             var core = Split(token).Core;
-            var letters = core.Count(char.IsLetter);
-            if (letters == 0) continue;
+            var letters = new string(core.Where(char.IsLetter).ToArray());
+            if (letters.Length == 0) continue;
             // Sözcük ortasındaki parantez ("the[lil") de okuma karışıklığıdır.
-            var clean = CleanCore(core) == core && NormalCase(core) && core.IndexOfAny(['[', ']', '(', ')']) < 0;
-            score += clean ? letters : -2 * letters;
+            var clean = CleanCore(core) == core && NormalCase(core) && core.IndexOfAny(['[', ']', '(', ')']) < 0 && !Vowelless(letters);
+            score += clean ? letters.Length : -2 * letters.Length;
         }
         return score;
     }
@@ -94,7 +95,19 @@ public static partial class OcrNoise
 
     /// <summary>Üç ve daha çok harfli, ünlüsüz ve kısaltma olmayan (tümü büyük harf değil) sözcük: İngilizcede olmaz ("Gtt", "rnnk").</summary>
     private static bool Vowelless(string letters) =>
-        letters.Length >= 3 && !letters.All(char.IsUpper) && letters.ToLowerInvariant().IndexOfAny("aeiouyäöüıàáâèéêìíîòóôùúû".ToCharArray()) < 0;
+        letters.Length >= 3 && !letters.All(char.IsUpper) && letters.ToLowerInvariant().IndexOfAny("aeiouyäöüıàáâèéêìíîòóôùúû".ToCharArray()) < 0
+        && !Interjections.Contains(Collapsed(letters.ToLowerInvariant()));
+
+    /// <summary>Ünlüsüz ama gerçek ünlemler ("Hmm", "Shh", "Brr", "Grr", "Psst", "Pfft", "Mmm", "Zzz", "Tsk"); art arda tekrarlar tek harf sayılır.</summary>
+    private static readonly HashSet<string> Interjections = ["hm", "m", "sh", "br", "gr", "pst", "pft", "tsk", "hrm", "z", "pht"];
+
+    private static string Collapsed(string text)
+    {
+        var result = new System.Text.StringBuilder();
+        foreach (var character in text)
+            if (result.Length == 0 || result[^1] != character) result.Append(character);
+        return result.ToString();
+    }
 
     /// <summary>"word", "WORD", "Word", "McDonald", "don't": büyük harf yalnız başta ya da baştan bir dizi.</summary>
     private static bool NormalCase(string core)

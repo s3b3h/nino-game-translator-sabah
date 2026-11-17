@@ -8,8 +8,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1.6"
-    CURRENT_PROJECT_VERSION: "7"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "11"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_IDENTITY: "-"
     ENABLE_HARDENED_RUNTIME: YES
@@ -17,6 +17,8 @@ settings:
     # (build-chiaki-macos.sh); Debug yalnız bu Mac'in mimarisini derler.
     ARCHS: "arm64 x86_64"
     ONLY_ACTIVE_ARCH: NO
+    # Paket sunucusu (server/packs; sır değil, paketler herkese açık). Info.plist CSPacksBaseURL bununla dolar.
+    PACKS_API_BASE_URL: ""
   configs:
     Debug:
       ONLY_ACTIVE_ARCH: YES
@@ -37,6 +39,10 @@ targets:
       - CouchSubs
       # Tasarım değerleri: Windows sürümüyle ortak tek kaynak.
       - path: ../design/tokens.json
+        buildPhase: resources
+      # Nino: altyazı yazı tipleri (OFL; TV sayfasıyla aynı dosyalar ve lisansları). Açılışta kaydedilir.
+      - path: ../tv-webos/fonts
+        type: folder
         buildPhase: resources
       # TV uygulaması paketi (scripts/package-tv.sh üretir; yoksa kurulum özelliği gizlenir).
       - path: ../dist/tv-app
@@ -81,6 +87,8 @@ targets:
         SUAllowsAutomaticUpdates: true
         # Uygulama uzun süre açık kalınca da yeni sürüm görünsün: saatte bir.
         SUScheduledCheckInterval: 3600
+        # Paket sunucusu (server/packs); derleme ayarı PACKS_API_BASE_URL boşsa paket indirme kapalı (PackUpdater).
+        CSPacksBaseURL: $(PACKS_API_BASE_URL)
     entitlements:
       path: CouchSubs/CouchSubs.entitlements
       properties:
@@ -153,10 +161,12 @@ targets:
         NSCameraUsageDescription: Nino reads the game picture from your HDMI capture card to translate its subtitles.
         NSMicrophoneUsageDescription: Nino plays the game sound from your HDMI capture card.
         NSHumanReadableCopyright: AGPL-3.0. Based on CouchSubs by Sinan Yorulmaz. Uses chiaki-ng (AGPL-3.0).
+        CSPacksBaseURL: $(PACKS_API_BASE_URL)
     entitlements:
       path: AppStore/CouchSubs.entitlements
       properties:
         com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-only: true
         # PS5 (Remote Play, PSN girişi), TV (SSAP, Samsung, SSDP), çeviri hizmetleri, paketler ve dublaj modeli.
         com.apple.security.network.client: true
         # Altyazı sunucusu (8787: TV uygulaması ve OBS), Remote Play'in UDP portları, Samsung girişinin dönüşü.

@@ -22,6 +22,22 @@ produce the bundled libraries, is available at https://github.com/yorulmazsinan/
 | .NET runtime (Mac TV install helper, Native AOT) | MIT | https://github.com/dotnet/runtime |
 | pocket-tts (Turkish dubbing voice engine, unmodified release binary; includes xn-ptts, Apache-2.0, and SentencePiece, Apache-2.0) | MIT, Copyright (c) Kyutai | https://github.com/kyutai-labs/pocket-tts |
 
+The Android phone app (`couchsubs-android`, experimental "install the TV app from this phone") contains a Kotlin port of
+the TizenSdb.Core sdb protocol and package signing and of the Apps2Samsung sign-in and certificate flow
+(`app/src/main/java/com/couchsubs/mobile/tv/samsung/`), under the same MIT terms below. For installing on Android TV it
+bundles Bouncy Castle (`bctls`, `bcpkix`, `bcprov`, `bcutil`; MIT, Copyright (c) The Legion of the Bouncy Castle Inc.,
+https://www.bouncycastle.org) for the TLS 1.3 of ADB wireless debugging, and the released Android TV app
+(`CouchSubs-androidtv.apk`, part of CouchSubs). For installing on LG TVs it bundles JSch (mwiede/jsch fork; BSD-3-Clause,
+Copyright (c) 2002-2018 ymnk, JCraft, Inc., https://github.com/mwiede/jsch) for the developer-mode SSH connection, and the
+released LG TV app (`com.couchsubs.tv_*_all.ipk`, part of CouchSubs).
+
+The iPhone app (`couchsubs-ios`, "install the TV app from this phone") contains a Swift port of the same TizenSdb.Core and
+Apps2Samsung code (`CouchSubs/TVInstall/`), under the same MIT terms below. It uses only Apple's frameworks (Security,
+CryptoKit, CommonCrypto, Network) for TLS and signing. For LG TVs it contains its own minimal SSH client
+(`CouchSubs/TVInstall/SshClient.swift`, part of CouchSubs under AGPL-3.0; written from RFC 4253/4252/4254, no third-party
+SSH code), negotiating the same algorithms JSch uses with LG TVs. It bundles the released Android TV and LG TV apps and the Samsung CA
+certificates below.
+
 Samsung developer CA certificates (`vd_tizen_dev_author_ca`, `author_ca`, `vd_tizen_dev_public2`, `public2`) are
 redistributed unmodified from Tizen Studio, solely so that the TV app can be signed for the user's own Samsung TV. They
 are the property of Samsung Electronics Co., Ltd. and are not covered by the CouchSubs license.
@@ -65,14 +81,32 @@ a trademark of Marvel and Sony Interactive Entertainment LLC.
 |---|---|---|
 | FFmpeg 7.1.2 (`libavcodec` H.264 decoder, `libswscale`; statically linked) | LGPL-2.1-or-later | https://ffmpeg.org |
 | .NET runtime and WPF | MIT | https://github.com/dotnet |
-| ONNX Runtime | MIT | https://github.com/microsoft/onnxruntime |
+| CTranslate2 4.9.0 (Windows CPU and NVIDIA CUDA inference) | MIT | https://github.com/OpenNMT/CTranslate2 |
+| ONNX Runtime (Nino: Windows free translation for Arabic, Hindi, Indonesian, Vietnamese and Dutch) | MIT | https://github.com/microsoft/onnxruntime |
+| Python 3.12 embedded runtime | Python Software Foundation License | https://www.python.org/downloads/release/python-31210/ |
+| NumPy (CTranslate2 wheel dependency) | BSD-3-Clause | https://github.com/numpy/numpy |
+| PyYAML (CTranslate2 wheel dependency) | MIT | https://github.com/yaml/pyyaml |
 | Microsoft.ML.Tokenizers | MIT | https://github.com/dotnet/machinelearning |
 | System.Security.Cryptography.ProtectedData | MIT | https://github.com/dotnet/runtime |
 | Microsoft WebView2 SDK | BSD-3-Clause | https://www.nuget.org/packages/Microsoft.Web.WebView2 |
+| Greenlight protocol reference | MIT | https://github.com/unknownskl/greenlight |
+| Node.js 22.14.0 runtime (Xbox helper) | MIT and bundled third-party licenses | https://github.com/nodejs/node |
+| xal-node (Xbox Microsoft device-code authentication) | MIT | https://github.com/unknownskl/xal-node |
+| xbox-webapi (home console discovery) | MIT | https://github.com/unknownskl/xbox-webapi |
+| xbox-xcloud-player (WebRTC video reception) | MIT | https://github.com/unknownskl/xbox-xcloud-player |
+| ip-address (ICE/Teredo address handling) | MIT | https://github.com/beaugunderson/ip-address |
+| jose (Xbox token handling, bundled dependency) | MIT | https://github.com/panva/jose |
+| uuid (bundled dependency) | MIT | https://github.com/uuidjs/uuid |
+| uuid4 (bundled dependency) | ISC | https://www.npmjs.com/package/uuid4 |
+| events (bundled browser EventEmitter) | MIT | https://github.com/browserify/events |
 | SSH.NET (LG TV connection) | MIT | https://github.com/sshnet/SSH.NET |
 | BouncyCastle.Cryptography (used by SSH.NET) | MIT | https://github.com/bcgit/bc-csharp |
 | Microsoft.Extensions.Logging.Abstractions (used by SSH.NET) | MIT | https://github.com/dotnet/runtime |
-| Microsoft Visual C++ 2015–2022 runtime (`vcruntime140*.dll`, `msvcp140*.dll`, `concrt140.dll`; needed by ONNX Runtime) | Microsoft Visual Studio license terms, "Distributable Code" (redist.txt) | https://learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files |
+| Microsoft Visual C++ 2015–2022 runtime (`vcruntime140*.dll`, `msvcp140*.dll`, `concrt140.dll`; needed by CTranslate2) | Microsoft Visual Studio license terms, "Distributable Code" (redist.txt) | https://learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files |
+
+The full copyright and license notices for Greenlight, the Xbox helper's bundled libraries, and the bundled Node.js
+runtime are in `windows/xbox-bridge/licenses/` in the source tree and `xbox-bridge/licenses/` in the Windows package.
+The Xbox helper adapts Greenlight's home-streaming protocol sequence; the full Greenlight application is not bundled.
 
 The Visual C++ runtime DLLs are Microsoft's redistributable files, copied unmodified from the Visual Studio
 `VC\Redist\MSVC\…\x64\Microsoft.VC14x.CRT` folder and placed next to `CouchSubs.exe` (app-local deployment, as
@@ -86,9 +120,18 @@ FFmpeg is built from the unmodified upstream release with the configuration in
 
 | Component | License | Source |
 |---|---|---|
-| OPUS-MT English→Turkish translation model (`opus-mt-tc-big-en-tr`, ONNX export) | CC BY 4.0 | Language Technology Research Group, University of Helsinki — https://huggingface.co/Helsinki-NLP/opus-mt-tc-big-en-tr, ONNX conversion https://huggingface.co/onnx-community/opus-mt-tc-big-en-tr |
+| OPUS-MT English→Turkish translation model (`opus-mt-tc-big-en-tr`, CTranslate2 conversion) | CC BY 4.0 | Language Technology Research Group, University of Helsinki — https://huggingface.co/Helsinki-NLP/opus-mt-tc-big-en-tr, conversion https://huggingface.co/Unbakedcookie/live-translator-models |
+| NVIDIA CUDA 12.8 cuBLAS and runtime (Windows GPU option only) | NVIDIA CUDA Toolkit license; downloaded license at `cuda-12.8/CUDA-LICENSE.txt` | https://developer.download.nvidia.com/compute/cuda/redist/ |
 
-The model is used unmodified (int8 quantised ONNX files as published by onnx-community).
+The model is downloaded as a SHA-256-verified CTranslate2 float16 conversion from the pinned source above. CouchSubs uses int8 computation on CPU and float16 on a compatible NVIDIA CUDA GPU.
+
+Nino adds these English→X models for the other translation languages on Windows (downloaded on demand, SHA-256
+verified, used unmodified as int8 ONNX files from Xenova's conversions for transformers.js):
+
+| Model | License | Source |
+|---|---|---|
+| OPUS-MT English→Arabic (`opus-mt-en-ar`) | CC BY 4.0 | https://huggingface.co/Helsinki-NLP/opus-mt-en-ar, ONNX https://huggingface.co/Xenova/opus-mt-en-ar |
+| OPUS-MT English→Hindi, Indonesian, Vietnamese, Dutch (`opus-mt-en-hi`, `-en-id`, `-en-vi`, `-en-nl`) | Apache-2.0 | https://huggingface.co/Helsinki-NLP, ONNX https://huggingface.co/Xenova |
 
 ## Downloaded on first use of Turkish dubbing (Mac)
 
@@ -102,6 +145,18 @@ synthetic and are not recordings of real people.
 ## Mac app
 
 Text recognition (Vision) and translation (Translation framework) are provided by macOS.
+
+## Subtitle fonts (Nino: TV app pages, Mac, iPhone, Android and Windows apps)
+
+| Component | License | Source |
+|---|---|---|
+| Barlow and Barlow Condensed (SemiBold, Bold; `tv-webos/fonts`, used unmodified) | SIL Open Font License 1.1, Copyright 2017 The Barlow Project Authors | https://github.com/jpt/barlow |
+| Nunito (variable font; `tv-webos/fonts`, used unmodified) | SIL Open Font License 1.1, Copyright 2014 The Nunito Project Authors | https://github.com/googlefonts/nunito |
+
+The license texts (`OFL-Barlow.txt`, `OFL-Nunito.txt`) are bundled next to the fonts in every package that contains them.
+The Windows app embeds modified copies made under the same license: Barlow Condensed renamed to "Nino Action"
+(`NinoAction-*.ttf`) and Nunito fixed to static SemiBold/Bold instances (`windows/src/CouchSubs.App/Fonts/`). The OBS
+page loads the same families from Google Fonts.
 
 ## Android app: Xbox home streaming (Nino)
 
@@ -118,6 +173,16 @@ and constants such as the Xbox client ID and channel access key are used):
 | Greenlight | MIT, Copyright (c) UnknownSKL (Jim Kroon) | https://github.com/unknownskl/greenlight |
 | xbox-xcloud-player | MIT, Copyright (c) UnknownSKL (Jim Kroon) | https://github.com/unknownskl/xbox-xcloud-player |
 | xal-node | MIT, Copyright (c) 2023 UnknownSKL (Jim Kroon) | https://github.com/unknownskl/xal-node |
+
+### iPhone app: Xbox home streaming (from CouchSubs)
+
+| Component | License | Source |
+|---|---|---|
+| WebRTC for iOS (`stasel/WebRTC`, Google libwebrtc build) | BSD-3-Clause with WebRTC patent grant | https://github.com/stasel/WebRTC |
+
+The Android and iPhone apps do not bundle the Node.js helper or the JavaScript player. They send the same requests as
+the Windows helper and open WebRTC with the platform library; H.264 is decoded by the phone's hardware decoder. The MIT
+notices for the ported projects are in `windows/xbox-bridge/licenses/`.
 
 ## Trademarks
 

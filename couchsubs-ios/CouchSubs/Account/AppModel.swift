@@ -28,18 +28,29 @@ final class AppModel: ObservableObject {
         self.defaults = defaults
     }
 
-    /// Açılışta ve uygulama öne gelince: paketler haftada bir yenilenir.
+    /// Açılışta paket listesine hemen bakılır, sonra uygulama açık kaldıkça günde bir (Android'deki gibi).
     func start() async {
-        await refreshPacks(force: false)
+        await refreshPacks(force: true)
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(PackStore.refreshInterval))
+            guard !Task.isCancelled else { break }
+            await refreshPacks(force: false)
+        }
     }
 
-    /// Paketleri sunucudan indirir (haftalık; `force` ile hemen). Sunucu yoksa ya da ulaşılamazsa uygulamayla gelen
-    /// paketler kullanılmaya devam eder.
-    func refreshPacks(force: Bool) async {
+    /// PS5'te yeni bir oyun başladı: o oyunun (havuzdan otomatik) paketi sunucuda yeni çıkmış olabilir; son bakış on
+    /// dakikadan eskiyse hemen bakılır.
+    func gameStarted() async {
+        await refreshPacks(force: false, maxAge: PackStore.gameCheckInterval)
+    }
+
+    /// Paketleri sunucudan indirir (son bakış `maxAge`'den eskiyse; `force` ile hemen). Sunucu yoksa ya da ulaşılamazsa
+    /// uygulamayla gelen paketler kullanılmaya devam eder.
+    func refreshPacks(force: Bool, maxAge: TimeInterval = PackStore.refreshInterval) async {
         guard let packStore else { return }
         packStatus = .downloading
         do {
-            let downloaded = try await packStore.refresh(force: force)
+            let downloaded = try await packStore.refresh(force: force, maxAge: maxAge)
             if downloaded > 0 {
                 library.reload()
                 analytics.log(.packsUpdated(count: downloaded))

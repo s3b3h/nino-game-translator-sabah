@@ -84,6 +84,13 @@ public class OverlayService extends Service implements TvPage.Host {
                         | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                         | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
+        // Katman da TV'den "en az görüntü işleme" ister (Android 11+); TV destekliyorsa oyun moduna geçer.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                layout.preferMinimalPostProcessing = true;
+            } catch (RuntimeException ignored) {
+            }
+        }
         try {
             windows.addView(page.webView, layout);
         } catch (RuntimeException e) {

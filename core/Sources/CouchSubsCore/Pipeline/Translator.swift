@@ -5,12 +5,29 @@ import Translation
 
 public protocol TextTranslator {
     func translate(_ text: String) async throws -> String
+    /// Altyazı gelmeden yerel modeli hazırlar; çevrimiçi çeviri isteği ya da bağlam durumu oluşturmamalı.
+    func warmUp() async
     /// Son çevrilen altyazının seslendirilecek cümleleri (konuşmacısıyla); dublaj için.
     func spokenLines(for text: String) -> [SpokenLine]
+    /// Birbirinden bağımsız metinleri ("ekranı çevir"deki menü satırları, görev yazıları) aynı sırada çevirir.
+    func translateAll(_ texts: [String]) async throws -> [String]
+    /// `translateAll` hepsini tek istekte çevirir (yapay zekâ); öyleyse ekran çevirisi parça parça istek göndermez.
+    var translatesTogether: Bool { get }
 }
 
 extension TextTranslator {
+    public func warmUp() async {}
+
     public func spokenLines(for text: String) -> [SpokenLine] { [] }
+
+    /// Varsayılan: metinler sırayla tek tek çevrilir.
+    public func translateAll(_ texts: [String]) async throws -> [String] {
+        var result: [String] = []
+        for text in texts { result.append(try await translate(text)) }
+        return result
+    }
+
+    public var translatesTogether: Bool { false }
 }
 
 public enum TranslatorError: Error, Equatable {
@@ -84,6 +101,11 @@ public final class Translator: TextTranslator {
         speech[text] = SpeechScript.lines(pieces: pieces, translations: translations)
         cache.store(result, for: text)
         return result
+    }
+
+    /// Apple'ın yerel modelini doğrudan çalıştırır; FreeLine bağlamını ve çeviri önbelleğini etkilemez.
+    public func warmUp() async {
+        _ = try? await run("Hello")
     }
 
     public func spokenLines(for text: String) -> [SpokenLine] {

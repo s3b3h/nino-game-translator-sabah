@@ -46,12 +46,21 @@ protocol PhoneServices: AnyObject {
     func register(host: String, accountId: Data, pin: UInt32) async throws -> RegisteredConsole
     func discoverTVs() async -> [LGTV]
     func pairTV(_ tv: LGTV, key: String?, server: String) async throws -> TVPairing
-    func makeStream(console: RegisteredConsole, accountId: Data) -> StreamControlling
+    /// `loginPasscode`: PS5 bu hesap için giriş şifresi isterse gönderilecek 4 hane (Ayarlar'da kayıtlıysa).
+    func makeStream(console: RegisteredConsole, accountId: Data, loginPasscode: String?) -> StreamControlling
     /// `onKey`: TV bağlantıda yeni jeton verdi (Samsung); saklanır.
     func makeKeeper(tv: LGTV, key: String?, params: [String: Any], appConnected: @escaping @Sendable () -> Bool,
                     onMoved: @escaping (LGTV) -> Void, onKey: @escaping @Sendable (String) -> Void) -> KeeperControlling
     func checkDeepLKey(_ key: String) async -> OnlineKeyCheck
     func testAIKey(provider: AIProvider, key: String, model: String?) async -> Result<String, AIFailure>
+}
+
+extension PhoneServices {
+    /// PS5'te o an çalışan oyun: yalnız bağlı PS5'in adresine keşif sorusu gider (ortak havuz için; bkz. `RunningGame`).
+    func runningGame(host: String) async -> RunningGame? {
+        guard let info = await Console.discover(timeout: .seconds(2), host: host).first else { return nil }
+        return RunningGame(titleId: info.runningAppTitleId, name: info.runningAppName)
+    }
 }
 
 final class LivePhoneServices: PhoneServices {
@@ -96,8 +105,8 @@ final class LivePhoneServices: PhoneServices {
         }
     }
 
-    func makeStream(console: RegisteredConsole, accountId: Data) -> StreamControlling {
-        StreamSession(console: console, accountId: accountId)
+    func makeStream(console: RegisteredConsole, accountId: Data, loginPasscode: String?) -> StreamControlling {
+        StreamSession(console: console, accountId: accountId, loginPasscode: loginPasscode)
     }
 
     func makeKeeper(tv: LGTV, key: String?, params: [String: Any], appConnected: @escaping @Sendable () -> Bool,

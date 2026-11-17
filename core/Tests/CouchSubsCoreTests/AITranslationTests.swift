@@ -13,6 +13,8 @@ private final class FakeAI: URLProtocol {
     nonisolated(unsafe) static var timeout = false
     /// Verilirse hizmetin döndüğü metin bu olur.
     nonisolated(unsafe) static var replyText: String?
+    /// İstek uçuşta iken oyun değişimini taklit eder; yanıt verilmeden çağrılır.
+    nonisolated(unsafe) static var onRequest: (() -> Void)?
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -31,6 +33,7 @@ private final class FakeAI: URLProtocol {
         }
         let body = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
         Self.requests.append((request, body))
+        Self.onRequest?()
         if Self.timeout {
             client?.urlProtocol(self, didFailWithError: URLError(.timedOut))
             return
@@ -88,6 +91,13 @@ private final class FakeAI: URLProtocol {
     }
 }
 
+private final class WarmupFallback: TextTranslator {
+    private(set) var warmUpCalls = 0
+
+    func warmUp() async { warmUpCalls += 1 }
+    func translate(_ text: String) async throws -> String { "yerel: " + text }
+}
+
 /// Windows'taki AiTranslatorTests ile aynı durumlar.
 final class AITranslationTests: XCTestCase {
     private let secret = "sk-SECRET-123"
@@ -97,6 +107,7 @@ final class AITranslationTests: XCTestCase {
         FakeAI.failure = nil
         FakeAI.timeout = false
         FakeAI.replyText = nil
+        FakeAI.onRequest = nil
     }
 
     /// Her çevirmen kendi dakikalık hakkıyla kurulur; testler uygulamanın ortak hakkını tüketmesin.
@@ -113,6 +124,166 @@ final class AITranslationTests: XCTestCase {
     private func local(_ text: String) async throws -> String { "yerel: " + text }
 
     private func user(_ index: Int) -> String { FakeAI.userText(FakeAI.requests[index].body, url: FakeAI.requests[index].request.url!) }
+
+    private func withGame(_ cache: TranslationCache, game: @escaping @Sendable () -> String?) -> AITranslationCore {
+        AITranslationCore(provider: .openAI, key: secret, session: FakeAI.session(), cache: cache,
+                          budget: RequestBudget(perMinute: 1000), game: game)
+    }
+
+    func testGameCacheSeparatesGamesAndReusesTheSameGame() async throws {
+        for screen in [false, true] {
+            FakeAI.requests = []
+            let box = GameBox()
+            box.value = "City game"
+            let core = withGame(TranslationCache(), game: { box.value })
+            func translate() async throws -> String {
+                if screen { return try await core.translateAll(["The bank is close."], fallback: local)[0] }
+                return try await core.translate("The bank is close.", fallback: local)
+            }
+            FakeAI.replyText = #"["Banka yakında."]"#
+            let first = try await translate()
+            let repeatFirst = try await translate()
+            XCTAssertEqual(first, "Banka yakında.")
+            XCTAssertEqual(repeatFirst, first)
+            XCTAssertEqual(FakeAI.requests.count, 1)
+            box.value = "River game"
+            FakeAI.replyText = #"["Kıyı yakında."]"#
+            let second = try await translate()
+            XCTAssertEqual(second, "Kıyı yakında.")
+            XCTAssertEqual(FakeAI.requests.count, 2)
+            XCTAssertTrue(user(0).hasPrefix("Game: City game\n"))
+            if FakeAI.requests.count > 1 { XCTAssertTrue(user(1).hasPrefix("Game: River game\n")) }
+            box.value = "City game"
+            let back = try await translate()
+            XCTAssertEqual(back, first)
+            XCTAssertEqual(FakeAI.requests.count, 2)
+        }
+    }
+
+    func testGameCacheAlsoSeparatesSentencePieces() async throws {
+        let box = GameBox()
+        box.value = "One"
+        let core = withGame(TranslationCache(), game: { box.value })
+        _ = try await core.translate("Stay close.", fallback: local)
+        box.value = "Two"
+        _ = try await core.translate("Stay close. Run!", fallback: local)
+        XCTAssertEqual(FakeAI.requests.count, 2)
+        XCTAssertTrue(user(1).hasSuffix("[\"Stay close.\",\"Run!\"]"))
+        _ = try await core.translate("Run!", fallback: local)
+        XCTAssertEqual(FakeAI.requests.count, 2)
+    }
+
+    func testGameCacheKeepsLegacyEntriesOnlyForUnknownGame() async throws {
+        for screen in [false, true] {
+            FakeAI.requests = []
+            let cache = TranslationCache()
+            cache.store("Eski çeviri.", for: "Stay close.")
+            let box = GameBox()
+            let core = withGame(cache, game: { box.value })
+            func translate() async throws -> String {
+                if screen { return try await core.translateAll(["Stay close."], fallback: local)[0] }
+                return try await core.translate("Stay close.", fallback: local)
+            }
+            let unknown = try await translate()
+            XCTAssertEqual(unknown, "Eski çeviri.")
+            box.value = "   "
+            let blank = try await translate()
+            XCTAssertEqual(blank, unknown)
+            XCTAssertTrue(FakeAI.requests.isEmpty)
+            box.value = "  One  "
+            let known = try await translate()
+            XCTAssertEqual(known, "[tr] Stay close.")
+            if !FakeAI.requests.isEmpty { XCTAssertTrue(user(0).hasPrefix("Game: One\n")) }
+            box.value = "One"
+            let trimmed = try await translate()
+            XCTAssertEqual(trimmed, known)
+            XCTAssertEqual(FakeAI.requests.count, 1)
+            box.value = nil
+            let unknownAgain = try await translate()
+            XCTAssertEqual(unknownAgain, unknown)
+            XCTAssertEqual(cache.value(for: "Stay close."), unknown)
+        }
+    }
+
+    func testGameCacheSnapshotsGameBeforeRequestAndStoresUnderThatGame() async throws {
+        for screen in [false, true] {
+            FakeAI.requests = []
+            let box = GameBox()
+            box.value = "One"
+            let cache = TranslationCache()
+            FakeAI.onRequest = { box.value = "Two" }
+            let core = withGame(cache, game: { box.reads += 1; return box.value })
+            if screen { _ = try await core.translateAll(["Stay close."], fallback: local) }
+            else { _ = try await core.translate("Stay close.", fallback: local) }
+            XCTAssertEqual(box.reads, 1)
+            XCTAssertTrue(user(0).hasPrefix("Game: One\n"))
+            let other = withGame(cache, game: { "Two" })
+            if screen { _ = try await other.translateAll(["Stay close."], fallback: local) }
+            else { _ = try await other.translate("Stay close.", fallback: local) }
+            XCTAssertEqual(FakeAI.requests.count, 2)
+            let original = withGame(cache, game: { "One" })
+            if screen { _ = try await original.translateAll(["Stay close."], fallback: local) }
+            else { _ = try await original.translate("Stay close.", fallback: local) }
+            XCTAssertEqual(FakeAI.requests.count, 2)
+        }
+    }
+
+    func testGameCachePersistsSpeechPiecesWithoutLeakingAcrossGames() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("couchsubs-game-cache-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("cache.jsonl")
+        let text = "KRATOS: We go now. Stay close."
+        let box = GameBox()
+        box.value = "One"
+        let first = withGame(TranslationCache(file: file), game: { box.value })
+        _ = try await first.translate(text, fallback: local)
+        let expected = first.spokenLines(for: text, fallback: { _ in [] })
+        XCTAssertEqual(expected.count, 2)
+        XCTAssertTrue(expected.allSatisfy { $0.speaker == "KRATOS" })
+        box.value = "Two"
+        XCTAssertTrue(first.spokenLines(for: text, fallback: { _ in [] }).isEmpty)
+        box.value = "One"
+        let reloaded = withGame(TranslationCache(file: file), game: { box.value })
+        XCTAssertEqual(reloaded.spokenLines(for: text, fallback: { _ in [] }), expected)
+        _ = try await reloaded.translate(text, fallback: local)
+        XCTAssertEqual(FakeAI.requests.count, 1)
+        box.value = "Two"
+        XCTAssertTrue(reloaded.spokenLines(for: text, fallback: { _ in [] }).isEmpty)
+        FakeAI.replyText = #"["Gidelim.","Yakında kal."]"#
+        _ = try await reloaded.translate(text, fallback: local)
+        XCTAssertEqual(FakeAI.requests.count, 2)
+        XCTAssertEqual(reloaded.spokenLines(for: text, fallback: { _ in [] }).first?.turkish, "Gidelim.")
+        box.value = "One"
+        XCTAssertEqual(reloaded.spokenLines(for: text, fallback: { _ in [] }), expected)
+    }
+
+    func testGameCacheSpeechCanUseWholeScreenEntryWithoutSentenceEntries() async throws {
+        let cache = TranslationCache()
+        let text = "We go now. Stay close."
+        _ = try await withGame(cache, game: { "One" }).translateAll([text], fallback: local)
+        let lines = withGame(cache, game: { "One" }).spokenLines(for: text, fallback: { _ in [] })
+        XCTAssertEqual(lines, [SpokenLine(english: text, turkish: "[tr] " + text)])
+        XCTAssertTrue(withGame(cache, game: { "Two" }).spokenLines(for: text, fallback: { _ in [] }).isEmpty)
+    }
+
+    func testGameCacheScreenBatchesKeepTheInitialGame() async throws {
+        let box = GameBox()
+        box.value = "One"
+        let cache = TranslationCache()
+        let texts = (0...AITranslationCore.screenBatch).map { "Menu item \($0)" }
+        FakeAI.onRequest = { box.value = "Two" }
+        let core = withGame(cache, game: { box.reads += 1; return box.value })
+        let result = try await core.translateAll(texts, fallback: local)
+        XCTAssertEqual(result, texts.map { "[tr] " + $0 })
+        XCTAssertEqual(box.reads, 1)
+        XCTAssertEqual(FakeAI.requests.count, 2)
+        XCTAssertTrue(user(0).hasPrefix("Game: One\n"))
+        XCTAssertTrue(user(1).hasPrefix("Game: One\n"))
+        _ = try await withGame(cache, game: { "One" }).translateAll(texts, fallback: local)
+        XCTAssertEqual(FakeAI.requests.count, 2)
+        _ = try await withGame(cache, game: { "Two" }).translateAll(texts, fallback: local)
+        XCTAssertEqual(FakeAI.requests.count, 4)
+    }
 
     // MARK: - İstek
 
@@ -136,6 +307,32 @@ final class AITranslationTests: XCTestCase {
         XCTAssertFalse(user(0).contains("KRATOS"))
     }
 
+    /// Model cümleyi çevirmeden geri verirse cümle yerel çeviriyle yeniden denenir ve yanıt önbelleğe yazılmaz (#245:
+    /// qwen2.5:3b "You think I'm on the run?" cümlesini olduğu gibi döndürdü, hat onu Türkçe sanıp göstermedi). Yerel
+    /// çeviri de aynı kalırsa (ad) modelin yanıtı kalır ve önbelleğe yazılır.
+    func testEchoedSentenceIsRetriedLocallyAndNotCached() async throws {
+        FakeAI.replyText = #"["You think I'm on the run?"]"#
+        let core = make(.openAI)
+        var asked: [String] = []
+        let local: (String) async throws -> String = { text in
+            asked.append(text)
+            return "yerel: " + text
+        }
+        let first = try await core.translate("Tommy: You think I'm on the run?", fallback: local)
+        XCTAssertEqual(first, "Tommy: yerel: You think I'm on the run?")
+        XCTAssertEqual(asked, ["You think I'm on the run?"])
+        _ = try await core.translate("Tommy: You think I'm on the run?", fallback: local)
+        XCTAssertEqual(FakeAI.requests.count, 2)
+
+        FakeAI.replyText = #"["Thomas Angelo."]"#
+        let names = make(.openAI)
+        let same: (String) async throws -> String = { $0 }
+        let name = try await names.translate("Thomas Angelo.", fallback: same)
+        XCTAssertEqual(name, "Thomas Angelo.")
+        _ = try await names.translate("Thomas Angelo.", fallback: same)
+        XCTAssertEqual(FakeAI.requests.count, 3)
+    }
+
     func testOpenAIRequest() async throws {
         _ = try await make(.openAI).translate("Run!", fallback: local)
         let (request, body) = FakeAI.requests[0]
@@ -147,6 +344,23 @@ final class AITranslationTests: XCTestCase {
         let messages = body["messages"] as? [[String: Any]] ?? []
         XCTAssertEqual(messages.map { $0["role"] as? String }, ["developer", "user"])
         XCTAssertEqual(messages[0]["content"] as? String, AIRequest.systemPrompt)
+    }
+
+    func testTranslatorWarmUpDoesNotSpendAIRequestOrSeedFirstSubtitleContext() async throws {
+        let fallback = WarmupFallback()
+        let budget = RequestBudget(perMinute: 1)
+        let translator = AITranslator(provider: .openAI, key: secret, model: nil, fallback: fallback,
+                                      session: FakeAI.session(), budget: budget)
+
+        await translator.warmUp()
+        XCTAssertEqual(FakeAI.requests.count, 0)
+        XCTAssertEqual(fallback.warmUpCalls, 1)
+
+        _ = try await translator.translate("First real subtitle.")
+
+        XCTAssertEqual(FakeAI.requests.count, 1)
+        XCTAssertFalse(user(0).contains("Hello"))
+        XCTAssertTrue(user(0).hasSuffix("[\"First real subtitle.\"]"))
     }
 
     func testClaudeRequest() async throws {
@@ -328,6 +542,15 @@ final class AITranslationTests: XCTestCase {
         XCTAssertEqual(try AIRequest.translations(from: "<think>…</think>Gidelim.", count: 1), ["Gidelim."])
     }
 
+    /// Yerel modellerin bitiş işaretleri (`</s>`, `<|im_end|>`) ekranda kalmaz; sondaki fazla virgül diziyi bozmaz.
+    func testLocalControlTokensAndTrailingComma() throws {
+        XCTAssertEqual(try AIRequest.translations(from: "[\"Yere yat!\"]</s>", count: 1), ["Yere yat!"])
+        XCTAssertEqual(try AIRequest.translations(from: "[Yere yat!]</s>", count: 1), ["Yere yat!"])
+        XCTAssertEqual(try AIRequest.translations(from: "Defol buradan!<|im_end|>", count: 1), ["Defol buradan!"])
+        XCTAssertEqual(try AIRequest.translations(from: "<s>[\"Bir.\", \"İki.\",]<|eot_id|>", count: 2), ["Bir.", "İki."])
+        XCTAssertEqual(try AIRequest.translations(from: "[\"<b> etiketi kalır\"]", count: 1), ["<b> etiketi kalır"])
+    }
+
     /// Sunucu kapalıysa ya da model indirilmemişse o satır ücretsiz çeviriyle gelir, durum bildirilir.
     func testLocalFailuresFallBack() async throws {
         FakeAI.timeout = true
@@ -397,6 +620,72 @@ final class AITranslationTests: XCTestCase {
         XCTAssertEqual(try AIRequest.text(provider: .openAI, from: Data(#"{"choices":[{"message":{"content":"Koş!"}}]}"#.utf8)), "Koş!")
     }
 
+    /// Tırnaksız dizi (#27): bazı yerel modeller `[Hareket etmemiz lazım.]` döndürür; köşeli parantezler ekranda kalmaz.
+    func testUnquotedArrayForOneSentence() throws {
+        XCTAssertEqual(try AIRequest.translations(from: "[Hareket etmemiz lazım.]", count: 1), ["Hareket etmemiz lazım."])
+        XCTAssertEqual(try AIRequest.translations(from: "[Dur, bekle, gitme.]", count: 1), ["Dur, bekle, gitme."])
+        XCTAssertEqual(try AIRequest.translations(from: "<think>\nKısa bir cümle.\n</think>\n[Geri çekil lan!]", count: 1),
+                       ["Geri çekil lan!"])
+        XCTAssertEqual(try AIRequest.translations(from: "```json\n[Yerinden kıpırdama.]\n```", count: 1), ["Yerinden kıpırdama."])
+        // İçi tırnaklı ama kaçışsız: JSON değil, yine de dış katman soyulur.
+        XCTAssertEqual(try AIRequest.translations(from: "[\"Ona \"dur\" dedim.\"]", count: 1), ["Ona \"dur\" dedim."])
+        // Köşeli parantez yalnız başta: düz metin olduğu gibi kalır.
+        XCTAssertEqual(try AIRequest.translations(from: "[gülüyor] Hadi gidelim.", count: 1), ["[gülüyor] Hadi gidelim."])
+    }
+
+    func testUnquotedArrayForSeveralSentences() throws {
+        XCTAssertEqual(try AIRequest.translations(from: "[Satır bir., Satır iki.]", count: 2), ["Satır bir.", "Satır iki."])
+        XCTAssertEqual(try AIRequest.translations(from: "[\n  Gidelim.,\n  Yakın dur.\n]", count: 2), ["Gidelim.", "Yakın dur."])
+        XCTAssertEqual(try AIRequest.translations(from: "<think>…</think>[Koş!, Hemen!]", count: 2), ["Koş!", "Hemen!"])
+        // Sayı tutmazsa parti her zamanki geri dönüşe gider.
+        XCTAssertThrowsError(try AIRequest.translations(from: "[Satır bir.]", count: 2))
+        XCTAssertThrowsError(try AIRequest.translations(from: "[Bir., İki., Üç.]", count: 2))
+    }
+
+    /// Cümle içi virgül bölünmez: önce cümle sonundan sonra gelen virgül denenir, düz virgül yalnız sayı tam tutarsa.
+    func testUnquotedArrayKeepsCommasInsideSentences() throws {
+        XCTAssertEqual(try AIRequest.translations(from: "[Evet, efendim., Hayır, gitmiyorum.]", count: 2),
+                       ["Evet, efendim.", "Hayır, gitmiyorum."])
+        XCTAssertEqual(try AIRequest.translations(from: "[Dur, bekle, gitme!, Tamam.]", count: 2), ["Dur, bekle, gitme!", "Tamam."])
+        XCTAssertEqual(try AIRequest.translations(from: "[Sakin ol, dostum.\nBen hallederim, merak etme.]", count: 2),
+                       ["Sakin ol, dostum.", "Ben hallederim, merak etme."])
+        XCTAssertThrowsError(try AIRequest.translations(from: "[Dur, bekle, gitme.]", count: 2))
+        XCTAssertEqual(try AIRequest.translations(from: "[Hey, Sen]", count: 2), ["Hey", "Sen"])
+    }
+
+    /// Tırnaksız yanıtla birden çok cümle yerel çeviriye düşmez.
+    func testUnquotedReplyIsUsedInsteadOfFallback() async throws {
+        FakeAI.replyText = "[Gidelim., Yakın dur.]"
+        let result = try await makeLocal().translate("We go now. Stay close.", fallback: local)
+        XCTAssertEqual(result, "Gidelim. Yakın dur.")
+    }
+
+    /// "Ekranı çevir"in tek isteği de tırnaksız yanıtı okur; oyun adı orada da gider.
+    func testScreenRequestReadsUnquotedReplyAndSendsGame() async throws {
+        FakeAI.replyText = "[Haritayı aç., Kamptan ayrıl.]"
+        let core = AITranslationCore(provider: .local, key: "", model: "qwen2.5:7b",
+                                     server: LocalAIServer(baseURL: LocalAIServer.ollamaURL, model: "qwen2.5:7b"),
+                                     session: FakeAI.session(), cache: TranslationCache(), budget: RequestBudget(perMinute: 1000),
+                                     game: { "Ghost of Yōtei" })
+        let result = try await core.translateAll(["Open the map.", "Leave the camp."], fallback: local)
+        XCTAssertEqual(result, ["Haritayı aç.", "Kamptan ayrıl."])
+        XCTAssertTrue(user(0).hasPrefix("Game: Ghost of Yōtei\n\n"))
+    }
+
+    /// Oyun biliniyorsa (paket eşleşmesi) istemde "Game:" satırı olarak gider; bilinmiyorsa hiç gitmez.
+    func testGameNameIsSentWhenKnown() async throws {
+        let box = GameBox()
+        let core = AITranslationCore(provider: .local, key: "", model: "qwen2.5:7b",
+                                     server: LocalAIServer(baseURL: LocalAIServer.ollamaURL, model: "qwen2.5:7b"),
+                                     session: FakeAI.session(), cache: TranslationCache(), budget: RequestBudget(perMinute: 1000),
+                                     game: { box.value })
+        _ = try await core.translate("Sit tight.", fallback: local)
+        XCTAssertFalse(user(0).contains("Game:"))
+        box.value = "Grand Theft Auto V"
+        _ = try await core.translate("I'll handle the plastic.", fallback: local)
+        XCTAssertTrue(user(1).hasPrefix("Game: Grand Theft Auto V\n\n"))
+    }
+
     func testPlainTextReplyForOneSentence() async throws {
         FakeAI.replyText = "Koş!"
         let result = try await make(.openAI).translate("Run!", fallback: local)
@@ -434,6 +723,41 @@ final class AITranslationTests: XCTestCase {
         XCTAssertEqual(reported, [.quotaExceeded])
         // Yerel çeviri bu motorun önbelleğine yazılmaz.
         XCTAssertNil(cache.value(for: "Run!"))
+    }
+
+    func testCachedSentencesSurviveServicePauseWithoutLocalWork() async throws {
+        for failure in ["server", "timeout", "invalid-reply", "daily-quota", "minute-quota"] {
+            FakeAI.requests = []
+            FakeAI.timeout = failure == "timeout"
+            switch failure {
+            case "daily-quota":
+                FakeAI.failure = (429, rateLimitBody(quotaId: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"))
+            case "minute-quota":
+                FakeAI.failure = (429, rateLimitBody(quotaId: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"))
+            case "invalid-reply": FakeAI.failure = (200, "{}")
+            default: FakeAI.failure = (503, "{}")
+            }
+            let cache = TranslationCache()
+            cache.store("Koş!", for: "Run!")
+            cache.store("Saklan!", for: "Hide!")
+            let translator = make(.gemini, cache: cache)
+            var calls: [String] = []
+            let fallback: (String) async throws -> String = { calls.append($0); return "yerel: " + $0 }
+            let failed = try await translator.translate("Wait!", fallback: fallback)
+            XCTAssertEqual(failed, "yerel: Wait!")
+            let error = translator.lastFailure
+            let cached = try await translator.translate("KRATOS: Run! Hide!", fallback: fallback)
+            XCTAssertEqual(cached, "KRATOS: Koş! Saklan!", failure)
+            XCTAssertEqual(FakeAI.requests.count, 1, failure)
+            XCTAssertEqual(calls, ["Wait!"], failure)
+            XCTAssertEqual(translator.lastFailure, error, failure)
+            XCTAssertEqual(translator.spokenLines(for: "KRATOS: Run! Hide!") { _ in [] }.last?.speaker, "KRATOS")
+            let missing = try await translator.translate("Run! Jump!", fallback: fallback)
+            XCTAssertEqual(missing, "yerel: Run! Jump!")
+            XCTAssertEqual(calls, ["Wait!", "Run! Jump!"])
+            XCTAssertEqual(FakeAI.requests.count, 1)
+            XCTAssertNil(cache.value(for: "Run! Jump!"))
+        }
     }
 
     func testTimeoutFallsBack() async throws {
@@ -612,4 +936,106 @@ final class AITranslationTests: XCTestCase {
         let empty = await AITranslationCore.test(provider: .claude, key: "  ", model: nil, session: FakeAI.session())
         XCTAssertEqual(empty, .failure(.invalidKey))
     }
+
+    // MARK: - Ekranı çevir
+
+    /// Ücretsiz çeviri kurulu değil: yerel çeviriye düşen satır hata verir (Mac'te dil paketi, Windows'ta model yok).
+    private struct MissingFree: TextTranslator {
+        func translate(_ text: String) async throws -> String { throw TranslatorError.needsDownload }
+    }
+
+    /// Birbirine benzemeyen yazılar (benzer satırları yazı tanıma çöpü sayan süzgece takılmasın).
+    private static let screenTexts = [
+        "Find the blacksmith.", "Open the world map", "Collect three iron bars", "Talk to the old hunter", "Leave the camp quietly",
+        "Upgrade your shield", "Rest at the campfire", "Follow the river north", "Climb the broken tower", "Defeat the wolf pack",
+        "Search the abandoned mine", "Light the signal fire", "Cross the frozen lake", "Return to the village", "Repair the bridge",
+        "Escort the merchant safely", "Hunt a wild boar", "Read the ancient runes", "Unlock the hidden vault", "Sharpen your axe",
+    ]
+
+    private func screen(_ count: Int) -> Reading {
+        Reading(lines: (0..<count).map { index in
+            // İki sütun, satırlar arası boşluk geniş: her satır ayrı grup.
+            let top = 0.02 + Double(index / 2) * 0.09, left = index % 2 == 0 ? 0.05 : 0.55
+            return TextLine(Self.screenTexts[index], box: TextBox(left: left, top: top, right: left + 0.35, bottom: top + 0.03))
+        })
+    }
+
+    /// Bildirilen hata (Gemini seçiliyken "Ekranı çevir" hiçbir şey göstermiyordu): parça başına istek gidince 20 satırlık
+    /// ekran dakikada 15 isteklik hakkı bitirir; kalan parçalar yerel çeviriye düşer, o kurulu değilse bütün ekran hata
+    /// verir. Canlı altyazı hakkı zaten bitirdiyse ilk parçada düşer, TV'ye tek çeviri gitmez.
+    func testScreenOneRequestPerParagraphRunsOutOfTheGeminiBudget() async throws {
+        let budget = RequestBudget(perMinute: 15)
+        let translator = AITranslator(provider: .gemini, key: secret, model: nil, fallback: MissingFree(), session: FakeAI.session(),
+                                      budget: budget)
+        var shown = 0
+        do {
+            _ = try await ScreenTranslation.translate(screen(20), using: { try await translator.translate($0) }) { shown = $0.count }
+            XCTFail("hak bitince yerel çeviri olmadan hata beklenir")
+        } catch {
+            XCTAssertEqual(error as? TranslatorError, .needsDownload)
+        }
+        XCTAssertEqual(FakeAI.requests.count, 15)
+        XCTAssertEqual(shown, 15)
+    }
+
+    /// Düzeltme: ekranın bütün parçaları tek istekte gider ve hepsi çevrilir; canlı altyazı dakikalık hakkı bitirmiş olsa da.
+    func testScreenIsTranslatedInOneRequestEvenWhenTheBudgetIsUsedUp() async throws {
+        let budget = RequestBudget(perMinute: 15)
+        for _ in 0..<15 { XCTAssertTrue(budget.take()) }
+        let translator = AITranslator(provider: .gemini, key: secret, model: nil, fallback: MissingFree(), session: FakeAI.session(),
+                                      budget: budget)
+        var reported: [Int] = []
+        let items = try await ScreenTranslation.translate(screen(20), using: translator) { reported.append($0.count) }
+        XCTAssertEqual(FakeAI.requests.count, 1)
+        XCTAssertEqual(items.count, 20)
+        XCTAssertEqual(Set(items.map(\.translation)), Set(Self.screenTexts.map { "[tr] " + $0 }))
+        XCTAssertEqual(reported, [20])
+        let config = FakeAI.requests[0].body["generationConfig"] as? [String: Any]
+        XCTAssertEqual(config?["maxOutputTokens"] as? Int, AIRequest.screenOutputTokens)
+        // Çevrilenler önbelleğe girer: yeniden basınca istek gitmez.
+        _ = try await ScreenTranslation.translate(screen(20), using: translator)
+        XCTAssertEqual(FakeAI.requests.count, 1)
+    }
+
+    /// Kalabalık ekran birkaç isteğe bölünür; sıra korunur.
+    func testCrowdedScreenIsSplitIntoBatches() async throws {
+        let core = make(.gemini)
+        let texts = (0..<(AITranslationCore.screenBatch + 5)).map { "Line \($0) of the menu" }
+        let result = try await core.translateAll(texts, fallback: local)
+        XCTAssertEqual(FakeAI.requests.count, 2)
+        XCTAssertEqual(result, texts.map { "[tr] " + $0 })
+    }
+
+    /// Hizmet çeviremezse parçalar yerel çeviriyle gelir ve hata bildirilir; yerel çeviri de yoksa hata yukarı çıkar.
+    func testScreenFailureFallsBackOrThrows() async throws {
+        FakeAI.failure = (500, "{}")
+        let core = make(.gemini)
+        var reported: [AIFailure?] = []
+        core.onFailureChanged = { reported.append($0) }
+        let result = try await core.translateAll(["Open the map", "Leave the camp"], fallback: local)
+        XCTAssertEqual(result, ["yerel: Open the map", "yerel: Leave the camp"])
+        XCTAssertEqual(reported, [.unreachable])
+
+        let translator = AITranslator(provider: .claude, key: secret, model: nil, fallback: MissingFree(), session: FakeAI.session(),
+                                      budget: RequestBudget(perMinute: 1000))
+        do {
+            _ = try await ScreenTranslation.translate(screen(3), using: translator)
+            XCTFail("hata beklenir")
+        } catch {
+            XCTAssertEqual(error as? TranslatorError, .needsDownload)
+            XCTAssertEqual(translator.lastFailure, .unreachable)
+        }
+    }
+
+    /// Yanıttaki dizi eksikse parçalar karışmaz: hepsi yerel çeviriye düşer.
+    func testScreenReplyWithWrongCountFallsBack() async throws {
+        FakeAI.replyText = #"["[tr] bir"]"#
+        let result = try await make(.openAI).translateAll(["One thing", "Another thing"], fallback: local)
+        XCTAssertEqual(result, ["yerel: One thing", "yerel: Another thing"])
+    }
+}
+
+private final class GameBox: @unchecked Sendable {
+    var value: String?
+    var reads = 0
 }

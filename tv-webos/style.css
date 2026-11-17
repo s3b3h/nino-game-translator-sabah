@@ -7,7 +7,10 @@ html, body {
   /* webOS HDMI görüntüyü sayfanın altındaki ayrı bir katmanda çizer; sayfa şeffaf kalmalı. */
   background: transparent;
   color: #fff;
-  font-family: "LG Smart UI", "Museo Sans", Arial, "Noto Naskh Arabic", "Noto Sans Arabic", "Droid Arabic Naskh", sans-serif;
+  /* Her TV'nin kendi yazı tipi: LG, Samsung (Tizen), Android TV; sonra genel yedek. "Segoe UI" bilerek yok: harfleri
+     ekran çevirisi kutularının satır yüksekliğini aşıyor, Windows'ta tv-screen.test.js'in 4K ölçümünü bozuyordu.
+     Nino: Arapça yazı tipleri en sonda (Latin harfler TV'nin kendi yazı tipiyle kalır). */
+  font-family: "LG Smart UI", "Museo Sans", "SamsungOne", "Tizen Sans", Roboto, Arial, "Noto Naskh Arabic", "Noto Sans Arabic", "Droid Arabic Naskh", sans-serif;
 }
 
 #video-host, #video-host video {
@@ -70,17 +73,45 @@ html, body {
 }
 #screen .item.paragraphs { text-align: left; text-align: start; white-space: pre-line; }
 
+/* Ek alanlar (görev, telefon, bildirim): çeviri İngilizce yazının yerinde küçük bir kutuda; altyazının ve "ekranı
+   çevir"in altında kalır. */
+#regions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 7;
+  pointer-events: none;
+}
+#regions.hidden { display: none; }
+#regions .region {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  white-space: pre-line;
+  text-shadow: 0 1px 2px #000;
+  word-wrap: break-word;
+}
+
 /* Hızlı konuşmada önceki satır kısa süre yeni satırın üstünde, daha küçük ve soluk durur; sonra solarak kalkar.
    Aradaki boşluk iki kutunun üst üste binmiş gibi görünmesini önler. Solma yalnız bu satırdadır; #subtitle'ın
    kendi katmanı ve görünürlüğü değişmez. */
 #subtitle-prev, #subtitle-prev2 {
   margin-bottom: 14px;
-  opacity: 0.6;
+  opacity: 0.75;
   -webkit-transition: opacity 0.4s linear;
   transition: opacity 0.4s linear;
 }
-/* İki önceki satır en üstte, daha da soluk durur (ekranda en çok üç satır). */
-#subtitle-prev2 { opacity: 0.45; }
+/* İki önceki satır en üstte, daha da soluk durur (ekranda en çok üç satır). Açık sahnede de okunsun diye %60'ın
+   altına inmez. */
+#subtitle-prev2 { opacity: 0.6; }
 #subtitle-prev.fading, #subtitle-prev2.fading { opacity: 0; }
 #subtitle-prev.hidden, #subtitle-prev2.hidden { display: none; }
 
@@ -92,9 +123,11 @@ html, body {
   font-size: 37px;
   line-height: 1.3;
   font-weight: 600;
-  text-shadow: 0 2px 4px #000;
+  text-shadow: 0 0 3px #000, 0 0 3px #000, 0 2px 4px #000;
 }
 
+/* Gölge üst üste üç katmandır: zemin koyuluğu düşükken (bilgisayardaki "Zemin koyuluğu" %0'a kadar iner) beyaz yazı
+   açık sahnede (kar, gökyüzü) tek yumuşak gölgeyle seçilmiyordu. Renkli değil, yalnız siyah kontur. */
 #subtitle-text {
   display: inline-block;
   padding: 10px 26px;
@@ -103,15 +136,34 @@ html, body {
   font-size: 46px;
   line-height: 1.3;
   font-weight: 600;
-  text-shadow: 0 2px 4px #000;
+  text-shadow: 0 0 3px #000, 0 0 3px #000, 0 2px 4px #000;
+}
+
+/* Zemin %30'dan saydamsa (app.js applyStyle) yazının çevresine 1 px'lik sert siyah kontur eklenir. */
+body.thin-bg #subtitle-text, body.thin-bg #subtitle-prev-text, body.thin-bg #subtitle-prev2-text {
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 4px #000, 0 2px 4px #000;
 }
 
 
-/* Panel ve bekleme ekranı: design/tokens.json'un koyu tema renkleri (docs/TASARIM.md). */
+/* Tam genişlik bant (bilgisayardaki "Arka plan alanı"): zemin ekranın iki kenarına uzanır, oyundaki İngilizce yazı
+   yan yana taşsa da görünmez. Eski sürümler bu sınıfı hiç kurmaz. */
+body.band #subtitle { left: 0 !important; right: 0 !important; }
+body.band #subtitle-text, body.band #subtitle-prev-text, body.band #subtitle-prev2-text {
+  display: block;
+  box-sizing: border-box;
+  border-radius: 0;
+}
+/* Bantta örtü de ekranın iki kenarına uzanır; köşeleri yuvarlak kalınca ekran kenarında köşelerden oyun görünüyordu. */
+body.band #subtitle-cover { border-radius: 0; }
+
+/* Panel ve bekleme ekranı: design/tokens.json'un koyu tema renkleri (docs/TASARIM.md). Köşeler belirteç ölçeğinin
+   TV'deki iki katıdır: büyük kutular 32 (card), küçük notlar ve düğmeler 24 (control). En küçük arayüz yazısı 24 px.
+   Köşedeki kutular TV'nin güvenli alanında durur (1080p'de üstte 54, yanlarda 96 piksel; Android TV'nin 27/48 dp'si):
+   kenarı taşan (overscan) TV'lerde kesilmesinler. */
 #panel {
   position: absolute;
-  top: 48px;
-  left: 48px;
+  top: 54px;
+  left: 96px;
   z-index: 20;
   min-width: 640px;
   max-width: 1100px;
@@ -125,24 +177,51 @@ html, body {
 }
 
 #panel.hidden { display: none; }
-#panel .title { display: flex; align-items: center; font-size: 32px; font-weight: 600; margin-bottom: 18px; }
+#panel .title {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
 #panel .title .logo { width: 48px; height: 48px; border-radius: 11px; margin-right: 16px; }
-#panel .row { display: flex; padding: 6px 0; }
+#panel .row { display: -webkit-box; display: -webkit-flex; display: flex; padding: 6px 0; }
 #panel .label { width: 200px; color: #9DA9C6; }
-#panel .keys { margin-top: 18px; padding-top: 16px; border-top: 2px solid #24335A; font-size: 22px; color: #9DA9C6; }
+#panel #app-version { margin-left: 12px; font-weight: 400; }
+#panel .keys { margin-top: 18px; padding-top: 16px; border-top: 2px solid #24335A; font-size: 24px; color: #9DA9C6; }
 #panel .keys .key { padding: 3px 0; }
 #panel .keys .key b { display: inline-block; min-width: 150px; color: #2D8CFF; font-weight: 600; }
 .muted { color: #9DA9C6; }
 .ok { color: #5FD39A; }
 .bad { color: #F28B82; }
 
-#waiting {
+/* Ortadaki kutular (bekleme ekranı, HDMI kutusu) tam ekran bir kabın içinde esnek kutuyla ortalanır. Eskiden
+   translate(-50%, -50%) ile ortalanıyordu: kutunun boyu tek sayı olunca yarım piksele düşüyor, TV'de yazı bulanıklaşıyordu.
+   Eski motorlar için -webkit-box ve -webkit-flex de verilir. */
+#waiting, #no-picture {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  -webkit-transform: translate(-50%, -50%);
-  z-index: 15;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+}
+
+#waiting { z-index: 15; }
+#waiting .card {
+  box-sizing: border-box;
   max-width: 1100px;
   padding: 56px 72px;
   border-radius: 32px;
@@ -155,7 +234,9 @@ html, body {
 #waiting.hidden { display: none; }
 #waiting .logo { width: 112px; height: 112px; border-radius: 26px; margin-bottom: 28px; }
 #waiting .waiting-title { font-size: 42px; font-weight: 600; line-height: 1.3; }
-#waiting .waiting-hint { margin-top: 16px; font-size: 28px; line-height: 1.4; color: #9DA9C6; }
+#waiting .waiting-hint { max-width: 900px; margin: 16px auto 0; font-size: 28px; line-height: 1.4; color: #9DA9C6; }
+/* Beklerken sakin durum satırı: TV'nin adresi (telefonda elle yazılabilir) ve aramanın sürdüğü. */
+#waiting .waiting-status { margin-top: 28px; font-size: 24px; line-height: 1.4; color: #9DA9C6; }
 
 /* Bekleme ekranındaki düğme; kumandayla seçili olduğu belli olsun diye sarı dolgu ve çerçeve. */
 #waiting .button {
@@ -174,8 +255,8 @@ html, body {
 /* Demo sırasında sağ üstte ne gösterildiğini anlatan not. */
 #demo-badge {
   position: absolute;
-  top: 48px;
-  right: 48px;
+  top: 54px;
+  right: 96px;
   z-index: 20;
   max-width: 760px;
   padding: 18px 26px;
@@ -192,8 +273,8 @@ html, body {
 /* Samsung: TV kendiliğinden HDMI girişine geçtiyse (Anynet+) sağ üstte ipucu; Tamam ya da Geri ile kapanır. */
 #source-tip {
   position: absolute;
-  top: 48px;
-  right: 48px;
+  top: 54px;
+  right: 96px;
   z-index: 21;
   max-width: 820px;
   padding: 22px 30px;
@@ -281,7 +362,8 @@ html, body {
   background: rgba(6, 12, 30, 0.74);
   -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  /* CouchSubs #261: katmanlı siyah gölge, açık sahnede (kar, gökyüzü) zemin saydamken de okunsun. */
+  text-shadow: 0 0 3px #000, 0 0 3px #000, 0 2px 4px #000;
 }
 
 /* ───────────── Nino bekleme ekranı: kendi kendine oynayan sinematik demo ───────────── */
@@ -330,7 +412,7 @@ html, body {
 #game-sub.on { opacity: 1; }
 
 /* Sol üstte küçük cam kart: logo, ne yapılacağı, bekleme noktaları. */
-#attract-card { position: absolute; top: 56px; left: 56px; z-index: 12; display: -webkit-box; display: -webkit-flex; display: flex;
+#attract-card { position: absolute; top: 54px; left: 96px; z-index: 12; display: -webkit-box; display: -webkit-flex; display: flex;
   -webkit-align-items: center; align-items: center; padding: 22px 34px 22px 22px; border-radius: 32px; max-width: 980px;
   border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(10, 18, 42, 0.62);
   -webkit-backdrop-filter: blur(30px) saturate(160%); backdrop-filter: blur(30px) saturate(160%);
@@ -347,7 +429,7 @@ html, body {
 #attract-card .dots i:nth-child(3) { -webkit-animation-delay: 0.4s; animation-delay: 0.4s; }
 
 /* Sağ üstte "ÖRNEK" rozeti. */
-#attract-badge { position: absolute; top: 64px; right: 64px; z-index: 12; padding: 10px 22px; border-radius: 999px;
+#attract-badge { position: absolute; top: 54px; right: 96px; z-index: 12; padding: 10px 22px; border-radius: 999px;
   font-size: 22px; font-weight: 700; letter-spacing: 3px; color: #fff;
   background: linear-gradient(180deg, #2D8CFF, #00308A); box-shadow: 0 10px 30px rgba(45, 140, 255, 0.45); }
 
@@ -439,6 +521,9 @@ body.attract #subtitle-text { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45), 0 0 0
   border-radius: 50%; text-align: center; font-size: 22px; color: #fff;
   background: linear-gradient(180deg, #2D8CFF, #00308A); box-shadow: 0 6px 18px rgba(45, 140, 255, 0.45); }
 #attract-card .status { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 22px; color: #b9c6e4; }
+/* TV'nin adresi ve ağda aramanın sürdüğü (CouchSubs'tan; app.js renderWaitingStatus). */
+#attract-card .waiting-status { margin-top: 8px; font-size: 22px; color: #8d9bbd; }
+#attract-card .waiting-status:empty { display: none; }
 
 /* Altyazıyı gösteren ok ve etiketi. */
 #attract-arrow { position: absolute; left: 13%; bottom: 17%; z-index: 12; width: 420px;
@@ -494,7 +579,7 @@ body.covering #subtitle-text, body.covering #subtitle-prev-text, body.covering #
 .btn-icon.pad { min-width: 2.4em; height: 1.4em; background: repeating-linear-gradient(90deg, currentColor 0 0.12em, transparent 0.12em 0.42em); }
 
 /* ───────────── Nino bilgi paneli (OK tuşu): sağda boydan boya beyaz cam ───────────── */
-#panel { position: absolute; top: 40px; right: 40px; bottom: 40px; left: auto; width: 600px; min-width: 0; max-width: none;
+#panel { position: absolute; top: 54px; right: 96px; bottom: 54px; left: auto; width: 600px; min-width: 0; max-width: none;
   box-sizing: border-box; padding: 34px 34px 22px; border-radius: 40px; overflow: hidden;
   font-size: 22px; line-height: 1.35; color: #0B1530;
   background: rgba(248, 250, 255, 0.86); border: 1px solid rgba(255, 255, 255, 0.9);
@@ -601,3 +686,47 @@ body.covering #subtitle-text, body.covering #subtitle-prev-text, body.covering #
 
 /* Nino: Arapça çeviri (app.js'deki setDirection). Harf aralığı Arapçada harflerin birleşmesini bozar. */
 [dir="rtl"] { letter-spacing: 0 !important; unicode-bidi: embed; }
+
+/* HDMI görüntüsü gelmeyince ortada açılan kutu: neden, ne yapılacağı ve HDMI girişi düğmeleri (◀▶ ve Tamam, ya da 1–4). */
+#no-picture { z-index: 22; }
+#no-picture .card {
+  width: 1300px;
+  box-sizing: border-box;
+  padding: 36px 48px;
+  border-radius: 32px;
+  border: 2px solid #2D8CFF;
+  background: rgba(10, 18, 42, 0.94);
+  color: #F2F5FB;
+  font-size: 28px;
+  line-height: 1.45;
+}
+#no-picture.hidden { display: none; }
+#no-picture b { display: block; color: #2D8CFF; font-size: 36px; margin-bottom: 12px; }
+#no-picture span { display: block; white-space: pre-line; }
+#no-picture-choices { margin-top: 26px; }
+#no-picture .button {
+  display: inline-block;
+  margin: 0 14px 10px 0;
+  padding: 14px 30px;
+  border-radius: 24px;
+  border: 3px solid #24335A;
+  background: #0E1733;
+  color: #F2F5FB;
+  font-size: 28px;
+  font-weight: 600;
+}
+#no-picture .button.current { border-color: #9DA9C6; }
+/* Doğru girişte de siyahsa ne yapılacağı: düğmelerin altında, küçük ve ikincil renkte (düğmelerin alt boşluğuyla 24 px). */
+#no-picture #no-picture-help { margin-top: 14px; font-size: 24px; line-height: 1.45; color: #9DA9C6; }
+#no-picture .button.focused { background: #2D8CFF; border-color: #FFFFFF; color: #FFFFFF; }
+
+/* Nino: altyazı yazı tipleri (SIL Open Font License; fonts/OFL-*.txt). Arapça, Tayca ve Hintçe harfler bu yazı
+   tiplerinde yoktur; o harfler listedeki sonraki (TV'nin kendi) yazı tipiyle çizilir. */
+@font-face { font-family: "Nino Modern"; src: url("fonts/Barlow-SemiBold.ttf") format("truetype"); font-weight: 600; }
+@font-face { font-family: "Nino Modern"; src: url("fonts/Barlow-Bold.ttf") format("truetype"); font-weight: 700; }
+@font-face { font-family: "Nino Condensed"; src: url("fonts/BarlowCondensed-SemiBold.ttf") format("truetype"); font-weight: 600; }
+@font-face { font-family: "Nino Condensed"; src: url("fonts/BarlowCondensed-Bold.ttf") format("truetype"); font-weight: 700; }
+@font-face { font-family: "Nino Rounded"; src: url("fonts/Nunito-Variable.ttf") format("truetype"); font-weight: 200 1000; }
+body[data-font="modern"] #subtitle, body[data-font="modern"] #screen { font-family: "Nino Modern", "LG Smart UI", "Museo Sans", "SamsungOne", "Tizen Sans", Roboto, Arial, "Noto Naskh Arabic", "Noto Sans Arabic", "Droid Arabic Naskh", sans-serif; }
+body[data-font="condensed"] #subtitle, body[data-font="condensed"] #screen { font-family: "Nino Condensed", "LG Smart UI", "Museo Sans", "SamsungOne", "Tizen Sans", Roboto, Arial, "Noto Naskh Arabic", "Noto Sans Arabic", "Droid Arabic Naskh", sans-serif; letter-spacing: 0.01em; }
+body[data-font="rounded"] #subtitle, body[data-font="rounded"] #screen { font-family: "Nino Rounded", "LG Smart UI", "Museo Sans", "SamsungOne", "Tizen Sans", Roboto, Arial, "Noto Naskh Arabic", "Noto Sans Arabic", "Droid Arabic Naskh", sans-serif; }

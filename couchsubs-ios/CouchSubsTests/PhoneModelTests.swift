@@ -28,7 +28,11 @@ private final class FakeServices: PhoneServices {
     func register(host: String, accountId: Data, pin: UInt32) async throws -> RegisteredConsole { try registerResult.get() }
     func discoverTVs() async -> [LGTV] { [] }
     func pairTV(_ tv: LGTV, key: String?, server: String) async throws -> TVPairing { TVPairing(key: "key", launched: launched) }
-    func makeStream(console: RegisteredConsole, accountId: Data) -> StreamControlling { stream }
+    var streamPasscodes: [String?] = []
+    func makeStream(console: RegisteredConsole, accountId: Data, loginPasscode: String?) -> StreamControlling {
+        streamPasscodes.append(loginPasscode)
+        return stream
+    }
     func makeKeeper(tv: LGTV, key: String?, params: [String: Any], appConnected: @escaping @Sendable () -> Bool,
                     onMoved: @escaping (LGTV) -> Void, onKey: @escaping @Sendable (String) -> Void) -> KeeperControlling { IdleKeeper() }
     func checkDeepLKey(_ key: String) async -> OnlineKeyCheck { OnlineKeyCheck(state: key == "good" ? .valid : .invalid) }
@@ -108,6 +112,23 @@ final class PhoneModelTests: XCTestCase {
         XCTAssertTrue(model.hasTV)
         XCTAssertTrue(model.tvAppMissing)
         XCTAssertEqual(model.settings.output, .tv)
+    }
+
+    /// Ayarlar'daki PS5 giriş şifresi oturuma verilir; yalnız 4 hane kaydedilir.
+    func testLoginPasscodeIsPassedToTheSession() async throws {
+        let model = makeModel()
+        try await model.completePSNLogin(redirect: URL(string: "https://example.com")!)
+        try await model.register(host: "192.168.1.20", pin: "12345678")
+        model.settings.output = .computer
+        XCTAssertFalse(model.setLoginPasscode("123"))
+        XCTAssertFalse(model.hasLoginPasscode)
+        XCTAssertTrue(model.setLoginPasscode("0042"))
+        XCTAssertTrue(model.hasLoginPasscode)
+        await model.start()
+        XCTAssertEqual(services.streamPasscodes, ["0042"])
+        model.stop()
+        model.removeLoginPasscode()
+        XCTAssertFalse(model.hasLoginPasscode)
     }
 
     func testStartKeepsScreenAwakeAndStopReleasesIt() async throws {

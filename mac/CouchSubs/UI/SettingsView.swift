@@ -2,10 +2,11 @@
 
 import CouchSubsCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Ayarların bölümleri; solda kenar çubuğunda listelenir, sağda seçili olan gösterilir.
 enum SettingsSection: CaseIterable, Identifiable {
-    case connection, interface, appearance, dubbing, translation, packs, language, area, obs, health, updates, about, reset
+    case connection, ps5, interface, appearance, dubbing, translation, packs, language, area, obs, health, updates, report, about, reset
 
     var id: Self { self }
 
@@ -22,6 +23,8 @@ enum SettingsSection: CaseIterable, Identifiable {
         case .obs: "OBS overlay"
         case .health: "System health"
         case .updates: "Updates"
+        case .ps5: "PS5 login passcode"
+        case .report: "Report a Problem"
         case .about: "About Nino"
         case .reset: "Reset"
         }
@@ -40,6 +43,8 @@ enum SettingsSection: CaseIterable, Identifiable {
         case .obs: "dot.radiowaves.left.and.right"
         case .health: "waveform.path.ecg"
         case .updates: "arrow.down.circle"
+        case .ps5: "lock"
+        case .report: "exclamationmark.bubble"
         case .about: "info.circle"
         case .reset: "arrow.counterclockwise"
         }
@@ -60,7 +65,9 @@ extension SettingsSection {
         case .area: Color(red: 0.35, green: 0.40, blue: 0.95)
         case .obs: Color(red: 0.92, green: 0.26, blue: 0.30)
         case .health: Color(red: 0.95, green: 0.30, blue: 0.45)
+        case .ps5: Color(red: 0.30, green: 0.35, blue: 0.45)
         case .updates: Color(red: 0.12, green: 0.62, blue: 0.36)
+        case .report: Color(red: 0.96, green: 0.62, blue: 0.12)
         case .about: Color(red: 0.45, green: 0.50, blue: 0.60)
         case .reset: Color(red: 0.90, green: 0.30, blue: 0.28)
         }
@@ -99,7 +106,9 @@ struct SettingsView: View {
             ScrollView {
                 Group {
                     if let section {
-                        SettingsPage(section: section)
+                        SettingsPage(section: section) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) { self.section = nil }
+                        }
                             .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
                                                     removal: .move(edge: .trailing).combined(with: .opacity)))
                     } else {
@@ -125,10 +134,11 @@ private struct SettingsList: View {
 
     private let groups: [[SettingsSection]] = [
         // Nino: "Bağlantı": oyun görüntüsünün nereden geldiği (PS5, Remote Play penceresi, Capture Card) ve altyazının yeri.
-        [.connection],
+        [.connection, .ps5],
         [.interface, .appearance, .translation, .language],
         [.packs, .dubbing, .area, .obs],
-        [.health, .updates, .about],
+        // Nino: Sorun Bildir, Hakkında'nın hemen üstünde.
+        [.health, .updates, .report, .about],
         // Nino: sıfırlama ayrı ve en altta (Hakkında'nın içinde değil).
         [.reset],
     ]
@@ -247,6 +257,8 @@ struct SidebarRow: View {
 /// Seçili bölümün başlığı ve karoları.
 private struct SettingsPage: View {
     let section: SettingsSection
+    /// Ayarlar listesine döner (ör. bildirim gönderildikten sonra).
+    var back: () -> Void = {}
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
@@ -288,6 +300,8 @@ private struct SettingsPage: View {
             case .updates: UpdatesCard()
             case .interface: InterfacePage()
             case .connection: SubtitleOutputCard(detailed: true)
+            case .ps5: LoginPasscodeCard()
+            case .report: ReportProblemCard(close: back)
             case .about:
                 AboutCard()
             case .reset:
@@ -359,7 +373,19 @@ private struct AppearanceCard: View {
             } onEditingChanged: { editing in
                 if editing { model.sendTestSubtitle() }
             }
+            Picker("Background area", selection: $model.settings.style.backgroundShape) {
+                Text("Fit the text").tag(SubtitleBackgroundShape.fit)
+                Text("Full-width band").tag(SubtitleBackgroundShape.band)
+            }
+            HintText(text: "Drag Background all the way to Solid to fully hide the English subtitle in the game. A full-width band also covers the sides.")
+            Picker("Font", selection: $model.settings.style.font) {
+                ForEach(SubtitleFont.pickerOrder, id: \.self) { font in
+                    Text(font.title).tag(font)
+                }
+            }
             Toggle("Bold text", isOn: $model.settings.style.bold)
+            Toggle("Keep previous lines above in fast dialogue", isOn: $model.settings.style.stackPrevious)
+            HintText(text: "When off, each new line replaces the previous one. Needs TV app 0.9.16 or later.")
             Picker("Text color", selection: $model.settings.style.textColor) {
                 Text("White").tag(SubtitleTextColor.white)
                 Text("Yellow").tag(SubtitleTextColor.yellow)
@@ -385,10 +411,12 @@ private struct LanguageCard: View {
             }
             // Nino: çeviri dili. Kayıtlı ayarı olmayan (eski) kurulumlar Türkçe açılır.
             Picker("Translation language", selection: $model.settings.targetLanguage) {
-                ForEach(TargetLanguage.choices, id: \.code) { choice in Text(verbatim: choice.name).tag(choice.code) }
+                ForEach(TargetLanguage.choices, id: \.code) { choice in
+                    Text(verbatim: TargetLanguage.flag(choice.code) + "  " + choice.name).tag(choice.code)
+                }
             }
             if !TargetLanguage.isTurkish(model.settings.targetLanguage) {
-                HintText(text: "Game packs, the term list and dubbing work only for Turkish. Arabic subtitles come from the translation engine you chose (Apple's free translation, Gemini, ChatGPT, Claude, DeepL or a local model).")
+                HintText(text: "Game packs, the term list and dubbing work only for Turkish. Other languages come from the translation engine you chose (Apple's free translation, Gemini, ChatGPT, Claude, DeepL or a local model). Urdu, Bengali and Filipino need an AI engine; Gemini is free.")
             }
         }
     }
@@ -421,8 +449,89 @@ private struct AreaCards: View {
             HintText(text: "Adjust the frame so it covers where the game shows its subtitles.")
             HintText(text: "Drag the frame to move it, or drag its corner to resize it.")
         }
+        ExtraAreasCard()
         Card(title: "Translate the screen (⌥⌘T)") {
             HintText(text: "Press ⌥⌘T while playing: every text on the screen is translated once and shown on the TV in its own place. Press again to remove the translations.")
+        }
+    }
+}
+
+/// Altyazının yanında sürekli okunan ek alanlar (en çok üç): görev yazısı, bildirim, telefon mesajı. Her biri
+/// adlandırılır, açılıp kapatılır; çerçevesi canlı önizlemede sürüklenir.
+private struct ExtraAreasCard: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Card(title: "Extra areas") {
+            HintText(text: "Besides the subtitle, Nino can keep reading up to three small areas, like a quest, a phone message or a notification. Each area is read about once a second and translated again only when its text changes. The translation shows on the TV next to the original text.")
+            ForEach(model.settings.extraAreas) { area in
+                ExtraAreaEditor(id: area.id, settings: $model.settings, preview: model.framePreview)
+            }
+            if model.settings.canAddExtraArea {
+                Menu("Add extra area") {
+                    ForEach(ExtraAreaPreset.allCases, id: \.self) { preset in
+                        Button(preset.title) { model.settings.addExtraArea(preset, name: preset.defaultName) }
+                    }
+                }
+                .fixedSize()
+            }
+        }
+    }
+}
+
+private struct ExtraAreaEditor: View {
+    let id: String
+    @Binding var settings: UserSettings
+    @ObservedObject var preview: FramePreview
+
+    var body: some View {
+        if let area = settings.extraAreas.first(where: { $0.id == id }) {
+            VStack(alignment: .leading, spacing: Theme.space("m")) {
+                HStack(spacing: Theme.space("m")) {
+                    TextField("Area name", text: Binding(get: { area.name }, set: { name in settings.updateExtraArea(id: id) { $0.name = name } }))
+                        .textFieldStyle(CSTextFieldStyle())
+                    Toggle("Read this area", isOn: Binding(get: { area.enabled },
+                                                           set: { on in settings.updateExtraArea(id: id) { $0.enabled = on } }))
+                        .fixedSize()
+                    Button("Remove") { settings.removeExtraArea(id: id) }.buttonStyle(.secondary)
+                }
+                Picker("Area preset", selection: Binding(get: { ExtraAreaPreset.matching(area.region) },
+                                                         set: { preset in
+                    guard let preset else { return }
+                    settings.updateExtraArea(id: id) { $0.region = preset.region }
+                })) {
+                    ForEach(ExtraAreaPreset.allCases, id: \.self) { preset in Text(preset.title).tag(Optional(preset)) }
+                    Text("Custom").tag(ExtraAreaPreset?.none)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                RegionPreview(region: area.region, frame: preview.image) { region in
+                    settings.updateExtraArea(id: id) { $0.region = region }
+                }
+                .opacity(area.enabled ? 1 : 0.5)
+            }
+            .padding(Theme.space("m"))
+            .background(Color.csSurface2, in: RoundedRectangle(cornerRadius: Theme.radius("inner"), style: .continuous))
+        }
+    }
+}
+
+extension ExtraAreaPreset {
+    /// Seçimin ekrandaki adı.
+    var title: LocalizedStringKey {
+        switch self {
+        case .quest: "Quest (top right)"
+        case .notification: "Notification (bottom left)"
+        case .phone: "Phone (bottom right)"
+        }
+    }
+
+    /// Yeni alanın adı (kullanıcı değiştirebilir).
+    var defaultName: String {
+        switch self {
+        case .quest: String(localized: "Quest")
+        case .notification: String(localized: "Notification")
+        case .phone: String(localized: "Phone")
         }
     }
 }
@@ -452,6 +561,94 @@ private struct OBSCard: View {
                 .buttonStyle(.secondary)
             }
             HintText(text: "If OBS runs on another computer, use this Mac's network address instead of localhost. The overlay only shows subtitles while the translation is running.")
+            if let networkAddress {
+                HintText(text: "Your streaming app does not accept localhost (TikTok LIVE Studio, for example)? Use this address with the computer's network address:")
+                AddressRow(address: networkAddress)
+            }
+        }
+        StreamWindowCard()
+    }
+
+    /// Aynı adres bu Mac'in ağ adresiyle; localhost'u kabul etmeyen yayın programları için.
+    private var networkAddress: String? {
+        AppModel.localAddress(near: nil).map { "http://\($0):\(model.serverPort)/obs" }
+    }
+}
+
+/// Kopyalanabilir adres satırı.
+private struct AddressRow: View {
+    let address: String
+    @State private var copied = false
+
+    var body: some View {
+        HStack(spacing: Theme.space("m")) {
+            Text(verbatim: address)
+                .font(.csBody.monospaced())
+                .textSelection(.enabled)
+                .padding(.horizontal, Theme.space("l"))
+                .frame(maxWidth: .infinity, minHeight: Theme.size("buttonHeight"), alignment: .leading)
+                .background(Color.csSurface2, in: RoundedRectangle(cornerRadius: Theme.radius("control"), style: .continuous))
+            Button(copied ? "Copied" : "Copy") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(address, forType: .string)
+                copied = true
+            }
+            .buttonStyle(.secondary)
+        }
+    }
+}
+
+/// Şeffaflık tanımayan yayın programları için düz zeminli altyazı penceresi (bkz. StreamWindow.swift).
+private struct StreamWindowCard: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Card(title: "Stream window") {
+            HintText(text: "For streaming apps without a transparent browser source (TikTok LIVE Studio, Streamlabs and others): open the stream window, add it with Window capture (the window is called Nino Stream) and remove its background with a Chroma key filter.")
+            Picker("Background", selection: $model.streamBackground) {
+                Text("Green").tag(StreamBackground.green)
+                Text("Black").tag(StreamBackground.black)
+                Text("Magenta").tag(StreamBackground.magenta)
+            }
+            .pickerStyle(.segmented)
+            Button(model.streamWindowOpen ? "Close the stream window" : "Open the stream window") {
+                model.streamWindowOpen.toggle()
+            }
+            .buttonStyle(.secondary)
+            HintText(text: "Keep the window open and uncovered while streaming. Subtitles appear in it while the translation is running, even when they are shown only on the TV.")
+        }
+    }
+}
+
+/// İkinci hesabın PS5 giriş şifresi (isteğe bağlı, 4 hane, Anahtarlık'ta). PS5 isterse oturum açılırken gönderilir.
+private struct LoginPasscodeCard: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var passcode = ""
+    @State private var invalid = false
+
+    var body: some View {
+        Card {
+            HintText(text: "Only needed if the second account has a login passcode on the PS5. Nino enters it when the PS5 asks. It is kept in the Keychain.")
+            if model.hasLoginPasscode {
+                HStack(spacing: Theme.space("m")) {
+                    Text("Passcode saved.").font(.csBody)
+                    Spacer()
+                    Button("Remove passcode") { model.removeLoginPasscode() }.buttonStyle(.secondary)
+                }
+            } else {
+                HStack(spacing: Theme.space("m")) {
+                    SecureField("4 digits", text: $passcode).textFieldStyle(CSTextFieldStyle())
+                    Button("Save") {
+                        invalid = !model.setLoginPasscode(passcode)
+                        if !invalid { passcode = "" }
+                    }
+                    .buttonStyle(.secondary)
+                    .disabled(passcode.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                if invalid {
+                    Text("Enter the 4-digit passcode.").font(.csCallout).foregroundStyle(Color.csSecondary)
+                }
+            }
         }
     }
 }
@@ -615,10 +812,25 @@ private struct ResetCard: View {
 /// (Windows'taki ayarlarla aynı düzen).
 private struct GamePacksPage: View {
     @EnvironmentObject private var model: AppModel
+    @State private var choosingImport = false
+    @State private var readingImport = false
+    @State private var importSelection: GamePackImportSelection?
+    @State private var importError: String?
     private let columns = [GridItem(.flexible(), spacing: Theme.space("gap"), alignment: .top),
                            GridItem(.flexible(), spacing: Theme.space("gap"), alignment: .top)]
+    private let importTypes: [UTType] = [.json, .plainText] + [UTType(filenameExtension: "srt")].compactMap { $0 }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: Theme.space("gap")) {
+            packList
+        }
+        .fileImporter(isPresented: $choosingImport, allowedContentTypes: importTypes, onCompletion: readImport)
+        .sheet(item: $importSelection) { selection in
+            GamePackImportSheet(selection: selection)
+        }
+    }
+
+    @ViewBuilder private var packList: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("Game packs").font(.csDisplay)
             Spacer()
@@ -631,8 +843,15 @@ private struct GamePacksPage: View {
             .foregroundStyle(Color.csSecondary)
             .fixedSize(horizontal: false, vertical: true)
         if !TargetLanguage.isTurkish(model.settings.targetLanguage) {
-            Card { HintText(text: "Packs are not used while the translation language is Arabic.") }
+            Card { HintText(text: "Packs are used only when the translation language is Turkish.") }
         }
+        Button("Import pack…") {
+            importError = nil
+            choosingImport = true
+        }
+        .buttonStyle(CSButtonStyle(kind: .secondary, height: "buttonLarge"))
+        .disabled(readingImport)
+        ErrorText(error: importError)
         if model.installedPacks.isEmpty {
             Card { HintText(text: "No game pack is installed.") }
         } else {
@@ -645,9 +864,150 @@ private struct GamePacksPage: View {
             Divider().overlay(Color.csBorder)
             SwitchRow(title: "Send the English subtitles read to the shared pool", isOn: $model.settings.sharePool)
             HintText(text: "Only the game's English text is sent, anonymously. It is used to make better Turkish translations for everyone.")
+            Divider().overlay(Color.csBorder)
+            SwitchRow(title: "Ask which game I'm playing", isOn: $model.settings.askGame)
+            HintText(text: "If no pack recognises the game, asked once two minutes after translation starts.")
+            Divider().overlay(Color.csBorder)
+            SwitchRow(title: "Show speaker name", isOn: $model.settings.showSpeakerNames)
+            HintText(text: "Keeps the character's name in front of the translation (ARTHUR: …). The name itself is never translated.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .tile()
+    }
+
+    private func readImport(_ result: Result<URL, Error>) {
+        guard case .success(let sourceURL) = result else {
+            importError = String(localized: "The translation file could not be read.")
+            return
+        }
+
+        readingImport = true
+        Task {
+            defer { readingImport = false }
+            do {
+                importSelection = try await Task.detached(priority: .userInitiated) {
+                    let access = sourceURL.startAccessingSecurityScopedResource()
+                    defer { if access { sourceURL.stopAccessingSecurityScopedResource() } }
+                    let size = try sourceURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+                    guard size <= GamePackImporter.maxFileBytes else { throw GamePackImporter.ImportError.fileTooLarge }
+                    let data = try Data(contentsOf: sourceURL)
+                    let preview = try GamePackImporter.parse(data, fileName: sourceURL.lastPathComponent)
+                    return GamePackImportSelection(sourceURL: sourceURL, preview: preview)
+                }.value
+            } catch is GamePackImporter.ImportError {
+                importError = String(localized: "The translation file could not be imported. Check its format and encoding.")
+            } catch {
+                importError = String(localized: "The translation file could not be read.")
+            }
+        }
+    }
+}
+
+private struct GamePackImportSelection: Identifiable, Sendable {
+    let id = UUID()
+    let sourceURL: URL
+    let preview: GamePackImportPreview
+}
+
+private struct GamePackImportSheet: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    let selection: GamePackImportSelection
+    @State private var title: String
+    @State private var installing = false
+    @State private var confirmReplacement = false
+    @State private var installError: String?
+
+    init(selection: GamePackImportSelection) {
+        self.selection = selection
+        _title = State(initialValue: selection.preview.suggestedTitle ?? selection.sourceURL.deletingPathExtension().lastPathComponent)
+    }
+
+    private var canInstall: Bool {
+        !installing && !selection.preview.entries.isEmpty && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.space("m")) {
+            Text("Import game pack").font(.csTitle)
+            VStack(alignment: .leading, spacing: Theme.space("xs")) {
+                Text("Game title")
+                TextField("Game title", text: $title)
+                    .labelsHidden()
+                    .disabled(installing)
+            }
+            Grid(alignment: .leading, horizontalSpacing: Theme.space("gap"), verticalSpacing: Theme.space("xs")) {
+                countRow("Usable entries", selection.preview.entries.count)
+                countRow("Invalid records", selection.preview.invalidCount)
+                countRow("Duplicate pairs", selection.preview.duplicateCount)
+                countRow("Conflicting entries", selection.preview.conflictCount)
+            }
+            if selection.preview.entries.isEmpty {
+                Text("The file contains no usable translations.")
+                    .foregroundStyle(Color.csWarning)
+            }
+            ErrorText(error: installError)
+            HStack {
+                if installing { ProgressView().controlSize(.small) }
+                Spacer()
+                Button("Cancel", role: .cancel) { dismiss() }
+                    .buttonStyle(CSButtonStyle(kind: .secondary, height: "buttonLarge"))
+                    .keyboardShortcut(.cancelAction)
+                    .disabled(installing)
+                Button("Install pack") { install(replacing: false) }
+                    .buttonStyle(CSButtonStyle(kind: .primary, height: "buttonLarge"))
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!canInstall)
+            }
+        }
+        .padding(Theme.space("screen"))
+        .frame(width: 440, alignment: .leading)
+        .appSurface()
+        .interactiveDismissDisabled(installing)
+        .alert("Replace game pack?", isPresented: $confirmReplacement) {
+            Button("Cancel", role: .cancel) {}
+            Button("Replace pack", role: .destructive) { install(replacing: true) }
+        } message: {
+            Text("A game pack with this ID already exists. Replacing it will overwrite the installed pack.")
+        }
+    }
+
+    private func countRow(_ label: LocalizedStringKey, _ count: Int) -> some View {
+        GridRow {
+            Text(label)
+            Text(count, format: .number).monospacedDigit()
+                .gridColumnAlignment(.trailing)
+        }
+    }
+
+    private func install(replacing: Bool) {
+        guard canInstall else { return }
+        installError = nil
+        installing = true
+        let title = self.title
+        let selection = self.selection
+        let packs = model.packs
+        Task {
+            defer { installing = false }
+            do {
+                model.installedPacks = try await Task.detached(priority: .userInitiated) {
+                    let sourceURL = selection.sourceURL
+                    let access = sourceURL.startAccessingSecurityScopedResource()
+                    defer { if access { sourceURL.stopAccessingSecurityScopedResource() } }
+                    try GamePackImporter.install(selection.preview, title: title, directory: GamePackLibrary.userDirectory,
+                                                 replacing: replacing, sourceURL: sourceURL)
+                    packs.reload()
+                    return packs.packs
+                }.value
+                dismiss()
+            } catch GamePackImporter.ImportError.destinationExists {
+                confirmReplacement = true
+            } catch GamePackImporter.ImportError.sourceIsDestination {
+                installError = String(localized: "The selected file is already at the install location. Choose a different game title.")
+            } catch {
+                installError = String(localized: "The game pack could not be installed.")
+            }
+        }
     }
 }
 
@@ -749,6 +1109,10 @@ struct TranslationCard: View {
                 HintText(text: FreeGemini.privacy)
                 HintText(text: FreeGemini.limit)
             }
+        }
+        Card(title: "Advanced") {
+            SwitchRow(title: "Check unchanged subtitle areas more often", isOn: $model.settings.fastSubtitleDetection)
+            HintText(text: "When the subtitle area looks unchanged, read it again after 2 frames instead of 20. Uses more CPU.")
         }
     }
 
@@ -1331,7 +1695,7 @@ struct ThemedSubtitle: View {
 
     var body: some View {
         let label = Text(verbatim: TargetLanguage.displayText(text))
-            .font(.system(size: fontSize, weight: weight))
+            .subtitleFont(style.font, size: fontSize, weight: weight)
             .foregroundStyle(color)
             .lineLimit(maxLines)
             .multilineTextAlignment(.center)
@@ -1405,7 +1769,7 @@ struct SubtitleThemePicker: View {
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space("m")), count: columns), spacing: Theme.space("m")) {
             ForEach(SubtitleTheme.allCases, id: \.self) { theme in
-                ThemeCard(theme: theme, selected: model.settings.style.theme == theme) {
+                ThemeCard(theme: theme, font: model.settings.style.font, selected: model.settings.style.theme == theme) {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         model.settings.style = theme.applied(to: model.settings.style)
                     }
@@ -1418,6 +1782,8 @@ struct SubtitleThemePicker: View {
 
 private struct ThemeCard: View {
     let theme: SubtitleTheme
+    /// Kartlardaki örnek de seçili yazı tipiyle çizilir.
+    let font: SubtitleFont
     let selected: Bool
     let action: () -> Void
     @State private var hovering = false
@@ -1427,7 +1793,7 @@ private struct ThemeCard: View {
             VStack(alignment: .leading, spacing: Theme.space("s")) {
                 ZStack {
                     PreviewScene()
-                    ThemedSubtitle(text: "Kim var orada?", style: theme.applied(to: SubtitleStyle()), fontSize: 11)
+                    ThemedSubtitle(text: "Kim var orada?", style: theme.applied(to: SubtitleStyle(font: font)), fontSize: 11)
                         .padding(.top, 26)
                 }
                 .aspectRatio(16 / 9, contentMode: .fit)

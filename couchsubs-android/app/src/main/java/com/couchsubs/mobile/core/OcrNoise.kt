@@ -19,12 +19,13 @@ object OcrNoise {
         val tokens = line.split(Regex("\\s+")).filter { it.isNotEmpty() }
         for ((index, token) in tokens.withIndex()) {
             val (lead, core, trail) = split(token)
-            // Tek başına "l" ya da "|" çoğu zaman yanlış okunmuş "I"dır; ardından küçük harfle süren sözcük gelmiyorsa
-            // altyazı kutusunun kenarıdır ("| Get in the car."), atılır.
+            // Tek başına "l" ya da "|" çoğu zaman yanlış okunmuş "I"dır; ardından küçük harfle başlayan sözcük yoksa
+            // ve token ?/! ile bitmiyorsa altyazı kutusunun kenarı olabilir.
             val pronoun = misreadI(core)
             if (pronoun != null) {
                 val next = if (index + 1 < tokens.size) tokens[index + 1].firstOrNull { it.isLetter() } ?: '\u0000' else '\u0000'
-                if (pronoun != "I" || next.isLowerCase()) kept.add(lead + pronoun + trail)
+                val endsQuestionOrExclamation = trail.any { it == '?' || it == '!' }
+                if (pronoun != "I" || next.isLowerCase() || endsQuestionOrExclamation) kept.add(lead + pronoun + trail)
                 continue
             }
             // Yalnız "?!", ".", "," gibi işaretlerden oluşan parça: satır başında ya da cümle bittikten sonra yazı tanımanın
@@ -48,12 +49,44 @@ object OcrNoise {
         var score = 0
         for (token in text.split(Regex("\\s+")).filter { it.isNotEmpty() }) {
             val core = split(token).second
-            val letters = core.count { it.isLetter() }
-            if (letters == 0) continue
-            val clean = cleanCore(core) == core && normalCase(core) && core.none { it in "[]()" }
-            score += if (clean) letters else -2 * letters
+            val letters = core.filter { it.isLetter() }
+            if (letters.isEmpty()) continue
+            val clean = cleanCore(core) == core && normalCase(core) && core.none { it in "[]()" } && !vowelless(letters)
+            score += if (clean) letters.length else -2 * letters.length
         }
         return score
+    }
+
+    /**
+     * Okuma çöp gibi mi: harflerinin altıda birinden çoğu bozuk sözcüklerde (karışık büyük-küçük harf, simge, ünlüsüz
+     * "Gtt"). Altyazılar geçişte birbirinin üstüne solarken yazı tanıma iki satırı karıştırıp noktayla biten bir çöp
+     * okuyabiliyor ("Gtt solkolfege."); nokta yüzünden ilk karede çevrilmesin (Mac: OcrNoise.looksGarbled).
+     */
+    fun looksGarbled(text: String): Boolean {
+        var good = 0
+        var bad = 0
+        for (token in text.split(Regex("\\s+")).filter { it.isNotEmpty() }) {
+            val core = split(token).second
+            val letters = core.filter { it.isLetter() }
+            if (letters.isEmpty()) continue
+            val clean = cleanCore(core) == core && normalCase(core) && core.none { it in "[]()" } && !vowelless(letters)
+            if (clean) good += letters.length else bad += letters.length
+        }
+        return bad * 6 > good + bad
+    }
+
+    /** Üç ve daha çok harfli, ünlüsüz ve kısaltma olmayan (tümü büyük harf değil) sözcük: İngilizcede olmaz ("Gtt", "rnnk"). */
+    private fun vowelless(letters: String): Boolean =
+        letters.length >= 3 && !letters.all { it.isUpperCase() } && letters.lowercase().none { it in "aeiouyäöüıàáâèéêìíîòóôùúû" } &&
+            collapsed(letters.lowercase()) !in interjections
+
+    /** Ünlüsüz ama gerçek ünlemler ("Hmm", "Shh", "Brr", "Grr", "Psst", "Pfft", "Mmm", "Zzz", "Tsk"); art arda tekrarlar tek harf sayılır. */
+    private val interjections = setOf("hm", "m", "sh", "br", "gr", "pst", "pft", "tsk", "hrm", "z", "pht")
+
+    private fun collapsed(text: String): String {
+        val result = StringBuilder()
+        for (character in text) if (result.isEmpty() || result.last() != character) result.append(character)
+        return result.toString()
     }
 
     private fun normalCase(core: String): Boolean {

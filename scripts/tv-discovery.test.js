@@ -49,7 +49,10 @@ function element() {
   const el = {
     className: '', textContent: '', innerHTML: '', style: {}, offsetHeight: 0,
     classList: { add() {}, remove() {}, contains: () => false, toggle() {} },
-    appendChild() {}, removeChild() {}, addEventListener() {}, setAttribute() {}, getAttribute: () => null,
+    children: [],
+    appendChild(child) { el.children.push(child); },
+    removeChild(child) { el.children = el.children.filter((c) => c !== child); },
+    addEventListener() {}, setAttribute() {}, getAttribute: () => null,
     getBoundingClientRect: () => ({ top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 })
   };
   return el;
@@ -62,13 +65,16 @@ function startTv({ saved, alive, localIp, hasLocalAddress }) {
   if (saved) storage.set('couchsubs.server', saved);
   const elements = new Map();
   const opened = [];
+  const streams = [];
 
   class FakeEventSource {
     constructor(url) {
       this.url = url;
       this.readyState = 0;
       this.closed = false;
+      this.listeners = {};
       opened.push(url);
+      streams.push(this);
       this.attempt();
     }
     attempt() {
@@ -85,7 +91,7 @@ function startTv({ saved, alive, localIp, hasLocalAddress }) {
         }
       }, 50);
     }
-    addEventListener() {}
+    addEventListener(name, fn) { (this.listeners[name] = this.listeners[name] || []).push(fn); }
     close() { this.closed = true; this.readyState = 2; }
   }
 
@@ -165,6 +171,12 @@ function startTv({ saved, alive, localIp, hasLocalAddress }) {
     clock,
     saved: () => storage.get('couchsubs.server'),
     lastOpened: () => opened[opened.length - 1],
+    element: (id) => document.getElementById(id),
+    // Açık bağlantıya bilgisayardan olay gelir.
+    emit(name, data) {
+      const source = streams[streams.length - 1];
+      for (const fn of source.listeners[name] || []) fn({ data: JSON.stringify(data) });
+    },
     server: () => elements.get('st-server') && elements.get('st-server').textContent
   };
 }
@@ -226,4 +238,39 @@ test('kayıtlı adres çalışıyorsa tarama yapılmaz ve kayıt değişmez', ()
   tv.clock.advance(120000);
   assert.strictEqual(tv.lastOpened(), 'http://192.168.1.109:8787/events');
   assert.strictEqual(tv.saved(), 'http://192.168.1.109:8787');
+});
+
+// Ek alanlar: bilgisayar köşedeki yazıların (görev, telefon) çevirisini "region" olayıyla gönderir.
+test('ek alanın çevirisi kendi yerinde küçük kutuda görünür, boş metin ve region-clear kaldırır', () => {
+  const tv = startTv({ saved: 'http://192.168.1.109:8787', alive: new Set(['http://192.168.1.109:8787']), hasLocalAddress: false });
+  tv.clock.advance(1000);
+  const host = tv.element('regions');
+  tv.emit('region', { id: 'q', text: 'Demirciyi bul', box: { left: 0.7, top: 0.05, right: 0.95, bottom: 0.1 }, line: 0.03 });
+  assert.strictEqual(host.children.length, 1);
+  assert.strictEqual(host.className, '');
+  const box = host.children[0];
+  assert.strictEqual(box.textContent, 'Demirciyi bul');
+  // Sağ üstteki yazı: kutu sağa ve üste yaslanır.
+  assert.ok(box.style.right.endsWith('%') && box.style.left === '');
+  assert.ok(box.style.top.endsWith('%') && box.style.bottom === '');
+  // Aynı alanın yeni çevirisi yeni kutu açmaz.
+  tv.emit('region', { id: 'q', text: 'Ahıra git', box: { left: 0.7, top: 0.05, right: 0.95, bottom: 0.1 } });
+  assert.strictEqual(host.children.length, 1);
+  assert.strictEqual(host.children[0].textContent, 'Ahıra git');
+  tv.emit('region', { id: 'p', text: 'Neredesin?', box: { left: 0.05, top: 0.7, right: 0.3, bottom: 0.8 } });
+  assert.strictEqual(host.children.length, 2);
+  assert.ok(host.children[1].style.left.endsWith('%') && host.children[1].style.bottom.endsWith('%'));
+  tv.emit('region', { id: 'q', text: '' });
+  assert.deepStrictEqual(host.children.map((c) => c.textContent), ['Neredesin?']);
+  tv.emit('region-clear', {});
+  assert.strictEqual(host.children.length, 0);
+  assert.strictEqual(host.className, 'hidden');
+});
+
+test('yeri bilinmeyen ya da bozuk ek alan olayı bir şey göstermez', () => {
+  const tv = startTv({ saved: 'http://192.168.1.109:8787', alive: new Set(['http://192.168.1.109:8787']), hasLocalAddress: false });
+  tv.clock.advance(1000);
+  tv.emit('region', { id: 'q', text: 'Merhaba' });
+  tv.emit('region', { text: 'Kimliksiz', box: { left: 0.1, top: 0.1, right: 0.2, bottom: 0.2 } });
+  assert.strictEqual(tv.element('regions').children.length, 0);
 });

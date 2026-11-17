@@ -189,7 +189,7 @@ CI önerisi: `.github/workflows/android-app.yml` (yalnız `couchsubs-android/**`
 
 1. Gerçek cihazda uçtan uca deneme: ImageReader biçimi, ML Kit okuma kalitesi, ısınma, Wi-Fi uykusu.
 2. Tasarımın uygulanması ve İngilizce metinler (`values-en`).
-3. İmza: telefon uygulamasının kendi anahtarı (yukarıda); `release.yml`'e `CouchSubs-android.apk` olarak eklenmesi
+3. İmza: telefon uygulamasının kendi anahtarı (yukarıda); dağıtım yalnız Google Play (2026-11-15: GitHub sürümlerinde telefon APK'sı yok; eski APK'lar silindi)
    (CI için anahtarın depo sırrı olarak verilmesi gerekir).
 4. Uygulama içi güncelleme denetimi (masaüstündeki gibi GitHub sürümleri) — Play dışı dağıtım için.
 5. Play (kuruluş hesabı, kapalı test şartı yok): iç test kanalı, veri güvenliği formu, FGS beyanı, marka kullanımının

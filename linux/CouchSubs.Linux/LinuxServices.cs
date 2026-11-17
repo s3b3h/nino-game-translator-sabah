@@ -78,7 +78,8 @@ public sealed class LinuxServices : IAppServices
         }
     }
 
-    public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId) => new StreamSession(console, accountId);
+    public IStreamSession MakeStream(RegisteredConsole console, byte[] accountId, string? loginPasscode) =>
+        new StreamSession(console, accountId, loginPasscode);
 
     public IKeeper MakeKeeper(LgTv tv, string? key, IReadOnlyDictionary<string, string> parameters, Func<bool> appConnected, Action<LgTv> onMoved,
                               Action<string> onKey)

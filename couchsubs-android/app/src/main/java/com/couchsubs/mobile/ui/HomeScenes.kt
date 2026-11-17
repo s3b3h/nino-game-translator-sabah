@@ -95,8 +95,16 @@ private val ArabicDeep = Color(0xFF056236)
 
 internal fun targetIsArabic(): Boolean = TargetLanguage.code(Services.settings.targetLanguage) == "ar"
 
-/** Açık hâlin rengi (iz ve küre), çeviri diline göre. */
-internal fun onColors(): Pair<Color, Color> = if (targetIsArabic()) ArabicGreen to ArabicDeep else FlagRed to FlagDeep
+/** Nino: Türkçe dışındaki her dilde kürenin içinde ay yıldız yerine o dilin bayrağı (emoji) çizilir. */
+internal fun targetIsTurkish(): Boolean = TargetLanguage.isTurkish(Services.settings.targetLanguage)
+
+/** Açık hâlin rengi (iz ve küre), çeviri diline göre: bayrağın baskın rengi. */
+internal fun onColors(): Pair<Color, Color> = when (TargetLanguage.code(Services.settings.targetLanguage)) {
+    "ar", "ur", "bn" -> ArabicGreen to ArabicDeep
+    "hi", "nl" -> Color(0xFFF08A1C) to Color(0xFFB85F00)
+    "th", "ms", "tl" -> Color(0xFF2D4FB3) to Color(0xFF1A3380)
+    else -> FlagRed to FlagDeep
+}
 private val LedBlue = Color(0xFF1F5CFF)
 private val LedLight = Color(0xFF738CFF)
 
@@ -261,8 +269,11 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
 
 /** Nino: seçili çeviri dilinin arayüz dilindeki adı ("Türkçe", "Arapça" / "التركية", "العربية"). */
 @Composable
-fun targetLanguageName(): String = stringResource(
-    if (TargetLanguage.code(Services.settings.targetLanguage) == "ar") R.string.nino_lang_ar else R.string.nino_lang_tr)
+fun targetLanguageName(): String = when (val code = TargetLanguage.code(Services.settings.targetLanguage)) {
+    "tr" -> stringResource(R.string.nino_lang_tr)
+    "ar" -> stringResource(R.string.nino_lang_ar)
+    else -> TargetLanguage.nativeName(code)
+}
 
 /** Sahnenin altındaki tek satırlık ipucu. */
 @Composable
@@ -450,9 +461,9 @@ private fun GlassKnob(progress: Float, starting: Boolean, onColor: Color) {
         if (starting) CircularProgressIndicator(Modifier.size(26.dp), color = Color.White, strokeWidth = 3.dp)
         else {
             Icon(Icons.Filled.PowerSettingsNew, null, tint = Color.White, modifier = Modifier.size(26.dp).alpha(1 - progress))
-            // Nino: Arapça hedefte kürenin içinde Suudi bayrağı (emoji, daireyi dolduracak kadar büyük, kırpılır).
-            if (targetIsArabic()) Box(Modifier.fillMaxSize(0.62f).clip(CircleShape).alpha(progress), contentAlignment = Alignment.Center) {
-                Text("\uD83C\uDDF8\uD83C\uDDE6", fontSize = 64.sp, modifier = Modifier.wrapContentSize(unbounded = true))
+            // Nino: Türkçe dışındaki dillerde kürenin içinde o dilin bayrağı (emoji, daireyi dolduracak kadar büyük, kırpılır).
+            if (!targetIsTurkish()) Box(Modifier.fillMaxSize(0.62f).clip(CircleShape).alpha(progress), contentAlignment = Alignment.Center) {
+                Text(TargetLanguage.flag(Services.settings.targetLanguage), fontSize = 64.sp, modifier = Modifier.wrapContentSize(unbounded = true))
             }
             else Canvas(Modifier.size(42.dp).alpha(progress).scale(0.7f + 0.3f * progress)) { drawCrescentStar(FlagRed) }
         }
@@ -505,8 +516,8 @@ fun GlassToggleThumbnail(modifier: Modifier = Modifier) {
                 modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp))
             Box(Modifier.padding(end = 2.dp).size(30.dp).background(Color.White.copy(alpha = 0.3f), CircleShape)
                 .border(1.5.dp, Color.White.copy(alpha = 0.9f), CircleShape), contentAlignment = Alignment.Center) {
-                if (targetIsArabic()) Box(Modifier.size(26.dp).clip(CircleShape), contentAlignment = Alignment.Center) {
-                    Text("\uD83C\uDDF8\uD83C\uDDE6", fontSize = 30.sp, modifier = Modifier.wrapContentSize(unbounded = true))
+                if (!targetIsTurkish()) Box(Modifier.size(26.dp).clip(CircleShape), contentAlignment = Alignment.Center) {
+                    Text(TargetLanguage.flag(Services.settings.targetLanguage), fontSize = 30.sp, modifier = Modifier.wrapContentSize(unbounded = true))
                 }
                 else Canvas(Modifier.size(16.dp)) { drawCrescentStar(FlagRed) }
             }

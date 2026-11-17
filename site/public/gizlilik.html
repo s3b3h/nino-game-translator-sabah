@@ -41,7 +41,7 @@ hr{border:0;border-top:1px solid var(--line);margin:56px 0 24px}
 <div class="wrap">
 <header><a href="/"><img src="img/logo.svg" alt="" width="32" height="32">CouchSubs</a></header>
 <h1>Gizlilik</h1>
-<p class="meta">Son güncelleme: 14 Kasım 2026</p>
+<p class="meta">Son güncelleme: 15 Kasım 2026</p>
 
 <p>CouchSubs, Enmera tarafından yayınlanan, ücretsiz ve açık kaynaklı bir uygulamadır. Hesap açmanızı istemez, reklam göstermez, uygulama içi satın alma yoktur. Aşağıda hangi verinin cihazınızda kaldığını ve hangisinin nereye gittiğini tek tek yazdık.</p>
 
@@ -58,7 +58,7 @@ hr{border:0;border-top:1px solid var(--line);margin:56px 0 24px}
   <li><strong>Sony:</strong> PlayStation Network girişi doğrudan Sony'nin sayfasında yapılır; şifrenizi CouchSubs görmez. Girişten sonra Sony'den yalnız hesap kimliği alınır.</li>
   <li><strong>Çeviri motorları (yalnız siz seçerseniz):</strong> Gemini, DeepL, OpenAI ya da Claude gibi çevrimiçi bir motoru kendi anahtarınızla açarsanız okunan İngilizce altyazı metni çeviri için o servise gönderilir. Görüntü, ses ve hesap bilgisi gönderilmez; o servisin kendi gizlilik koşulları geçerlidir. Yerel yapay zekâ (Ollama, LM Studio) seçerseniz metin bilgisayarınızdan çıkmaz.</li>
   <li><strong>Çeviri modelleri:</strong> Windows'ta ilk açılışta çeviri modeli <code>huggingface.co</code> adresinden bir kez indirilir; Mac'te çeviri dillerini macOS indirir ve yönetir.</li>
-  <li><strong>Ortak havuz (Ayarlar › Çeviri'den kapatılabilir):</strong> hiçbir Türkçe yamada bulunmayan, okunan İngilizce altyazı satırları herkes için yeni yamalar hazırlamak üzere kendi sunucumuza (<code>couchsubs-pool.enmera.workers.dev</code>) gönderilir. Giden yalnız satırın metni, ondan üretilen anahtar, ilk görüldüğü an, uygulama sürümü, işletim sistemi ve kuruluma özgü rastgele bir kimliktir. Görüntü, ses, kullanıcı adı, PSN ya da hesap bilgisi gönderilmez. Kapatınca gönderim hemen durur ve bekleyen satırlar silinir.</li>
+  <li><strong>Ortak havuz (Ayarlar › Çeviri'den kapatılabilir):</strong> hiçbir Türkçe yamada bulunmayan, okunan İngilizce altyazı satırları herkes için yeni yamalar hazırlamak üzere kendi sunucumuza (<code>couchsubs-pool.enmera.workers.dev</code>) gönderilir. Giden yalnız satırın metni, ondan üretilen anahtar, ilk görüldüğü an, uygulama sürümü, işletim sistemi ve kuruluma özgü rastgele bir kimliktir. Biliniyorsa satırla birlikte oynanan oyunun kimliği ve adı (ör. PPSA01234, "Grand Theft Auto VI") da gönderilir: oyunu PS5 bildirir, uygulama okunan satırları hazır yamalarla eşleştirerek kendisi tanır ya da siz "Hangi oyunu oynuyorsunuz?" sorusunda seçersiniz (Ayarlar'dan kapatılabilir); bu, satırların hangi oyuna ait olduğunu bilmek içindir ve sizinle ilgili bir bilgi taşımaz. Görüntü, ses, kullanıcı adı, PSN ya da hesap bilgisi gönderilmez. En az iki farklı kurulumda okunan satırlar her gece kendiliğinden makine çevirisiyle (kendi Cloudflare hesabımızdaki Workers AI) o oyunun Türkçe yamasına dönüştürülür ve herkese dağıtılır; yamada satırı kimin gönderdiğine dair bir bilgi bulunmaz. Kapatınca gönderim hemen durur ve bekleyen satırlar silinir.</li>
   <li><strong>Ev ağı:</strong> PS5'i ve TV'yi bulmak, onlarla eşleşmek için yalnız yerel ağ kullanılır. TV uygulaması altyazıları yalnız ev ağındaki CouchSubs'tan alır.</li>
 </ul>
 
@@ -79,7 +79,7 @@ hr{border:0;border-top:1px solid var(--line);margin:56px 0 24px}
   <li><strong>Kullanım istatistikleri (Profil › Kullanım verisi'nden kapatılabilir, varsayılan açık):</strong> Google Firebase Analytics ve Meta App Events uygulamanın nasıl kullanıldığını kimliğinize bağlanmadan ölçer; çökmeler Firebase Crashlytics ile bildirilir. Giden: açılan ekranlar, kurulumun bitmesi ve seçilen altyazı hedefi (TV ya da telefon), çevirinin başlaması (hedef, çeviri motoru, paketlerin açık olup olmadığı) ve bitmesi (süre, satır sayısı, hazır yamadan gelen satır sayısı), bağlanan TV sayısı, kullanılan oyun yamasının adı; ayrıca bu hizmetlerin uygulamaya özgü rastgele kimliği, cihaz modeli, Android sürümü ve IP adresinden çıkan ülke. Meta'ya, karşılama ekranı geçildikten sonra, olayların yalnız adı (ayrıntısız) ve uygulamanın açılışı gider. Altyazı metni, görüntü, PSN hesabı ya da anahtarlar gönderilmez. Kapatınca Firebase'e ve Meta'ya hiçbir şey gitmez. Google'ın ve Meta'nın kendi gizlilik koşulları geçerlidir.</li>
   <li><strong>Ortak havuz (Ayarlar › Ortak havuza katkı'dan kapatılabilir, varsayılan açık):</strong> yukarıda anlatıldığı gibi; işletim sistemi "android" olarak gider.</li>
   <li><strong>TV'de gösterme:</strong> telefon ev ağında küçük bir altyazı sunucusu açar (port 8787) ve TV'yi yerel ağda arar; altyazılar yalnız aynı ağdaki CouchSubs TV uygulamasına gider.</li>
-  <li>Türkçe yamalar (oyun paketleri) haftada bir, hesap ya da kimlik bilgisi gönderilmeden indirilir.</li>
+  <li>Türkçe yamalar (oyun paketleri) uygulama açılınca, günde bir ve PS5'te yeni bir oyun başlayınca, hesap ya da kimlik bilgisi gönderilmeden indirilir.</li>
 </ul>
 
 <h2 id="silme">Verilerinizi silme</h2>

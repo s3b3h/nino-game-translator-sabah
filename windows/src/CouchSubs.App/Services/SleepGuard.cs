@@ -4,7 +4,8 @@ using System.Runtime.InteropServices;
 
 namespace CouchSubs.App.Services;
 
-/// <summary>Çeviri sürerken bilgisayarın boşta uykuya geçmesini engeller (kullanıcı TV'de oynuyor, bilgisayara dokunmuyor).</summary>
+/// <summary>Çeviri sürerken bilgisayarın boşta uykuya geçmesini engeller (kullanıcı TV'de oynuyor, bilgisayara dokunmuyor).
+/// Görüntü bir pencereden okunuyorsa ya da altyazı bu ekrandaysa ekranın kapanması da engellenir.</summary>
 public static partial class SleepGuard
 {
     private const uint EsContinuous = 0x80000000;
@@ -12,15 +13,19 @@ public static partial class SleepGuard
     private const uint EsDisplayRequired = 0x00000002;
     private static bool system;
     private static bool display;
+    /// <summary>Oturum boyunca ekran açık kalsın (pencereden okunuyor ya da altyazı bu ekranda).</summary>
+    private static bool sessionDisplay;
 
     [LibraryImport("kernel32.dll")]
     private static partial uint SetThreadExecutionState(uint flags);
 
     public static bool IsActive { get; private set; }
 
-    public static void Begin()
+    /// <summary>ES_CONTINUOUS ile verilen bayraklar öncekilerin yerine geçer; yeniden çağrı ekran isteğini açıp kapatabilir.</summary>
+    public static void Begin(bool keepDisplayOn)
     {
         system = true;
+        sessionDisplay = keepDisplayOn;
         Apply();
         IsActive = true;
     }
@@ -28,6 +33,7 @@ public static partial class SleepGuard
     public static void End()
     {
         system = false;
+        sessionDisplay = false;
         Apply();
         IsActive = false;
     }
@@ -41,5 +47,5 @@ public static partial class SleepGuard
     }
 
     private static void Apply() =>
-        SetThreadExecutionState(EsContinuous | (system ? EsSystemRequired : 0) | (display ? EsDisplayRequired | EsSystemRequired : 0));
+        SetThreadExecutionState(EsContinuous | (system ? EsSystemRequired : 0) | (display || sessionDisplay ? EsDisplayRequired | EsSystemRequired : 0));
 }

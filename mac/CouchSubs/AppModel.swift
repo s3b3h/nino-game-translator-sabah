@@ -23,6 +23,14 @@ extension AppServices {
     func testLocalAI(server: LocalAIServer, key: String) async -> Result<String, AIFailure> {
         await AITranslationCore.test(provider: .local, key: key, model: server.model, server: server)
     }
+    /// Bu Mac'teki Remote Play penceresinden (PS Remote Play ya da chiaki-ng) okuyan görüntü kaynağı (bkz. `RemotePlayWindowStream`).
+    func makeWindowStream(app: RemotePlayApp) -> StreamControlling { RemotePlayWindowStream(app: app) }
+    func remotePlayInstalled(_ app: RemotePlayApp) -> Bool { RemotePlayWindowStream.isInstalled(app) }
+    /// PS5'te o an çalışan oyun: yalnız bağlı PS5'in adresine keşif sorusu gider (ortak havuz için; bkz. `RunningGame`).
+    func runningGame(host: String) async -> RunningGame? {
+        guard let info = await Console.discover(timeout: .seconds(2), host: host).first else { return nil }
+        return RunningGame(titleId: info.runningAppTitleId, name: info.runningAppName)
+    }
 }
 
 protocol AppServices: AnyObject {
@@ -36,12 +44,18 @@ protocol AppServices: AnyObject {
     func discoverTVs() async -> [LGTV]
     /// TV ile eşleşir ve TV uygulamasını sunucu adresiyle başlatmayı dener.
     func pairTV(_ tv: LGTV, key: String?, server: String) async throws -> TVPairing
-    func makeStream(console: RegisteredConsole, accountId: Data) -> StreamControlling
-    /// Nino: oyun görüntüsünü bu bilgisayardaki PS Remote Play ya da chiaki-ng penceresinden okuyan kaynak.
+    /// `loginPasscode`: PS5 bu hesap için giriş şifresi isterse gönderilecek 4 hane (Ayarlar'da kayıtlıysa).
+    func makeStream(console: RegisteredConsole, accountId: Data, loginPasscode: String?) -> StreamControlling
+    /// Nino: oyun görüntüsünü bu bilgisayardaki PS Remote Play, chiaki-ng ya da Xbox yayın penceresinden okuyan kaynak.
     func makeWindowStream() -> GameWindowStream
     /// Nino: oyun görüntüsünü bu bilgisayara takılı HDMI yakalama kartından okuyan kaynak. `showsPlayer`: oyun bu
     /// bilgisayarda tam ekran gösterilir (altyazı bilgisayar ekranındaysa).
     func makeCardStream(showsPlayer: Bool, preferredID: String?) -> CaptureCardStream
+    /// CouchSubs'ın Remote Play penceresi kaynağı (`UserSettings.frameSource`, `remotePlayApp`). Nino `makeWindowStream()`
+    /// kullanır; bu yalnız kurulu uygulamayı sormak ve uyumluluk için durur.
+    func makeWindowStream(app: RemotePlayApp) -> StreamControlling
+    /// Seçilen Remote Play uygulaması (PS Remote Play ya da chiaki-ng) bu Mac'te kurulu mu.
+    func remotePlayInstalled(_ app: RemotePlayApp) -> Bool
     /// `onMoved`: TV ağda yeni bir adreste bulununca çağrılır.
     /// `appConnected`: TV uygulaması bilgisayara bağlı mı (Samsung'da bağlıyken TV'ye dokunulmaz).
     /// `onKey`: TV bağlantıda yeni jeton verdi (Samsung); saklanır.
@@ -166,8 +180,8 @@ final class LiveServices: AppServices {
         return TVPairing(key: newKey, launched: launched)
     }
 
-    func makeStream(console: RegisteredConsole, accountId: Data) -> StreamControlling {
-        StreamSession(console: console, accountId: accountId)
+    func makeStream(console: RegisteredConsole, accountId: Data, loginPasscode: String?) -> StreamControlling {
+        StreamSession(console: console, accountId: accountId, loginPasscode: loginPasscode)
     }
 
     func makeKeeper(tv: LGTV, key: String?, params: [String: Any], appConnected: @escaping @Sendable () -> Bool,
@@ -424,6 +438,8 @@ final class AppModel: ObservableObject {
     @Published var welcomeConsole: GameConsole?
     @Published var accountId: Data?
     @Published var console: RegisteredConsole?
+    /// İkinci hesabın PS5 giriş şifresi Anahtarlık'ta kayıtlı.
+    @Published private(set) var hasLoginPasscode: Bool
     @Published var tv: LGTV?
     /// TV'nin eşleşme anahtarı kayıtlı.
     @Published private var tvKeySaved: Bool
@@ -453,10 +469,21 @@ final class AppModel: ObservableObject {
                     Task { await start() }
                 }
             }
+            // Nino: asıl görüntü kaynağı `videoSource`'tur. CouchSubs'tan gelen `frameSource` (ikinci hesap adımındaki
+            // "Remote Play penceresi" seçimi) ona yansıtılır; `videoSource` değişince de `frameSource` ona uyar.
+            // Eşitleme yalnız iki seçim çeliştiğinde yapılır: yakalama kartı (`frameSource`'ta karşılığı yok) bu yansıtmayla
+            // PS5'e dönmesin (aynı didSet içindeki yazma, gözlemciyi yeniden çağırır).
+            if settings.frameSource != oldValue.frameSource, settings.videoSource == oldValue.videoSource {
+                if settings.frameSource == .remotePlayWindow, settings.videoSource != .window { settings.videoSource = .window }
+                else if settings.frameSource != .remotePlayWindow, settings.videoSource == .window { settings.videoSource = .ps5 }
+            } else if settings.videoSource != oldValue.videoSource {
+                settings.frameSource = settings.videoSource == .window ? .remotePlayWindow : .ps5
+            }
             if settings.videoSource != oldValue.videoSource { videoSourceChanged() }
             if settings.dubbing != oldValue.dubbing { dubbingSettingsChanged(from: oldValue.dubbing) }
             if settings.targetLanguage != oldValue.targetLanguage { targetLanguageChanged() }
             if settings.gamePacks != oldValue.gamePacks, let pipeline { connectPacks(to: pipeline) }
+            pipeline?.showSpeakerNames = settings.showSpeakerNames
             if settings.appearance != oldValue.appearance { settings.appearance.apply() }
             if settings.sharePool != oldValue.sharePool {
                 let (pool, enabled) = (pool, settings.sharePool)
@@ -467,9 +494,10 @@ final class AppModel: ObservableObject {
                 || settings.openAIModel != oldValue.openAIModel || settings.claudeModel != oldValue.claudeModel
                 || settings.localAIBaseURL != oldValue.localAIBaseURL || settings.localAIModel != oldValue.localAIModel
             if translationChanged { Task { await refreshTranslatorStatus() } }
-            if isRunning, settings.sourceLanguage != oldValue.sourceLanguage || settings.targetLanguage != oldValue.targetLanguage
-                || translationChanged {
-                Task { await refreshTranslatorStatus() }
+            let languageChanged = settings.sourceLanguage != oldValue.sourceLanguage
+                || settings.targetLanguage != oldValue.targetLanguage
+            if isRunning, languageChanged || translationChanged || settings.fastSubtitleDetection != oldValue.fastSubtitleDetection {
+                if languageChanged { Task { await refreshTranslatorStatus() } }
                 makePipeline()
             }
         }
@@ -539,6 +567,8 @@ final class AppModel: ObservableObject {
     private var keeper: KeeperControlling?
     @Published private var sleepActivity: NSObjectProtocol?
     private var pipeline: SubtitlePipeline?
+    /// Ek alanları (görev, telefon, bildirim) okuyup çeviren; çeviri sürerken var.
+    private var regionWatcher: RegionWatcher?
     /// Oyundaki altyazının son görüldüğü yer; deneme altyazısı TV'de oraya yerleşir.
     private var lastSubtitleBox: TextBox?
     /// Hatta aynı anda tek kare girer. Durdurma ve yeni hat kapıyı sıfırlar; takılan okuma hattı yeniden kurdurur.
@@ -552,8 +582,19 @@ final class AppModel: ObservableObject {
     @Published var installedPacks: [GamePackLibrary.Info] = []
     private let pool: NinoPool
     private var poolDriver: NinoPoolDriver?
+    /// Sorun Bildir: havuzla aynı rastgele kuruluş kimliği (sunucu tuzlayıp özetler).
+    func reportInstallID() async -> String { await pool.installID }
+    /// Oynanan oyun: PS5'in bildirdiği, kullanıcının seçtiği ya da paketten tanınan (havuza giden satırlar bu oyunla gider).
+    let gameChoice: GameChoice
     private var poolTimer: Task<Void, Never>?
     private var terminateObserver: NSObjectProtocol?
+    /// Bağlıyken birkaç dakikada bir PS5'e çalışan oyunu sorar (havuza giden satırlar oyunla gider). Testlerde kapalı.
+    private var gameProbe: Task<Void, Never>?
+    private let probesGame: Bool
+    static let gameProbeInterval: Duration = .seconds(120)
+    /// Paket sunucusundan yeni ve güncellenen paketler (adres yapılandırılmadıysa nil; bkz. `PackUpdater`).
+    private var packUpdates: Task<Void, Never>?
+    private var packUpdater: PackUpdater?
 
     // Dublaj
     private var dubber: Dubber?
@@ -567,9 +608,24 @@ final class AppModel: ObservableObject {
     // Bilgisayar ekranındaki altyazı penceresi (bkz. AppModel+ComputerScreen.swift)
     /// Pencerede şu an görünen satırlar (TV'dekiyle aynı yığın).
     @Published var overlayLines: [SubtitleStack.Line] = []
+    /// Penceredeki ek alan çevirileri (yukarıdan aşağı).
+    @Published var overlayRegions: [OverlayRegion] = []
     /// Pencerenin yeri ve genişliği ayarlanıyor: örnek yazı görünür, tıklamalar geçmez.
     @Published var overlayAdjusting = false
     var overlayStack = SubtitleStack()
+    /// "Yayın penceresi" açık: altyazı bilgisayar ekranında gösterilmese de satırlar yığına gelir (bkz. StreamWindow.swift).
+    @Published var streamWindowOpen = false {
+        didSet {
+            guard streamWindowOpen != oldValue, !streamWindowOpen, !showsOnComputer else { return }
+            overlayHide()
+        }
+    }
+    /// Yayın penceresinin zemin rengi (chroma key ile silinir).
+    @Published var streamBackground = StreamBackground.green {
+        didSet { defaults.set(streamBackground.rawValue, forKey: StoreKey.streamBackground) }
+    }
+    /// "Ekranı çevir" çevirilerinin pencerede kalacağı an (`overlayClock` saatiyle); yoksa 0.
+    var overlayScreenUntil: TimeInterval = 0
     var overlayTimer: Task<Void, Never>?
     /// Yığının saati (saniye); testlerde ileri sarılır.
     var overlayClock: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
@@ -584,16 +640,19 @@ final class AppModel: ObservableObject {
         let tv = store.load(LGTV.self, for: StoreKey.tv)
         let tvKeySaved = store.load(String.self, for: StoreKey.tvKey) != nil
         let paired = tv != nil && tvKeySaved
-        let ready = Self.setupIsComplete(store: store, accountId: accountId, console: console, paired: paired)
-        self.tvKeySaved = tvKeySaved
-        self.accountId = accountId
-        self.console = console
-        self.tv = tv
         // Nino: ilk açılışta (kayıtlı ayar yok) sistemin dili Arapçaysa çeviri dili Arapça seçilir.
         let loaded = defaults.data(forKey: StoreKey.settings).flatMap { try? JSONDecoder().decode(UserSettings.self, from: $0) }
             ?? { var first = UserSettings(); first.targetLanguage = TargetLanguage.preferred(); return first }()
+        let ready = Self.setupIsComplete(store: store, accountId: accountId, console: console, paired: paired,
+                                         readsWindow: loaded.frameSource == .remotePlayWindow)
+        self.tvKeySaved = tvKeySaved
+        hasLoginPasscode = LoginPasscode.normalized(store.load(String.self, for: StoreKey.loginPasscode)) != nil
+        self.accountId = accountId
+        self.console = console
+        self.tv = tv
         let curated = loaded.withCuratedModels()
         settings = curated
+        streamBackground = StreamBackground(stored: defaults.string(forKey: StoreKey.streamBackground))
         // Pencereler açılmadan önce: açılışta açık temanın bir an görünmesi olmaz.
         curated.appearance.apply()
         let poolFile = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -616,6 +675,8 @@ final class AppModel: ObservableObject {
         // Nino'nun kendi havuzu (NinoPool); CouchSubs'tan kalan pool.json kuyruğu bir kez ona aktarılır.
         pool = NinoPool(directory: poolFile.deletingLastPathComponent().appendingPathComponent("pool", isDirectory: true),
                         app: AppIdentity.version, platform: "mac", enabled: curated.sharePool && !testing, legacyFile: poolFile)
+        probesGame = !testing
+        gameChoice = GameChoice(defaults: defaults)
         if !testing {
             historyFile = SubtitleHistory.defaultFile
             history = SubtitleHistory.load(from: SubtitleHistory.defaultFile)
@@ -630,6 +691,14 @@ final class AppModel: ObservableObject {
             engine.storeKey.flatMap { store.load(String.self, for: $0) }?.isEmpty == false
         })
         attachServer()
+        // Nino: NinoPool oyunu her satırla birlikte alır (`offer(_:game:)`; bkz. connectPacks), ayrıca bildirilmez.
+        gameChoice.onChange = { [weak self] game in
+            // Bu oyunun (havuzdan otomatik) paketi sunucuda yeni çıkmış olabilir.
+            if game != nil { self?.packsForGame() }
+        }
+        gameChoice.packTitles = { [weak self] in GameCatalog.packGames(self?.installedPacks ?? []) }
+        // Elle seçilen oyunda satırlar yalnız o oyunun paketinde aranır, paketi yoksa hiç aranmaz (#218).
+        gameChoice.packs = packs
 
         // Paketler ilk altyazıyı bekletmesin diye açılışta arka planda yüklenir.
         let packs = self.packs
@@ -637,15 +706,87 @@ final class AppModel: ObservableObject {
             let list = packs.packs
             await MainActor.run { self?.installedPacks = list }
         }
-        // Testlerde havuz hiçbir şey göndermez.
-        if !testing { startPool() }
+        // Testlerde havuz hiçbir şey göndermez, paket sunucusuna da sorulmaz.
+        if !testing {
+            startPool()
+            startPackUpdates()
+        }
+    }
+
+    /// Paket sunucusunun adresi yapılandırıldıysa (Info.plist `CSPacksBaseURL`) açılışta ve günde bir bakılır; PS5'te
+    /// yeni bir oyun tanınınca da (`packsForGame`). Yeni paket inince paketler yeniden okunur.
+    private func startPackUpdates() {
+        guard let base = PackUpdater.configuredBaseURL() else { return }
+        let state = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(AppIdentity.name, isDirectory: true).appendingPathComponent("packs-remote.json")
+        let updater = PackUpdater(baseURL: base, directory: GamePackLibrary.userDirectory, stateFile: state)
+        packUpdater = updater
+        let packs = self.packs
+        packUpdates = Task.detached(priority: .background) { [weak self] in
+            var force = true
+            while !Task.isCancelled {
+                let result = await updater.refresh(force: force)
+                force = false
+                await Self.applyPackRefresh(result, packs: packs, model: self)
+                try? await Task.sleep(for: .seconds(PackUpdater.refreshInterval))
+            }
+        }
+    }
+
+    /// PS5'te yeni bir oyun başladı: o oyunun paketi sunucuda yeni çıkmış olabilir, son bakış eskiyse hemen bakılır.
+    private func packsForGame() {
+        guard let updater = packUpdater else { return }
+        let packs = self.packs
+        Task.detached(priority: .utility) { [weak self] in
+            let result = await updater.refresh(maxAge: PackUpdater.gameCheckInterval)
+            await Self.applyPackRefresh(result, packs: packs, model: self)
+        }
+    }
+
+    private nonisolated static func applyPackRefresh(_ result: PackUpdater.Refresh, packs: GamePackLibrary, model: AppModel?) async {
+        guard result.changed else { return }
+        packs.reload()
+        let list = packs.packs
+        await MainActor.run { model?.installedPacks = list }
+        RemotePlayLog.write("Paketler güncellendi: \((result.downloaded + result.removed).joined(separator: ", "))")
+    }
+
+    /// PS5'e bağlanınca çalışan oyun okunmaya başlar, bağlantı gidince bırakılır (havuz satırı oyunsuz gider).
+    private func updateGameProbe(connected: Bool) {
+        guard probesGame else { return }
+        guard connected, let host = console?.host else {
+            gameProbe?.cancel()
+            gameProbe = nil
+            gameChoice.consoleReported(nil)
+            return
+        }
+        guard gameProbe == nil else { return }
+        let services = self.services
+        gameProbe = Task { [weak self] in
+            var last: RunningGame?
+            while !Task.isCancelled {
+                let game = await services.runningGame(host: host)
+                // Bu arada bağlantı bittiyse oyun yazılmaz (bırakılan oyun geri gelmesin).
+                guard !Task.isCancelled else { break }
+                self?.gameChoice.consoleReported(game)
+                if game != last, let game {
+                    // Paket sunucusuna bakılması `gameChoice.onChange`te.
+                    SubtitleLog.write("PS5'te çalışan oyun: \(game.name ?? "?") (\(game.titleId ?? "?"))")
+                }
+                last = game
+                try? await Task.sleep(for: Self.gameProbeInterval)
+            }
+        }
     }
 
     /// Kurulum bitmiş mi. "Bitti" yalnız sihirbazın sonuna gelinince kaydedilir (TV adımı başarıyla geçildi ya da
     /// "TV'm yok" seçildi). Sihirbaz başlarken `false` yazılır: Samsung'da TV eşleşip uygulama kurulurken Nino
     /// kapatılırsa eşleşme kayıtlı olsa da kurulum bitmiş sayılmaz. Hiç kayıt yoksa (beta.25'ten önce kurulmuş)
-    /// eskisi gibi eşleşmiş TV yeter ve "bitti" kaydedilir.
-    static func setupIsComplete(store: AppStore, accountId: Data?, console: RegisteredConsole?, paired: Bool) -> Bool {
+    /// eskisi gibi eşleşmiş TV yeter ve "bitti" kaydedilir. Görüntü PS Remote Play penceresinden okunuyorsa PS5 eşleşmesi
+    /// (hesap, PS5 kaydı) gerekmez; sihirbaz açılmaz, kayıt da değiştirilmez (PS5'e dönülürse eski durum geçerlidir).
+    static func setupIsComplete(store: AppStore, accountId: Data?, console: RegisteredConsole?, paired: Bool,
+                                readsWindow: Bool = false) -> Bool {
+        if readsWindow { return true }
         let saved = store.load(Bool.self, for: StoreKey.setupComplete)
         let ready = accountId != nil && console != nil && (saved ?? paired)
         if saved == nil { store.save(ready, for: StoreKey.setupComplete) }
@@ -678,13 +819,17 @@ final class AppModel: ObservableObject {
         let active = settings.gamePacks && settings.sourceLanguage == "en" && settings.targetLanguage == "tr"
         pipeline.packLookup = active ? { packs.match($0) } : nil
         pipeline.packName = { packs.searchScope }
+        // Ek alanlar da pakette aranır ama havuza önerilmez (arayüz yazıları havuzu kirletmesin).
+        regionWatcher?.packLookup = pipeline.packLookup
         guard settings.sourceLanguage == "en" else {
             pipeline.onPackMiss = nil
             return
         }
+        let sense = gameChoice.sense
         pipeline.onPackMiss = { text in
             guard active || packs.match(text) == nil else { return }
-            let game = packs.searchScope
+            // Paketten tanınan oyun; yoksa PS5'in bildirdiği ya da kullanıcının seçtiği oyun (`GameChoice`).
+            let game = packs.searchScope ?? sense.current?.name
             Task { await pool.offer(text, game: game) }
         }
     }
@@ -821,8 +966,14 @@ final class AppModel: ObservableObject {
 
     /// PS5'e kayıt olur. Her başarısızlık kullanıcıya anlatılır (`AppError` ya da `DetailedError`); sessiz dönüş yok.
     func register(host: String, pin: String) async throws {
-        let host = host.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !host.isEmpty else { throw AppError.missingConsole }
+        let typed = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !typed.isEmpty else { throw AppError.missingConsole }
+        // Elle yazılan adres temizlenir ("192.168.1.5:9295", "http://…", virgüllü yazım); adres değilse libchiaki'ye
+        // gitmeden söylenir.
+        guard let host = ManualAddress.normalize(typed) else {
+            RemotePlayLog.write("PS5 kaydı: geçersiz adres yazıldı: \(typed)")
+            throw AppError.badAddress
+        }
         guard let value = Registration.pin(from: pin) else { throw AppError.invalidPin }
         guard let accountId else { throw AppError.missingAccount }
         let registered: RegisteredConsole
@@ -876,6 +1027,33 @@ final class AppModel: ObservableObject {
         advance()
     }
 
+    /// Sihirbazdaki "İkinci hesap yok mu?": görüntü bu Mac'teki PS Remote Play penceresinden okunur. PSN girişi, PS5
+    /// eşleştirmesi ve TV adımı atlanır, kurulum biter; TV eşleşmemişse altyazı bilgisayar ekranında gösterilir (TV ve
+    /// daha iyi çeviri sonra Ayarlar'dan).
+    func useRemotePlayWindow() {
+        settings.gameConsole = .ps5
+        settings.videoSource = .window
+        if !hasTV { settings.output = .computer }
+        step = .done
+    }
+
+    /// Görüntü PS5'ten (ikinci hesap) alınacak ama hesap ya da PS5 eşleşmesi yok: Ayarlar'da "Hesabı bağla" görünür.
+    var needsPS5Link: Bool { settings.videoSource == .ps5 && (accountId == nil || console == nil) }
+
+    /// Ayarlar › Görüntü kaynağı › "Hesabı bağla": sihirbaz ikinci hesap adımından açılır (PSN girişi, PS5 eşleştirmesi).
+    func linkPS5Account() { step = .secondAccount }
+
+    /// Seçilen Remote Play uygulaması bu Mac'te kurulu mu (Ayarlar'daki "Kurulu" / "İndir" satırları).
+    func remotePlayInstalled(_ app: RemotePlayApp) -> Bool { services.remotePlayInstalled(app) }
+
+    /// Görüntü Remote Play penceresinden okunacak ama seçilen uygulama kurulu değil: ana ekran nereden indirileceğini söyler.
+    var remotePlayMissing: Bool { usesGameWindow && !usesXboxWindow && !services.remotePlayInstalled(settings.remotePlayApp) }
+
+    /// "PS Remote Play'i indir" / "chiaki-ng'yi indir": resmi indirme sayfası tarayıcıda açılır.
+    func openDownload(for app: RemotePlayApp) {
+        NSWorkspace.shared.open(app == .chiaki ? RemotePlayWindowStream.chiakiDownloadURL : RemotePlayWindowStream.sonyDownloadURL)
+    }
+
     func pair(_ tv: LGTV) async throws {
         try await startServer()
         let savedKey = store.load(String.self, for: StoreKey.tvKey)
@@ -924,7 +1102,10 @@ final class AppModel: ObservableObject {
 
     private func refreshLGApp(_ tv: LGTV) async {
         guard let bundled = services.bundledTVAppVersion else { return }
-        guard await services.isDevModeOn(host: tv.host) else {
+        let devModeOn = await services.isDevModeOn(host: tv.host)
+        // Beklerken parola kartından kurulum başladıysa kart geri "geliştirici modu kapalı"ya dönmez.
+        if tvApp == .working { return }
+        guard devModeOn else {
             tvApp = tvAppMissing ? .devModeOff : .unknown
             return
         }
@@ -970,7 +1151,7 @@ final class AppModel: ObservableObject {
 
     /// Kurulumun TV'yi değiştiren adımları (yalnız sürüm okumak değil).
     static func isInstallStep(_ step: String) -> Bool {
-        ["signin", "certificate", "signing", "installing", "uninstalling"].contains(step)
+        ["signin", "certificate", "signing", "installing", "uninstalling", "play"].contains(step)
     }
 
     /// Kurulum hatası ve yardımcının verdiği sebep (TV'nin kurulum çıktısı, Samsung'un yanıtı); sebep de gösterilir.
@@ -1100,11 +1281,12 @@ final class AppModel: ObservableObject {
     /// LG geliştirici modunun 1000 saatlik süresini günde en çok bir kez baştan başlatır; kullanıcı TV'den uzatmak
     /// zorunda kalmaz.
     private func renewDevSessionIfDue(tv: LGTV, devKey: String) async {
-        let last = defaults.object(forKey: StoreKey.devSessionRenewed) as? Date ?? .distantPast
+        let key = StoreKey.devSessionRenewedFor(host: tv.host)
+        let last = defaults.object(forKey: key) as? Date ?? .distantPast
         guard Date().timeIntervalSince(last) > 20 * 3600 else { return }
         if let hours = await services.renewDevSession(host: tv.host, devKey: devKey) {
             devModeHoursLeft = hours
-            defaults.set(Date(), forKey: StoreKey.devSessionRenewed)
+            defaults.set(Date(), forKey: key)
         }
     }
 
@@ -1145,7 +1327,8 @@ final class AppModel: ObservableObject {
     func resetSetup() {
         stop()
         [StoreKey.accountId, StoreKey.console, StoreKey.tv, StoreKey.tvKey, StoreKey.tvDevKey, StoreKey.tvAppVersion,
-         StoreKey.setupComplete].forEach(store.remove)
+         StoreKey.setupComplete, StoreKey.loginPasscode].forEach(store.remove)
+        hasLoginPasscode = false
         accountId = nil
         console = nil
         tv = nil
@@ -1184,6 +1367,7 @@ final class AppModel: ObservableObject {
     func start() async {
         // Düğmeye iki kez basılması ya da beklerken tekrar çağrılması ikinci bir oturum açmaz.
         guard !isRunning, !isStarting, canStart else { return }
+        // PS5'e bağlanmak için eşleşmiş PS5 ve ikinci hesap gerekir; oyun penceresinden ya da yakalama kartından okumak için gerekmez.
         let windowSource = usesGameWindow
         let cardSource = usesCaptureCard
         if !windowSource, !cardSource, console == nil || accountId == nil { return }
@@ -1221,7 +1405,8 @@ final class AppModel: ObservableObject {
             session = card
         } else if let console, let accountId {
             RemotePlayLog.write("Çeviri başladı; PS5'e bağlanılıyor: \(console.name) \(console.host)")
-            session = services.makeStream(console: console, accountId: accountId)
+            session = services.makeStream(console: console, accountId: accountId,
+                                          loginPasscode: store.load(String.self, for: StoreKey.loginPasscode))
         } else { return }
         session.onState = { [weak self] state in Task { @MainActor in self?.sessionStateChanged(state) } }
         session.onConsoleMoved = { [weak self] moved in Task { @MainActor in self?.consoleMoved(moved) } }
@@ -1240,6 +1425,11 @@ final class AppModel: ObservableObject {
         self.session = session
 
         startKeeper()
+        // Remote Play penceresinden okurken PS5 eşleşmesi olmayabilir; son oyun o zaman PS5 adı olmadan hatırlanır.
+        gameChoice.start(console: console.map { $0.name.isEmpty ? $0.host : $0.name }) { [weak self] in
+            guard let self else { return false }
+            return self.settings.askGame && self.settings.sharePool
+        }
 
         // Mac uykudan uyanınca bağlantıları hemen yenile.
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
@@ -1248,15 +1438,15 @@ final class AppModel: ObservableObject {
                 self?.keeper?.reconnect()
             }
         }
-        sleepActivity = ProcessInfo.processInfo.beginActivity(options: [.userInitiated, .idleSystemSleepDisabled],
-                                                              reason: "Translating game subtitles")
+        keepAwake()
         isRunning = true
         if screenHotkey == nil { screenHotkey = GlobalHotkey(.translateScreen) { [weak self] in self?.translateScreen() } }
         screenHotkey?.enabled = true
         updateClickThroughHotkey()
     }
 
-    /// Çeviri başlatılabilir mi: PS5 kurulu ve altyazının gideceği bir yer var (TV eşleşmiş ya da bilgisayar ekranı seçili).
+    /// Çeviri başlatılabilir mi: görüntü kaynağı hazır (PS5 kurulu ya da PS Remote Play penceresi seçili) ve altyazının
+    /// gideceği bir yer var (TV eşleşmiş ya da bilgisayar ekranı seçili).
     var canStart: Bool {
         // Nino: Xbox penceresinde altyazı TV'ye de gidebilir; TV seçiliyse TV eşleşmiş olmalı.
         (usesGameWindow && !usesXboxWindow) || ((usesGameWindow || usesCaptureCard || (console != nil && accountId != nil)) && (showsOnComputer || hasTV))
@@ -1325,11 +1515,14 @@ final class AppModel: ObservableObject {
     /// Oyun penceresi durumunun kullanıcıya gösterilecek metni.
     var windowStatusText: String {
         switch windowStatus {
-        case .stopped: return settings.gameConsole == .xbox ? String(localized: "Reads the Xbox stream window")
-            : String(localized: "Reads the PS Remote Play window")
+        case .stopped:
+            if settings.gameConsole == .xbox { return String(localized: "Reads the Xbox stream window") }
+            // CouchSubs'tan: Remote Play uygulaması kurulu değilse ana ekran nereden indirileceğini söyler.
+            if remotePlayMissing { return String(localized: "The Remote Play app isn't installed on this Mac. Download it in Settings › Picture source.") }
+            return String(localized: "Reads the PS Remote Play window")
         case .needsPermission: return String(localized: "Allow Nino in System Settings › Privacy & Security › Screen Recording, then reopen Nino.")
         case .lookingForWindow: return settings.gameConsole == .xbox
-            ? String(localized: "Open Greenlight or xbox.com/play in your browser and start streaming your Xbox")
+            ? String(localized: "Start your Xbox in Greenlight. Press Connect Your Xbox if you need help.")
             : String(localized: "Open PS Remote Play or chiaki-ng and start playing")
         case .capturing(let app): return String(format: String(localized: "Reading %@"), app)
         }
@@ -1351,12 +1544,34 @@ final class AppModel: ObservableObject {
         Task { await refreshTVApp() }
     }
 
+    /// Çeviri sürerken bilgisayar ekranı da açık kalsın mı: görüntü bu Mac'teki Remote Play penceresinden okunuyorsa
+    /// (ekran kapanınca ScreenCaptureKit kare vermez) ya da altyazı bu ekranda gösteriliyorsa. X'te bildirildi: kullanıcı
+    /// TV'de oynayıp Mac'e dokunmayınca ekran kendi ayarıyla (prizdeyken çoğu zaman 10 dakika) kapanıyor, altyazı
+    /// kesiliyordu. PS5'ten doğrudan okunup yalnız TV'ye gönderiliyorsa ekran kendi ayarıyla kapanabilir.
+    var keepsDisplayOn: Bool {
+        // Nino: oyun penceresi (PS Remote Play, chiaki-ng, Xbox yayını) ya da altyazı/oyun bu ekranda.
+        usesGameWindow || showsOnComputer
+    }
+
+    /// Mac'in boşta uyuması (ve gerekiyorsa ekranın kapanması) engellenir; çeviri sürerken ayar değişince yeniden kurulur.
+    private func keepAwake() {
+        var options: ProcessInfo.ActivityOptions = [.userInitiated, .idleSystemSleepDisabled]
+        if keepsDisplayOn { options.insert(.idleDisplaySleepDisabled) }
+        let previous = sleepActivity
+        sleepActivity = ProcessInfo.processInfo.beginActivity(options: options, reason: "Translating game subtitles")
+        if let previous { ProcessInfo.processInfo.endActivity(previous) }
+    }
+
     /// Altyazının yeri değişti: TV seçildiyse TV uygulaması açılır, kaldırıldıysa artık açık tutulmaz.
     private func outputChanged() {
         server.sendsToTV = showsOnTV
-        if !showsOnComputer { overlayHide() }
+        if !showsOnComputer {
+            // Yayın penceresi açıksa satırları kalır; yalnız saydam pencerenin yer ayarı biter.
+            if streamWindowOpen { overlayAdjusting = false } else { overlayHide() }
+        }
         updateClickThroughHotkey()
         guard isRunning else { return }
+        keepAwake()
         if showsOnTV {
             startKeeper()
         } else {
@@ -1379,7 +1594,12 @@ final class AppModel: ObservableObject {
     /// ⌥⌘T: oyunun şu anki karesinin tamamını bir kez okur, her yazı grubunu ayrı çevirip TV'de kendi yerine koyar.
     /// Çeviriler hazırlandıkça TV'ye gider. Çeviri sürerken ya da çeviriler TV'deyken yeniden basmak onları kaldırır.
     func translateScreen() {
-        guard isRunning, let frame = lastFrame else { return }
+        guard isRunning else { return }
+        guard let frame = lastFrame else {
+            // Çeviri sürüyor ama PS5'ten henüz görüntü gelmedi: tuş sessizce yok sayılmasın.
+            server.sendSubtitle(String(localized: "Couldn't capture the screen: no picture from the PS5 yet."), durationMs: 4000)
+            return
+        }
         if let task = screenTask {
             task.cancel()
             screenTask = nil
@@ -1398,7 +1618,8 @@ final class AppModel: ObservableObject {
         screenTask = Task { [weak self] in
             do {
                 let reading = try await Task.detached(priority: .userInitiated) { try reader.readLines(frame, deep: false) }.value
-                let items = try await ScreenTranslation.translate(reading, using: { try await translator.translate($0) }) { shown in
+                // Yapay zekâda ekranın bütün yazıları tek istekte gider (bkz. AITranslationCore.translateAll).
+                let items = try await ScreenTranslation.translate(reading, using: translator) { shown in
                     guard !Task.isCancelled else { return }
                     let milliseconds = ScreenTranslation.displayMilliseconds(shown)
                     server.sendScreen(shown, durationMs: milliseconds)
@@ -1409,10 +1630,10 @@ final class AppModel: ObservableObject {
             } catch is CancellationError {
                 return
             } catch let error as TranslatorError {
-                server.clear()
                 self?.translatorStatus = Self.translatorStatus(after: error)
+                self?.showScreenFailure(error, translator: translator)
             } catch {
-                server.clear()
+                self?.showScreenFailure(error, translator: translator)
             }
             if !Task.isCancelled { self?.screenTask = nil }
         }
@@ -1572,6 +1793,30 @@ final class AppModel: ObservableObject {
         promptItems = []
     }
 
+    /// Ekran çevrilemedi: nedeni TV'de (ve bilgisayardaki altyazıda) birkaç saniye görünür, sessizce kaybolmaz.
+    private func showScreenFailure(_ error: Error, translator: TextTranslator) {
+        guard !Task.isCancelled else { return }
+        server.clear()
+        let reason = Self.screenFailureReason(error, translator: translator, engine: settings.onlineEngine, server: settings.localAIServer)
+        server.sendSubtitle(String(format: String(localized: "Couldn't translate the screen: %@"), reason), durationMs: 6000)
+    }
+
+    /// Ekran çevirisinin neden olmadığı: önce çevrimiçi motorun hatası, sonra ücretsiz çevirinin durumu.
+    static func screenFailureReason(_ error: Error, translator: TextTranslator, engine: TranslationEngine,
+                                    server: LocalAIServer?) -> String {
+        if let online = translator as? AITranslator {
+            if let failure = online.lastFailure { return TranslationCard.describe(failure, engine: engine, server: server) }
+            if online.lastLineWasRateLimited {
+                return String(format: String(localized: "%@ has reached its per-minute limit. Try again in a minute."), engine.displayName)
+            }
+        }
+        switch error as? TranslatorError {
+        case .needsDownload: return String(localized: "The free translation isn't downloaded yet.")
+        case .unsupported: return String(localized: "The free translation doesn't work on this Mac.")
+        case nil: return String(localized: "Something went wrong. Try again.")
+        }
+    }
+
     private func hideScreen() {
         screenShownUntil = .distantPast
         server.clearScreen()
@@ -1588,13 +1833,17 @@ final class AppModel: ObservableObject {
         pipeline?.reset()
         // Eski hatta süren okuma beklenmez; yeni hat ilk karesini hemen alır.
         frameGate.reset()
+        let scheduler = ReadScheduler(maxReuse: settings.fastSubtitleDetection
+            ? ReadScheduler.fastMaxReuse : ReadScheduler.defaultMaxReuse)
         let pipeline = SubtitlePipeline(reader: VisionReader(language: settings.sourceLanguage),
                                         translator: makeTranslator(),
-                                        server: server, scheduler: ReadScheduler())
+                                        server: server, scheduler: scheduler)
+        pipeline.showSpeakerNames = settings.showSpeakerNames
         pipeline.onPair = { [weak self, weak pipeline] source, translation in
             self?.lastSource = source
             self?.lastTranslation = translation
             self?.addToHistory(source: source, translation: translation, origin: pipeline?.lastOrigin == "paket" ? .pack : .engine)
+            if let self { self.gameChoice.noteLine(fromPack: pipeline?.lastOrigin == "paket", packs: self.packs) }
             if let box = pipeline?.lastBox, let self {
                 self.lastSubtitleBox = box
                 // Nino: altyazının yeri bu oyun için öğrenilir; sınır her satırda güncellenir.
@@ -1624,11 +1873,22 @@ final class AppModel: ObservableObject {
         pipeline.onReadResult = { [weak self] error in self?.noteRead(error) }
         pipeline.onSpeech = { [weak self] lines in self?.speak(lines) }
         pipeline.onLog = { SubtitleLog.write($0) }
-        connectPacks(to: pipeline)
         onlineIssue = nil
         pipeline.warmUp()
         self.pipeline = pipeline
+        // Ek alan okuyucusu yeni dil ve motorla, ilk ek alan karesinde yeniden kurulur.
+        regionWatcher?.reset()
+        regionWatcher = nil
+        connectPacks(to: pipeline)
         activeLanguages = (settings.sourceLanguage, settings.targetLanguage)
+    }
+
+    /// Ek alanlar aynı dil, motor ve paketlerle okunur; ayrı bir okuyucu ve çevirmenle (altyazının sırasını beklemez).
+    private func makeRegionWatcher(packLookup: ((String) -> PackMatch?)?) -> RegionWatcher {
+        let watcher = RegionWatcher(reader: VisionReader(language: settings.sourceLanguage), translator: makeTranslator(), server: server)
+        watcher.packLookup = packLookup
+        watcher.onLog = { SubtitleLog.write($0) }
+        return watcher
     }
 
     private func refreshTranslatorStatus() async {
@@ -1649,16 +1909,22 @@ final class AppModel: ObservableObject {
         let engine = settings.onlineEngine
         guard onlineTranslationActive, let storeKey = engine.storeKey else { return local }
         let online: TextTranslator & OnlineTranslating
+        // Oynanan oyunun adı modele bağlam olarak gider, önbellek de oyuna göre ayrılır. Ad kararlı oyundur (`GameSense`:
+        // PS5'in bildirdiği, kullanıcının seçtiği ya da son 20 satırın 5'i aynı paketten gelince o paketin oyunu); son
+        // eşleşen paket değil, yoksa tek bir ortak satır adı başka oyuna geçirirdi (#27). Oyun bilinmiyorsa ad gitmez.
+        let sense = gameChoice.sense
+        let game: @Sendable () -> String? = { sense.current?.name }
         if engine == .local, let server = settings.localAIServer {
             // Yerel modelin anahtarı isteğe bağlıdır; önbellekte sunucu ve model ayrı tutulur.
             let key = store.load(String.self, for: storeKey) ?? ""
             online = AITranslator(provider: .local, key: key, model: server.model, server: server, fallback: local,
-                                  cache: Self.translationCache(engine: server.engineID, source: source, target: target), target: target)
+                                  cache: Self.translationCache(engine: server.engineID, source: source, target: target), target: target,
+                                  game: game)
         } else if let key = store.load(String.self, for: storeKey), let provider = engine.aiProvider {
             let model = provider.model(settings.model(for: provider)).id
             online = AITranslator(provider: provider, key: key, model: model, fallback: local,
                                   cache: Self.translationCache(engine: provider.engineID(model: model), source: source, target: target),
-                                  target: target)
+                                  target: target, game: game)
         } else if let key = store.load(String.self, for: storeKey) {
             online = DeepLTranslator(key: key, fallback: local,
                                      cache: Self.translationCache(engine: DeepLTranslator.engineID, source: source, target: target),
@@ -1681,9 +1947,11 @@ final class AppModel: ObservableObject {
         return TranslationCache.shared(in: directory, engine: engine, source: source, target: target)
     }
 
-    /// Çevrimiçi çeviri İngilizce→Türkçe ve İngilizce→Arapça için, seçili motor hazırsa açılır.
+    /// Çevrimiçi çeviri İngilizceden Nino'nun çeviri dillerine, seçili motor hazırsa ve o dili çevirebiliyorsa açılır.
     var onlineTranslationActive: Bool {
-        settings.onlineTranslation && settings.sourceLanguage == "en" && ["tr", "ar"].contains(settings.targetLanguage)
+        settings.onlineTranslation && settings.sourceLanguage == "en"
+            && TargetLanguage.choices.contains { $0.code == settings.targetLanguage }
+            && (settings.onlineEngine != .deepL || TargetLanguage.deepLSupports(settings.targetLanguage))
             && isReady(settings.onlineEngine)
     }
 
@@ -1783,10 +2051,28 @@ final class AppModel: ObservableObject {
         }
     }
 
+    // MARK: - PS5 giriş şifresi
+
+    /// 4 haneyi Anahtarlık'a kaydeder; geçersizse kaydetmez ve false döner. Sonraki bağlantıda kullanılır.
+    @discardableResult
+    func setLoginPasscode(_ value: String) -> Bool {
+        guard let pin = LoginPasscode.normalized(value) else { return false }
+        store.save(pin, for: StoreKey.loginPasscode)
+        hasLoginPasscode = true
+        return true
+    }
+
+    func removeLoginPasscode() {
+        store.remove(StoreKey.loginPasscode)
+        hasLoginPasscode = false
+    }
+
     func stop() {
         resetCorners()
         session?.stop()
         session = nil
+        updateGameProbe(connected: false)
+        gameChoice.stop()
         keeper?.stop()
         keeper = nil
         pipeline?.reset()
@@ -1798,6 +2084,8 @@ final class AppModel: ObservableObject {
             SubtitleLog.write("oturum bitti")
         }
         pipeline = nil
+        regionWatcher?.reset()
+        regionWatcher = nil
         // Yeni "Başlat" eski oturumdan kalan (belki takılmış) okumayı beklemeden temiz başlar.
         frameGate.reset()
         activeLanguages = nil
@@ -1843,9 +2131,11 @@ final class AppModel: ObservableObject {
             }
         }
         sessionState = state
+        updateGameProbe(connected: state == .streaming)
         // Bağlantı koptuysa TV'de eski altyazı kalmasın.
         if case .disconnected = state {
             pipeline?.reset()
+            regionWatcher?.reset()
             server.clear()
             dubber?.stop()
         }
@@ -1893,6 +2183,20 @@ final class AppModel: ObservableObject {
         return Self.statusText(sessionState, running: isRunning, pairedName: console.map { $0.name.isEmpty ? "PS5" : $0.name })
     }
 
+    /// Görüntü bu Mac'teki Remote Play penceresinden okunurken durumun metni.
+    static func windowStatusText(_ state: SessionState, running: Bool, installed: Bool = true) -> String {
+        if case .streaming = state { return String(localized: "Reading the Remote Play window") }
+        if !installed { return String(localized: "The Remote Play app isn't installed on this Mac. Download it in Settings › Picture source.") }
+        switch state {
+        case .streaming: return String(localized: "Reading the Remote Play window")
+        case .connecting: return String(localized: "Waiting for the Remote Play window. Open PS Remote Play or chiaki-ng on this Mac.")
+        case .disconnected(let reason):
+            guard running else { return String(localized: "Reads the Remote Play window on this Mac when you start translating.") }
+            if case .other(let detail) = reason, !detail.isEmpty { return detail }
+            return String(localized: "Waiting for the Remote Play window. Open PS Remote Play or chiaki-ng on this Mac.")
+        }
+    }
+
     /// PS5 durumunun kullanıcıya gösterilecek metni. `pairedName`: eşleşmiş PS5'in adı; çeviri başlamamışken eşleşmiş
     /// PS5 için "Bağlı değil" yerine "eşleşti, başlatınca bağlanır" denir (eskiden eşleştirme başarılı olsa da ana ekran
     /// "Bağlı değil" diyordu).
@@ -1914,13 +2218,23 @@ final class AppModel: ObservableObject {
         case .consoleAsleep: return String(localized: "Turn on your PS5")
         case .inUse: return String(localized: "Remote Play is in use on another device")
         case .refused: return String(localized: "The PS5 refused the connection. Set up the PS5 again.")
-        case .loginPasscode: return String(localized: "The second user has a login passcode on the PS5. Turn it off in Settings › Users and Accounts.")
+        case .loginPasscode:
+            return String(localized: "The PS5 asks for this account's login passcode. Enter it in Settings, or turn off this account's login passcode on the PS5.")
+        // Yanlış şifre bir kez gönderilir; PS5 yeniden isterse oturum kapanır (döngü yok).
+        case .loginPasscodeIncorrect:
+            return String(localized: "The PS5 didn't accept the login passcode in Settings. Correct it, or turn off this account's login passcode on the PS5.")
         // Eskiden "Yeniden bağlanılıyor… (Unknown Session Request Error)" diye sonsuza kadar deneniyordu.
         case .registrationInvalid: return String(localized: "The PS5 didn't accept this pairing. Pair the PS5 again with the second account in Settings.")
+        // Eskiden görüntü hiç gelmeyince sonsuza kadar "Yeniden bağlanılıyor… (no picture from the PS5)".
+        case .noPicture: return String(localized: "No picture from the PS5. Is Remote Play turned off, or is the PS5 in rest mode? Check, then start again.")
         // Eskiden ağ hatası, bulunamayan PS5 ve diğer nedenler hep yalnız "Yeniden bağlanılıyor…" idi.
         case .notFound(let host):
             return String(format: String(localized: "PS5 not found at %@. Make sure it is on and on the same network. Reconnecting…"), host)
         case .network: return String(localized: "Can't reach the PS5. Reconnecting…")
+        // Eskiden "Yeniden bağlanılıyor… (Unknown Session Request Error)" görünüyordu (GitHub #33, #202).
+        case .rejected(let code?):
+            return String(format: String(localized: "The PS5 rejected the connection (code %@). Another Remote Play app (PS Remote Play) may be open, or the PS5 may be in another session. Close PS Remote Play, restart the PS5, then try again."), String(format: "0x%08x", code))
+        case .rejected(nil): return String(localized: "The PS5 didn't start the session. Another Remote Play app (PS Remote Play) may be open, or the PS5 may be in another session. Close PS Remote Play, restart the PS5, then try again.")
         case .other(let detail) where !detail.isEmpty: return String(format: String(localized: "Reconnecting… (%@)"), detail)
         case .other, .stopped: return String(localized: "Reconnecting…")
         }
@@ -1940,6 +2254,10 @@ final class AppModel: ObservableObject {
         #endif
         if isRunning { watchCorners(frame) }
         guard pipeline != nil else { return }
+        // Ek alanlar ayrı ve seyrek okunur (saniyede bir); altyazı okumasını beklemez, onu bekletmez.
+        let areas = settings.activeExtraAreas
+        if regionWatcher == nil, !areas.isEmpty, let pipeline { regionWatcher = makeRegionWatcher(packLookup: pipeline.packLookup) }
+        regionWatcher?.offer(frame, areas: areas)
         // Önceki kare hâlâ işleniyorsa bu kare atlanır; okuma kareleri biriktirmez.
         var entry = frameGate.enter(now: SubtitleStabilizer.uptimeMs())
         if case .stuck(let ms) = entry {

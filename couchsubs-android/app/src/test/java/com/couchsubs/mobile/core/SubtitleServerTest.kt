@@ -36,12 +36,30 @@ class SubtitleServerTest {
     fun clearAndStyleFrames() {
         assertEquals("event: clear\ndata: {}\n\n", SubtitleServer.clearFrame())
         assertEquals(
-            "event: style\ndata: {\"background\":100,\"bold\":false,\"bottomPercent\":7,\"displayMode\":\"inApp\",\"fontSize\":46," +
-                "\"placement\":\"cover\",\"textColor\":\"white\"}\n\n",
+            "event: style\ndata: {\"background\":100,\"backgroundShape\":\"fit\",\"bold\":false,\"bottomPercent\":7,\"displayMode\":\"inApp\",\"font\":\"condensed\",\"fontSize\":46," +
+                "\"placement\":\"cover\",\"stackPrevious\":true,\"textColor\":\"white\"}\n\n",
             SubtitleServer.styleFrame(SubtitleStyle()),
         )
         assertTrue(SubtitleServer.styleFrame(SubtitleStyle(displayMode = TvDisplayMode.OVERLAY, textColor = SubtitleTextColor.YELLOW))
             .contains("\"displayMode\":\"overlay\""))
+        val band = SubtitleServer.styleFrame(SubtitleStyle(background = 100, backgroundShape = SubtitleBackgroundShape.BAND))
+        assertTrue(band.contains("\"background\":100") && band.contains("\"backgroundShape\":\"band\""))
+        // "Önceki satırları üstte tut" kapalıysa TV'ye false gider (Windows ve Mac ile aynı).
+        assertTrue(SubtitleServer.styleFrame(SubtitleStyle(stackPrevious = false)).contains("\"stackPrevious\":false"))
+    }
+
+    @Test
+    fun fontGoesToTheTvAndDefaultsToCondensed() {
+        assertEquals(SubtitleFont.CONDENSED, SubtitleStyle().font)
+        assertTrue(SubtitleServer.styleFrame(SubtitleStyle(font = SubtitleFont.ROUNDED)).contains("\"font\":\"rounded\""))
+        assertTrue(SubtitleServer.styleFrame(SubtitleStyle(font = SubtitleFont.MODERN)).contains("\"font\":\"modern\""))
+        assertTrue(SubtitleServer.styleFrame(SubtitleStyle(font = SubtitleFont.SYSTEM)).contains("\"font\":\"system\""))
+        // Mac/Windows ile aynı adlar; eski kayıtta ad yoksa ya da tanınmıyorsa Aksiyon (condensed).
+        assertEquals(listOf("condensed", "modern", "rounded", "system"), SubtitleFont.entries.map { it.wire })
+        assertEquals(SubtitleFont.CONDENSED, SubtitleFont.from(null))
+        assertEquals(SubtitleFont.CONDENSED, SubtitleFont.from("comic"))
+        assertEquals(SubtitleFont.ROUNDED, SubtitleFont.from("rounded"))
+        assertEquals(SubtitleFont.MODERN, SubtitleFont.from("MODERN"))
     }
 
     @Test

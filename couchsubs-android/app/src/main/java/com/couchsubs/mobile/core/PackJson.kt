@@ -15,7 +15,12 @@ object PackJson {
         val title: String?,
         /** Kökteki dize alanları sırayla (düz biçimde satırlar). */
         val rootStrings: List<Pair<String, String>>,
+        /** Biçim 2'deki "fuzzy" nesnesi (bulanık imzalar); yoksa null. */
+        val fuzzy: Fuzzy? = null,
     )
+
+    /** "fuzzy" nesnesi: base64 alanlar doğrudan baytlara açılır (ara String yok); eksik ya da bozuk alan null. */
+    class Fuzzy(val version: Double?, val count: Double?, val mask: ByteArray?, val lengths: ByteArray?, val blooms: ByteArray?)
 
     /** [onSegment]: biçim 2'deki "segments" nesnesinin satırları (oyunun ayrı gösterdiği parçalar). */
     fun parse(data: ByteArray, onEntry: (String, String) -> Unit, onSegment: (String, String) -> Unit = { _, _ -> }): Result = try {
@@ -34,9 +39,14 @@ object PackJson {
             position++
             var wrapped = false
             var format: Double? = null
+            var fuzzy: Fuzzy? = null
             val strings = mutableListOf<Pair<String, String>>()
             members { name ->
                 when {
+                    name == "fuzzy" && peek() == '{'.code -> {
+                        position++
+                        fuzzy = fuzzy()
+                    }
                     name == "entries" && peek() == '{'.code -> {
                         wrapped = true
                         position++
@@ -55,7 +65,47 @@ object PackJson {
             if (position != data.size) throw InvalidPackException("Paket JSON değil")
             val id = strings.lastOrNull { it.first == "id" }?.second
             val title = strings.lastOrNull { it.first == "title" }?.second
-            return Result(wrapped, format, id, title, strings)
+            return Result(wrapped, format, id, title, strings, fuzzy)
+        }
+
+        /** `{` okunmuş "fuzzy" nesnesi. */
+        private fun fuzzy(): Fuzzy {
+            var version: Double? = null
+            var count: Double? = null
+            val bytes = HashMap<String, ByteArray?>()
+            members { name ->
+                when {
+                    (name == "version" || name == "count") && isNumberStart(peek()) -> {
+                        val value = number()
+                        if (name == "version") version = value else count = value
+                    }
+                    (name == "mask" || name == "lengths" || name == "blooms") && peek() == '"'.code -> bytes[name] = base64()
+                    else -> skipValue()
+                }
+            }
+            return Fuzzy(version, count, bytes["mask"], bytes["lengths"], bytes["blooms"])
+        }
+
+        /** base64 dize: kaçış yoksa kaynak baytlardan doğrudan açılır; bozuksa null. */
+        private fun base64(): ByteArray? {
+            val begin = position + 1
+            var end = begin
+            while (end < data.size && data[end] != '"'.code.toByte() && data[end] != '\\'.code.toByte()) end++
+            if (end < data.size && data[end] == '"'.code.toByte()) {
+                position = end + 1
+                return try {
+                    val decoded = java.util.Base64.getDecoder().decode(java.nio.ByteBuffer.wrap(data, begin, end - begin))
+                    ByteArray(decoded.remaining()).also { decoded.get(it) }
+                } catch (error: IllegalArgumentException) {
+                    null
+                }
+            }
+            val text = string()
+            return try {
+                java.util.Base64.getDecoder().decode(text)
+            } catch (error: IllegalArgumentException) {
+                null
+            }
         }
 
         /** `{` okunmuş nesnenin üyeleri: her ad için [value] değeri okumalıdır; `}` ile biter. */

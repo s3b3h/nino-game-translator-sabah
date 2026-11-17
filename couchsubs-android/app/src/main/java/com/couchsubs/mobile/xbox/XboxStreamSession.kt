@@ -1,26 +1,34 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Nino: bu dosya Nino için sıfırdan yazıldı. Görüntü Google'ın libwebrtc'siyle (BSD-3) alınır.
+// Xbox ev yayını (Beta): Windows'taki XboxStreamSession + player.html'in telefondaki karşılığı. Görüntü yerel
+// libwebrtc'yle alınır; kareler OCR hattına doğrudan parlaklık (Y) düzlemi olarak gider (bkz. docs/superpowers/specs/
+// 2026-11-16-telefon-xbox-design.md). Oyun sesi ayar açıksa telefonda çalınır (bkz. playAudio); mikrofon açılmaz,
+// kumanda girdisi gönderilmez.
 package com.couchsubs.mobile.xbox
 
 import android.content.Context
+import android.media.AudioAttributes
+import android.os.SystemClock
 import android.util.Log
+import com.couchsubs.mobile.R
+import com.couchsubs.mobile.account.Backend
 import com.couchsubs.mobile.remoteplay.DisconnectKind
 import com.couchsubs.mobile.remoteplay.FrameSource
-import com.couchsubs.mobile.remoteplay.ReconnectPolicy
 import com.couchsubs.mobile.remoteplay.SessionState
+import com.couchsubs.mobile.remoteplay.VideoFrame
 import org.webrtc.DataChannel
-import org.webrtc.DefaultVideoDecoderFactory
+import org.webrtc.IceCandidate
 import org.webrtc.MediaConstraints
 import org.webrtc.MediaStream
 import org.webrtc.MediaStreamTrack
 import org.webrtc.PeerConnection
 import org.webrtc.PeerConnectionFactory
-import org.webrtc.RtpReceiver
 import org.webrtc.RtpTransceiver
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
+import org.webrtc.SoftwareVideoEncoderFactory
 import org.webrtc.VideoSink
 import org.webrtc.VideoTrack
+import org.webrtc.audio.JavaAudioDeviceModule
 import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -28,294 +36,480 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Parlaklık (Y) düzlemi; yalnız çağrı süresince geçerlidir. */
-fun interface LumaSink {
-    fun onLuma(buffer: ByteBuffer, rowStride: Int, width: Int, height: Int)
-}
-
-/**
- * Xbox ev yayını (Xbox uygulamasındaki "Uzaktan oynat" ile aynı yol): Microsoft hesabıyla oturum açılır, konsol
- * görüntüsü WebRTC (H.264) ile telefona gelir, çözülen karelerin parlaklık düzlemi okuma hattına verilir. Ses çalınmaz,
- * mikrofon açılmaz, kol girişi gönderilmez. Bağlantı koparsa PS5 yolundaki gibi artan aralıklarla yeniden denenir.
- */
 class XboxStreamSession(
     context: Context,
-    private val account: XboxAccount,
+    private val auth: XboxAuth,
     private val console: XboxConsole,
-    private val onLuma: LumaSink,
+    private val onFrame: (VideoFrame) -> Unit,
     private val onState: (SessionState) -> Unit,
+    /** Hatayı kullanıcının dilinde anlatır (Türkçe/İngilizce metinler hizmette). */
+    private val describe: (XboxError) -> String,
+    /**
+     * Oyunun sesi bu telefonda çalınır (Ayarlar > "Xbox sesini bu cihazda çal", varsayılan açık). Xbox uzaktan oynatma
+     * sürerken sesi istemciye verip TV'yi susturabilir; kapalıyken ses hiçbir yerden gelmeyebilir. Mikrofon her durumda
+     * kapalıdır, yerel ses parçası eklenmez: Xbox'a ses gönderilmez.
+     */
+    private val playAudio: Boolean = true,
 ) : FrameSource {
     private companion object {
-        const val TAG = "NinoXbox"
-        /** Okuma saniyede birkaç kez yapılır; her kareyi çevirmek pili boşuna harcar. */
-        const val FRAME_INTERVAL_MS = 100L
-        const val KEEPALIVE_SECONDS = 30L
-        const val GATHER_TIMEOUT_MS = 5_000L
-        /** Oturum kurulduktan sonra bu süre içinde görüntü gelmezse bağlantı başarısız sayılır (nedeni ekranda görünür). */
-        const val FIRST_FRAME_TIMEOUT_SECONDS = 20L
-        @Volatile var initialized = false
+        const val TAG = "CouchSubsXbox"
+        const val ICE_GATHER_MS = 5000L
+        const val KEEPALIVE_MS = 30_000L
+        /** El sıkışmadan sonra bu sürede kare gelmezse oturum yeniden açılır. */
+        const val FIRST_FRAME_MS = 20_000L
+        /** OCR saniyede beş kez okur; her kareyi I420'ye çevirmeye gerek yok. */
+        const val FRAME_INTERVAL_MS = 66L
+        /** Kare onayları oynatıcıdaki gibi 16 ms'de bir paketlenir (Input.ts `_inputInterval`). */
+        const val ACK_INTERVAL_MS = 16L
     }
 
-    private val app = context.applicationContext
-    private val worker = Executors.newSingleThreadScheduledExecutor { Thread(it, "Nino Xbox").apply { isDaemon = true } }
+    private val appContext = context.applicationContext
+    private val home = XboxHome(auth)
+    private val machine = XboxSessionMachine()
+    private val frameCounter = XboxFrameCounter()
+    private var frameSession: XboxFrameCounter.Session? = null
+    private val worker = Executors.newSingleThreadExecutor { Thread(it, "CouchSubs Xbox").apply { isDaemon = true } }
+    private val timers = Executors.newSingleThreadScheduledExecutor { Thread(it, "CouchSubs Xbox timers").apply { isDaemon = true } }
     private val stopped = AtomicBoolean(false)
-    private val policy = ReconnectPolicy()
+    private val started = AtomicBoolean(false)
+    @Volatile private var sessionId: String? = null
+    @Volatile private var peer: PeerConnection? = null
+    @Volatile private var factory: PeerConnectionFactory? = null
+    @Volatile private var ended: CountDownLatch? = null
+    @Volatile private var endReason: String? = null
+    @Volatile private var keepalive: ScheduledFuture<*>? = null
+    @Volatile private var lastConverted = 0L
+    @Volatile private var firstFrameAt = 0L
+    /** Kare onayları (bkz. XboxFrameAcks.kt): el sıkışmadan sonra gönderilir. */
+    private val acks = XboxFrameAckQueue()
+    @Volatile private var acking = false
+    @Volatile private var ackSequence = 0
+    @Volatile private var acksSent = 0L
+    @Volatile private var ackTask: ScheduledFuture<*>? = null
+    /** Onay paketlerindeki anların sıfırı (oynatıcıdaki performance.now() gibi). */
+    @Volatile private var clockStart = 0L
+    /** Oturumda bir kez Crashlytics'e kopma özeti gider (nedeni sahadan görmek için). */
+    private val endReported = AtomicBoolean(false)
+    private val decoded = DecodedFrameListener { rtpMs, arrivedAt, decodedAt ->
+        if (!acking) return@DecodedFrameListener
+        acks.offer(XboxFrameAck(XboxFrameAckQueue.serverDataKey(rtpMs), arrivedAt - clockStart, decodedAt - clockStart))
+    }
+    private val channels = HashMap<String, DataChannel>()
 
-    // Aşağıdakiler yalnız [worker] iş parçacığında değişir.
-    private var factory: PeerConnectionFactory? = null
-    private var peer: PeerConnection? = null
-    private var api: XboxApi? = null
-    private var session: String? = null
-    private var keepalive: ScheduledFuture<*>? = null
-    private val channels = mutableMapOf<String, DataChannel>()
-    @Volatile private var streaming = false
-    @Volatile private var lastFrame = 0L
-    @Volatile private var generation = 0
-    @Volatile private var peerState: PeerConnection.PeerConnectionState? = null
-    private var firstFrameCheck: ScheduledFuture<*>? = null
-
-    @Volatile override var framesReceived = 0L
-        private set
+    override val framesReceived: Long get() = frameCounter.totalFrames
 
     override fun start() {
-        worker.execute { connect() }
+        if (!started.compareAndSet(false, true)) return
+        worker.execute(::run)
     }
 
     override fun dispose() {
-        stopped.set(true)
+        if (!stopped.compareAndSet(false, true)) return
+        machine.stop()
+        ended?.countDown()
         worker.execute {
-            teardown()
-            factory?.dispose()
-            factory = null
-            worker.shutdown()
+            closePeer()
+            stopRemote()
+            onState(SessionState.Disconnected(DisconnectKind.STOPPED))
         }
-        onState(SessionState.Disconnected(DisconnectKind.STOPPED))
+        worker.shutdown()
+        timers.shutdown()
     }
 
-    private fun connect() {
+    private fun log(text: String) {
+        Log.i(TAG, text)
+        Backend.breadcrumb("xbox: $text")
+    }
+
+    private fun run() {
+        log("konsol: ${console.name}")
+        while (!stopped.get()) {
+            var action: XboxSessionMachine.Action = machine.start()
+            // Makine `/state` yanıtında kendisi karar verdiyse (Failed, errorDetails) aynı hata yeniden sayılmaz.
+            var decided: XboxSessionMachine.Action? = null
+            onState(SessionState.Connecting)
+            try {
+                log("oturum açılıyor: ${console.name}")
+                sessionId = home.play(console.id)
+                log("play yanıtı: oturum ${sessionId?.take(8)}…")
+                action = machine.played()
+                loop@ while (!stopped.get()) {
+                    when (val step = action) {
+                        is XboxSessionMachine.Action.PollState -> {
+                            if (step.delayMs > 0) Thread.sleep(step.delayMs)
+                            val status = home.state(requireNotNull(sessionId))
+                            action = machine.status(status.state, status.errorDetails)
+                            if (status.state != "Provisioning") log("durum: ${status.state}")
+                            if (status.errorDetails != null) log("errorDetails: ${status.errorDetails}")
+                        }
+                        XboxSessionMachine.Action.Connect -> {
+                            home.connect(requireNotNull(sessionId))
+                            log("connect: başarılı")
+                            action = machine.connected()
+                        }
+                        XboxSessionMachine.Action.Negotiate -> {
+                            negotiate(requireNotNull(sessionId))
+                            break@loop
+                        }
+                        is XboxSessionMachine.Action.Retry -> {
+                            decided = step
+                            throw XboxException((machine.phase as? XboxSessionMachine.Phase.Failed)?.kind
+                                ?: XboxError.SERVICE, (machine.phase as? XboxSessionMachine.Phase.Failed)?.message ?: "Xbox")
+                        }
+                        else -> break@loop
+                    }
+                }
+                if (!stopped.get()) throw XboxException(XboxError.NETWORK, endReason ?: "Xbox görüntü bağlantısı kapandı")
+            } catch (error: InterruptedException) {
+                if (stopped.get()) break
+            } catch (error: XboxException) {
+                action = decided ?: machine.fail(error.kind, error.message ?: "")
+                report(error.kind, error.message)
+            } catch (error: Exception) {
+                action = machine.fail(XboxError.SERVICE, error.message ?: error.javaClass.simpleName)
+                report(XboxError.SERVICE, error.message)
+            } finally {
+                summarize()
+                closePeer()
+                stopRemote()
+            }
+            if (stopped.get()) break
+            val retry = (action as? XboxSessionMachine.Action.Retry)?.delayMs ?: break
+            try {
+                Thread.sleep(retry)
+            } catch (error: InterruptedException) {
+                break
+            }
+        }
+    }
+
+    /**
+     * Bağlantı bitince: kaç kare geldi, kaç onay gitti, ilk kareden kaç saniye sonra ve neden bitti. "Görüntü hiç
+     * gelmedi" (ilk kare sınırı) ile "görüntü geldi, Xbox kapattı" (onay) birbirinden bu satırla ayrılır.
+     */
+    private fun summarize() {
+        val session = frameSession ?: return
+        val frames = frameCounter.framesInSession(session)
+        val now = SystemClock.elapsedRealtime()
+        val lived = if (firstFrameAt > 0) "${(now - firstFrameAt) / 1000} sn" else "ilk kare yok"
+        val reason = endReason ?: lastError ?: "durduruldu"
+        val text = "bağlantı bitti: $reason; kare $frames, onay $acksSent, ilk kareden sonra $lived"
+        log(text)
+        if (!stopped.get() && endReported.compareAndSet(false, true)) Backend.recordError(XboxSessionEnded(text))
+    }
+
+    @Volatile private var lastError: String? = null
+
+    private fun report(kind: XboxError, detail: String?) {
+        lastError = "$kind: $detail"
         if (stopped.get()) return
-        onState(SessionState.Connecting)
-        val attempt = ++generation
+        log("kopma ($kind): $detail")
+        val failed = machine.phase as? XboxSessionMachine.Phase.Failed
+        when {
+            failed == null || failed.willRetry -> {
+                failed?.let { log("yeniden deneme ${it.attempt}/${machine.retryDelaysMs.size}: ${machine.retryDelaysMs[it.attempt - 1] / 1000} sn sonra") }
+                onState(SessionState.Disconnected(DisconnectKind.OTHER, describe(kind)))
+            }
+            // Giriş gerekiyor: kullanıcının yapacağı iş hizmetin metninde.
+            kind in XboxSessionMachine.FATAL -> onState(SessionState.Disconnected(DisconnectKind.OTHER, describe(kind)))
+            else -> {
+                // Denemeler bitti ya da konsol yayını reddetti: yayın durur, yeniden denenmez.
+                log("yeniden denenmiyor, yayın durdu")
+                onState(SessionState.Disconnected(DisconnectKind.OTHER,
+                    appContext.getString(R.string.xbox_connection_lost, detail?.takeIf { it.isNotBlank() } ?: kind.name)))
+            }
+        }
+    }
+
+    private fun stopRemote() {
+        val id = sessionId ?: return
+        sessionId = null
         try {
-            val host = account.streamHost()
-            val api = XboxApi(host).also { this.api = it }
-            val link = createPeer(attempt)
-            val flow = XboxSessionFlow(api, account::transferToken, stopped = { stopped.get() || attempt != generation })
-            val path = flow.open(console.serverId, link) { session = it }
-            session = path
-            Log.i(TAG, "oturum kuruldu, görüntü bekleniyor")
-            firstFrameCheck = worker.schedule({
-                if (attempt == generation && !streaming && !stopped.get())
-                    fail(DisconnectKind.XBOX_UNREACHABLE, "no video (${peerState ?: "NEW"})", retry = true)
-            }, FIRST_FRAME_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            keepalive = worker.scheduleWithFixedDelay({
-                try { api.keepalive(path) } catch (error: Exception) { Log.w(TAG, "keepalive", error) }
-            }, KEEPALIVE_SECONDS, KEEPALIVE_SECONDS, TimeUnit.SECONDS)
-        } catch (error: InterruptedException) {
-            return
-        } catch (error: XboxException) {
-            Log.w(TAG, "oturum kurulamadı", error)
-            val kind = when (error.step) {
-                XboxStep.SIGNED_OUT -> DisconnectKind.XBOX_SIGNED_OUT
-                XboxStep.SESSION -> DisconnectKind.XBOX_UNREACHABLE
-                else -> DisconnectKind.NETWORK
-            }
-            fail(kind, error.message?.removePrefix("Xbox "), retry = kind != DisconnectKind.XBOX_SIGNED_OUT)
+            home.stop(id)
         } catch (error: Exception) {
-            Log.w(TAG, "bağlantı", error)
-            fail(DisconnectKind.NETWORK, error.message, retry = true)
+            // Kopan bağlantının kapatılacak oturumu yoktur.
         }
     }
 
-    private fun fail(kind: DisconnectKind, detail: String?, retry: Boolean) {
-        teardown()
-        if (stopped.get()) return
-        onState(SessionState.Disconnected(kind, detail))
-        if (retry) try {
-            worker.schedule({ connect() }, policy.nextDelaySeconds().toLong(), TimeUnit.SECONDS)
-        } catch (error: java.util.concurrent.RejectedExecutionException) { }
-    }
+    // --- WebRTC ---
 
-    private fun teardown() {
-        firstFrameCheck?.cancel(false)
-        firstFrameCheck = null
-        peerState = null
-        keepalive?.cancel(false)
-        keepalive = null
-        streaming = false
-        channels.values.forEach { try { it.unregisterObserver(); it.close(); it.dispose() } catch (error: Exception) { } }
-        channels.clear()
-        peer?.let { try { it.close(); it.dispose() } catch (error: Exception) { Log.w(TAG, "kapatma", error) } }
-        peer = null
-        val path = session
-        val api = api
-        session = null
-        if (path != null && api != null) api.stop(path)
-    }
-
-    private fun factory(): PeerConnectionFactory {
-        factory?.let { return it }
-        if (!initialized) {
-            PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(app).createInitializationOptions())
-            initialized = true
-        }
-        // EGL bağlamı verilmez: donanım çözücü kareyi dokuya değil belleğe yazar (Y düzlemi doğrudan okunur).
-        return PeerConnectionFactory.builder()
-            .setVideoDecoderFactory(DefaultVideoDecoderFactory(null))
-            .createPeerConnectionFactory()
-            .also { factory = it }
-    }
-
-    private fun createPeer(attempt: Int): PeerLink {
-        val factory = factory()
-        val candidates = mutableListOf<IceCandidate>()
-        val gathered = CountDownLatch(1)
-        val config = PeerConnection.RTCConfiguration(emptyList()).apply {
-            sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
-            bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
-        }
-        val observer = object : PeerConnection.Observer {
-            override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
-            override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {}
-            override fun onConnectionChange(state: PeerConnection.PeerConnectionState?) {
-                Log.i(TAG, "bağlantı: $state")
-                if (attempt == generation) peerState = state
-                if (state == PeerConnection.PeerConnectionState.FAILED || state == PeerConnection.PeerConnectionState.DISCONNECTED)
-                    post { if (attempt == generation && !stopped.get()) fail(DisconnectKind.NETWORK, state.name, retry = true) }
+    private fun createFactory(): PeerConnectionFactory {
+        WebRtc.initialize(appContext)
+        // Mikrofon hiç açılmaz. Oyun sesi ayar açıksa medya sesi olarak çalınır (telefonun medya ses düzeyiyle,
+        // görüşme sesi gibi kulaklığa değil); kapalıysa eski davranış: ses susturulur.
+        val audio = JavaAudioDeviceModule.builder(appContext)
+            .setAudioAttributes(AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+                .build())
+            .setUseStereoOutput(true)
+            .createAudioDeviceModule().apply {
+                setSpeakerMute(!playAudio)
+                setMicrophoneMute(true)
             }
+        return PeerConnectionFactory.builder()
+            .setAudioDeviceModule(audio)
+            // EGL bağlamı yok: donanım çözücüsü kareyi bellekte verir, Y düzlemi doğrudan okunur.
+            // Kare onayı için çözülen karenin RTP zaman damgası gerekir; çözücü seçimi DefaultVideoDecoderFactory'ninki.
+            .setVideoDecoderFactory(XboxDecoderFactory(decoded))
+            .setVideoEncoderFactory(SoftwareVideoEncoderFactory())
+            .createPeerConnectionFactory()
+            .also { audio.release() }
+    }
+
+    private fun negotiate(id: String) {
+        val negotiatedFrames = frameCounter.beginSession()
+        frameSession = negotiatedFrames
+        val sink = VideoSink { frame ->
+            if (stopped.get()) return@VideoSink
+            val sessionFrames = frameCounter.recordFrame(negotiatedFrames) ?: return@VideoSink
+            val now = SystemClock.elapsedRealtime()
+            if (sessionFrames == 1L) {
+                firstFrameAt = now
+                log("ilk kare ${frame.buffer.width}x${frame.buffer.height}")
+                frameCounter.runIfCurrent(negotiatedFrames) {
+                    if (!stopped.get() && machine.streaming()) onState(SessionState.Streaming)
+                }
+            }
+            if (now - lastConverted < FRAME_INTERVAL_MS) return@VideoSink
+            lastConverted = now
+            val i420 = frame.buffer.toI420() ?: return@VideoSink
+            try {
+                if (frameCounter.framesInSession(negotiatedFrames) > 0) {
+                    onFrame(VideoFrame(i420.dataY, i420.width, i420.height, i420.strideY))
+                }
+            } finally {
+                i420.release()
+            }
+        }
+        val done = CountDownLatch(1).also { ended = it }
+        endReason = null
+        lastError = null
+        firstFrameAt = 0L
+        acking = false
+        acks.clear()
+        ackSequence = 0
+        acksSent = 0L
+        clockStart = SystemClock.elapsedRealtime()
+        val pcFactory = createFactory().also { factory = it }
+        val gathered = CountDownLatch(1)
+        val local = ArrayList<XboxIceCandidate>()
+        val config = PeerConnection.RTCConfiguration(listOf(
+            PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
+            PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer(),
+        )).apply { sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN }
+        val connection = pcFactory.createPeerConnection(config, object : PeerConnection.Observer {
+            override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
+            override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) { log("ICE: $state") }
             override fun onIceConnectionReceivingChange(receiving: Boolean) {}
             override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {
                 if (state == PeerConnection.IceGatheringState.COMPLETE) gathered.countDown()
             }
-            override fun onIceCandidate(candidate: org.webrtc.IceCandidate) {
-                synchronized(candidates) { candidates.add(IceCandidate("a=" + candidate.sdp.removePrefix("a="), candidate.sdpMid, candidate.sdpMLineIndex)) }
+            override fun onIceCandidate(candidate: IceCandidate) {
+                synchronized(local) { local += XboxIceCandidate(candidate.sdp, candidate.sdpMid, candidate.sdpMLineIndex) }
             }
-            override fun onIceCandidatesRemoved(removed: Array<out org.webrtc.IceCandidate>?) {}
+            override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
             override fun onAddStream(stream: MediaStream?) {}
             override fun onRemoveStream(stream: MediaStream?) {}
             override fun onDataChannel(channel: DataChannel?) {}
             override fun onRenegotiationNeeded() {}
-            override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {}
-            override fun onTrack(transceiver: RtpTransceiver) {
-                when (val track = transceiver.receiver.track()) {
-                    is VideoTrack -> track.addSink(sink(attempt))
-                    // Oyun sesi telefondan çalmasın (ses TV'den gelir).
-                    null -> {}
-                    else -> if (track.kind() == MediaStreamTrack.AUDIO_TRACK_KIND) track.setEnabled(false)
+            override fun onConnectionChange(state: PeerConnection.PeerConnectionState?) {
+                log("bağlantı: $state")
+                if (state == PeerConnection.PeerConnectionState.FAILED || state == PeerConnection.PeerConnectionState.CLOSED) {
+                    endReason = "Xbox WebRTC bağlantısı kesildi ($state)"
+                    done.countDown()
                 }
             }
-        }
-        val pc = factory.createPeerConnection(config, observer) ?: throw IllegalStateException("createPeerConnection null")
-        peer = pc
-        // Ses satırı "gönder-al" olmalı (Xbox'ın web istemcisi ve xbox-xcloud-player böyle ister; sohbet sesi bu satırdan
-        // gider). Nino ses parçası eklemez, mikrofon açılmaz; yalnız teklif başvuru istemcisiyle aynı olur.
-        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_RECV))
-        val video = pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
-        try {
-            val codecs = factory.getRtpReceiverCapabilities(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO).codecs
-            video.setCodecPreferences(codecs.sortedBy { XboxCodecs.rank(it.mimeType ?: it.name ?: "", it.parameters?.get("profile-level-id")) })
-        } catch (error: Exception) {
-            Log.w(TAG, "kodek sırası", error)
-        }
-        for ((name, protocol) in XboxChannels.all) {
-            val channel = pc.createDataChannel(name, DataChannel.Init().apply { ordered = true; this.protocol = protocol }) ?: continue
-            channels[name] = channel
-            channel.registerObserver(channelObserver(name, channel))
-        }
+        }) ?: throw XboxException(XboxError.SERVICE, "WebRTC bağlantısı kurulamadı")
+        peer = connection
 
-        return object : PeerLink {
-            override fun createOffer(): String {
-                val offer = await<SessionDescription> { done -> pc.createOffer(done, MediaConstraints()) }
-                await<Unit> { done -> pc.setLocalDescription(done, offer) }
-                return offer.description
+        // Oynatıcıdaki sıra: önce veri kanalları, sonra ses (gönder-al) ve görüntü (yalnız al).
+        for ((name, protocol) in XboxChannels.CHANNELS) {
+            val init = DataChannel.Init().apply {
+                ordered = true
+                this.protocol = protocol
             }
+            val channel = connection.createDataChannel(name, init) ?: throw XboxException(XboxError.SERVICE, "Veri kanalı açılamadı: $name")
+            synchronized(channels) { channels[name] = channel }
+            channel.registerObserver(ChannelObserver(name, channel, done))
+        }
+        val audio = connection.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO,
+            RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_RECV))
+        val video = connection.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO,
+            RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
+        audio?.receiver?.track()?.setEnabled(playAudio)
+        log(if (playAudio) "oyun sesi bu telefonda çalınır" else "oyun sesi kapalı (ayar)")
+        (video?.receiver?.track() as? VideoTrack)?.addSink(sink)
+            ?: throw XboxException(XboxError.SERVICE, "Görüntü alıcısı kurulamadı")
 
-            override fun setAnswer(sdp: String) {
-                await<Unit> { done -> pc.setRemoteDescription(done, SessionDescription(SessionDescription.Type.ANSWER, sdp)) }
-            }
+        val offer = await<SessionDescription>("SDP teklifi") { result -> connection.createOffer(result.creating(), MediaConstraints()) }
+        val munged = SessionDescription(SessionDescription.Type.OFFER, XboxChannels.mungeOffer(offer.description))
+        await<Unit>("yerel SDP") { result -> connection.setLocalDescription(result.setting(), munged) }
+        log("SDP gönderiliyor")
+        val answer = home.sdp(id, munged.description)
+        await<Unit>("Xbox SDP") { result -> connection.setRemoteDescription(result.setting(), SessionDescription(SessionDescription.Type.ANSWER, answer)) }
+        // Yerel adaylar toplanana kadar (en çok 5 sn) beklenir; yavaş ağ bağdaştırıcılarının adayları da gitsin.
+        gathered.await(ICE_GATHER_MS, TimeUnit.MILLISECONDS)
+        val candidates = synchronized(local) { local.toList() }
+        log("ICE: ${candidates.size} yerel aday gönderiliyor")
+        val remote = home.ice(id, candidates)
+        var added = 0
+        for (candidate in remote) {
+            val line = candidate.sdpLine ?: continue
+            if (connection.addIceCandidate(IceCandidate(candidate.sdpMid ?: "", candidate.sdpMLineIndex, line))) added++
+        }
+        log("ICE: Xbox'tan ${remote.size} aday, $added eklendi")
 
-            override fun localCandidates(): List<IceCandidate> {
-                gathered.await(GATHER_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                return synchronized(candidates) { candidates.toList() }
-            }
-
-            override fun addRemoteCandidates(candidates: List<IceCandidate>) {
-                for (candidate in candidates) {
-                    val line = candidate.candidate.removePrefix("a=").trim()
-                    if (!pc.addIceCandidate(org.webrtc.IceCandidate(candidate.sdpMid ?: "0", candidate.sdpMLineIndex, line)))
-                        Log.w(TAG, "aday eklenemedi: $line")
-                }
+        val negotiatedAt = SystemClock.elapsedRealtime()
+        while (!stopped.get()) {
+            if (done.await(1, TimeUnit.SECONDS)) break
+            if (frameCounter.framesInSession(negotiatedFrames) == 0L && SystemClock.elapsedRealtime() - negotiatedAt > FIRST_FRAME_MS) {
+                endReason = "Xbox'tan ${FIRST_FRAME_MS / 1000} sn içinde görüntü gelmedi"
+                throw XboxException(XboxError.CONSOLE_UNAVAILABLE, endReason!!)
             }
         }
     }
 
-    private fun channelObserver(name: String, channel: DataChannel) = object : DataChannel.Observer {
+    private inner class ChannelObserver(private val name: String, private val channel: DataChannel, private val done: CountDownLatch) : DataChannel.Observer {
         override fun onBufferedAmountChange(previous: Long) {}
+
         override fun onStateChange() {
-            if (channel.state() == DataChannel.State.OPEN && name == XboxChannels.MESSAGE) send(XboxChannels.MESSAGE, XboxChannels.handshake())
-        }
-        override fun onMessage(buffer: DataChannel.Buffer) {
-            if (name != XboxChannels.MESSAGE || buffer.binary) return
-            val bytes = ByteArray(buffer.data.remaining()).also { buffer.data.get(it) }
-            if (XboxChannels.isHandshakeAck(String(bytes, Charsets.UTF_8))) {
-                send(XboxChannels.CONTROL, XboxChannels.authorization())
-                send(XboxChannels.CONTROL, XboxChannels.gamepadChanged(0, true))
-                send(XboxChannels.CONTROL, XboxChannels.gamepadChanged(0, false))
-                channels[XboxChannels.INPUT]?.send(DataChannel.Buffer(ByteBuffer.wrap(XboxChannels.clientMetadata(System.nanoTime() / 1e6)), true))
-                XboxChannels.configuration().forEach { send(XboxChannels.MESSAGE, it) }
+            val state = channel.state()
+            log("kanal $name: $state")
+            when {
+                state == DataChannel.State.OPEN && name == "message" -> sendText("message", XboxChannels.HANDSHAKE)
+                state == DataChannel.State.OPEN && name == "input" -> startKeepalive()
+                state == DataChannel.State.CLOSED && name == "input" -> {
+                    endReason = "Xbox görüntü bağlantısı kapandı"
+                    done.countDown()
+                }
             }
         }
-    }
 
-    /** Kapatıldıktan sonra gelen WebRTC geri çağrıları yok sayılır. */
-    private fun post(task: () -> Unit) {
-        try { worker.execute(task) } catch (error: java.util.concurrent.RejectedExecutionException) { }
-    }
-
-    private fun send(name: String, text: String) {
-        channels[name]?.send(DataChannel.Buffer(ByteBuffer.wrap(text.toByteArray(Charsets.UTF_8)), false))
-    }
-
-    private fun sink(attempt: Int) = VideoSink { frame ->
-        if (attempt != generation || stopped.get()) return@VideoSink
-        framesReceived++
-        if (!streaming) {
-            streaming = true
-            onState(SessionState.Streaming)
-        }
-        val now = System.currentTimeMillis()
-        if (now - lastFrame < FRAME_INTERVAL_MS) return@VideoSink
-        lastFrame = now
-        val i420 = frame.buffer.toI420() ?: return@VideoSink
-        try {
-            onLuma.onLuma(i420.dataY, i420.strideY, i420.width, i420.height)
-        } catch (error: Exception) {
-            Log.w(TAG, "kare", error)
-        } finally {
-            i420.release()
+        override fun onMessage(buffer: DataChannel.Buffer) {
+            val bytes = ByteArray(buffer.data.remaining()).also { buffer.data.get(it) }
+            if (buffer.binary) {
+                // input kanalından gelenler: 16 = ServerMetadata, 128 = titreşim (her an gelir, yazılmaz).
+                val type = if (bytes.isEmpty()) -1 else bytes[0].toInt() and 0xff
+                if (type != 128) log("kanal $name: ikili ileti, tür $type, ${bytes.size} bayt")
+                return
+            }
+            val text = String(bytes, Charsets.UTF_8)
+            if (name != "message" || !XboxChannels.isHandshakeAck(text)) {
+                // Xbox'ın kapatma bildirimi gibi iletiler (ör. TransactionStart) burada görünür.
+                log("kanal $name: ${text.take(300)}")
+                return
+            }
+            log("el sıkışma tamam")
+            sendText("control", XboxChannels.AUTHORIZATION)
+            sendText("control", XboxChannels.GAMEPAD_ADDED)
+            send("input", XboxChannels.clientMetadataPacket(0, (SystemClock.elapsedRealtime() - clockStart).toDouble()), binary = true)
+            XboxChannels.configurationMessages().forEach { sendText("message", it) }
+            startAcks()
         }
     }
 
-    /** org.webrtc'nin geri çağrılı SDP işlemlerini bloklayan çağrıya çevirir. */
-    private class Done<T> {
+    private fun sendText(name: String, text: String) = send(name, text.toByteArray(Charsets.UTF_8), binary = false)
+
+    private fun send(name: String, bytes: ByteArray, binary: Boolean) {
+        val channel = synchronized(channels) { channels[name] } ?: return
+        if (channel.state() != DataChannel.State.OPEN) return
+        channel.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), binary))
+    }
+
+    /** El sıkışmadan sonra çözülen karelerin onayı 16 ms'de bir `input` kanalına gider (oynatıcıdaki döngü). */
+    private fun startAcks() {
+        ackTask?.cancel(false)
+        acks.clear()
+        acking = true
+        ackTask = timers.scheduleWithFixedDelay({
+            try {
+                val frames = acks.drain()
+                if (frames.isEmpty()) return@scheduleWithFixedDelay
+                val sequence = ++ackSequence
+                send("input", XboxChannels.frameAckPacket(sequence, (SystemClock.elapsedRealtime() - clockStart).toDouble(), frames), binary = true)
+                acksSent += frames.size
+                if (sequence == 1) log("kare onayı başladı")
+            } catch (error: Exception) {
+                log("kare onayı: ${error.message}")
+            }
+        }, ACK_INTERVAL_MS, ACK_INTERVAL_MS, TimeUnit.MILLISECONDS)
+    }
+
+    private fun startKeepalive() {
+        keepalive?.cancel(false)
+        keepalive = timers.scheduleWithFixedDelay({
+            val id = sessionId ?: return@scheduleWithFixedDelay
+            try {
+                home.keepalive(id)
+            } catch (error: Exception) {
+                log("canlı tutma: ${error.message}")
+            }
+        }, KEEPALIVE_MS, KEEPALIVE_MS, TimeUnit.MILLISECONDS)
+    }
+
+    private fun closePeer() {
+        frameSession?.let(frameCounter::endSession)
+        frameSession = null
+        keepalive?.cancel(false)
+        keepalive = null
+        acking = false
+        ackTask?.cancel(false)
+        ackTask = null
+        acks.clear()
+        synchronized(channels) {
+            channels.values.forEach { runCatching { it.unregisterObserver(); it.dispose() } }
+            channels.clear()
+        }
+        peer?.let { runCatching { it.dispose() } }
+        peer = null
+        factory?.let { runCatching { it.dispose() } }
+        factory = null
+        ended = null
+    }
+
+    /** WebRTC'nin geri çağırmalı işlemini bekler (en çok 10 sn). */
+    private fun <T> await(what: String, start: (SdpResult<T>) -> Unit): T {
+        val result = SdpResult<T>()
+        start(result)
+        if (!result.latch.await(10, TimeUnit.SECONDS)) throw XboxException(XboxError.TIMEOUT, "$what zaman aşımı")
+        result.error?.let { throw XboxException(XboxError.SERVICE, "$what: $it") }
+        @Suppress("UNCHECKED_CAST")
+        return result.value as T
+    }
+
+    private class SdpResult<T> {
         val latch = CountDownLatch(1)
-        @Volatile var value: T? = null
+        @Volatile var value: Any? = null
         @Volatile var error: String? = null
-    }
 
-    private fun <T> await(start: (SdpObserver) -> Unit): T {
-        val done = Done<T>()
-        start(object : SdpObserver {
-            @Suppress("UNCHECKED_CAST")
-            override fun onCreateSuccess(description: SessionDescription?) { done.value = description as T?; done.latch.countDown() }
-            @Suppress("UNCHECKED_CAST")
-            override fun onSetSuccess() { done.value = Unit as T; done.latch.countDown() }
-            override fun onCreateFailure(error: String?) { done.error = error ?: "create"; done.latch.countDown() }
-            override fun onSetFailure(error: String?) { done.error = error ?: "set"; done.latch.countDown() }
-        })
-        if (!done.latch.await(10, TimeUnit.SECONDS)) throw XboxException(XboxStep.SESSION, null, "sdp timeout")
-        done.error?.let { throw XboxException(XboxStep.SESSION, null, it) }
-        return done.value ?: throw XboxException(XboxStep.SESSION, null, "sdp empty")
-    }
+        fun creating() = object : SdpObserver {
+            override fun onCreateSuccess(description: SessionDescription) { value = description; latch.countDown() }
+            override fun onSetSuccess() {}
+            override fun onCreateFailure(message: String?) { error = message ?: "?"; latch.countDown() }
+            override fun onSetFailure(message: String?) {}
+        }
 
+        fun setting() = object : SdpObserver {
+            override fun onCreateSuccess(description: SessionDescription?) {}
+            override fun onSetSuccess() { value = Unit; latch.countDown() }
+            override fun onCreateFailure(message: String?) {}
+            override fun onSetFailure(message: String?) { error = message ?: "?"; latch.countDown() }
+        }
+    }
 }
+
+/** libwebrtc süreçte bir kez başlatılır. */
+private object WebRtc {
+    @Volatile private var ready = false
+
+    @Synchronized
+    fun initialize(context: Context) {
+        if (ready) return
+        PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(context).createInitializationOptions())
+        ready = true
+    }
+}
+
+/** Crashlytics'e giden tanı kaydı: Xbox bağlantısının neden ve ne kadar sürede bittiği (çökme değildir). */
+private class XboxSessionEnded(message: String) : Exception(message)

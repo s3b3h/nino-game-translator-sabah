@@ -45,16 +45,9 @@ public enum ScreenTranslation {
         for group in groups(reading) {
             try Task.checkCancellation()
             var translated: [String] = []
-            var changed = false
-            for paragraph in group.paragraphs {
-                var text = try await translatePreservingIcons(paragraph, using: translate).trimmingCharacters(in: .whitespacesAndNewlines)
-                if text.isEmpty { text = paragraph }
-                changed = changed || !TextMatch.isSimilar(TextMatch.normalize(paragraph), TextMatch.normalize(text), threshold: 0.90)
-                translated.append(text)
-            }
-            guard changed else { continue }
-            items.append(Item(source: group.paragraphs.joined(separator: "\n"), translation: translated.joined(separator: "\n"),
-                              box: group.box, lineHeight: group.lineHeight))
+            for paragraph in group.paragraphs { translated.append(try await translatePreservingIcons(paragraph, using: translate)) }
+            guard let item = item(group, translated) else { continue }
+            items.append(item)
             progress(items)
         }
         return items
@@ -128,6 +121,54 @@ public enum ScreenTranslation {
         return missing.isEmpty ? result : missing.joined(separator: " ") + " " + result
     }
 
+    /// Çevirmen parçaları tek istekte çevirebiliyorsa (yapay zekâ) ekranın bütün parçaları birlikte gider ve sonuç bir
+    /// kerede gelir; yoksa gruplar sırayla çevrilip hazırlandıkça bildirilir.
+    public static func translate(_ reading: Reading, using translator: TextTranslator,
+                                 progress: ([Item]) -> Void = { _ in }) async throws -> [Item] {
+        guard translator.translatesTogether else {
+            return try await translate(reading, using: { try await translator.translate($0) }, progress: progress)
+        }
+        let groups = groups(reading)
+        let paragraphs = groups.flatMap(\.paragraphs)
+        guard !paragraphs.isEmpty else { return [] }
+        // Nino: düğme simgesi olan parça ("Hold ✕ to aim") simgesi korunarak tek tek çevrilir; kalanlar tek istekte gider.
+        let withIcons = paragraphs.indices.filter { index in
+            paragraphs[index].split(separator: " ").contains { ButtonPrompts.isIcon(String($0)) }
+        }
+        let plain = paragraphs.indices.filter { !withIcons.contains($0) }
+        var translations = paragraphs
+        let together = plain.isEmpty ? [] : try await translator.translateAll(plain.map { paragraphs[$0] })
+        for (index, translation) in zip(plain, together) { translations[index] = translation }
+        for index in withIcons {
+            translations[index] = try await translatePreservingIcons(paragraphs[index], using: { try await translator.translate($0) })
+        }
+        try Task.checkCancellation()
+        var items: [Item] = []
+        var next = 0
+        for group in groups {
+            let count = group.paragraphs.count
+            let translated = (next..<next + count).map { $0 < translations.count ? translations[$0] : paragraphs[$0] }
+            next += count
+            if let item = item(group, translated) { items.append(item) }
+        }
+        if !items.isEmpty { progress(items) }
+        return items
+    }
+
+    /// Grubun gösterilecek çevirisi; çevirisi aslıyla aynıysa (ad, sayı, zaten Türkçe yazı) nil.
+    private static func item(_ group: Group, _ translations: [String]) -> Item? {
+        var changed = false
+        let texts = zip(group.paragraphs, translations).map { paragraph, translation in
+            var text = translation.trimmingCharacters(in: .whitespacesAndNewlines)
+            if text.isEmpty { text = paragraph }
+            changed = changed || !TextMatch.isSimilar(TextMatch.normalize(paragraph), TextMatch.normalize(text), threshold: 0.90)
+            return text
+        }
+        guard changed else { return nil }
+        return Item(source: group.paragraphs.joined(separator: "\n"), translation: texts.joined(separator: "\n"),
+                    box: group.box, lineHeight: group.lineHeight)
+    }
+
     /// Satırları gruplara toplar. Kumanda ipuçları ve yazı tanıma çöpleri atılır; harfi olmayan ya da tek harfli satırlar
     /// ("23m", "9", "+") göstergedir, çevrilmez. Bir satır, üstündeki satırın hemen altındaysa, yatayda onunla üst üste
     /// biniyorsa ve yazı boyu benziyorsa o gruba katılır. Gruplar yukarıdan aşağı, en çok `maxGroups`.
@@ -136,9 +177,13 @@ public enum ScreenTranslation {
         let lines = reading.withoutOcrNoise().lines
             .filter { $0.box != nil && isWords($0.text) }
             .sorted { $0.box!.top < $1.box!.top }
+        // Nino: ipucu satırı ("R2 Swing") kendi grubunda çevrilir ama sütun sınırı sayılmaz (CouchSubs onu baştan atıyordu).
+        let columnLines = lines.filter { !ButtonPrompts.isPrompt($0.text) }
         var groups: [[TextLine]] = []
         for line in lines {
-            if let index = groups.lastIndex(where: { belongs(line.box!, below: $0.last!.box!) }) {
+            if let index = groups.lastIndex(where: { belongs(line.box!, below: $0.last!.box!) }),
+               !bridgesColumns(groups[index].last!.box!, line.box!, columnLines),
+               !bridgesColumns(line.box!, groups[index].last!.box!, columnLines) {
                 groups[index].append(line)
             } else {
                 groups.append([line])
@@ -148,6 +193,18 @@ public enum ScreenTranslation {
             let heights = group.map { $0.box!.bottom - $0.box!.top }.sorted()
             let box = group.dropFirst().reduce(group[0].box!) { $0.union($1.box!) }
             return Group(paragraphs: paragraphs(group), box: box, lineHeight: heights[heights.count / 2])
+        }
+    }
+
+    // Geniş başlık/alt satır iki bağımsız sütundan birine katılmasın. Filtrelenmiş OCR satırlarına bakılır.
+    private static func bridgesColumns(_ wide: TextBox, _ column: TextBox, _ lines: [TextLine]) -> Bool {
+        lines.contains { line in
+            let peer = line.box!
+            guard min(column.right, peer.right) <= max(column.left, peer.left) else { return false }
+            let rowOverlap = min(column.bottom, peer.bottom) - max(column.top, peer.top)
+            guard rowOverlap > 0, rowOverlap >= min(column.bottom - column.top, peer.bottom - peer.top) * 0.5 else { return false }
+            return (belongs(column, below: wide) && belongs(peer, below: wide))
+                || (belongs(wide, below: column) && belongs(wide, below: peer))
         }
     }
 

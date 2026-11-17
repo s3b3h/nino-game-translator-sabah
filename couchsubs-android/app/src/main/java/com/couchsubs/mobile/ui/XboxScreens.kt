@@ -1,232 +1,271 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Nino: konsol seçimi (PS5 / Xbox) ve Xbox kurulumu (Microsoft girişi + konsol seçimi). Sıfırdan yazıldı.
+// Based on CouchSubs by Sinan Yorulmaz (https://github.com/yorulmazsinan/couchsubs), modified on 2026-11-18.
+// Konsol seçimi (PlayStation varsayılan, Xbox Beta) ve Xbox kurulumu: Microsoft girişi (cihaz kodu) → Xbox seçimi.
+// Xbox'ta "İkinci hesap" (PSN) adımı yoktur. Windows'taki XboxLoginStep ve XboxConsoleStep'in karşılığı.
 package com.couchsubs.mobile.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.couchsubs.mobile.R
 import com.couchsubs.mobile.Services
-import com.couchsubs.mobile.settings.VideoSource
-import com.couchsubs.mobile.xbox.DeviceCode
-import com.couchsubs.mobile.xbox.DeviceCodePoll
-import com.couchsubs.mobile.xbox.XboxAccount
-import com.couchsubs.mobile.xbox.XboxAuth
+import com.couchsubs.mobile.settings.ConsolePlatform
 import com.couchsubs.mobile.xbox.XboxConsole
+import com.couchsubs.mobile.xbox.XboxDeviceCode
+import com.couchsubs.mobile.xbox.XboxError
 import com.couchsubs.mobile.xbox.XboxException
-import com.couchsubs.mobile.xbox.XboxStep
+import com.couchsubs.mobile.xbox.XboxHome
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
 
 /**
- * Kurulumun ilk sorusu: hangi konsolda oynuyorsunuz? (Altyazı hedefi ekranıyla aynı kimlik: koyu sahnede iki cam kutu.)
- * Yakalama kartı Ayarlar › Görüntü Kaynağı'ndan seçilir.
+ * Nino: kurulumun ilk sorusu: hangi konsolda oynuyorsunuz? (Altyazı hedefi ekranıyla aynı kimlik: koyu sahnede iki cam
+ * kutu.) Ayarlar'dan da açılır. Yakalama kartı Ayarlar › Görüntü Kaynağı'ndan seçilir.
  */
 @Composable
-fun ConsoleScreen(onBack: (() -> Unit)?, onDone: () -> Unit) {
+fun ConsoleScreen(onBack: (() -> Unit)? = null, onDone: () -> Unit) {
     val settings = Services.settings
-    var xbox by remember { mutableStateOf(settings.usesXbox) }
+    var chosen by remember { mutableStateOf(settings.platform) }
+    val xbox = chosen == ConsolePlatform.XBOX
     ScreenScaffold(top = { TopBar(onBack = onBack) }, bottom = {
         PrimaryButton(stringResource(R.string.next)) {
-            settings.videoSource = if (xbox) VideoSource.XBOX else VideoSource.REMOTE_PLAY
-            settings.consoleAsked = true
+            settings.platformChoice = chosen
             onDone()
         }
     }) {
         Heading(stringResource(R.string.console_title), stringResource(R.string.console_body))
         OnboardingStage(height = 250.dp) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SelectableGlass(Icons.Filled.SportsEsports, "PS5", stringResource(R.string.console_ps5_detail), !xbox, Modifier.weight(1f)) { xbox = false }
-                SelectableGlass(Icons.Filled.Gamepad, "Xbox", stringResource(R.string.console_xbox_detail), xbox, Modifier.weight(1f)) { xbox = true }
+                SelectableGlass(Icons.Filled.SportsEsports, "PS5", stringResource(R.string.console_ps5_detail), !xbox, Modifier.weight(1f)) { chosen = ConsolePlatform.PLAYSTATION }
+                SelectableGlass(Icons.Filled.Gamepad, "Xbox", stringResource(R.string.console_xbox_detail), xbox, Modifier.weight(1f)) { chosen = ConsolePlatform.XBOX }
             }
         }
         Text(stringResource(if (xbox) R.string.console_xbox_body else R.string.console_ps5_body), fontSize = 15.sp, lineHeight = 21.sp, color = Tokens.Color.secondary)
+        if (xbox) NoteTile(stringResource(R.string.xbox_beta_note), Tokens.Color.secondary)
     }
-}
-
-/** Xbox kurulumunun adımları. */
-private sealed class XboxPhase {
-    data object SignIn : XboxPhase()
-    data object Requesting : XboxPhase()
-    data class Code(val code: DeviceCode) : XboxPhase()
-    data object Loading : XboxPhase()
-    data class Consoles(val list: List<XboxConsole>) : XboxPhase()
 }
 
 /**
- * Xbox kurulumu: Microsoft hesabıyla giriş (şifre Nino'ya yazılmaz; microsoft.com/link'te kod girilir), ardından
- * hesaptaki konsollardan biri seçilir. Konsolda Ayarlar › Cihazlar ve bağlantılar › Uzak özellikler açık olmalı.
+ * Microsoft girişinin durumu ekrandan bağımsız tutulur: kullanıcı kodu tarayıcıda yazarken tablet döner ya da Android
+ * etkinliği yeniden kurar; ekranın kapsamında çalışan bekleme o an iptal oluyor, kullanıcı onaylayıp döndüğünde giriş
+ * hiç bitmiyordu. Bekleme kodun süresi dolana kadar sürer; geri ya da "Şimdilik geç" iptal eder.
  */
-@Composable
-fun XboxScreen(onBack: (() -> Unit)?, onSkip: (() -> Unit)? = null, onDone: () -> Unit) {
-    val context = LocalContext.current
-    val settings = Services.settings
-    val account = remember { XboxAccount(settings) }
-    val auth = remember { XboxAuth() }
-    var phase by remember { mutableStateOf<XboxPhase>(if (account.signedIn) XboxPhase.Loading else XboxPhase.SignIn) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var selected by remember { mutableStateOf(settings.xboxConsole?.serverId) }
-    val messages = xboxErrors()
+internal object XboxLoginFlow {
+    var code by mutableStateOf<XboxDeviceCode?>(null)
+        private set
+    var working by mutableStateOf(false)
+        private set
+    var problem by mutableStateOf<String?>(null)
+        private set
+    /** Giriş bitti; ekran bunu görünce bir sonraki adıma geçer ve [consume] ile siler. */
+    var completed by mutableStateOf(false)
+        private set
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var job: Job? = null
 
-    // Kod gösterilirken Microsoft'a onaylandı mı diye sorulur (Microsoft'un istediği aralıkla).
-    val current = phase
-    LaunchedEffect(current) {
-        when (current) {
-            is XboxPhase.Requesting -> phase = try {
-                XboxPhase.Code(withContext(Dispatchers.IO) { auth.requestDeviceCode() })
-            } catch (failure: Exception) {
-                error = messages(failure)
-                XboxPhase.SignIn
+    fun begin(context: Context) {
+        val app = context.applicationContext
+        job?.cancel()
+        problem = null
+        completed = false
+        working = true
+        job = scope.launch {
+            try {
+                val challenge = withContext(Dispatchers.IO) { Services.xboxAuth.startDeviceCode() }
+                code = challenge
+                copy(app, challenge.userCode)
+                if (!openLink(app, challenge.verificationUri)) problem = app.getString(R.string.xbox_login_no_browser, challenge.verificationUri)
+                val active = coroutineContext
+                withContext(Dispatchers.IO) { Services.xboxAuth.pollDeviceCode(challenge) { !active.isActive } }
+                code = null
+                completed = true
+            } catch (error: XboxException) {
+                problem = xboxProblem(app, error)
+                code = null
+            } catch (error: InterruptedException) {
+                // İptal edildi.
+            } catch (error: CancellationException) {
+                // İptal edildi.
+            } catch (error: Exception) {
+                problem = error.message ?: error.javaClass.simpleName
+                code = null
+            } finally {
+                // Yerine yeni giriş başlatıldıysa onun durumuna dokunulmaz.
+                if (job === coroutineContext[Job]) working = false
             }
-            is XboxPhase.Code -> {
-                var interval = current.code.intervalSeconds * 1000L
-                val deadline = System.currentTimeMillis() + current.code.expiresInSeconds * 1000L
-                while (System.currentTimeMillis() < deadline) {
-                    delay(interval)
-                    val result = try { withContext(Dispatchers.IO) { auth.pollDeviceCode(current.code) } } catch (failure: Exception) { DeviceCodePoll.Pending }
-                    when (result) {
-                        DeviceCodePoll.Pending -> {}
-                        DeviceCodePoll.SlowDown -> interval += 5000
-                        is DeviceCodePoll.Done -> {
-                            account.save(result.tokens)
-                            phase = XboxPhase.Loading
-                            return@LaunchedEffect
-                        }
-                        is DeviceCodePoll.Failed -> break
-                    }
-                }
-                error = context.getString(R.string.xbox_code_expired)
-                phase = XboxPhase.SignIn
-            }
-            is XboxPhase.Loading -> phase = try {
-                val list = withContext(Dispatchers.IO) { account.consoles() }
-                if (selected == null || list.none { it.serverId == selected }) selected = list.firstOrNull()?.serverId
-                error = if (list.isEmpty()) context.getString(R.string.xbox_no_consoles) else null
-                XboxPhase.Consoles(list)
-            } catch (failure: Exception) {
-                error = messages(failure)
-                if (!account.signedIn) XboxPhase.SignIn else XboxPhase.Consoles(emptyList())
-            }
-            else -> {}
         }
     }
 
-    ScreenScaffold(top = { TopBar(onBack = onBack, actions = { SkipAction(onSkip) }) }, bottom = {
-        when (val p = phase) {
-            XboxPhase.SignIn -> PrimaryButton(stringResource(R.string.xbox_sign_in)) { error = null; phase = XboxPhase.Requesting }
-            is XboxPhase.Code -> PrimaryButton(stringResource(R.string.xbox_open_link)) {
-                copy(context, p.code.userCode)
-                open(context, p.code.verificationUri)
+    fun cancel() {
+        job?.cancel()
+        job = null
+        code = null
+        working = false
+    }
+
+    fun consume() { completed = false }
+}
+
+/** Microsoft girişi: cihaz kodu gösterilir ve kopyalanır, Microsoft sayfası tarayıcıda açılır, onay beklenir. */
+@Composable
+fun XboxLoginScreen(onBack: (() -> Unit)? = null, onSkip: (() -> Unit)? = null, onDone: () -> Unit) {
+    val context = LocalContext.current
+    val auth = Services.xboxAuth
+    val flow = XboxLoginFlow
+    LaunchedEffect(flow.completed) {
+        if (flow.completed) {
+            flow.consume()
+            onDone()
+        }
+    }
+    val back = onBack?.let { action -> { flow.cancel(); action() } }
+    val skip = onSkip?.let { action -> { flow.cancel(); action() } }
+    ScreenScaffold(top = { TopBar(onBack = back) { SkipAction(skip) } }, bottom = {
+        val current = flow.code
+        if (current != null) GhostButton(stringResource(R.string.xbox_login_open)) {
+            copy(context, current.userCode)
+            openLink(context, current.verificationUri)
+        }
+        PrimaryButton(stringResource(R.string.xbox_login_button), enabled = !flow.working) { flow.begin(context) }
+    }) {
+        Heading(stringResource(R.string.xbox_login_title), stringResource(R.string.xbox_login_body), stringResource(R.string.setup_step, 1))
+        Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.inline)) { Pill(stringResource(R.string.beta)) }
+        if (auth.signedIn && flow.code == null) StatusLabel(stringResource(R.string.xbox_login_done))
+        if (flow.code == null && !flow.working) BodyText(stringResource(R.string.xbox_login_how))
+        flow.code?.let { challenge ->
+            Tile(Modifier.fillMaxWidth()) {
+                TileLabel(stringResource(R.string.xbox_login_code))
+                Text(challenge.userCode, style = Tokens.Type.title, color = Tokens.Color.accentText,
+                    modifier = Modifier.clickable(onClickLabel = stringResource(R.string.xbox_login_copy)) { copy(context, challenge.userCode) })
+                Text(challenge.verificationUri.removePrefix("https://"), style = Tokens.Type.headline, color = Tokens.Color.accentText,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable(onClickLabel = stringResource(R.string.xbox_login_open)) {
+                        copy(context, challenge.userCode)
+                        openLink(context, challenge.verificationUri)
+                    })
+                Text(stringResource(R.string.xbox_login_steps), style = Tokens.Type.caption, color = Tokens.Color.secondary)
             }
-            is XboxPhase.Consoles -> {
-                val chosen = p.list.firstOrNull { it.serverId == selected }
-                if (p.list.isEmpty()) PrimaryButton(stringResource(R.string.xbox_retry)) { phase = XboxPhase.Loading }
-                else PrimaryButton(stringResource(R.string.save), enabled = chosen != null) {
-                    settings.xboxConsole = chosen
-                    settings.videoSource = VideoSource.XBOX
-                    onDone()
-                }
-                GhostButton(stringResource(R.string.xbox_sign_out), color = Tokens.Color.secondary) {
-                    account.signOut()
-                    selected = null
-                    error = null
-                    phase = XboxPhase.SignIn
-                }
-            }
-            else -> PrimaryButton(stringResource(R.string.xbox_working), enabled = false) {}
+            if (flow.working) BodyText(stringResource(R.string.xbox_login_waiting))
+        }
+        flow.problem?.let { NoteTile(stringResource(R.string.xbox_login_failed, it)) }
+    }
+}
+
+/** Hesaptaki Xbox'lar; yalnız uzaktan oynatması açık olan seçilebilir. */
+@Composable
+fun XboxConsoleScreen(onBack: (() -> Unit)? = null, onSkip: (() -> Unit)? = null, onSignIn: () -> Unit, onDone: () -> Unit) {
+    val settings = Services.settings
+    var consoles by remember { mutableStateOf<List<XboxConsole>?>(null) }
+    var selected by remember { mutableStateOf(settings.xboxConsole?.id) }
+    var problem by remember { mutableStateOf<String?>(null) }
+    var needsSignIn by remember { mutableStateOf(false) }
+    var attempt by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
+    LaunchedEffect(attempt) {
+        consoles = null
+        problem = null
+        try {
+            val list = withContext(Dispatchers.IO) { XboxHome(Services.xboxAuth).consoles() }
+            consoles = list
+            if (selected == null) selected = list.firstOrNull { it.streamingEnabled }?.id
+        } catch (error: XboxException) {
+            needsSignIn = error.kind == XboxError.SIGN_IN_REQUIRED
+            problem = xboxProblem(context, error)
+            consoles = emptyList()
+        } catch (error: Exception) {
+            problem = error.message
+            consoles = emptyList()
+        }
+    }
+    val choice = consoles?.firstOrNull { it.id == selected && it.streamingEnabled }
+    ScreenScaffold(top = { TopBar(onBack = onBack) { SkipAction(onSkip) } }, bottom = {
+        GhostButton(stringResource(R.string.xbox_consoles_refresh)) { attempt++ }
+        if (needsSignIn) PrimaryButton(stringResource(R.string.xbox_login_button), onClick = onSignIn)
+        else PrimaryButton(stringResource(R.string.xbox_console_choose), enabled = choice != null) {
+            settings.xboxConsole = choice
+            onDone()
         }
     }) {
-        Heading(stringResource(R.string.xbox_title), stringResource(
-            if (phase is XboxPhase.Consoles) R.string.xbox_consoles_body else R.string.xbox_sign_in_body))
-        OnboardingStage(height = 290.dp) {
-            when (val p = phase) {
-                is XboxPhase.Code -> CodeCard(p.code)
-                is XboxPhase.Consoles -> if (p.list.isEmpty()) GlassRow("X", stringResource(R.string.xbox_no_consoles_title), stringResource(R.string.xbox_remote_hint), null)
-                    else p.list.take(3).forEach { console ->
-                        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).clickable { selected = console.serverId }) {
-                            GlassRow("X", console.name, XboxConsole.typeName(console.type) + " · " + powerText(console),
-                                if (console.serverId == selected) stringResource(R.string.selected) else null)
+        Heading(stringResource(R.string.xbox_consoles_title), stringResource(R.string.xbox_consoles_body), stringResource(R.string.setup_step, 2))
+        when (val list = consoles) {
+            null -> Tile(Modifier.fillMaxWidth()) { BodyText(stringResource(R.string.xbox_consoles_searching)) }
+            else -> {
+                if (list.isEmpty() && problem == null) NoteTile(stringResource(R.string.xbox_consoles_empty), Tokens.Color.secondary)
+                list.forEach { console ->
+                    Tile(Modifier.fillMaxWidth(), style = if (selected == console.id) TileStyle.ACTIVE else TileStyle.NORMAL,
+                        onClick = { if (console.streamingEnabled) selected = console.id }) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
+                            if (console.streamingEnabled) TileIcon(Icons.Filled.Check, Tokens.Color.success)
+                            else TileIcon(Icons.Filled.Warning, Tokens.Color.warning)
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Tokens.Space.hair)) {
+                                Text(console.name.ifEmpty { console.model }, style = Tokens.Type.headline, color = Tokens.Color.text)
+                                Text(stringResource(if (console.streamingEnabled) R.string.xbox_console_ready else R.string.xbox_console_off),
+                                    style = Tokens.Type.caption, color = Tokens.Color.secondary)
+                            }
                         }
                     }
-                else -> {
-                    GlassRow("1", stringResource(R.string.xbox_step_remote), stringResource(R.string.xbox_remote_hint), null)
-                    GlassRow("2", stringResource(R.string.xbox_step_account), stringResource(R.string.xbox_account_hint), null)
-                    GlassRow("3", stringResource(R.string.xbox_step_code), stringResource(R.string.xbox_code_hint), null)
                 }
             }
         }
-        error?.let { NoteTile(it) }
-        Text(stringResource(R.string.xbox_privacy), fontSize = 13.sp, lineHeight = 18.sp, color = Tokens.Color.secondary)
+        problem?.let { NoteTile(it) }
     }
 }
 
-@Composable
-private fun CodeCard(code: DeviceCode) {
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(stringResource(R.string.xbox_code_label), fontSize = 14.sp, color = Color.White.copy(alpha = 0.7f))
-        Text(code.userCode, fontSize = 40.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, letterSpacing = 4.sp, color = Color.White)
-        Text(code.verificationUri.removePrefix("https://").removePrefix("www."), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-        Text(stringResource(R.string.xbox_code_waiting), fontSize = 13.sp, color = Color.White.copy(alpha = 0.6f))
-    }
+/** Ekranda gösterilecek anlaşılır neden; beklenmedik yanıtta teknik ayrıntı parantez içinde. */
+internal fun xboxProblem(context: Context, error: XboxException): String = when (error.kind) {
+    XboxError.SIGN_IN_REQUIRED, XboxError.SIGN_IN_DECLINED -> context.getString(R.string.xbox_error_sign_in)
+    XboxError.CODE_EXPIRED -> context.getString(R.string.xbox_login_expired)
+    XboxError.NO_XBOX_ACCOUNT -> context.getString(R.string.xbox_error_no_account)
+    XboxError.NETWORK -> context.getString(R.string.xbox_error_offline)
+    else -> context.getString(R.string.xbox_error_unexpected, error.message ?: error.kind.name)
 }
 
-@Composable
-private fun powerText(console: XboxConsole) = stringResource(when (console.powerState) {
-    "On" -> R.string.xbox_power_on
-    "ConnectedStandby" -> R.string.xbox_power_standby
-    else -> R.string.xbox_power_off
-})
-
-private fun copy(context: Context, text: String) {
-    try {
-        context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Microsoft", text))
-    } catch (error: Exception) {
-    }
+/** Bağlantıyı tarayıcıda açar; açacak uygulama yoksa false (kullanıcıya adres yazılır). */
+private fun openLink(context: Context, url: String): Boolean = try {
+    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    true
+} catch (error: Exception) {
+    false
 }
 
-/** Xbox hatalarının kullanıcıya anlatımı. */
-@Composable
-fun xboxErrors(): (Exception) -> String {
-    val signIn = stringResource(R.string.xbox_error_sign_in)
-    val signedOut = stringResource(R.string.xbox_phase_signed_out)
-    val live = stringResource(R.string.xbox_error_live)
-    val streaming = stringResource(R.string.xbox_error_streaming)
-    val network = stringResource(R.string.xbox_error_network)
-    return { error ->
-        when ((error as? XboxException)?.step) {
-            XboxStep.SIGN_IN -> signIn
-            XboxStep.SIGNED_OUT -> signedOut
-            XboxStep.XBOX_LIVE -> live
-            XboxStep.STREAMING, XboxStep.CONSOLES, XboxStep.SESSION -> streaming
-            null -> network
-        }
-    }
+private fun copy(context: Context, code: String) {
+    val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
+    clipboard.setPrimaryClip(ClipData.newPlainText("Microsoft", code))
+    Toast.makeText(context, context.getString(R.string.xbox_login_copied), Toast.LENGTH_SHORT).show()
 }

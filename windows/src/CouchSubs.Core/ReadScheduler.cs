@@ -15,8 +15,9 @@ public readonly record struct ReadPlan(bool Reuse, string Text, bool Deep)
 /// Hangi karede yazı tanıma yapılacağını seçer. Oyun süresinin çoğunda bölge boştur ya da değişmez;
 /// işlemcinin büyük kısmı bu karelerde boşa gider.
 /// </summary>
-public sealed class ReadScheduler(int changeThreshold = ReadScheduler.ChangeThreshold, int maxReuse = 20, int deepEvery = 3)
+public sealed class ReadScheduler(int changeThreshold = ReadScheduler.ChangeThreshold, int maxReuse = ReadScheduler.DefaultMaxReuse, int deepEvery = 3)
 {
+    public const int DefaultMaxReuse = 20, FastMaxReuse = 2;
     /// <summary>Bölge izinin (<see cref="RegionCropper.Signature"/>) boyutu: satır başına bu kadar gri örnek, bu kadar satır.</summary>
     public const int SignatureWidth = 64, SignatureHeight = 12;
     /// <summary>Video gürültüsü bu farkı aşmaz; bir harf eklenmesi aşar.</summary>

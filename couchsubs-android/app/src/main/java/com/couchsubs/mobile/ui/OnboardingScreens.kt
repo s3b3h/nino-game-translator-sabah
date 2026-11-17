@@ -69,31 +69,17 @@ import com.couchsubs.mobile.settings.SubtitleTarget
 import com.couchsubs.mobile.tv.FoundTv
 import com.couchsubs.mobile.tv.TvBrand
 import com.couchsubs.mobile.tv.TvDiscovery
+import com.couchsubs.mobile.core.ManualAddress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Nino: çeviri dili için yalnız bayraklar (🇹🇷 / 🇸🇦): seçili olan tam renkli ve ince mavi halkalı, öteki soluk. Ekran
- * okuyucu dilin adını okur. Sonra Ayarlar'dan da değişir.
- */
+/** Nino: çeviri dili, bayraklı açılır menü (seçili dilin bayrağı ve adı). Sonra Ayarlar'dan da değişir. */
 @Composable
 fun TranslationLanguageFlags() {
     var selected by remember { mutableStateOf(Services.settings.targetLanguage) }
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-        TargetLanguage.choices.forEach { (code, name) ->
-            val on = selected == code
-            Box(Modifier.size(36.dp).alpha(if (on) 1f else 0.45f)
-                .background(Color.White.copy(alpha = if (on) 0.10f else 0f), CircleShape)
-                .border(1.5.dp, if (on) Tokens.Color.accent else Color.Transparent, CircleShape)
-                .clickable { selected = code; Services.settings.targetLanguage = code }
-                .semantics { contentDescription = name; this.selected = on },
-                contentAlignment = Alignment.Center) {
-                Text(TargetLanguage.flags[code] ?: name, fontSize = 18.sp)
-            }
-        }
-    }
+    TargetLanguageMenu(selected, compact = true) { selected = it; Services.settings.targetLanguage = it }
 }
 
 /** Karşılama: üç sayfa, yatay kaydırma, nokta göstergesi; otomatik geçiş yok. */
@@ -178,6 +164,7 @@ fun PairScreen(onBack: (() -> Unit)? = null, onSkip: (() -> Unit)? = null, onDon
     var manual by remember { mutableStateOf(false) }
     var working by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<String?>(null) }
+    var addressError by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val failures = registrationErrors()
     // Nino: arama ekran açık kaldıkça yinelenir; PS5 sonradan açılır ya da dinlenme modundan uyanırsa kendiliğinden
@@ -205,13 +192,21 @@ fun PairScreen(onBack: (() -> Unit)? = null, onSkip: (() -> Unit)? = null, onDon
         if (!manual) GhostButton(stringResource(R.string.pair_not_found)) { manual = true }
         // Nino: PS5'i yanında olmayan (ya da mağaza incelemesi) kurulumu atlayıp örnek altyazılarla dener.
         if (onSkip != null) GhostButton(stringResource(R.string.demo_try)) { com.couchsubs.mobile.service.DemoSession.start(); onSkip() }
-        PrimaryButton(stringResource(R.string.pair_button), enabled = !working && pin != null && host.isNotEmpty()) {
+        PrimaryButton(stringResource(R.string.pair_button), enabled = !working && pin != null && host.isNotBlank()) {
             val accountId = settings.accountId ?: return@PrimaryButton
+            // Elle yazılan adres temizlenir ("192.168.1.5:3000", "http://…", virgüllü yazım); adres değilse söylenir (#50).
+            val address = ManualAddress.normalize(host)
+            if (address == null) {
+                problem = null
+                addressError = true
+                return@PrimaryButton
+            }
+            addressError = false
             working = true
             problem = null
             scope.launch {
                 try {
-                    settings.console = withContext(Dispatchers.IO) { Registration.register(host, accountId, pin!!) }
+                    settings.console = withContext(Dispatchers.IO) { Registration.register(address, accountId, pin!!) }
                     onDone()
                 } catch (error: RegistrationException) {
                     problem = failures(error.failure) + (error.detail?.let { " ($it)" } ?: "")
@@ -244,7 +239,8 @@ fun PairScreen(onBack: (() -> Unit)? = null, onSkip: (() -> Unit)? = null, onDon
                 }
             }
         }
-        if (manual) Field(host, { host = it.trim() }, stringResource(R.string.pair_address), keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+        if (manual) Field(host, { host = it; addressError = false }, stringResource(R.string.pair_address), keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+        if (addressError) NoteTile(stringResource(R.string.address_invalid))
         Tile(Modifier.fillMaxWidth()) {
             TileLabel(stringResource(R.string.pair_code))
             // Görünmez alan rakamları alır; kutular gösterir.
@@ -282,7 +278,7 @@ fun registrationErrors(): (RegistrationFailure) -> String {
 }
 
 @Composable
-fun TargetScreen(onBack: (() -> Unit)? = null, onDone: () -> Unit) {
+fun TargetScreen(onBack: (() -> Unit)? = null, onTvInstall: (() -> Unit)? = null, onDone: () -> Unit) {
     val context = LocalContext.current
     val settings = Services.settings
     var target by remember { mutableStateOf(settings.target) }
@@ -309,6 +305,9 @@ fun TargetScreen(onBack: (() -> Unit)? = null, onDone: () -> Unit) {
             }
         }
         Text(stringResource(if (target == SubtitleTarget.TV) R.string.target_tv_body else R.string.target_phone_body), fontSize = 15.sp, lineHeight = 21.sp, color = Tokens.Color.secondary)
+        // Nino: Android TV'de TV uygulamasını telefon kendisi kurar (bilgisayar gerekmez).
+        // (Samsung, LG ve Android TV; ilk kurulumda da.)
+        if (target == SubtitleTarget.TV && onTvInstall != null) SecondaryButton(stringResource(R.string.tv_install_button), Modifier.fillMaxWidth(), onClick = onTvInstall)
         GhostButton(stringResource(R.string.target_unlisted)) { open(context, context.getString(R.string.url_tvs)) }
     }
 }

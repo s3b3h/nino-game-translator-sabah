@@ -14,6 +14,8 @@ import android.util.Log
 import com.couchsubs.mobile.remoteplay.DisconnectKind
 import com.couchsubs.mobile.remoteplay.FrameSource
 import com.couchsubs.mobile.remoteplay.SessionState
+import com.couchsubs.mobile.remoteplay.VideoFrame
+import java.nio.ByteBuffer
 import java.io.File
 
 /**
@@ -44,14 +46,14 @@ class ClipClock(private val nowMs: () -> Long, private val speed: Double = 1.0) 
 
 /**
  * Demo kaynağı (yalnız debug yapısı): PS5 Remote Play oturumu yerine kayıtlı bir klibi MediaCodec ile aynı biçimde
- * (YUV_420_888 ImageReader) çözer ve kareleri okuma hattına verir. Önce "bağlanılıyor", ardından "akış" durumu bildirilir;
+ * (YUV_420_888 ImageReader) çözer, parlaklık düzlemini [VideoFrame] olarak okuma hattına verir. Önce "bağlanılıyor", ardından "akış" durumu bildirilir;
  * böylece ana ekran ve telefon altyazı ekranı gerçek bağlantıdaki gibi görünür.
  */
 class DemoFrameSource(
     @Suppress("unused") private val context: Context,
     private val clip: File,
     private val speed: Double,
-    private val onFrame: (Image) -> Unit,
+    private val onFrame: (VideoFrame) -> Unit,
     private val onState: (SessionState) -> Unit,
 ) : FrameSource {
     private companion object {
@@ -94,6 +96,30 @@ class DemoFrameSource(
         }
     }
 
+    private var lumaBuffer: ByteBuffer? = null
+
+    /** Yalnız debug yapısı (öykünücü): Image'ın Y düzlemi, PS5 oturumundaki gibi sıkışık bir arabelleğe kopyalanır. */
+    private fun luma(image: Image): VideoFrame {
+        val crop = image.cropRect
+        val width = crop.width()
+        val height = crop.height()
+        val buffer = lumaBuffer?.takeIf { it.capacity() >= width * height } ?: ByteBuffer.allocateDirect(width * height).also { lumaBuffer = it }
+        val plane = image.planes[0]
+        val source = plane.buffer
+        val row = ByteArray(width)
+        for (y in 0 until height) {
+            val start = (crop.top + y) * plane.rowStride + crop.left * plane.pixelStride
+            if (plane.pixelStride == 1) {
+                source.position(start)
+                source.get(row, 0, width)
+            } else for (x in 0 until width) row[x] = source.get(start + x * plane.pixelStride)
+            buffer.position(y * width)
+            buffer.put(row, 0, width)
+        }
+        buffer.clear()
+        return VideoFrame(buffer, width, height, width)
+    }
+
     private fun decode() {
         val extractor = MediaExtractor().apply { setDataSource(clip.absolutePath) }
         val track = (0 until extractor.trackCount).firstOrNull {
@@ -114,7 +140,7 @@ class DemoFrameSource(
             } ?: return@setOnImageAvailableListener
             framesReceived++
             try {
-                onFrame(image)
+                onFrame(luma(image))
             } catch (error: RuntimeException) {
                 Log.e(TAG, "frame handler", error)
             } finally {

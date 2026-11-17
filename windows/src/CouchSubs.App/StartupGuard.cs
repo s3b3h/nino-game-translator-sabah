@@ -16,7 +16,7 @@ internal static class StartupGuard
 {
     static bool Turkish => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "tr";
 
-    static string LogPath =>
+    internal static string LogPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", "hata.log");
 
     /// <summary>

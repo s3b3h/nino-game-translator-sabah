@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.couchsubs.mobile.remoteplay
 
-import android.view.Surface
+import java.nio.ByteBuffer
 
 /** Yerel kayıt ya da oturum başlatma sonucu; alanları yerel taraf (couchsubs-jni.c) doldurur. */
 class NativeOutcome {
@@ -23,9 +23,18 @@ fun interface NativeSessionListener {
     fun onEvent(type: Int, reason: Int, text: String?)
 }
 
+/**
+ * Çözülen kareler çözücünün çıkış iş parçacığından gelir: [buffer] Y düzlemidir ve yalnız çağrı süresince geçerlidir.
+ * Çağrı kısa sürmeli (kopyala ve dön); bu sürede çözücü yeni kare vermez.
+ */
+fun interface NativeFrameListener {
+    fun onFrame(buffer: ByteBuffer, width: Int, height: Int, rowStride: Int, colorFormat: Int)
+}
+
 /** libchiaki'ye JNI köprüsü (app/src/main/cpp/couchsubs-jni.c). */
 object NativeBridge {
     const val EVENT_CONNECTED = 1
+    /** reason: 1 ise önceki şifre yanlıştı. */
     const val EVENT_LOGIN_PIN = 2
     const val EVENT_QUIT = 3
     const val QUIT_STOPPED = 1
@@ -46,15 +55,18 @@ object NativeBridge {
 
     @JvmStatic private external fun init(): Int
     @JvmStatic external fun discover(targets: Array<String>, timeoutMs: Int): Array<String>?
-    /** Nino: bir sonraki oturumda yazılım video çözücüsü (donanımınki okunamayan kare verirse). */
-    @JvmStatic external fun setPreferSoftwareDecoder(prefer: Boolean)
     @JvmStatic external fun wake(host: String, credential: Long): Int
     @JvmStatic external fun register(host: String, accountId: ByteArray, pin: Int, outcome: NativeOutcome)
     @JvmStatic external fun sessionStart(
         host: String, registKey: ByteArray, morning: ByteArray, accountId: ByteArray, width: Int, height: Int,
-        surface: Surface, listener: NativeSessionListener, outcome: NativeOutcome,
+        frameListener: NativeFrameListener,
+        /** Üreticiye göre seçilen çözücü türünün (yazılım/donanım) tersiyle başla (önceki oturumda görüntü gelmedi). */
+        swapDecoder: Boolean,
+        listener: NativeSessionListener, outcome: NativeOutcome,
     ): Long
     @JvmStatic external fun sessionStop(ptr: Long)
+    /** PS5'in istediği giriş şifresini (ASCII rakamlar) gönderir; 0 başarı. Olay geri çağrısından çağrılmamalı. */
+    @JvmStatic external fun sessionSetLoginPin(ptr: Long, pin: ByteArray): Int
     @JvmStatic external fun sessionErrors(ptr: Long): String?
     @JvmStatic external fun sessionFrames(ptr: Long): Long
 }

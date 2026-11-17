@@ -8,9 +8,15 @@ namespace CouchSubs.Shell;
 
 public static class StoreKeys
 {
+    public const string ConsoleKind = "consoleKind";
+    public const string ConsoleKindLocked = "consoleKindLocked";
+    public const string XboxToken = "xboxToken";
+    public const string XboxConsole = "xboxConsole";
     public const string AccountId = "accountId";
     public const string Console = "console";
     public const string Tv = "tv";
+    /// <summary>PS5'in adına göre son seçilen oyun ("Hangi oyunu oynuyorsunuz?" kartının ilk önerisi).</summary>
+    public const string LastGames = "lastGames";
     public const string TvKey = "tvKey";
     public const string TvDevKey = "tvDevKey";
     /// <summary>Samsung ve Android TV'ye CouchSubs'ın kurduğu sürüm (LG'de sürüm TV'den okunur).</summary>
@@ -19,6 +25,7 @@ public static class StoreKeys
     public const string CaptureCardId = "captureCardId";
     /// <summary>LG geliştirici modu süresinin son uzatıldığı an.</summary>
     public const string DevSessionRenewed = "devSessionRenewed";
+    public static string DevSessionRenewedFor(string host) => $"{DevSessionRenewed}.{host.Trim().ToLowerInvariant()}";
     /// <summary>Kullanıcının DeepL anahtarı (isteğe bağlı çevrimiçi çeviri).</summary>
     public const string DeepLKey = "deepLKey";
     /// <summary>Kullanıcının yapay zekâ anahtarları (isteğe bağlı çevrimiçi çeviri).</summary>
@@ -29,6 +36,37 @@ public static class StoreKeys
     public const string LocalAiKey = "localAIKey";
     /// <summary>Kurulum sihirbazı bitti. TV'siz kurulumda (altyazı bilgisayar ekranında) ana ekranı bu açar.</summary>
     public const string SetupComplete = "setupComplete";
+    /// <summary>İkinci hesabın PS5 giriş şifresi (4 hane, isteğe bağlı); PS5 isterse oturum açılırken gönderilir.</summary>
+    public const string LoginPasscode = "loginPasscode";
+    /// <summary>"Yayın penceresi"nin zemin rengi (<see cref="StreamBackground"/>).</summary>
+    public const string StreamBackground = "streamBackground";
+}
+
+/// <summary>
+/// "Yayın penceresi"nin ve OBS sayfasının (<c>/obs?bg=green</c>) düz zemin rengi (Mac: StreamBackground.swift). Şeffaflık
+/// tanımayan yayın programları (TikTok LIVE Studio, pencere yakalama) pencereyi yakalar, zemini chroma key ile siler.
+/// </summary>
+public enum StreamBackground { Green, Black, Magenta }
+
+public static class StreamBackgrounds
+{
+    /// <summary>0-255 RGB; chroma key'in varsayılanlarıyla (yeşil #00FF00, mor #FF00FF) aynı.</summary>
+    public static (byte Red, byte Green, byte Blue) Rgb(this StreamBackground background) => background switch
+    {
+        StreamBackground.Black => (0x00, 0x00, 0x00),
+        StreamBackground.Magenta => (0xFF, 0x00, 0xFF),
+        _ => (0x00, 0xFF, 0x00),
+    };
+
+    /// <summary>Kayıttaki ad (Mac ile aynı: green, black, magenta).</summary>
+    public static string StoredName(this StreamBackground background) => background.ToString().ToLowerInvariant();
+
+    /// <summary>Kayıtlı değer okunamazsa yeşil (chroma key'in en yaygın rengi).</summary>
+    public static StreamBackground FromStored(string? stored) =>
+        Enum.TryParse<StreamBackground>(stored, ignoreCase: true, out var value) && Enum.IsDefined(value) ? value : StreamBackground.Green;
+
+    /// <summary>Düz zeminde yarı saydam altyazı kutusu zeminle karışır ve chroma key'i bozar: kutu ya tam koyu ya hiç yoktur.</summary>
+    public static double BoxOpacity(int backgroundPercent) => backgroundPercent > 0 ? 1 : 0;
 }
 
 /// <summary>Altyazının gösterileceği yer (Mac'teki SubtitleOutput ile aynı).</summary>
@@ -62,6 +100,10 @@ public sealed record OverlayBounds(double Left, double Top, double Width);
 /// </summary>
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<TranslationEngine>))]
 public enum TranslationEngine { Free, DeepL, Gemini, OpenAi, Claude, Local }
+
+/// <summary>Windows'taki ücretsiz OPUS-MT çevirisinin çalışacağı aygıt.</summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<TranslationDevice>))]
+public enum TranslationDevice { Cpu, Gpu }
 
 public static class TranslationEngines
 {
@@ -137,6 +179,22 @@ public static class TranslationEngines
     };
 }
 
+/// <summary>
+/// Görüntünün nereden okunduğu. <c>Ps5</c>: CouchSubs PS5'e kendisi bağlanır (ikinci hesap). <c>RemotePlayWindow</c>:
+/// oyun bu bilgisayardaki PS Remote Play'de ya da chiaki-ng'de oynanır, CouchSubs yalnız o pencereyi okur; PS5'e ikinci
+/// oturum açılmadığı için ikinci hesap gerekmez (Mac'teki FrameSource ile aynı). Eski ayar dosyaları PS5 ile açılır.
+/// </summary>
+public enum FrameSource { Ps5, RemotePlayWindow, CaptureWindow }
+
+/// <summary>
+/// Kullanıcının açıkça seçtiği OBS projektörü veya oyun penceresi. PID/handle saklanmaz (yeniden açılışta değişir);
+/// hem süreç adı hem pencere başlığı eşleşmelidir. Pencere bulunmazsa başka kaynağa geçilmez.
+/// </summary>
+public sealed record WindowCaptureTarget(string ProcessName, string Title);
+
+/// <summary>Pencereden okunurken hangi Remote Play uygulaması: hangisi açıksa, yalnız Sony'ninki ya da yalnız chiaki-ng.</summary>
+public enum RemotePlayApp { Automatic, Sony, Chiaki }
+
 /// <summary>Kalıcı ayarlar (şifreli depo değil, sıradan ayar dosyası).</summary>
 public sealed record UserSettings
 {
@@ -157,6 +215,13 @@ public sealed record UserSettings
     public ResultTarget ExtraTarget1 { get; init; } = ResultTarget.Tv;
     public ResultTarget ExtraTarget2 { get; init; } = ResultTarget.Tv;
     public ResultTarget ExtraTarget3 { get; init; } = ResultTarget.Tv;
+    /// <summary>
+    /// Ek bölge tuşa basmadan da sürekli okunur (saniyede bir; görev, telefon mesajı, bildirim). Çevirisi altyazının
+    /// gösterildiği yerde, asıl yazının yanında küçük bir kutuda durur (Mac: ek alanlar). Varsayılan kapalı.
+    /// </summary>
+    public bool ExtraLive1 { get; init; }
+    public bool ExtraLive2 { get; init; }
+    public bool ExtraLive3 { get; init; }
     /// <summary>Serbest alan çevirisinin (Num 5) sonucu nerede gösterilir.</summary>
     public ResultTarget FreeAreaTarget { get; init; } = ResultTarget.Tv;
     public SubtitleStyle Style { get; init; } = new();
@@ -169,6 +234,12 @@ public sealed record UserSettings
     public int PartialWaitMs { get; init; } = SubtitlePipeline.CleanWaitMs;
     public string SourceLanguage { get; init; } = "en";
     public string TargetLanguage { get; init; } = "tr";
+    /// <summary>Eski ayar dosyalarında bulunmaz; varsayılan CPU'dur. GPU yalnız NVIDIA CUDA içindir.</summary>
+    public TranslationDevice TranslationDevice { get; init; } = TranslationDevice.Cpu;
+    /// <summary>Windows CTranslate2 CPU iç işlemlerinin iş parçacığı sayısı; eski ayarlarda 2.</summary>
+    public int CpuTranslationThreads { get; init; } = CpuThreadOptions.Default;
+    /// <summary>Değişmeyen altyazı bölgesinde tam OCR okumasını en fazla iki kare yeniden kullan.</summary>
+    public bool FastSubtitleDetection { get; init; }
     public DubbingSettings Dubbing { get; init; } = new();
     /// <summary>
     /// Açıksa çeviri <see cref="OnlineEngine"/> ile yapılır (anahtarı kayıtlıysa); kapalıysa ya da hizmete ulaşılamazsa
@@ -208,6 +279,23 @@ public sealed record UserSettings
     public AppAppearance Appearance { get; init; } = AppAppearance.System;
     /// <summary>Nino: ana ekranın arayüzü. Eski ayar dosyalarında yoktur; salon sahnesiyle açılır.</summary>
     public HomeStyle HomeStyle { get; init; } = HomeStyle.LivingRoom;
+    /// <summary>Oynanan oyun paketle tanınmazsa çeviri başladıktan iki dakika sonra bir kez sorulur (bkz. <see cref="GameSense"/>).</summary>
+    public bool AskGame { get; init; } = true;
+    /// <summary>Altyazıdaki konuşan adı ("ARTHUR: …") çeviride gösterilir; kapalıysa yalnız Türkçe cümle görünür.</summary>
+    public bool ShowSpeakerNames { get; init; } = true;
+    /// <summary>Görüntü PS5 bağlantısından mı, bu bilgisayardaki Remote Play penceresinden mi okunur.</summary>
+    public FrameSource FrameSource { get; init; } = FrameSource.Ps5;
+    /// <summary>Xbox karelerini #244 öncesindeki 200 ms aralıkla al; varsayılan 66 ms.</summary>
+    public bool XboxLegacyFrameRate { get; init; }
+    /// <summary>OBS veya başka bir açık pencere seçildiyse yalnız bu pencere yakalanır (varsayılan null).</summary>
+    public WindowCaptureTarget? CaptureWindow { get; init; }
+    /// <summary>Pencereden okunurken hangi Remote Play uygulaması (bkz. <see cref="Shell.RemotePlayApp"/>).</summary>
+    public RemotePlayApp RemotePlayApp { get; init; } = RemotePlayApp.Automatic;
+    /// <summary>
+    /// Kullanıcının değiştirdiği kısayollar (yalnız varsayılandan farklı olanlar; bkz. <see cref="HotkeyTable.Assign"/>).
+    /// Eski ayar dosyalarında yoktur; o zaman bütün kısayollar varsayılandır.
+    /// </summary>
+    public IReadOnlyList<HotkeyChoice> Hotkeys { get; init; } = [];
 
     /// <summary>Ayarlarda seçili motor: çevrimiçi çeviri kapalıysa ücretsiz olan.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
@@ -273,6 +361,24 @@ public sealed record UserSettings
         3 => this with { ExtraTarget3 = target },
         _ => this,
     };
+
+    /// <summary>Ek bölge sürekli okunuyor mu.</summary>
+    public bool ExtraLive(int slot) => slot switch { 1 => ExtraLive1, 2 => ExtraLive2, 3 => ExtraLive3, _ => false };
+
+    public UserSettings WithExtraLive(int slot, bool live) => slot switch
+    {
+        1 => this with { ExtraLive1 = live },
+        2 => this with { ExtraLive2 = live },
+        3 => this with { ExtraLive3 = live },
+        _ => this,
+    };
+
+    /// <summary>Sürekli okunan ek bölgeler (açık ve "Sürekli oku" seçili olanlar).</summary>
+    public IReadOnlyList<WatchedArea> WatchedAreas() =>
+        [.. Enumerable.Range(1, ExtraRegionCount)
+            .Where(ExtraLive)
+            .Select(slot => ExtraRegion(slot) is { } region ? new WatchedArea("area" + slot, "Area " + slot, region) : null)
+            .OfType<WatchedArea>()];
 }
 
 /// <summary>Tek seferlik çevirinin sonucunun gösterileceği yer.</summary>
@@ -295,7 +401,12 @@ public interface ISettingsStore
 /// <summary>Çeviri sürerken bilgisayarın boşta uykuya geçmesini engeller.</summary>
 public interface ISleepGuard
 {
-    void Begin();
+    /// <param name="keepDisplayOn">
+    /// Ekran da kapanmasın: görüntü bu bilgisayardaki bir pencereden okunuyor ya da altyazı bu ekranda gösteriliyor.
+    /// Ekran kapanınca pencere yakalama kare vermez; kullanıcı TV'de oynadığı için bilgisayar ekranı birkaç dakikada
+    /// (Windows ve macOS'ta prizdeyken çoğu zaman 10 dakika) kapanır ve altyazı kesilirdi. Çeviri sürerken yeniden çağrılabilir.
+    /// </param>
+    void Begin(bool keepDisplayOn);
     void End();
 }
 
@@ -307,6 +418,22 @@ public interface IKeeper
     void Reconnect();
 }
 
+public enum GameConsoleKind { PlayStation, Xbox }
+
+public sealed record XboxConsole(string Id, string Name, string Model, bool StreamingEnabled);
+public sealed record XboxLoginChallenge(string Code, Uri Url, int ExpiresIn);
+
+/// <summary>Windows Xbox home streaming backend. Other platforms can supply their own implementation.</summary>
+public interface IXboxService
+{
+    event Action<string>? TokenUpdated;
+    void Clear();
+    Task<XboxLoginChallenge> BeginLoginAsync();
+    Task<string> CompleteLoginAsync();
+    Task<IReadOnlyList<XboxConsole>> DiscoverAsync(string token);
+    IStreamSession MakeStream(XboxConsole console, string token, bool legacyFrameRate);
+}
+
 /// <summary>Cihaz üstü çeviri modeli: kurulu mu, indir, çevirmen oluştur.</summary>
 public interface ITranslationModel
 {
@@ -315,7 +442,14 @@ public interface ITranslationModel
     Task DownloadAsync(string source, string target, IProgress<double> progress, CancellationToken cancellationToken);
     ITextTranslator Create(string source, string target);
 
-    /// <summary>Model kurulu ama çeviri motoru bu bilgisayarda açılamadı (ör. ONNX Runtime yüklenemedi).</summary>
+    /// <summary>İstenen GPU kullanılamayınca CPU'ya geçildiğinde bildirilir.</summary>
+    event Action? GpuFallback { add { } remove { } }
+
+    /// <summary>Yeni çevirmen oluşturulurken kullanılacak aygıt.</summary>
+    void SelectDevice(TranslationDevice device) { }
+    void SelectCpuThreads(int threads) { }
+
+    /// <summary>Model kurulu ama çeviri motoru bu bilgisayarda açılamadı (ör. CTranslate2 çalışma zamanı eksik).</summary>
     bool EngineFailed => false;
 
     /// <summary><see cref="EngineFailed"/> true olunca bir kez, herhangi bir iş parçacığından çağrılır.</summary>
@@ -325,19 +459,29 @@ public interface ITranslationModel
 /// <summary>Dış dünyayla (PS5, PSN, TV, OCR, çeviri) konuşan her şey; testlerde sahtesi kullanılır.</summary>
 public interface IAppServices
 {
+    IXboxService? Xbox => null;
     Task<IReadOnlyList<ConsoleInfo>> DiscoverConsolesAsync();
     Task<byte[]> AccountIdFromRedirectAsync(Uri redirect);
     Task<RegisteredConsole> RegisterAsync(string host, byte[] accountId, uint pin);
     Task<IReadOnlyList<LgTv>> DiscoverTvsAsync();
     /// <summary>TV ile eşleşir ve TV uygulamasını sunucu adresiyle başlatmayı dener.</summary>
     Task<TvPairing> PairTvAsync(LgTv tv, string? key, string server);
-    IStreamSession MakeStream(RegisteredConsole console, byte[] accountId);
+    /// <param name="loginPasscode">PS5 bu hesap için giriş şifresi isterse gönderilecek 4 hane (Ayarlar'da kayıtlıysa).</param>
+    IStreamSession MakeStream(RegisteredConsole console, byte[] accountId, string? loginPasscode);
     /// <summary>Nino: bu bilgisayardaki PS Remote Play ya da chiaki-ng penceresinden okuyan kaynak; bu derlemede yoksa null.</summary>
     IGameWindowStream? MakeWindowStream(GameConsole console) => null;
     /// <summary>Nino: bu bilgisayara takılı HDMI yakalama kartından okuyan kaynak; bu derlemede yoksa null.</summary>
     /// <param name="showsPlayer">Oyun bu bilgisayarda tam ekran gösterilir, sesi çalınır (altyazı bilgisayar ekranındaysa).</param>
     /// <param name="preferredId">Kullanıcının seçtiği aygıt; null ise kendiliğinden seçilir.</param>
     ICaptureCardStream? MakeCardStream(bool showsPlayer, string? preferredId) => null;
+    /// <summary>Görüntüyü bu bilgisayardaki Remote Play penceresinden (PS Remote Play ya da chiaki-ng) alan kaynak.</summary>
+    IStreamSession MakeWindowStream(RemotePlayApp app) => throw new NotSupportedException();
+    /// <summary>Açıkça seçilen pencereyi okumak için aynı Windows Graphics Capture hattını kullanır.</summary>
+    IStreamSession MakeCaptureWindowStream(WindowCaptureTarget target) => throw new NotSupportedException();
+    /// <summary>Kullanıcının seçebileceği görünür pencereler. PSN veya ekran paylaşım izni gerekmez.</summary>
+    IReadOnlyList<WindowCaptureTarget> CaptureWindows() => [];
+    /// <summary>Seçilen Remote Play uygulaması (PS Remote Play ya da chiaki-ng) bu bilgisayarda kurulu mu.</summary>
+    bool RemotePlayInstalled(RemotePlayApp app) => true;
     /// <param name="appConnected">TV uygulaması bilgisayara bağlı mı (Samsung'da bağlıyken TV'ye dokunulmaz).</param>
     /// <param name="onMoved">TV ağda yeni bir adreste bulununca çağrılır.</param>
     /// <param name="onKey">TV bağlantıda yeni jeton verdi (Samsung); saklanır.</param>
@@ -372,12 +516,18 @@ public interface IAppServices
     /// <summary>DeepL çevirmeni; <paramref name="fallback"/> DeepL'e ulaşılamayan satırları çevirir. Bu derlemede yoksa null.</summary>
     ITextTranslator? MakeOnlineTranslator(string key, ITextTranslator? fallback, string target = "tr") => null;
     Task<OnlineKeyCheck> CheckOnlineKeyAsync(string key) => Task.FromResult(new OnlineKeyCheck(OnlineKeyState.Unreachable));
-    /// <summary>Yapay zekâ çevirmeni; <paramref name="fallback"/> hizmete ulaşılamayan satırları çevirir. Bu derlemede yoksa null.</summary>
-    ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback, string target = "tr") => null;
+    /// <summary>
+    /// Yapay zekâ çevirmeni; <paramref name="fallback"/> hizmete ulaşılamayan satırları çevirir, <paramref name="game"/>
+    /// oynanan oyunun adını verir (istem ve önbellek anahtarı; bilinmiyorsa null). Nino: <paramref name="target"/> hedef dil.
+    /// Bu derlemede yoksa null.
+    /// </summary>
+    ITextTranslator? MakeAiTranslator(AiProvider provider, string key, string model, ITextTranslator? fallback, Func<string?>? game,
+                                      string target = "tr") => null;
     /// <summary>Yapay zekâ anahtarını örnek bir satırı çevirerek dener.</summary>
     Task<AiTestResult> TestAiKeyAsync(AiProvider provider, string key, string model) => Task.FromResult(new AiTestResult(OnlineKeyState.Unreachable));
     /// <summary>Yerel model (Ollama, LM Studio) çevirmeni; anahtar boş olabilir. Bu derlemede yoksa null.</summary>
-    ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback, string target = "tr") => null;
+    ITextTranslator? MakeLocalAiTranslator(LocalAiServer server, string key, ITextTranslator? fallback, Func<string?>? game,
+                                           string target = "tr") => null;
     /// <summary>Yerel model sunucusunu örnek bir satırı çevirerek dener ("Bağlantıyı dene").</summary>
     Task<AiTestResult> TestLocalAiAsync(LocalAiServer server, string key) => Task.FromResult(new AiTestResult(OnlineKeyState.Unreachable));
     /// <summary>Türkçe dublaj modeli; bu derlemede yoksa null.</summary>
@@ -396,6 +546,10 @@ public interface IAppServices
     PackMatch? FindInPacks(string text) => null;
     /// <summary>Ortak havuz; testlerde null (hiçbir şey gönderilmez).</summary>
     NinoPool? Pool => null;
+    /// <summary>PS5'te o an çalışan oyun (yalnız bağlı PS5'e keşif sorusu); bilinmiyorsa ve testlerde null.</summary>
+    Task<RunningGame?> RunningGameAsync(string host) => Task.FromResult<RunningGame?>(null);
+    /// <summary>Paket sunucusundan yeni paketler; adres yapılandırılmadıysa ve testlerde null.</summary>
+    PackUpdater? PackUpdates => null;
     /// <summary>Altyazı geçmişinin dosyası (%LOCALAPPDATA%\CouchSubs\history.json); testlerde null (diske yazılmaz).</summary>
     string? HistoryFile => null;
 }

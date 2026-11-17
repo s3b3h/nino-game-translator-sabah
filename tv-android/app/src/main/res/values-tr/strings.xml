@@ -8,8 +8,18 @@
     <string name="overlay_choose_input">Kumandayla TV\'yi PS5\'in girişine (HDMI %1$d) alın. Altyazı görüntünün üstünde çıkacak.</string>
     <string name="overlay_permission_needed">Katman modu için \"Diğer uygulamaların üzerinde göster\" izni gerekiyor.</string>
     <string name="overlay_fallback_needs_permission">PS5 görüntüsü Nino\'nun içinde gelmiyor. Bazı TV\'lerde görüntü burada siyah kalır. Katman modu bunu çözer ama \"Diğer uygulamaların üzerinde göster\" izni gerekiyor.</string>
-    <string name="overlay_unavailable">PS5 görüntüsü Nino\'nun içinde gelmiyor. Bazı TV\'lerde görüntü burada siyah kalır. Katman modu bunu çözer ama yalnızca bilgisayardaki Nino\'nun kurduğu TV uygulamasında var: bu kopyayı kaldırın, TV\'de USB hata ayıklamayı açın ve çeviriyi bilgisayardan başlatın.</string>
+    <string name="overlay_unavailable">Katman seçili, ama Google Play\'den kurulan bu TV uygulamasında Katman modu yok; altyazı Nino\'nun içinde gösteriliyor. Katman, bilgisayardaki Nino\'nun TV\'ye doğrudan kurduğu sürümde var: bu kopyayı kaldırın, TV\'de USB hata ayıklamayı açın ve çeviriyi bilgisayarda başlatın.</string>
     <string name="overlay_permission_how">Bilgisayardaki Nino bu izni TV uygulamasını kurarken kendisi verir: USB hata ayıklama açıkken çeviriyi oradan başlatın. Ya da TV\'de Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster\'den Nino\'yu açın.</string>
+    <string name="no_picture">HDMI %1$d girişinden görüntü gelmiyor.</string>
+    <string name="no_picture_empty">HDMI %1$d girişinde cihaz görünmüyor.</string>
+    <string name="no_picture_choose">PS5\'in bağlı olduğu HDMI girişini seçin (ok tuşları ve Tamam, ya da 1–4 sayı tuşları):</string>
+    <string name="no_picture_still_black">Doğru girişte de siyah mı? Bu TV HDMI görüntüsünü uygulamalara vermiyor olabilir (bazı Vestel ve MediaTek TV\'ler) ya da HDCP engelliyordur. PS5\'te Ayarlar › Sistem › HDMI › HDCP\'yi Etkinleştir\'i kapatmayı deneyin. Olmazsa TV\'yi kumandadan PS5\'in HDMI girişine alın, altyazıyı telefon ekranından izleyin.</string>
+    <string name="hdmi_not_offered">Bu TV HDMI girişlerini uygulamalara açmıyor; PS5 görüntüsü Nino\'nun içinde gösterilemiyor. TV\'yi kumandadan PS5\'in HDMI girişine alın, altyazıyı telefon ekranından izleyin.</string>
+    <string name="overlay_from_computer">Google Play\'den kurulan bu sürümde Katman modu yok. Bilgisayardaki Nino\'nun kurduğu TV uygulamasında var: altyazı TV\'nin kendi HDMI görüntüsünün üstünde çıkar.</string>
+    <string name="picker_connected">bağlı</string>
+    <string name="picker_close">Kapat</string>
+    <string name="overlay_offer">Ya da Katman\'a geçin: TV, PS5\'i kendi HDMI girişinde gösterir, altyazı görüntünün üstünde çıkar.</string>
+    <string name="overlay_switch">Katman\'a geç</string>
     <string name="overlay_active">Nino açık. Altyazılar PS5 görüntüsünün üstünde çıkacak; çeviriyi bilgisayardaki ya da telefondaki Nino\'dan başlatın.</string>
     <string name="press_input_again">PS5\'in girişini seçmek için kaynak tuşuna bir daha basın.</string>
 </resources>

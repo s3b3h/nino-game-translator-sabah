@@ -71,6 +71,17 @@ public class FallbackWatchTest {
     }
 
     @Test
+    public void blackScreenIsReportedEvenWhenTheInputLooksEmpty() {
+        // Vestel: PS5 HDMI 2'de, uygulama HDMI 1'i açtı. Giriş boş görünür; katmana geçilmez ama giriş seçici çıkmalı.
+        FallbackWatch watch = new FallbackWatch();
+        watch.trouble(0);
+        assertFalse(watch.noPicture(LIMIT - 1));
+        assertTrue(watch.noPicture(LIMIT));
+        watch.videoAvailable();
+        assertFalse(watch.noPicture(10 * LIMIT));
+    }
+
+    @Test
     public void pushedToBackgroundRightAfterTuningIsATakeover() {
         // MediaTek Google TV: TV kendi HDMI oynatıcısını ~1,3 sn sonra öne çekti.
         FallbackWatch watch = new FallbackWatch();

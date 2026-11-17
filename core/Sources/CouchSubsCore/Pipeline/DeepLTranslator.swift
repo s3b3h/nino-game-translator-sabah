@@ -123,6 +123,11 @@ public final class DeepLTranslator: TextTranslator, OnlineTranslating {
         return result
     }
 
+    /// Yalnız yerel yedeği hazırlar; DeepL isteği veya satır bağlamı oluşturmaz.
+    public func warmUp() async {
+        await fallback.warmUp()
+    }
+
     private func report(_ state: OnlineKeyState?) {
         guard state != failure else { return }
         failure = state

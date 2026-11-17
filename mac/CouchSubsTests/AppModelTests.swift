@@ -18,6 +18,9 @@ extension UserDefaults {
 }
 
 final class FakeServices: AppServices {
+    /// PS Remote Play / chiaki-ng bu Mac'te kurulu mu (Ayarlar'daki indirme satırları, ana ekran uyarısı).
+    var remotePlayInstalledResult = true
+    func remotePlayInstalled(_ app: RemotePlayApp) -> Bool { remotePlayInstalledResult }
     var consoles = [ConsoleInfo(host: "192.168.1.253", name: "PS5-789", isAwake: true)]
     var tvs = [LGTV(name: "LG TV", host: "192.168.1.153")]
     var registered: RegisteredConsole?
@@ -70,7 +73,9 @@ final class FakeServices: AppServices {
     /// TV'nin eşleşmede döndüğü jeton (Samsung jetonla gelen bağlantıda boş dönebilir).
     var pairKey = "tv-key"
     var onKey: (@Sendable (String) -> Void)?
-    func makeStream(console: RegisteredConsole, accountId: Data) -> StreamControlling {
+    var streamPasscodes: [String?] = []
+    func makeStream(console: RegisteredConsole, accountId: Data, loginPasscode: String?) -> StreamControlling {
+        streamPasscodes.append(loginPasscode)
         let stream = FakeStream()
         streams.append(stream)
         return stream
@@ -210,6 +215,53 @@ final class AppModelTests: XCTestCase {
         model.advance()
         XCTAssertEqual(model.step, .done)
         XCTAssertEqual(AppModel(services: FakeServices(), store: store, defaults: defaults).step, .done)
+    }
+
+    /// "İkinci hesap yok mu?": PSN girişi ve PS5 olmadan kurulum biter; görüntü Remote Play penceresinden, altyazı
+    /// bilgisayar ekranında. Yeniden açılınca sihirbaz çıkmaz.
+    func testNoSecondAccountReadsRemotePlayWindowAndCompletesSetup() {
+        let store = MemoryStore()
+        let defaults = UserDefaults.isolated()
+        let model = AppModel(services: FakeServices(), store: store, defaults: defaults)
+        // Nino: ilk ekranda önce konsol seçilir.
+        model.chooseWelcomeConsole(.ps5)
+        model.advance()
+        XCTAssertEqual(model.step, .secondAccount)
+        model.useRemotePlayWindow()
+        XCTAssertEqual(model.step, .done)
+        XCTAssertEqual(model.settings.frameSource, .remotePlayWindow)
+        XCTAssertEqual(model.settings.output, .computer)
+        XCTAssertNil(model.accountId)
+        XCTAssertTrue(model.canStart)
+        XCTAssertEqual(AppModel(services: FakeServices(), store: store, defaults: defaults).step, .done)
+    }
+
+    /// Pencere modunda kurulmuş, sonra Ayarlar'da PS5 seçilmiş: "Hesabı bağla" görünür, sihirbaz ikinci hesap adımından açılır.
+    func testLinkPS5AccountOpensWizardAtSecondAccount() {
+        let model = AppModel(services: FakeServices(), store: MemoryStore(), defaults: UserDefaults.isolated())
+        model.advance()
+        model.useRemotePlayWindow()
+        XCTAssertFalse(model.needsPS5Link)
+        model.settings.frameSource = .ps5
+        XCTAssertTrue(model.needsPS5Link)
+        XCTAssertFalse(model.canStart)
+        model.linkPS5Account()
+        XCTAssertEqual(model.step, .secondAccount)
+    }
+
+    /// Remote Play uygulaması kurulu değilse ana ekran bunu ve nereden indirileceğini söyler.
+    func testMissingRemotePlayAppIsReported() {
+        let services = FakeServices()
+        services.remotePlayInstalledResult = false
+        let model = AppModel(services: services, store: MemoryStore(), defaults: UserDefaults.isolated())
+        model.advance()
+        model.useRemotePlayWindow()
+        XCTAssertTrue(model.remotePlayMissing)
+        XCTAssertEqual(model.ps5StatusText, String(localized: "The Remote Play app isn't installed on this Mac. Download it in Settings › Picture source."))
+        services.remotePlayInstalledResult = true
+        XCTAssertFalse(model.remotePlayMissing)
+        // Nino: kurulu Remote Play penceresi için Nino'nun kısa metni.
+        XCTAssertEqual(model.ps5StatusText, String(localized: "Reads the PS Remote Play window"))
     }
 
     /// "TV'm yok, bilgisayar ekranında göster" de kurulumu bitirir.
@@ -417,6 +469,30 @@ final class AppModelTests: XCTestCase {
         let failed = model.loginWindowError(problem: "The Internet connection appears to be offline.")
         XCTAssertEqual((failed as? DetailedError)?.error, .loginPageFailed)
         XCTAssertTrue(failed.localizedDescription.contains("offline"))
+    }
+
+    /// Elle yazılan PS5 adresi temizlenir; adres olmayan yazı libchiaki'ye gitmeden "bu adreste PS5 yok" iletisi alır.
+    func testManualConsoleAddressIsCleanedOrRejected() async throws {
+        for (typed, expected) in [("192.168.1.253:9295", "192.168.1.253"), ("http://192.168.1.253/", "192.168.1.253"),
+                                  ("192,168,1,253", "192.168.1.253")] {
+            let services = FakeServices()
+            let model = AppModel(services: services, store: MemoryStore(), defaults: .isolated())
+            model.accountId = Data(repeating: 1, count: 8)
+            try await model.register(host: typed, pin: "12345678")
+            XCTAssertEqual(services.registered?.host, expected, typed)
+        }
+        for typed in ["192.168.1.256", "192.168.1. 253", "PS5 salon", "fe80::1"] {
+            let services = FakeServices()
+            let model = AppModel(services: services, store: MemoryStore(), defaults: .isolated())
+            model.accountId = Data(repeating: 1, count: 8)
+            do {
+                try await model.register(host: typed, pin: "12345678")
+                XCTFail("Geçersiz adresle kayıt başlamamalı: \(typed)")
+            } catch {
+                XCTAssertEqual(error as? AppError, .badAddress, typed)
+                XCTAssertNil(services.registered, typed)
+            }
+        }
     }
 
     /// PS5 seçilmeden ya da adres yazılmadan bağlanılırsa "PS5 bulunamadı" denir.
@@ -677,6 +753,28 @@ final class AppModelRunTests: XCTestCase {
         model.stop()
     }
 
+    /// Ayarlar'daki PS5 giriş şifresi oturuma verilir; yalnız 4 hane kaydedilir, kurulum sıfırlanınca silinir.
+    func testLoginPasscodeIsSavedAndPassedToTheSession() async {
+        let services = FakeServices()
+        let model = readyModel(services)
+        XCTAssertFalse(model.hasLoginPasscode)
+        XCTAssertFalse(model.setLoginPasscode("12a4"))
+        XCTAssertFalse(model.hasLoginPasscode)
+        XCTAssertTrue(model.setLoginPasscode(" 4321 "))
+        XCTAssertTrue(model.hasLoginPasscode)
+        await model.start()
+        XCTAssertEqual(services.streamPasscodes, ["4321"])
+        model.stop()
+        model.removeLoginPasscode()
+        XCTAssertFalse(model.hasLoginPasscode)
+        await model.start()
+        XCTAssertEqual(services.streamPasscodes, ["4321", nil])
+        model.stop()
+        XCTAssertTrue(model.setLoginPasscode("1111"))
+        model.resetSetup()
+        XCTAssertFalse(model.hasLoginPasscode)
+    }
+
     func testRunningPreventsIdleSleep() async {
         let model = readyModel(FakeServices())
         await model.start()
@@ -735,7 +833,9 @@ final class AppModelRunTests: XCTestCase {
 
     func testLoginPasscodeIsExplained() {
         XCTAssertEqual(AppModel.statusText(.disconnected(.loginPasscode), running: true),
-                       String(localized: "The second user has a login passcode on the PS5. Turn it off in Settings › Users and Accounts."))
+                       String(localized: "The PS5 asks for this account's login passcode. Enter it in Settings, or turn off this account's login passcode on the PS5."))
+        XCTAssertEqual(AppModel.statusText(.disconnected(.loginPasscodeIncorrect), running: true),
+                       String(localized: "The PS5 didn't accept the login passcode in Settings. Correct it, or turn off this account's login passcode on the PS5."))
     }
 
     func testDisconnectReasonsAreExplained() {
@@ -745,6 +845,11 @@ final class AppModelRunTests: XCTestCase {
         XCTAssertEqual(AppModel.statusText(.disconnected(.network), running: true), String(localized: "Can't reach the PS5. Reconnecting…"))
         XCTAssertEqual(AppModel.statusText(.disconnected(.registrationInvalid), running: true),
                        String(localized: "The PS5 didn't accept this pairing. Pair the PS5 again with the second account in Settings."))
+        // PS5 oturum isteğini reddetti: kod metinde, libchiaki'nin "Unknown Session Request Error"u değil (GitHub #33, #202).
+        let rejected = AppModel.statusText(.disconnected(.rejected(0x80108bff)), running: true)
+        XCTAssertTrue(rejected.contains("0x80108bff"))
+        XCTAssertFalse(rejected.contains("Unknown Session Request"))
+        XCTAssertFalse(AppModel.statusText(.disconnected(.rejected(nil)), running: true).contains("Unknown Session Request"))
         XCTAssertTrue(AppModel.statusText(.disconnected(.notFound("192.168.1.70")), running: true).contains("192.168.1.70"))
         XCTAssertTrue(AppModel.statusText(.disconnected(.other("Session Request RP Version Mismatch")), running: true)
             .contains("Session Request RP Version Mismatch"))

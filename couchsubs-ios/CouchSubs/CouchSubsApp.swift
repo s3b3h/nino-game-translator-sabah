@@ -4,6 +4,7 @@ import CouchSubsCore
 import RemotePlay
 import SwiftUI
 import UIKit
+import UserNotifications
 
 /// Nino Game Translator tamamen ücretsizdir, hesap istemez ve hiçbir ölçüm ya da izleme yapmaz (CouchSubs'taki Firebase
 /// ve Meta kitaplıkları kaldırıldı).
@@ -18,13 +19,19 @@ struct CouchSubsApp: App {
 
     init() {
         let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-        // Uygulamayla gelen paketler, üstüne sunucudan indirilen güncel sürümleri.
+        // Uygulamayla gelen paketler, üstüne sunucudan indirilen güncel sürümleri, en üstte içe aktarılan topluluk paketleri.
         let library = GamePackLibrary(bundled: GamePackLibrary.bundledDirectory,
-                                      user: PackStore.filesDirectory(in: PackStore.defaultDirectory))
+                                      user: PackStore.filesDirectory(in: PackStore.defaultDirectory),
+                                      imported: PackStore.importedDirectory)
         let model = testing ? PhoneModel(store: EphemeralStore(), packs: library)
             : Self.demoStore().map { PhoneModel(store: $0, packs: library) } ?? PhoneModel(packs: library)
         // Çeviri sürerken ekran kararmaz: iOS kilitlenen ya da arka plana geçen uygulamayı askıya alır.
         model.keepScreenAwake = { UIApplication.shared.isIdleTimerDisabled = $0 }
+        // PS5 bağlantısı koptuğunda yerel bildirim (Profil'deki tercih; testlerde kapalı).
+        if !testing {
+            model.requestNotificationPermission = { ConnectionAlert.requestPermission() }
+            model.onConnectionLost = { ConnectionAlert.post() }
+        }
         // Çevrilen son satırlar ("Geçmiş"); testlerde dosyaya dokunulmaz.
         if !testing { model.loadHistory() }
 
@@ -36,6 +43,7 @@ struct CouchSubsApp: App {
         // Nino: arayüz yalnız Türkçe ya da Arapçadır (çeviri dili; ilk açılışta telefon Arapçaysa Arapça, değilse Türkçe).
         // Uygulama dili açılışta, metinler okunmadan önce ayarlanır; telefon İngilizce olsa da İngilizce görünmez.
         if !testing { UILanguage.remember(target: model.settings.targetLanguage) }
+        model.onGameStarted = { [weak app] in Task { await app?.gameStarted() } }
         _model = StateObject(wrappedValue: model)
         _app = StateObject(wrappedValue: app)
     }
@@ -79,6 +87,28 @@ struct CouchSubsApp: App {
     }
 }
 
+/// "PS5 bağlantısı koptu" yerel bildirimi (Android'deki gibi). Uygulama öndeyken gösterilmez: durum ekranda görünür.
+@MainActor
+enum ConnectionAlert {
+    private static let identifier = "connection-lost"
+
+    /// İzin yalnız ilk seferde sorulur; sonra iOS kayıtlı yanıtı döner.
+    static func requestPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    static func post() {
+        guard UIApplication.shared.applicationState != .active else { return }
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "PS5 connection lost")
+        content.body = String(localized: "Subtitles stopped. Open Nino to reconnect.")
+        content.sound = .default
+        // Aynı kimlik: art arda kopmalarda bildirimler birikmez, sonuncusu kalır.
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+}
+
 struct RootView: View {
     @EnvironmentObject private var model: PhoneModel
     @EnvironmentObject private var app: AppModel
@@ -113,12 +143,25 @@ struct RootView: View {
     @ViewBuilder private var setup: some View {
         switch model.step {
         case .welcome, .psnLogin:
-            PSNScreen(onBack: { welcomeSeen = false }) {
-                if model.step == .welcome { model.advance() }
-                model.advance()
+            // Önce konsol türü (PlayStation varsayılan, Xbox Beta); Xbox'ta ikinci hesap (PSN) yerine Microsoft girişi.
+            if !model.platformChosen {
+                PlatformScreen(onBack: { welcomeSeen = false }) {}
+            } else if model.isXbox {
+                XboxLoginScreen(onBack: { model.platformChosen = false }, onSkip: { model.skipSetup() }, onDone: {
+                    if model.step == .welcome { model.advance() }
+                    model.advance()
+                })
+            } else {
+                PSNScreen(onBack: { model.platformChosen = false }, onSkip: { model.skipSetup() }, onDone: {
+                    if model.step == .welcome { model.advance() }
+                    model.advance()
+                })
             }
+        case .console where model.isXbox:
+            XboxConsoleScreen(onBack: { model.back() }, onSkip: { model.skipSetup() }, onSignIn: { model.back() },
+                              onDone: { model.advance() })
         case .console:
-            PS5PairScreen(onBack: { model.back() }) { model.advance() }
+            PS5PairScreen(onBack: { model.back() }, onSkip: { model.skipSetup() }, onDone: { model.advance() })
         case .output, .done:
             TargetScreen(onBack: { model.back() }) { model.advance() }
         }
@@ -135,10 +178,31 @@ struct RootView: View {
                 case .profile: ProfileScreen(path: $path)
                 case .packs: PacksScreen()
                 case .target: TargetScreen(setup: false) { path.removeLast() }
-                case .ps5: PS5PairScreen(onBack: { path.removeLast() }) { path.removeLast() }
-                case .psn: PSNScreen(onBack: { path.removeLast() }) { path.removeLast() }
+                // Kurulum atlandıysa PSN girişi yoktur: PS5 eşlemeden önce giriş yapılır, ardından eşlemeye geçilir.
+                case .platform:
+                    PlatformScreen(onBack: { path.removeLast() }) {
+                        path.removeLast()
+                        if model.isXbox && (!model.xboxSignedIn || model.xboxConsole == nil) { path.append(.ps5) }
+                    }
+                // Xbox (Beta): giriş yoksa önce Microsoft girişi, ardından Xbox seçimi.
+                case .ps5 where model.isXbox && !model.xboxSignedIn:
+                    XboxLoginScreen(onBack: { path.removeLast() }, onDone: {
+                        path.removeLast()
+                        path.append(.ps5)
+                    })
+                case .ps5 where model.isXbox:
+                    XboxConsoleScreen(onBack: { path.removeLast() }, onSignIn: { model.signOutXbox() }, onDone: { path.removeLast() })
+                case .ps5 where model.accountId == nil:
+                    PSNScreen(onBack: { path.removeLast() }, onDone: {
+                        path.removeLast()
+                        path.append(.ps5)
+                    })
+                case .ps5: PS5PairScreen(onBack: { path.removeLast() }, onDone: { path.removeLast() })
+                case .psn: PSNScreen(onBack: { path.removeLast() }, onDone: { path.removeLast() })
                 case .about: AboutScreen()
                 case .history: HistoryScreen()
+                case .tvInstall: TVInstallScreen(onDone: { path.removeAll() })
+                case .tvUpdate: TVInstallScreen(update: model.tvAppUpdate, onDone: { path.removeAll() })
                 }
             }
         }

@@ -226,10 +226,11 @@ fun DemoScene(
     chips: @Composable (() -> Unit)? = null,
     badge: String = stringResource(R.string.nino_sample),
 ) {
-    // Nino: örnek çeviriler seçili çeviri dilinde (Türkçe ya da Arapça).
-    val arabic = TargetLanguage.code(Services.settings.targetLanguage) == "ar"
-    val lines = remember(arabic) {
-        if (arabic) listOf(
+    // Nino: örnek çeviriler seçili çeviri dilinde (Türkçe, Arapça ya da öbür dillerin üç satırı).
+    val target = TargetLanguage.code(Services.settings.targetLanguage)
+    val arabic = target == "ar"
+    val lines = remember(target) {
+        TargetLanguage.sampleLines(target).takeIf { it.isNotEmpty() } ?: if (arabic) listOf(
             "This city needs someone to watch over it." to "هذه المدينة تحتاج إلى من يحرسها.",
             "They're coming. Stay out of sight." to "إنهم قادمون. ابقَ بعيدًا عن الأنظار.",
             "Who's there?" to "من هناك؟",
@@ -255,10 +256,11 @@ fun DemoScene(
             launch { english.animateTo(0f, tween(250)) }
             turkish.animateTo(0f, tween(250))
             delay(450)
-            index.intValue = (index.intValue + 1) % lines.size
+            index.intValue += 1
         }
     }
-    val (en, tr) = lines[index.intValue]
+    // Dil değişince satır sayısı değişebilir (5 → 3): sıra okunurken listenin boyuyla alınır.
+    val (en, tr) = lines[index.intValue % lines.size]
     // Nino: ana ekrandaki sahne kartıyla aynı: lacivert→siyah, ince ışıklı kenar, yumuşak gölge.
     val shape = RoundedCornerShape(28.dp)
     val ink = Color(0xFF0A1430)

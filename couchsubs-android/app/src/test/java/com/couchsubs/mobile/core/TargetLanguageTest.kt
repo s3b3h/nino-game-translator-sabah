@@ -51,11 +51,39 @@ class TargetLanguageTest {
     }
 
     @Test fun deepLGoesToArabicWithoutTurkishFormality() {
-        val arabic = JSONObject(DeepLTranslator.body(listOf("Hi"), null, "ar"))
+        val arabic = JSONObject(DeepLTranslator.body(listOf("Hi"), null, target = "ar"))
         assertEquals("AR", arabic.getString("target_lang"))
         assertFalse(arabic.has("formality"))
         val turkish = JSONObject(DeepLTranslator.body(listOf("Hi"), null))
         assertEquals("TR", turkish.getString("target_lang"))
         assertEquals("prefer_less", turkish.getString("formality"))
+    }
+
+    @Test fun moreLanguagesWithFlagsTurkishFirst() {
+        assertEquals("tr", TargetLanguage.choices.first().first)
+        assertEquals(11, TargetLanguage.choices.size)
+        TargetLanguage.choices.forEach { assertTrue(TargetLanguage.flag(it.first) != "🌐") }
+        assertEquals("hi", TargetLanguage.preferred("hi"))
+        assertEquals("tl", TargetLanguage.preferred("fil"))
+        assertEquals("tr", TargetLanguage.preferred("fi"))
+        assertEquals("id", TargetLanguage.preferred("in"))
+    }
+
+    @Test fun ownScriptIsAlreadyInTarget() {
+        assertTrue(TargetLanguage.isAlready("ตั้งค่า", "th"))
+        assertTrue(TargetLanguage.isAlready("सेटिंग्स", "hi"))
+        assertTrue(TargetLanguage.isAlready("ترتیبات", "ur"))
+        assertFalse(TargetLanguage.isAlready("Where is the camp?", "th"))
+        assertFalse(TargetLanguage.isAlready("Pengaturan", "id"))
+    }
+
+    @Test fun aiPromptNamesTheChosenLanguage() {
+        assertTrue(AiRequest.systemPrompt("hi").contains("natural Hindi"))
+        assertFalse(AiRequest.systemPrompt("vi").contains("Arabic"))
+        assertEquals(AiRequest.ARABIC_SYSTEM_PROMPT, AiRequest.systemPrompt("ar"))
+        assertTrue(TargetLanguage.deepLSupports("id"))
+        assertFalse(TargetLanguage.deepLSupports("hi"))
+        assertEquals(3, TargetLanguage.sampleLines("nl").size)
+        assertTrue(TargetLanguage.sampleLines("tr").isEmpty())
     }
 }

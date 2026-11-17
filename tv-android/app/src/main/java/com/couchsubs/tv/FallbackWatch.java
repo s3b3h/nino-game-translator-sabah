@@ -64,6 +64,14 @@ final class FallbackWatch {
         return troubleFor(now) && sourceConnected && !canDrawOverlays;
     }
 
+    /**
+     * Giriş açıldı ama LIMIT_MS boyunca görüntü gelmedi; girişte cihaz olsun olmasın. Katmana geçilemiyorsa kullanıcıya
+     * giriş seçici ve ne yapılacağı gösterilir: ya yanlış HDMI girişi açık ya da TV görüntüyü uygulamaya vermiyor.
+     */
+    boolean noPicture(long now) {
+        return troubleFor(now);
+    }
+
     private boolean troubleFor(long now) {
         return !played && troubleSince >= 0 && now - troubleSince >= LIMIT_MS;
     }

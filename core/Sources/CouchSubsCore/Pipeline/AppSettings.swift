@@ -13,7 +13,13 @@ public enum StoreKey {
     public static let tvAppVersion = "tvAppVersion"
     /// LG geliştirici modu süresinin son uzatıldığı an.
     public static let devSessionRenewed = "devSessionRenewed"
+    /// Aynı süre TV adresine göre tutulur; ikinci TV birincinin kaydıyla atlanmaz.
+    public static func devSessionRenewedFor(host: String) -> String {
+        "devSessionRenewed.\(host.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())"
+    }
     public static let settings = "settings"
+    /// İkinci hesabın PS5 giriş şifresi (4 hane, isteğe bağlı); PS5 isterse oturum açılırken gönderilir.
+    public static let loginPasscode = "loginPasscode"
     /// Kurulum sihirbazı bitti. TV'siz kurulumda (altyazı bilgisayar ekranında) ana ekranı bu açar.
     public static let setupComplete = "setupComplete"
     /// Kullanıcının DeepL anahtarı (isteğe bağlı çevrimiçi çeviri).
@@ -24,6 +30,8 @@ public enum StoreKey {
     public static let claudeKey = "claudeKey"
     /// Yerel model sunucusunun (Ollama, LM Studio) isteğe bağlı anahtarı.
     public static let localAIKey = "localAIKey"
+    /// "Yayın penceresi"nin zemin rengi (`StreamBackground`).
+    public static let streamBackground = "streamBackground"
 }
 
 /// Ayarlardaki çeviri motoru seçimi. Ücretsiz olan cihaz üstü çeviridir; bulut motorları kullanıcının kendi anahtarıyla
@@ -91,6 +99,19 @@ public enum GameConsole: String, Codable, CaseIterable {
     case ps5, xbox
 }
 
+/// Görüntünün nereden okunduğu. `ps5`: CouchSubs PS5'e kendisi bağlanır (ikinci hesap). `remotePlayWindow`: oyun bu
+/// bilgisayardaki Sony PS Remote Play uygulamasında oynanır, CouchSubs yalnız onun penceresini okur; PS5'e ikinci oturum
+/// açılmadığı için ikinci hesap gerekmez. Eski kayıtlar `ps5` ile açılır.
+public enum FrameSource: String, Codable, CaseIterable {
+    case ps5, remotePlayWindow
+}
+
+/// Görüntü pencereden okunurken hangi Remote Play uygulamasının penceresi: hangisi açıksa (Sony'nin PS Remote Play'i ya
+/// da açık kaynak chiaki-ng), yalnız Sony'ninki ya da yalnız chiaki-ng'ninki. Eski kayıtlar "hangisi açıksa" ile açılır.
+public enum RemotePlayApp: String, Codable, CaseIterable {
+    case automatic, sony, chiaki
+}
+
 /// Uygulama pencerelerinin görünümü (Windows'taki `AppAppearance` ile aynı). Nino: varsayılan sistemle aynıdır (açık ya da koyu).
 public enum AppAppearance: String, Codable, CaseIterable {
     case dark, light, system
@@ -107,6 +128,8 @@ public struct UserSettings: Codable, Equatable {
     public var region = CropRegion()
     /// Bölgenin hazır seçimi (Alt bölge, Üst bölge, Tam ekran, Özel). Eski kayıtlarda yoktur; bölgeden çıkarılır.
     public var areaPreset = AreaPreset.bottom
+    /// Altyazının yanında sürekli okunan ek alanlar (görev, bildirim, telefon). Varsayılan: hiç yok.
+    public var extraAreas: [ExtraArea] = []
     public var style = SubtitleStyle()
     public var sourceLanguage = "en"
     public var targetLanguage = "tr"
@@ -141,10 +164,24 @@ public struct UserSettings: Codable, Equatable {
     public var sharePool = true
     /// Nino: sol üstteki ipucu kutusu da çevrilir (alt kısımdaki menü ve tuş yazıları çevrilmez; altyazıya odak).
     public var translateCorners = true
+    /// Oynanan oyun paketle tanınmazsa çeviri başladıktan iki dakika sonra bir kez sorulur (bkz. `GameSense`).
+    public var askGame = true
+    /// Altyazıdaki konuşan adı ("ARTHUR: …") çeviride gösterilir; kapalıysa yalnız Türkçe cümle görünür.
+    public var showSpeakerNames = true
+    /// Mac'te değişmeyen altyazı bölgesini en fazla iki kare yeniden kullan; varsayılan kapalı.
+    public var fastSubtitleDetection = false
+    /// iPhone Xbox ev yayınında oyun sesi telefonda çalınır. Xbox uzaktan oynatma sürerken sesi istemciye verip TV'yi
+    /// susturabilir; kapalıyken ses hiçbir yerden gelmeyebilir, bu yüzden varsayılan açık. PS5'i etkilemez.
+    public var xboxAudioOnDevice = true
     /// Koyu, açık ya da sistemle aynı. Eski kayıtlarda yoktur; onlar da koyu açılır.
     public var appearance = AppAppearance.system
     /// Nino: ana ekranın arayüzü. Eski kayıtlarda yoktur; salon sahnesiyle açılır.
     public var homeStyle = HomeStyle.livingRoom
+    /// Görüntü PS5 bağlantısından mı, bu bilgisayardaki PS Remote Play penceresinden mi okunur (CouchSubs'tan gelen ayar;
+    /// Nino'da asıl kaynak `videoSource`'tur, bu yalnız uyumluluk için saklanır).
+    public var frameSource = FrameSource.ps5
+    /// Pencereden okunurken hangi Remote Play uygulaması (bkz. `RemotePlayApp`).
+    public var remotePlayApp = RemotePlayApp.automatic
 
     public init() {}
 
@@ -154,6 +191,8 @@ public struct UserSettings: Codable, Equatable {
         let defaults = UserSettings()
         region = try values.decodeIfPresent(CropRegion.self, forKey: .region) ?? defaults.region
         areaPreset = (try? values.decodeIfPresent(AreaPreset.self, forKey: .areaPreset)) ?? AreaPreset.matching(region)
+        extraAreas = Array(((try? values.decodeIfPresent([ExtraArea].self, forKey: .extraAreas)) ?? defaults.extraAreas)
+            .prefix(ExtraArea.maxCount))
         style = try values.decodeIfPresent(SubtitleStyle.self, forKey: .style) ?? defaults.style
         sourceLanguage = try values.decodeIfPresent(String.self, forKey: .sourceLanguage) ?? defaults.sourceLanguage
         targetLanguage = try values.decodeIfPresent(String.self, forKey: .targetLanguage) ?? defaults.targetLanguage
@@ -178,8 +217,14 @@ public struct UserSettings: Codable, Equatable {
         gamePacks = try values.decodeIfPresent(Bool.self, forKey: .gamePacks) ?? defaults.gamePacks
         sharePool = try values.decodeIfPresent(Bool.self, forKey: .sharePool) ?? defaults.sharePool
         translateCorners = (try? values.decodeIfPresent(Bool.self, forKey: .translateCorners)) ?? defaults.translateCorners
+        askGame = try values.decodeIfPresent(Bool.self, forKey: .askGame) ?? defaults.askGame
+        showSpeakerNames = try values.decodeIfPresent(Bool.self, forKey: .showSpeakerNames) ?? defaults.showSpeakerNames
+        fastSubtitleDetection = try values.decodeIfPresent(Bool.self, forKey: .fastSubtitleDetection) ?? defaults.fastSubtitleDetection
+        xboxAudioOnDevice = try values.decodeIfPresent(Bool.self, forKey: .xboxAudioOnDevice) ?? defaults.xboxAudioOnDevice
         appearance = (try? values.decodeIfPresent(AppAppearance.self, forKey: .appearance)) ?? defaults.appearance
         homeStyle = (try? values.decodeIfPresent(HomeStyle.self, forKey: .homeStyle)) ?? defaults.homeStyle
+        frameSource = (try? values.decodeIfPresent(FrameSource.self, forKey: .frameSource)) ?? defaults.frameSource
+        remotePlayApp = (try? values.decodeIfPresent(RemotePlayApp.self, forKey: .remotePlayApp)) ?? defaults.remotePlayApp
     }
 
     /// Hazır bölge seçilir; Özel seçilince kayıtlı bölge olduğu gibi kalır.

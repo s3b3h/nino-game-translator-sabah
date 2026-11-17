@@ -8,11 +8,17 @@ public struct ConsoleInfo: Codable, Hashable, Sendable {
     public let host: String
     public let name: String
     public let isAwake: Bool
+    /// PS5'te o an çalışan uygulama (keşif yanıtındaki `running-app-titleid` ve `running-app-name`); ana ekranda ya
+    /// da dinlenme modunda yok.
+    public let runningAppTitleId: String?
+    public let runningAppName: String?
 
-    public init(host: String, name: String, isAwake: Bool) {
+    public init(host: String, name: String, isAwake: Bool, runningAppTitleId: String? = nil, runningAppName: String? = nil) {
         self.host = host
         self.name = name
         self.isAwake = isAwake
+        self.runningAppTitleId = runningAppTitleId
+        self.runningAppName = runningAppName
     }
 }
 
@@ -32,7 +38,11 @@ public enum Console {
     public static func wake(_ console: RegisteredConsole) throws {
         guard let credential = console.wakeCredential else { throw ChiakiError(code: CHIAKI_ERR_INVALID_DATA) }
         let logger = ChiakiLogger()
-        let error = chiaki_discovery_wakeup(logger.pointer, nil, console.host, credential, true)
+        // Günlük çağrı bitene dek yaşamalı: Swift onu son kullanımda (`pointer` okununca) bırakabilir, libchiaki ise
+        // uyandırma sırasında günlüğe yazar (serbest kalmış belleğe yazmak chiaki_log'da çökertir).
+        let error = withExtendedLifetime(logger) {
+            chiaki_discovery_wakeup(logger.pointer, nil, console.host, credential, true)
+        }
         guard error.isSuccess else { throw ChiakiError(code: error) }
     }
 
@@ -43,6 +53,8 @@ public enum Console {
 
     static func search(timeout: Duration, host: String?) -> [ConsoleInfo] {
         let logger = ChiakiLogger()
+        // İlk defer en son çalışır: günlük, aşağıdaki chiaki_discovery_fini de dahil her C çağrısından sonra bırakılır.
+        defer { withExtendedLifetime(logger) {} }
         let discovery = UnsafeMutablePointer<ChiakiDiscovery>.allocate(capacity: 1)
         let thread = UnsafeMutablePointer<ChiakiDiscoveryThread>.allocate(capacity: 1)
         defer {
@@ -59,7 +71,9 @@ public enum Console {
             let collector = Unmanaged<Collector>.fromOpaque(user).takeUnretainedValue()
             let info = ConsoleInfo(host: String(cString: address),
                                    name: host.pointee.host_name.map { String(cString: $0) } ?? "PS5",
-                                   isAwake: host.pointee.state == CHIAKI_DISCOVERY_HOST_STATE_READY)
+                                   isAwake: host.pointee.state == CHIAKI_DISCOVERY_HOST_STATE_READY,
+                                   runningAppTitleId: host.pointee.running_app_titleid.map { String(cString: $0) },
+                                   runningAppName: host.pointee.running_app_name.map { String(cString: $0) })
             collector.lock.lock()
             collector.hosts[info.host] = info
             collector.lock.unlock()
@@ -91,7 +105,6 @@ public enum Console {
             Thread.sleep(forTimeInterval: 0.5)
         }
         chiaki_discovery_thread_stop(thread)
-        withExtendedLifetime(logger) {}
 
         collector.lock.lock()
         defer { collector.lock.unlock() }

@@ -33,6 +33,8 @@ if (signingFile.exists()) {
 
 // Depo kökü: oyun paketleri, model listesi ve chiaki-ng buradan okunur (masaüstüyle ortak).
 def repoRoot = rootProject.projectDir.parentFile
+// Samsung TV uygulamasının sürümü (tv-tizen/config.xml); telefondan kurulumda TV'deki sürümle karşılaştırılır.
+def tizenVersion = (file("$repoRoot/tv-tizen/config.xml").text =~ / version="([0-9.]+)" viewmodes/)[0][1]
 def abis = (findProperty('couchsubs.abis') ?: 'arm64-v8a').toString().split(',')*.trim()
 // Yerel kütüphane olmadan (yalnız Kotlin ve arayüz) derlemek için: -Pcouchsubs.skipNative=true
 def skipNative = (findProperty('couchsubs.skipNative') ?: 'false').toString().toBoolean()
@@ -56,6 +58,7 @@ android {
         buildConfigField 'String', 'PACKS_URL', "\"${secret('packs.url')}\""
         buildConfigField 'String', 'FACEBOOK_APP_ID', "\"${secret('facebook.appId')}\""
         buildConfigField 'boolean', 'HAS_FIREBASE', "${hasGoogleServices}"
+        buildConfigField 'String', 'TV_SAMSUNG_VERSION', "\"${tizenVersion}\""
         manifestPlaceholders = [
             facebookAppId      : secret('facebook.appId'),
             facebookClientToken: secret('facebook.clientToken'),
@@ -100,6 +103,14 @@ android {
         release {
             minifyEnabled false
             signingConfig releaseSigning ? signingConfigs.release : signingConfigs.debug
+            // Yerel çökme izleri (libcouchsubs-jni, içine bağlı libchiaki ve OpenSSL) Crashlytics'te sembollü görünsün:
+            // sembol dosyası sürüm derlemesinde yüklenir (bkz. aşağıdaki uploadCrashlyticsSymbolFileRelease). Eklenti
+            // yalnız google-services.json varken uygulandığı için blok da o zaman eklenir; CI onsuz derler.
+            if (hasGoogleServices) {
+                firebaseCrashlytics {
+                    nativeSymbolUploadEnabled true
+                }
+            }
         }
     }
     compileOptions {
@@ -114,20 +125,105 @@ android {
     sourceSets.main.assets.srcDirs += layout.buildDirectory.dir('generated/couchsubs-assets')
     // Paketler ücretsiz ve her derlemede uygulamayla gelir (dokuz paket ~27 MB); sunucudan yalnız yenileri ve güncellemeleri iner.
     sourceSets.main.assets.srcDirs += layout.buildDirectory.dir('generated/couchsubs-packs')
+    // Telefondan TV kurulumu ve güncellemesi: imzasız Samsung paketi (her derlemede kaynaktan, yani hep en yenisi);
+    // kurulurken TV'ye özel sertifikayla imzalanır.
+    sourceSets.main.assets.srcDirs += layout.buildDirectory.dir('generated/couchsubs-tv')
+    // Android TV ve LG paketleri: Nino'nun dist/tv-app klasöründen (tvReleasePackages).
+    sourceSets.main.assets.srcDirs += layout.buildDirectory.dir('generated/couchsubs-tv-release')
     testOptions { unitTests.returnDefaultValues = true }
-    packaging { resources { excludes += ['/META-INF/{AL2.0,LGPL2.1}'] } }
+    // BouncyCastle ve jsch jar'ları aynı OSGi dosyalarını taşır (uygulamada kullanılmaz).
+    packaging { resources { excludes += ['/META-INF/{AL2.0,LGPL2.1}', 'META-INF/versions/*/OSGI-INF/MANIFEST.MF'] } }
 }
 
 // Oyun paketleri ve yapay zekâ model listesi Mac ve Windows'la aynı dosyalardır.
 tasks.register('copyCouchSubsAssets', Copy) {
     into layout.buildDirectory.dir('generated/couchsubs-assets')
-    from("$repoRoot/core/Sources/CouchSubsCore/Resources") { include 'ai-models.json' }
+    from("$repoRoot/core/Sources/CouchSubsCore/Resources") { include 'ai-models.json', 'glossary-en-tr.json' }
+    // Altyazı yazı tipleri (OFL; TV sayfasıyla aynı dosyalar): telefon ekranı ve Ayarlar'daki önizleme kullanır.
+    from("$repoRoot/tv-webos/fonts") { include '*.ttf', 'OFL-*.txt'; into 'fonts' }
 }
 tasks.register('copyCouchSubsPacks', Copy) {
     into layout.buildDirectory.dir('generated/couchsubs-packs')
     from("$repoRoot/core/Sources/CouchSubsCore/Resources") { include 'packs/*.json.gz' }
 }
-preBuild.dependsOn 'copyCouchSubsAssets', 'copyCouchSubsPacks'
+// Samsung TV paketi (.wgt): scripts/package-tizen.sh'nin yaptığının aynısı (ortak dosyalar tv-webos'tan, Tizen'e
+// özgüler tv-tizen'den; index.html'e Samsung'un webapis.js'i eklenir, panel simgesi panel-icon.png olur).
+tasks.register('samsungTvPackage', Zip) {
+    archiveFileName = 'couchsubs-samsung.wgt'
+    destinationDirectory = layout.buildDirectory.dir('generated/couchsubs-tv/tv')
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    from("$repoRoot/tv-webos") { include 'app.js', 'i18n.js', 'config.js', 'style.css', 'largeIcon.png', 'fonts/**' }
+    from("$repoRoot/tv-webos") { include 'icon.png'; rename { 'panel-icon.png' } }
+    from("$repoRoot/tv-webos") {
+        include 'index.html'
+        filter { String line ->
+            if (line == '  <script src="platform.js"></script>') '  <script src="$WEBAPIS/webapis/webapis.js"></script>\n' + line
+            else line.replace('src="icon.png"', 'src="panel-icon.png"')
+        }
+    }
+    from("$repoRoot/tv-tizen") { include 'platform.js', 'config.xml', 'icon.png' }
+}
+// Android TV paketi (.apk) ve LG paketi (.ipk) kaynaktan derlenmez. Nino: CouchSubs'ın GitHub sürümünden değil,
+// Mac ve Windows'un da kurduğu dist/tv-app klasöründen alınır (couchsubs-androidtv_<sürüm>.apk,
+// com.couchsubs.tv_<sürüm>_all.ipk); böylece telefon TV'ye CouchSubs'ı değil Nino'nun TV uygulamasını kurar ve
+// masaüstünün kurduğuyla aynı imzalı kopya onu güncelleyebilir. Klasörde paket yoksa önceki kopya kalır; hiç yoksa
+// uygulama "paket yok" der. CI -Pcouchsubs.requireTvPackages=true ile paketleri şart koşar.
+def tvReleaseDir = layout.buildDirectory.dir('generated/couchsubs-tv-release/tv').get().asFile
+def requireTvPackages = (findProperty('couchsubs.requireTvPackages') ?: 'false').toString().toBoolean()
+tasks.register('tvReleasePackages') {
+    def outDir = tvReleaseDir
+    def required = requireTvPackages
+    def sourceDir = file("$repoRoot/dist/tv-app")
+    outputs.upToDateWhen { false }
+    // dist/tv-app'teki ad → uygulamadaki ad.
+    def wanted = [[pattern: ~/couchsubs-androidtv_([0-9.]+)\.apk/, file: 'couchsubs-androidtv.apk'],
+                  [pattern: ~/com\.couchsubs\.tv_([0-9.]+)_all\.ipk/, file: 'couchsubs-lg.ipk']]
+    doLast {
+        def parts = { String v -> v.tokenize('.').collect { it.isInteger() ? it.toInteger() : 0 } }
+        def compare = { String a, String b ->
+            def x = parts(a), y = parts(b)
+            for (int i = 0; i < Math.max(x.size(), y.size()); i++) {
+                def l = i < x.size() ? x[i] : 0, r = i < y.size() ? y[i] : 0
+                if (l != r) return l <=> r
+            }
+            0
+        }
+        try {
+            if (!sourceDir.isDirectory()) throw new GradleException("${sourceDir} yok")
+            def properties = []
+            def chosen = [:]
+            wanted.each { item ->
+                // Birden çok sürüm varsa en yenisi.
+                def candidates = (sourceDir.listFiles() ?: []).findAll { it.isFile() && it.name ==~ item.pattern }
+                if (!candidates) throw new GradleException("${sourceDir}: ${item.pattern} yok")
+                def best = candidates.max { l, r -> compare((l.name =~ item.pattern)[0][1], (r.name =~ item.pattern)[0][1]) }
+                chosen[item.file] = best
+            }
+            def apkVersion = (chosen['couchsubs-androidtv.apk'].name =~ wanted[0].pattern)[0][1]
+            properties << "release=v${apkVersion}".toString()
+            chosen.each { name, source -> properties << "${name}=${source.name}".toString() }
+            outDir.mkdirs()
+            chosen.each { name, source -> new File(outDir, name).bytes = source.bytes }
+            new File(outDir, 'tv-packages.properties').text = properties.join('\n') + '\n'
+            logger.lifecycle("TV paketleri (dist/tv-app): ${chosen.values()*.name.join(', ')}")
+        } catch (Exception error) {
+            if (required) throw new GradleException("TV paketleri bulunamadı: ${error.message}", error)
+            if (new File(outDir, 'tv-packages.properties').exists()) logger.warn("TV paketleri yenilenemedi, önceki kopya kullanılıyor: ${error.message}")
+            else logger.warn("TV paketleri bulunamadı, telefondan Android TV/LG kurulumu bu derlemede çalışmaz: ${error.message}")
+        }
+    }
+}
+preBuild.dependsOn 'copyCouchSubsAssets', 'copyCouchSubsPacks', 'samsungTvPackage', 'tvReleasePackages'
+
+// Sürüm derlemesi (assembleRelease / bundleRelease) bitince yerel semboller Crashlytics'e yüklenir; böylece yerel
+// çökme izlerinde "Missing BuildId" yerine işlev adları görünür. Ağ yoksa -Pcouchsubs.skipSymbolUpload=true ile atlanır.
+def skipSymbolUpload = (findProperty('couchsubs.skipSymbolUpload') ?: 'false').toString().toBoolean()
+if (hasGoogleServices && !skipNative && !skipSymbolUpload) {
+    tasks.matching { it.name in ['assembleRelease', 'bundleRelease'] }.configureEach {
+        finalizedBy 'uploadCrashlyticsSymbolFileRelease'
+    }
+}
 
 // CI'da chiaki-ng yamaları masaüstü derlemeleri gibi uygulanır (scripts/patch-chiaki.sh): -Pcouchsubs.patchChiaki=true
 if ((findProperty('couchsubs.patchChiaki') ?: 'false').toString().toBoolean()) {
@@ -141,6 +237,9 @@ if ((findProperty('couchsubs.patchChiaki') ?: 'false').toString().toBoolean()) {
 // Testler, gömülü paketleri depodaki yerinden okur.
 tasks.withType(Test).configureEach {
     systemProperty 'couchsubs.packs', "$repoRoot/core/Sources/CouchSubsCore/Resources/packs"
+    systemProperty 'couchsubs.glossary', "$repoRoot/core/Sources/CouchSubsCore/Resources/glossary-en-tr.json"
+    systemProperty 'couchsubs.tvPackages', tvReleaseDir.absolutePath
+    systemProperty 'couchsubs.requireTvPackages', requireTvPackages.toString()
 }
 
 dependencies {
@@ -155,8 +254,6 @@ dependencies {
     // Cihaz üstü yazı tanıma (Latin modeli uygulamayla gelir) ve ücretsiz çeviri (EN→TR modeli ilk kullanımda iner).
     implementation 'com.google.mlkit:text-recognition:16.0.1'
     implementation 'com.google.mlkit:translate:17.0.3'
-    // Nino: Xbox ev yayını WebRTC ile gelir (Google'ın libwebrtc derlemesi, BSD-3).
-    implementation 'io.github.webrtc-sdk:android:125.6422.07'
     implementation 'androidx.navigation:navigation-compose:2.8.5'
     implementation 'androidx.compose.material:material-icons-core'
     implementation 'androidx.compose.material:material-icons-extended'
@@ -165,10 +262,23 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.7.0')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-crashlytics'
+    // Yerel çökmeler (libchiaki, MediaCodec) de raporlansın: düz Crashlytics yalnız Java çökmelerini görür.
+    implementation 'com.google.firebase:firebase-crashlytics-ndk'
     // Meta App Events (iPhone'la aynı): yalnız olay adları, reklam kimliği yok. Uygulamada reklam yok.
     implementation 'com.facebook.android:facebook-core:17.0.0'
+    // Telefondan Android TV kurulumu: kablosuz hata ayıklamanın TLS 1.3'ü, anahtar dışa aktarımı ve sertifika (MIT).
+    // Samsung testleri de sertifika isteğini ayrıştırmak ve sahte sertifika vermek için bunu kullanır.
+    implementation 'org.bouncycastle:bctls-jdk18on:1.79'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.79'
+    // Telefondan LG kurulumu: geliştirici modunun SSH'si (9922). mwiede/jsch, BSD.
+    implementation 'com.github.mwiede:jsch:0.2.25'
+    // Xbox ev yayını (Beta): Google libwebrtc'nin Android derlemesi (webrtc-sdk, BSD-3). Görüntü donanım çözücüsüyle
+    // alınır, kareler OCR'a Y düzlemi olarak gider (docs/superpowers/specs/2026-11-16-telefon-xbox-design.md).
+    implementation 'io.github.webrtc-sdk:android:144.7559.15'
 
     testImplementation 'junit:junit:4.13.2'
     // android.jar'daki org.json yalnız iskelettir; JVM testleri gerçeğini kullanır.
     testImplementation 'org.json:json:20240303'
+    // Yalnız testlerde: paket imzasını bağımsız bir XML imza doğrulayıcısıyla denetlemek için (Apache-2.0).
+    testImplementation 'org.apache.santuario:xmlsec:3.0.4'
 }

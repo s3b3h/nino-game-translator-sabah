@@ -243,6 +243,8 @@ public struct AIContextLine: Equatable, Sendable {
 public enum AIRequest {
     /// Bir altyazı satırına yeten çıktı sınırı; düşünen modellere de pay bırakır.
     public static let maxOutputTokens = 1024
+    /// "Ekranı çevir"in tek isteğinde çıktı sınırı: ekrandaki bütün yazılar birlikte döner.
+    public static let screenOutputTokens = 8192
 
     public static let systemPrompt = """
         You translate English video game subtitles into natural, spoken Turkish, the way people really talk. \
@@ -267,9 +269,25 @@ public enum AIRequest {
         Reply with only the translation, no explanations, notes or quotes.
         """
 
-    /// Hedef dile göre yönerge; Türkçe dışındaki dillerde `systemPrompt` kullanılmaz.
+    /// Nino: öbür dillerin (Hintçe, Endonezce, Tayca…) yönergesi; dil adı yerine konur.
+    public static func genericSystemPrompt(language: String) -> String {
+        """
+        You translate English video game subtitles into clear, natural \(language), the way good \(language) \
+        game subtitles read. Keep it short and easy to read on screen; use a natural spoken tone for dialogue. \
+        Keep character names, place names and speaker labels such as "ATREUS:" exactly as they are, in Latin letters. \
+        Keep line breaks. Keep the meaning and tone; do not add or leave out anything. \
+        Keep controller button symbols (✕ ○ △ □, L1, R2) unchanged. \
+        Reply with only the translation, no explanations, notes or quotes.
+        """
+    }
+
+    /// Hedef dile göre yönerge: Türkçe, Arapça ya da dil adıyla genel yönerge.
     public static func systemPrompt(for target: String) -> String {
-        TargetLanguage.isTurkish(target) ? systemPrompt : arabicSystemPrompt
+        switch TargetLanguage.englishName(target) {
+        case "Turkish": systemPrompt
+        case "Arabic": arabicSystemPrompt
+        case let language: genericSystemPrompt(language: language)
+        }
     }
 
     /// Kullanıcı iletisi: önceki satırlar (yalnız bağlam) ve çevrilecek cümleler.
@@ -299,7 +317,7 @@ public enum AIRequest {
     /// Hizmete giden HTTP isteği. `server`: yerel modelin sunucusu (verilmezse Ollama'nın varsayılan adresi).
     public static func make(provider: AIProvider, key: String, model: AIModel, sentences: [String],
                             context: [AIContextLine], game: String? = nil, server: LocalAIServer? = nil,
-                            target: String = "tr") -> URLRequest {
+                            target: String = "tr", maxOutputTokens: Int = AIRequest.maxOutputTokens) -> URLRequest {
         let key = key.trimmingCharacters(in: .whitespacesAndNewlines)
         let user = userMessage(sentences: sentences, context: context, game: game, target: target)
         let systemPrompt = systemPrompt(for: target)
@@ -406,17 +424,19 @@ public enum AIRequest {
         if let end = trimmed.range(of: "</think>", options: .backwards) {
             trimmed = String(trimmed[end.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
         }
+        trimmed = stripControlTokens(trimmed)
         // ```json … ``` çitini at.
         if trimmed.hasPrefix("```") {
             trimmed = trimmed.split(separator: "\n", omittingEmptySubsequences: false).dropFirst()
                 .filter { !$0.hasPrefix("```") }.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         }
         if let start = trimmed.firstIndex(of: "["), let end = trimmed.lastIndex(of: "]"), start < end,
-           let data = String(trimmed[start...end]).data(using: .utf8),
+           let data = withoutTrailingComma(String(trimmed[start...end])).data(using: .utf8),
            let list = try? JSONSerialization.jsonObject(with: data) as? [String] {
             guard list.count == count else { throw AIFailure.unreachable }
             return list.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         }
+        if let list = unquotedList(trimmed, count: count) { return list }
         // TranslateGemma düz metin döner: birden çok cümle satır satır gelir.
         if count > 1 {
             let lines = trimmed.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
@@ -424,6 +444,64 @@ public enum AIRequest {
             return lines
         }
         return [trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”"))]
+    }
+
+    /// Yerel modellerin metne sızan bitiş/rol işaretleri (`</s>`, `<|im_end|>`, `<|eot_id|>`, `<end_of_turn>` …)
+    /// ekranda görünmesin; yalnız bu kalıplar silinir, altyazıdaki başka `<…>` yazılara dokunulmaz.
+    static func stripControlTokens(_ text: String) -> String {
+        text.replacingOccurrences(of: #"</?s>|<\|[A-Za-z0-9_]{1,32}\|>|</?(?:start|end)_of_turn>|</?(?:eos|bos|pad)>"#,
+                                  with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// `["Bir.", "İki.",]` gibi sondaki fazla virgül JSON'u bozmasın.
+    static func withoutTrailingComma(_ text: String) -> String {
+        text.replacingOccurrences(of: #",\s*\]$"#, with: "]", options: .regularExpression)
+    }
+
+    /// Tırnaksız dizi: bazı yerel modeller JSON istense de `[Hareket etmemiz lazım.]` ya da `[Satır bir., Satır iki.]`
+    /// döndürür. Yalnız bütün yanıt köşeli parantez içindeyse ve öğe sayısı tam tutuyorsa alınır; tutmazsa nil (hat
+    /// her zamanki geri dönüşe gider). Cümle içi virgülde yanlış bölmemek için sıra: satır sonu, cümle sonu işaretinden
+    /// (. ! ? … ") sonra gelen virgül, en son düz virgül.
+    static func unquotedList(_ text: String, count: Int) -> [String]? {
+        guard count >= 1, text.count >= 2, text.hasPrefix("["), text.hasSuffix("]") else { return nil }
+        let inner = String(text.dropFirst().dropLast())
+        func clean(_ item: Substring) -> String {
+            var value = item.trimmingCharacters(in: .whitespacesAndNewlines)
+            if value.hasSuffix(",") { value.removeLast() }
+            return value.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "\"“”"))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        let candidates: [[Substring]] = count == 1 ? [[Substring(inner)]] : [
+            inner.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty },
+            sentenceSplit(inner),
+            inner.split(separator: ",", omittingEmptySubsequences: false),
+        ]
+        for parts in candidates {
+            let items = parts.map(clean)
+            if items.count == count, !items.contains(where: \.isEmpty) { return items }
+        }
+        return nil
+    }
+
+    /// Cümle sonu işaretinden (. ! ? … " ”) hemen sonra gelen virgüllerden böler; işaret öğede kalır.
+    private static func sentenceSplit(_ text: String) -> [Substring] {
+        let ends: Set<Character> = [".", "!", "?", "…", "\"", "”"]
+        var parts: [Substring] = []
+        var start = text.startIndex
+        var last: Character?
+        var index = text.startIndex
+        while index < text.endIndex {
+            let character = text[index]
+            if character == ",", let last, ends.contains(last) {
+                parts.append(text[start..<index])
+                start = text.index(after: index)
+            }
+            if !character.isWhitespace { last = character }
+            index = text.index(after: index)
+        }
+        parts.append(text[start...])
+        return parts
     }
 
     /// Başarısız HTTP yanıtının anlamı. Gövde yalnız tanınan hata kodları için okunur, hiçbir yere yazılmaz.
@@ -488,6 +566,8 @@ public final class AITranslationCore: @unchecked Sendable {
     public let server: LocalAIServer?
     private let key: String
     private let session: URLSession
+    /// "Ekranı çevir"in uzun yanıtlı tek isteği için daha uzun bekleyen oturum.
+    private let screenSession: URLSession
     private let cache: TranslationCache
     private let budget: RequestBudget?
     private let names = SpeakerNames()
@@ -498,6 +578,8 @@ public final class AITranslationCore: @unchecked Sendable {
     private var pausedUntil = Date.distantPast
     private var failure: AIFailure?
     private var rateLimited = false
+    /// Oynanan oyunun adı (ör. paket eşleşmesinden); biliniyorsa istemde "Game:" olarak gider.
+    private let game: (@Sendable () -> String?)?
 
     /// Son hata; çeviri düzgün gidiyorsa nil. Değiştikçe `onFailureChanged` çağrılır.
     public var lastFailure: AIFailure? { lock.withLock { failure } }
@@ -510,21 +592,29 @@ public final class AITranslationCore: @unchecked Sendable {
     /// sayar; çeviri hattı yeniden kurulsa da hak sıfırlanmaz). Modelin sınırı yoksa hak da yoktur.
     /// `server`: yerel modelin sunucusu (yalnız `.local`; verilmezse Ollama'nın varsayılan adresi).
     /// `session`: verilmezse hizmete uygun zaman aşımıyla kurulur (yerel model daha uzun bekler).
+    /// `game`: oynanan oyunun adı; her istekte sorulur, nil ya da boşsa istemde oyun satırı olmaz.
     public init(provider: AIProvider, key: String, model: String? = nil, server: LocalAIServer? = nil, session: URLSession? = nil,
-                cache: TranslationCache = TranslationCache(), budget: RequestBudget? = nil, target: String = "tr") {
+                cache: TranslationCache = TranslationCache(), budget: RequestBudget? = nil, target: String = "tr",
+                game: (@Sendable () -> String?)? = nil) {
         self.provider = provider
         self.target = target
+        self.game = game
         self.key = key.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolved = provider.model(model)
         self.model = resolved
         self.server = provider.isLocal ? server ?? LocalAIServer(baseURL: LocalAIServer.ollamaURL, model: resolved.id) : nil
         self.session = session ?? Self.makeSession(provider: provider)
+        screenSession = session ?? Self.makeSession(timeout: provider.isLocal ? Self.localTestTimeout : Self.screenTimeout)
         self.cache = cache
         self.budget = budget ?? RequestBudget.shared(provider: provider, model: resolved)
     }
 
     /// Bulut hizmetinde beklenen en uzun süre.
     public static let timeout: TimeInterval = 5
+    /// "Ekranı çevir"de bulut hizmetinde beklenen en uzun süre: bütün ekranın çevirisi tek yanıtta gelir.
+    public static let screenTimeout: TimeInterval = 30
+    /// Bir istekte giden en çok parça; kalabalık ekran birkaç isteğe bölünür.
+    public static let screenBatch = 40
     /// Yerel modelde beklenen en uzun süre: bilgisayardaki model buluttan yavaştır ve bir süre boşta kalınca belleğe
     /// yeniden yüklenir. Yine de sınırlıdır: çeviriler sırayla gider, bir satır bütün sırayı bekletmesin; ekrandan çoktan
     /// kalkmış satırın geç gelen çevirisini hat zaten göstermez.
@@ -545,25 +635,30 @@ public final class AITranslationCore: @unchecked Sendable {
     }
 
     public func translate(_ text: String, fallback: (String) async throws -> String) async throws -> String {
+        // Arama, HTTP isteği ve kayıt aynı oyunla yapılmalı; callback işlem sırasında değişebilir.
+        let game = self.game?()?.trimmingCharacters(in: .whitespacesAndNewlines)
         // Bağlam, bu satırdan önce gösterilenlerdir; satırın kendisi bağlama girmez.
         let context = lock.withLock { recent }
         shown(text)
-        if let cached = cache.value(for: text) { return remember(cached, for: text) }
-        guard Date() >= lock.withLock({ pausedUntil }) else { return remember(try await fallback(text), for: text) }
+        if let cached = cache.value(for: Self.cacheKey(text, game: game)) { return remember(cached, for: text) }
         let pieces = SubtitleSegmenter.split(text)
         names.learn(from: pieces)
         // Önbellekte duran cümleler yeniden gönderilmez.
-        var translations: [String?] = pieces.map { $0.translate ? cache.value(for: $0.text) : nil }
+        var translations: [String?] = pieces.map { $0.translate ? cache.value(for: Self.cacheKey($0.text, game: game)) : nil }
         let missing = pieces.indices.filter { pieces[$0].translate && translations[$0] == nil }
         let sources = missing.map { SubtitleSegmenter.normalizeCase(pieces[$0].text, names: names.all) }
+        // Hizmetin beklemesi yalnız eksik çeviriler içindir; önbellekteki parçalar yerel motor istemez.
+        if !sources.isEmpty, Date() < lock.withLock({ pausedUntil }) {
+            return remember(try await fallback(text), for: text)
+        }
         // Dakikalık hak bittiyse istek gönderilmez; satır sessizce yerel çeviriyle çevrilir (hata değildir).
         let allowed = sources.isEmpty || budget?.take() != false
         lock.withLock { rateLimited = !allowed }
         guard allowed else { return remember(try await fallback(text), for: text) }
         let translated: [String]
         do {
-            translated = sources.isEmpty ? [] : try await request(sources, context: context)
-            setFailure(nil)
+            translated = sources.isEmpty ? [] : try await request(sources, context: context, game: game)
+            if !sources.isEmpty { setFailure(nil) }
         } catch is CancellationError {
             throw CancellationError()
         } catch let error as URLError where error.code == .cancelled && Task.isCancelled {
@@ -582,23 +677,109 @@ public final class AITranslationCore: @unchecked Sendable {
             lock.withLock { pausedUntil = Date().addingTimeInterval(Self.retryAfter) }
             return remember(try await fallback(text), for: text)
         }
+        var local = false
         for (index, sentence) in zip(missing, translated) {
+            let piece = pieces[index].text
+            if Self.isEcho(piece, sentence), let retried = try await Self.retryEcho(piece, fallback: fallback),
+               !Self.isEcho(piece, retried) {
+                // Yerel çeviri bu motorun önbelleğine yazılmaz.
+                translations[index] = retried
+                local = true
+                continue
+            }
             translations[index] = sentence
-            cache.store(sentence, for: pieces[index].text)
+            cache.store(sentence, for: Self.cacheKey(piece, game: game))
         }
         let result = zip(pieces, translations).map { $1 ?? $0.text }.joined()
         lock.withLock {
             if speech.count >= 512 { speech.removeAll() }
-            speech[text] = SpeechScript.lines(pieces: pieces, translations: translations)
+            speech[Self.cacheKey(text, game: game)] = SpeechScript.lines(pieces: pieces, translations: translations)
         }
-        cache.store(result, for: text)
+        if !local { cache.store(result, for: Self.cacheKey(text, game: game)) }
         return remember(result, for: text)
     }
 
+    /// Model cümleyi çevirmeden geri verdi mi (hattın "zaten hedef dilde" eşiğiyle aynı). Küçük yerel modeller İngilizce
+    /// cümleyi sık sık olduğu gibi döndürüyor ("You think I'm on the run?"); hat bunu Türkçe sanıp hiç göstermiyor,
+    /// önbellek de öyle saklıyordu (#245).
+    static func isEcho(_ source: String, _ translation: String) -> Bool {
+        TextMatch.isSimilar(TextMatch.normalize(source), TextMatch.normalize(translation), threshold: 0.90)
+    }
+
+    /// Geri verilen cümle cihaz üstü çeviriyle bir kez daha denenir; o da aynı kalırsa (ad, konsolun Türkçe menüsü)
+    /// çevrilecek bir şey yoktur ve modelin yanıtı önbelleğe yazılır. Yerel çeviri yoksa ya da hata verirse nil.
+    private static func retryEcho(_ text: String, fallback: (String) async throws -> String) async throws -> String? {
+        do {
+            return try await fallback(text)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            return nil
+        }
+    }
+
+    /// "Ekranı çevir": birbirinden bağımsız parçalar (menü satırı, görev yazısı...) tek istekte, aynı sırada çevrilir.
+    /// Parça başına istek gitseydi kalabalık bir ekran Gemini'nin dakikalık hakkını (15) ilk saniyelerde bitirir, kalan
+    /// parçalar yerel çeviriye düşerdi; yerel çeviri kurulu değilse ekranın hiçbir yazısı çevrilmezdi. Bu tek istek
+    /// kullanıcının tuşa basmasıyla gider: ortak hak o an bitmiş olsa da gönderilir (hakkı sayılır). Hata ya da dakikalık
+    /// sınırda parçalar yerel çeviriyle çevrilir; o da yoksa hata yukarı çıkar ve ekranda gösterilir.
+    public func translateAll(_ texts: [String], fallback: (String) async throws -> String) async throws -> [String] {
+        let game = self.game?()?.trimmingCharacters(in: .whitespacesAndNewlines)
+        var results: [String?] = texts.map { cache.value(for: Self.cacheKey($0, game: game)) }
+        let missing = texts.indices.filter { results[$0] == nil }
+        var failed = Date() < lock.withLock({ pausedUntil })
+        for chunk in stride(from: 0, to: missing.count, by: Self.screenBatch).map({ Array(missing[$0..<min($0 + Self.screenBatch, missing.count)]) })
+        where !failed {
+            try Task.checkCancellation()
+            _ = budget?.take()
+            lock.withLock { rateLimited = false }
+            do {
+                let sentences = chunk.map { texts[$0] }
+                let request = AIRequest.make(provider: provider, key: key, model: model, sentences: sentences, context: [],
+                                             game: game, server: server, target: target,
+                                             maxOutputTokens: AIRequest.screenOutputTokens)
+                let translated = try await Self.send(request, provider: provider, count: sentences.count, session: screenSession)
+                setFailure(nil)
+                for (index, translation) in zip(chunk, translated) {
+                    results[index] = translation
+                    cache.store(translation, for: Self.cacheKey(texts[index], game: game))
+                }
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch let error as URLError where error.code == .cancelled && Task.isCancelled {
+                throw CancellationError()
+            } catch let error as AIRateLimited {
+                if let perMinute = error.limit.requestsPerMinute { budget?.lower(to: perMinute) }
+                let pause = max(1, min(error.limit.retryAfter ?? Self.rateLimitPause, Self.rateLimitPause))
+                lock.withLock {
+                    rateLimited = true
+                    pausedUntil = Date().addingTimeInterval(pause)
+                }
+                failed = true
+            } catch {
+                setFailure(error as? AIFailure ?? .unreachable)
+                lock.withLock { pausedUntil = Date().addingTimeInterval(Self.retryAfter) }
+                failed = true
+            }
+        }
+        for index in texts.indices where results[index] == nil {
+            try Task.checkCancellation()
+            results[index] = try await fallback(texts[index])
+        }
+        return results.map { $0 ?? "" }
+    }
+
     public func spokenLines(for text: String, fallback: (String) -> [SpokenLine]) -> [SpokenLine] {
-        if let lines = lock.withLock({ speech[text] }) { return lines }
-        let cached = SpeechScript.fromCache(text, cache: cache)
+        let game = self.game?()?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let lines = lock.withLock({ speech[Self.cacheKey(text, game: game)] }) { return lines }
+        let cached = SpeechScript.fromCache(text, cache: cache, cacheKey: { Self.cacheKey($0, game: game) })
         return cached.isEmpty ? fallback(text) : cached
+    }
+
+    // Oyun bilinmiyorsa eski kayıtlar geçerlidir; biliniyorsa yalnız o oyunun sonucu kullanılır.
+    private static func cacheKey(_ text: String, game: String?) -> String {
+        guard let game, !game.isEmpty else { return text }
+        return game + "\u{001f}" + text
     }
 
     private func shown(_ text: String) {
@@ -626,9 +807,9 @@ public final class AITranslationCore: @unchecked Sendable {
         if changed { onFailureChanged?(value) }
     }
 
-    private func request(_ sentences: [String], context: [AIContextLine]) async throws -> [String] {
+    private func request(_ sentences: [String], context: [AIContextLine], game: String?) async throws -> [String] {
         try await Self.send(AIRequest.make(provider: provider, key: key, model: model, sentences: sentences, context: context,
-                                           server: server, target: target),
+                                           game: game, server: server, target: target),
                             provider: provider, count: sentences.count, session: session)
     }
 

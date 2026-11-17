@@ -5,6 +5,7 @@ import Foundation
 /// Hangi karede yazı tanıma yapılacağını seçer. Oyun süresinin çoğunda bölge boştur ya da değişmez;
 /// işlemcinin büyük kısmı bu karelerde boşa gider.
 public struct ReadScheduler {
+    public static let defaultMaxReuse = 20, fastMaxReuse = 2
     public enum Plan: Equatable {
         /// Bölge değişmedi, son okuma geçerli.
         case reuse(String)
@@ -26,7 +27,7 @@ public struct ReadScheduler {
     private var reused = 0
     private var emptyReads = 0
 
-    public init(changeThreshold: Int = ReadScheduler.defaultChangeThreshold, maxReuse: Int = 20, deepEvery: Int = 3) {
+    public init(changeThreshold: Int = ReadScheduler.defaultChangeThreshold, maxReuse: Int = ReadScheduler.defaultMaxReuse, deepEvery: Int = 3) {
         self.changeThreshold = changeThreshold
         self.maxReuse = maxReuse
         self.deepEvery = deepEvery

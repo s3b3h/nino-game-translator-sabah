@@ -40,6 +40,66 @@ final class ScreenTranslationTests: XCTestCase {
         XCTAssertEqual(groups.count, 2)
     }
 
+    func testFullWidthHeadingDoesNotAbsorbOneOfTwoColumns() {
+        for reversed in [false, true] {
+            let lines = [line("Available missions", 0.05, 0.10, 0.95),
+                line("Find the blacksmith in", 0.05, 0.14, 0.43), line("Bring the medicine to", 0.57, 0.14, 0.95),
+                line("the village square.", 0.05, 0.18, 0.40), line("the northern camp.", 0.57, 0.18, 0.92)]
+            let groups = ScreenTranslation.groups(Reading(lines: reversed ? Array(lines.reversed()) : lines))
+            XCTAssertEqual(groups.count, 3)
+            XCTAssertTrue(groups.contains { $0.paragraphs == ["Available missions"] && abs($0.box.bottom - 0.13) < 1e-6 })
+            XCTAssertTrue(groups.contains { $0.paragraphs == ["Find the blacksmith in the village square."] && $0.box.right < 0.5 })
+            XCTAssertTrue(groups.contains { $0.paragraphs == ["Bring the medicine to the northern camp."] && $0.box.left > 0.5 })
+        }
+    }
+
+    func testFullWidthFooterDoesNotJoinEitherColumn() {
+        for reversed in [false, true] {
+            let lines = [line("Find the blacksmith in", 0.05, 0.14, 0.43), line("Bring the medicine to", 0.57, 0.14, 0.95),
+                line("the village square.", 0.05, 0.18, 0.40), line("the northern camp.", 0.57, 0.18, 0.92),
+                line("Choose a destination", 0.05, 0.22, 0.95)]
+            let groups = ScreenTranslation.groups(Reading(lines: reversed ? Array(lines.reversed()) : lines))
+            XCTAssertEqual(groups.count, 3)
+            XCTAssertTrue(groups.contains { $0.paragraphs == ["Choose a destination"] && abs($0.box.top - 0.22) < 1e-6 })
+            XCTAssertTrue(groups.contains { $0.paragraphs == ["Find the blacksmith in the village square."] })
+            XCTAssertTrue(groups.contains { $0.paragraphs == ["Bring the medicine to the northern camp."] })
+        }
+    }
+
+    func testWrappedParagraphKeepsNarrowOrIndentedContinuation() {
+        for (left, right) in [(0.05, 0.4), (0.30, 0.70), (0.60, 0.95)] {
+            let groups = ScreenTranslation.groups(Reading(lines: [line("Find the blacksmith in", 0.05, 0.10, 0.95),
+                line("the village square.", left, 0.14, right)]))
+            XCTAssertEqual(groups.map(\.paragraphs), [["Find the blacksmith in the village square."]])
+        }
+    }
+
+    func testNearbyUnrelatedColumnDoesNotDetachTheLocalHeading() {
+        let groups = ScreenTranslation.groups(Reading(lines: [line("Current objective", 0.05, 0.10, 0.43),
+            line("Find the blacksmith in", 0.05, 0.14, 0.43), line("Bring the medicine to", 0.57, 0.14, 0.95),
+            line("the village square.", 0.05, 0.18, 0.40), line("the northern camp.", 0.57, 0.18, 0.92)]))
+        XCTAssertEqual(groups.count, 2)
+        XCTAssertTrue(groups.contains { $0.paragraphs == ["Current objective", "Find the blacksmith in the village square."] })
+    }
+
+    func testFilteredControllerPromptDoesNotCreateAColumnBoundary() {
+        let groups = ScreenTranslation.groups(Reading(lines: [line("Find the blacksmith in", 0.05, 0.10, 0.95),
+            line("the village square.", 0.05, 0.14, 0.43), line("R2 Swing", 0.57, 0.14, 0.95)]))
+        // Nino: ipucu da çevrilir (kendi grubunda), ama paragrafı bölmez.
+        XCTAssertEqual(groups.map(\.paragraphs), [["Find the blacksmith in the village square."], ["R2 Swing"]])
+    }
+
+    func testSeparatingTheHeadingKeepsTranslationInputsAndText() async throws {
+        var requested: [String] = []
+        let items = try await ScreenTranslation.translate(Reading(lines: [line("Available missions", 0.05, 0.10, 0.95),
+            line("Find the blacksmith in", 0.05, 0.14, 0.43), line("Bring the medicine to", 0.57, 0.14, 0.95),
+            line("the village square.", 0.05, 0.18, 0.40), line("the northern camp.", 0.57, 0.18, 0.92)]),
+            using: { requested.append($0); return "Türkçe sonuç \(requested.count)" }, progress: { _ in })
+        XCTAssertEqual(items.map(\.source), ["Available missions", "Find the blacksmith in the village square.", "Bring the medicine to the northern camp."])
+        XCTAssertEqual(items.map(\.source), requested)
+        XCTAssertEqual(items.map(\.translation), ["Türkçe sonuç 1", "Türkçe sonuç 2", "Türkçe sonuç 3"])
+    }
+
     /// Nino: sayılar çevrilmez; kumanda ipuçları ise simgesi korunarak çevrilir.
     func testNumbersAreNotTranslatedButPromptsAre() {
         let groups = ScreenTranslation.groups(Reading(lines: [

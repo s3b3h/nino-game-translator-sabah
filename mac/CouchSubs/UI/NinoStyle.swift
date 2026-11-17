@@ -229,10 +229,19 @@ struct OptionCard: View {
     @State private var hovering = false
     @Environment(\.isEnabled) private var isEnabled
 
+    /// Görsel pakette var mı (dosya iPhone uygulamasında da derlenir).
+    private static func hasImage(_ name: String) -> Bool {
+        #if os(macOS)
+        NSImage(named: name) != nil
+        #else
+        UIImage(named: name) != nil
+        #endif
+    }
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: Theme.space("l")) {
-                if let image, NSImage(named: image) != nil {
+                if let image, Self.hasImage(image) {
                     Image(image).resizable().scaledToFit().frame(width: 88, height: 60)
                 } else {
                     GradientIcon(symbol: symbol, size: 44)

@@ -18,7 +18,7 @@ object SubtitleSegmenter {
     )
 
     /** Büyük harfle başlayıp iki noktayla biten ama ad olmayan oyun başlıkları; bunlar çevrilir. */
-    private val notNames = setOf(
+    internal val notNames = setOf(
         "note", "warning", "tip", "hint", "objective", "objectives", "quest", "goal", "new", "reward", "rewards",
         "location", "chapter", "mission", "task", "tutorial", "update", "info", "status", "level", "controls",
         "press", "hold", "tap", "remember", "example", "question", "answer", "result", "results", "time",
@@ -151,20 +151,40 @@ object SubtitleSegmenter {
 /**
  * Satırı oyun paketinde arar (Windows: PackLookup.cs, Mac: GamePacks.swift). Sırayla: satırın tamamı; konuşmacı
  * etiketi ya da diyalog tiresi varsa onsuz hâli (etiket çeviriye eklenir); birden çok satırsa her satır ayrı; birden çok
- * cümleyse her cümle ayrı. Parçalı aramada parçaların hepsi bulunmalıdır, yoksa satır motorla çevrilir.
+ * cümleyse her cümle ayrı. Parçalı aramada parçaların hepsi bulunmalıdır, yoksa satır motorla çevrilir. Tam anahtarla
+ * hiçbir yol tutmazsa aynı sıra bir kez daha denenir; bu kez her parça önce tam, sonra `nearest` ile (OCR hatalarına
+ * dayanıklı) aranır.
  */
 object PackLookup {
-    /** Kütüphanedeki (açık) paketlerde arar; sonuçta satırın son bulunan parçasının paketi yazılır. */
+    /**
+     * Kütüphanedeki (açık) paketlerde arar (bulanık arama oynanan oyunun paketinde); sonuçta satırın son bulunan parçasının
+     * paketi yazılır.
+     */
     fun match(library: GamePackLibrary, text: String): PackMatch? {
         var lastPack: String? = null
-        val found = match(text) { line -> library.findWithPack(line)?.also { lastPack = it.packId }?.text }
+        // Aynı parça bir aramada birkaç yoldan sorulabilir (etiketli/etiketsiz gövde aynı); bulanık sonuç bir kez hesaplanır.
+        val asked = HashMap<String, PackMatch?>()
+        val nearest = { line: String ->
+            val near = if (asked.containsKey(line)) asked[line] else library.nearestWithPack(line).also { asked[line] = it }
+            near?.also { lastPack = it.packId }?.text
+        }
+        val found = match(text, nearest) { line -> library.findWithPack(line)?.also { lastPack = it.packId }?.text }
         return found?.copy(packId = lastPack)
     }
 
-    /** [find]: tek bir metnin (tamamının) paketteki Türkçesi. */
-    fun match(text: String, find: (String) -> String?): PackMatch? {
+    /**
+     * [find]: tek bir metnin (tamamının) paketteki Türkçesi. [nearest]: tam anahtar yoksa en benzer satırın Türkçesi
+     * (bulanık arama); verilmezse yapılmaz.
+     */
+    fun match(text: String, nearest: ((String) -> String?)? = null, find: (String) -> String?): PackMatch? {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return null
+        phase(trimmed, find)?.let { return it }
+        if (nearest == null) return null
+        return phase(trimmed) { line -> find(line) ?: nearest(line) }
+    }
+
+    private fun phase(trimmed: String, find: (String) -> String?): PackMatch? {
         single(trimmed, find)?.let { return result(it.first, it.second) }
 
         // Her satır ayrı bir altyazı olabilir (iki konuşmacı alt alta).
@@ -176,6 +196,8 @@ object PackLookup {
             for (line in lines) {
                 val found = single(line, find)
                 if (found == null) {
+                    // Altyazıyla aynı bloğa düşen köşe yazısı ("San Andreas", "First Person • zoom") atlanır.
+                    if (isOverlay(line)) continue
                     all = false
                     break
                 }
@@ -186,7 +208,7 @@ object PackLookup {
                 pieces.addAll(found.first)
                 translations.addAll(found.second)
             }
-            if (all) return result(pieces, translations)
+            if (all && pieces.isNotEmpty()) return result(pieces, translations)
         }
 
         // Cümle cümle (etiket, tire ve ayraçlar olduğu gibi kalır).
@@ -203,17 +225,78 @@ object PackLookup {
         return result(split, sentences)
     }
 
-    /** Tek satır: başında konuşmacı etiketi ya da diyalog tiresi varsa önce onsuz hâli, sonra tamamı. */
+    /**
+     * Tek satır: başında konuşmacı etiketi ya da diyalog tiresi varsa ("- ENZO: ") önce onlarsız hâli (etiket/tire çeviriye
+     * eklenir), sonra tamamı, sonra OCR'ın bozduğu etiketsiz hâli ([looseLabel]).
+     */
     private fun single(line: String, find: (String) -> String?): Pair<List<SubtitleSegmenter.Piece>, List<String?>>? {
         val split = SubtitleSegmenter.split(line)
-        if (split.size > 1 && !split[0].translate && split.none { it.text == "\n" }) {
-            val body = split.drop(1).joinToString("") { it.text }
+        val lead = split.takeWhile { !it.translate }
+        if (lead.isNotEmpty() && lead.size < split.size && split.none { it.text == "\n" }) {
+            val body = split.drop(lead.size).joinToString("") { it.text }
             find(body)?.let { turkish ->
-                return listOf(split[0], SubtitleSegmenter.Piece(body, true)) to listOf(null, turkish)
+                return (lead + SubtitleSegmenter.Piece(body, true)) to (List<String?>(lead.size) { null } + turkish)
             }
         }
-        val whole = find(line) ?: return null
-        return listOf(SubtitleSegmenter.Piece(line, true)) to listOf(whole)
+        find(line)?.let { return listOf(SubtitleSegmenter.Piece(line, true)) to listOf(it) }
+        val (label, body) = looseLabel(line) ?: return null
+        val turkish = find(body) ?: return null
+        return listOf(SubtitleSegmenter.Piece(label, false), SubtitleSegmenter.Piece(body, true)) to listOf(null, turkish)
+    }
+
+    /**
+     * Altyazı olmayan köşe yazısı satırı: en çok dört sözcük; "•" içerir ("First Person • zoom") ya da noktalama yok ve
+     * her sözcük büyük harfle başlar ("San Andreas", "Mirror Park", "LOSNN"). Yalnız başka satırlar pakette bulunduysa
+     * atlanır. Uzun satırdaki "•" OCR lekesidir ("…with a colieague• Not that…"): o satır altyazıdır; atlanınca iki
+     * satırlık altyazının yalnız ikinci satırının Türkçesi ("Seninle.") gösteriliyordu (#245).
+     */
+    fun isOverlay(line: String): Boolean {
+        val words = PackFuzzy.words(line)
+        if (words.isEmpty() || words.size > 4) return false
+        if (line.contains('•')) return true
+        return words.all { word -> Character.isUpperCase(word[0]) && word.all { PackFuzzy.isLetter(it) || PackFuzzy.isDigit(it) } }
+    }
+
+    /**
+     * OCR'ın bozduğu konuşmacı etiketi: "-GAETANO:", "M]:", "li LUCA:", "MİNE GUARD•" (ilk 32 karakterde iki nokta ya da
+     * • ve önündeki sözcükte küçük harf yok) ya da iki noktasız "SEBASTIAN Where…" (en çok üç büyük harfli sözcük, ardından
+     * büyük harfle başlayan küçük harfli sözcük). (ekranda kalacak etiket, aranacak gövde) ya da null. Yalnız paket
+     * aramasında yeniden deneme içindir.
+     */
+    fun looseLabel(line: String): Pair<String, String>? {
+        val points = line.codePoints().toArray()
+        fun text(start: Int, end: Int) = String(points, start, end - start)
+        fun nameLike(token: IntArray, minimum: Int): Boolean {
+            val letters = token.filter { PackFuzzy.isLetter(it) }
+            return letters.size >= minimum && letters.none { Character.isLowerCase(it) }
+        }
+        fun isNumber(codePoint: Int) = when (Character.getType(codePoint).toByte()) {
+            Character.DECIMAL_DIGIT_NUMBER, Character.LETTER_NUMBER, Character.OTHER_NUMBER -> true
+            else -> false
+        }
+        for (index in 1 until minOf(points.size, 33)) {
+            if (points[index] != ':'.code && points[index] != '•'.code) continue
+            val last = PackFuzzy.words(text(0, index)).lastOrNull() ?: continue
+            if (!nameLike(last, 1)) continue
+            var start = index + 1
+            while (start < points.size && !PackFuzzy.isLetter(points[start]) && !isNumber(points[start])) start++
+            val body = text(start, points.size).trim()
+            if (body.codePoints().noneMatch { PackFuzzy.isLetter(it) }) return null
+            return text(0, index + 1).trim() + " " to body
+        }
+        var position = 0
+        while (position < points.size && !PackFuzzy.isLetter(points[position])) position++
+        repeat(3) {
+            var end = position
+            while (end < points.size && !PackFuzzy.isSpace(points[end])) end++
+            if (end >= points.size || !Character.isUpperCase(points[position]) || !nameLike(points.copyOfRange(position, end), 2)) return null
+            while (end < points.size && PackFuzzy.isSpace(points[end])) end++
+            position = end
+            if (position + 1 < points.size && Character.isUpperCase(points[position]) && Character.isLowerCase(points[position + 1])) {
+                return text(0, position).trim() + " " to text(position, points.size).trim()
+            }
+        }
+        return null
     }
 
     private fun result(pieces: List<SubtitleSegmenter.Piece>, translations: List<String?>): PackMatch =

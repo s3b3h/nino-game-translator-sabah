@@ -85,7 +85,8 @@ public sealed partial class AndroidTvInstaller(string host, string keyDirectory,
         CancellationToken cancellationToken = default)
     {
         await using var adb = await ConnectAsync(cancellationToken);
-        var installed = VersionFromDumpsys(await adb.RunAsync($"shell:dumpsys package {PackageName}", cancellationToken: cancellationToken));
+        var dumpsys = await adb.RunAsync($"shell:dumpsys package {PackageName}", cancellationToken: cancellationToken);
+        var installed = VersionFromDumpsys(dumpsys);
         if (installed is not null && !Versions.IsNewer(version, installed))
         {
             // Bu izni vermeyen eski bir CouchSubs'ın kurduğu güncel uygulama da izni alsın.
@@ -94,6 +95,8 @@ public sealed partial class AndroidTvInstaller(string host, string keyDirectory,
             await adb.RunAsync($"shell:am start -n {PackageName}/.MainActivity", cancellationToken: cancellationToken);
             return (installed, false);
         }
+        // Nino: CouchSubs'ın Play yolu (PlayStoreRedirect.cs) kullanılmaz: com.couchsubs.tv Play'de CouchSubs'ın TV
+        // uygulamasıdır, Nino'nunki değil. Nino TV her zaman yanındaki APK ile kurulur.
         // Nino: eski sürüm varsa önce tamamen kaldırılır (ayarları ve kalıntılarıyla), yeni sürüm temiz kurulur.
         if (installed is not null)
             await adb.RunAsync($"shell:pm uninstall {PackageName}", cancellationToken: cancellationToken);

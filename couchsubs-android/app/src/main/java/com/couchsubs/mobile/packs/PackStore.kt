@@ -22,18 +22,21 @@ interface PackServer {
 }
 
 /**
- * Sunucudaki yeni ve güncellenen oyun paketleri (ücretsiz, hesapsız): sunucudan indirilir, SHA-256 ile doğrulanıp uygulamanın klasöründe saklanır, haftada bir
- * yenilenir. Sürümü değişmeyen paket yeniden indirilmez; sunucudan kalkan paket silinir. Bozuk ya da yarım dosya hiçbir
+ * Sunucudaki yeni ve güncellenen oyun paketleri (ücretsiz, hesapsız): sunucudan indirilir, SHA-256 ile doğrulanıp uygulamanın klasöründe saklanır; açılışta,
+ * günde bir ve PS5'te yeni oyun başlayınca yenilenir. Sürümü değişmeyen paket yeniden indirilmez; sunucudan kalkan paket silinir. Bozuk ya da yarım dosya hiçbir
  * zaman yüklenmez (önce geçici dosyaya yazılır, doğrulanınca yerine konur). Uygulamayla gelen paketlerle aynı
  * kimlikteki indirilmiş paket onların yerine geçer (bkz. GamePackLibrary).
  */
 class PackStore(
-    private val directory: File,
+    val directory: File,
     private val server: PackServer,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     companion object {
-        const val REFRESH_INTERVAL_MS = 7L * 24 * 60 * 60 * 1000
+        /** Açılışta ve günde bir bakılır (iPhone'daki PackStore ile aynı); havuzdan her gece üretilen `pool-*` paketleri en geç bir gün sonra gelir. */
+        const val REFRESH_INTERVAL_MS = 24L * 60 * 60 * 1000
+        /** PS5'te yeni bir oyun tanınınca son bakış bundan eskiyse hemen bakılır (o oyunun paketi yeni çıkmış olabilir). */
+        const val GAME_CHECK_MS = 10L * 60 * 1000
         private const val MANIFEST = "packs.state"
 
         fun sha256(data: ByteArray): String =
@@ -57,16 +60,17 @@ class PackStore(
     val lastCheck: Long get() = synchronized(lock) { manifest().first }
 
     /**
-     * Süresi geldiyse (ya da [force]) sunucuya bakar ve değişen paketleri indirir (bloklar). Liste alınamazsa elde
-     * olanlar kalır; inemeyen paket bir sonraki açılışta yeniden denenir.
+     * Son bakış [maxAgeMs]'den eskiyse (ya da [force]) sunucuya bakar ve değişen paketleri indirir (bloklar). Liste
+     * alınamazsa elde olanlar kalır; inemeyen paket bir sonraki açılışta yeniden denenir.
      */
-    fun refresh(force: Boolean = false): Refresh = synchronized(lock) {
+    fun refresh(force: Boolean = false, maxAgeMs: Long = REFRESH_INTERVAL_MS): Refresh = synchronized(lock) {
         val (checked, current) = manifest()
-        if (!force && current.isNotEmpty() && clock() - checked < REFRESH_INTERVAL_MS) return Refresh(skipped = true)
+        if (!force && current.isNotEmpty() && clock() - checked < maxAgeMs) return Refresh(skipped = true)
         val remote = server.list()
         directory.mkdirs()
         val kept = mutableListOf<Local>()
         val downloaded = mutableListOf<String>()
+        var retry = false
         for (pack in remote) {
             val existing = current.firstOrNull { it.id == pack.id }
             val file = packFile(pack.id)
@@ -80,10 +84,12 @@ class PackStore(
                 server.download(pack.id)
             } catch (error: PackDownloadException) {
                 // Bu paket şimdi inmedi: eski sürümü varsa o kalır, sonraki yenilemede yeniden denenir.
+                retry = true
                 if (existing != null && file.isFile) kept.add(existing.copy(version = -1))
                 continue
             }
             if (!sha256(data).equals(pack.sha256, ignoreCase = true)) {
+                retry = true
                 if (existing != null && file.isFile) kept.add(existing.copy(version = -1))
                 continue
             }
@@ -98,8 +104,7 @@ class PackStore(
         }
         val removed = current.map { it.id }.filter { id -> remote.none { it.id == id } }
         removed.forEach { packFile(it).delete() }
-        // Bir paket inemediyse (sürüm -1) bir sonraki açılışta yeniden denensin diye kontrol zamanı ilerletilmez.
-        val retry = kept.any { it.version == -1L }
+        // Başarısız indirme ya da checksum doğrulaması sonraki yenilemede yeniden denensin diye kontrol zamanı ilerletilmez.
         writeManifest(if (retry) checked else clock(), kept)
         Refresh(downloaded, removed)
     }
@@ -145,7 +150,12 @@ class PackStore(
 class HttpPackServer(private val baseUrl: String) : PackServer {
     override fun list(): List<RemotePack> {
         val body = String(request("$baseUrl/v1/packs"), Charsets.UTF_8)
-        val packs = JSONObject(body).optJSONArray("packs") ?: return emptyList()
+        // Eksik/null ya da bozuk liste başarısız yanıttır, boş liste değildir: boş sayılırsa indirilmiş paketler silinir.
+        val packs = try {
+            JSONObject(body).optJSONArray("packs")
+        } catch (error: JSONException) {
+            null
+        } ?: throw PackDownloadException(null, "invalid pack list")
         return (0 until packs.length()).map { index ->
             val item = packs.getJSONObject(index)
             RemotePack(item.getString("id"), item.optString("title"), item.optLong("version"), item.getString("sha256"),

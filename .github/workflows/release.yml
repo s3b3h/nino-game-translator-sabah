@@ -27,6 +27,9 @@ jobs:
   android:
     uses: ./.github/workflows/tv-android.yml
     secrets: inherit
+    # TV paketi TV_KEYSTORE_* sırlarıyla imzalanmalı; yoksa sürüm durur (geliştirme anahtarına düşmez).
+    with:
+      require-signing: true
   mac:
     needs: android
     runs-on: macos-26
@@ -120,7 +123,10 @@ jobs:
           path: dist/tv-app/*
           if-no-files-found: error
 
+  # Nino: sürüm elle yayımlanır (Nino adları, appcast ve Sparkle imzası Mac'te hazırlanır). Bu CouchSubs adımı
+  # Nino deposunda "CouchSubs" adlı bir sürüm yayımlardı; kapalıdır. Derlenen dosyalar iş akışının çıktılarından alınır.
   publish:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs: [windows, mac, tv, android]
     steps:

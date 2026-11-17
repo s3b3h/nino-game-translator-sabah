@@ -10,13 +10,16 @@ import UIKit
 
 // MARK: - Arayüz dili (çeviri dilini izler)
 
-/// Arayüz dili çeviri dilini izler: Türkçe → Türkçe arayüz, Arapça → Arapça (sağdan sola). Yeni metinler `Home` tablosunda.
+/// Arayüz dili çeviri dilini izler: Türkçe → Türkçe arayüz, Arapça ve Urduca sağdan sola, her dil kendi arayüzüyle.
+/// Yeni metinler `Home` tablosunda.
 enum UILanguage {
-    static func code(for target: String) -> String { TargetLanguage.isTurkish(target) ? "tr" : "ar" }
+    static func code(for target: String) -> String { TargetLanguage.interfaceLanguage(target) }
 
     static func locale(for target: String) -> Locale { Locale(identifier: code(for: target)) }
 
-    static func direction(for target: String) -> LayoutDirection { code(for: target) == "ar" ? .rightToLeft : .leftToRight }
+    static func direction(for target: String) -> LayoutDirection {
+        TargetLanguage.isRightToLeft(target) ? .rightToLeft : .leftToRight
+    }
 
     /// Verilen dilin paketinden metin; yoksa ana paket.
     static func text(_ key: String, _ locale: Locale, table: String = "Home") -> String {
@@ -34,14 +37,21 @@ enum UILanguage {
     }
 }
 
-/// Bayrak renkleri: Türkçe kırmızı, Arapça yeşil.
+/// Bayrak renkleri: Türkçe kırmızı, Arapça yeşil; öbür diller bayraklarının baskın rengi.
 enum FlagColors {
     static let red = Color(hex: 0xE30A17)
     static let redDeep = Color(hex: 0xA80514)
     static let green = Color(hex: 0x0B8A4A)
     static let greenDeep = Color(hex: 0x056236)
 
-    static func pair(arabic: Bool) -> (Color, Color) { arabic ? (green, greenDeep) : (red, redDeep) }
+    static func pair(for target: String) -> (Color, Color) {
+        switch String(target.prefix(2)) {
+        case "ar", "ur", "bn": (green, greenDeep)
+        case "hi", "nl": (Color(hex: 0xF08A1C), Color(hex: 0xB85F00))
+        case "th", "ms", "tl": (Color(hex: 0x2D4FB3), Color(hex: 0x1A3380))
+        default: (red, redDeep)
+        }
+    }
 }
 
 private let ink = Color(hex: 0x0A1430)
@@ -75,9 +85,11 @@ struct HomeScreen: View {
         return model.canStart ? .ready : .notPaired
     }
 
-    private var arabic: Bool { !TargetLanguage.isTurkish(model.settings.targetLanguage) }
+    private var target: String { model.settings.targetLanguage }
     private var onPhone: Bool { model.isDemo || model.settings.output.showsOnComputer }
-    private var languageName: String { t(arabic ? "lang.ar" : "lang.tr") }
+    private var languageName: String {
+        TargetLanguage.isTurkish(target) ? t("lang.tr") : target.hasPrefix("ar") ? t("lang.ar") : TargetLanguage.nativeName(target)
+    }
 
     var body: some View {
         MobileScreen {
@@ -106,7 +118,7 @@ struct HomeScreen: View {
                       badge: t(model.isDemo ? "demo.badge" : "home.live"), locale: locale,
                       onFullScreen: onPhone ? { openFullScreen() } : nil)
                 .padding(.top, 8)
-            SlideToTranslate(state: state, arabic: arabic, label: slideLabel,
+            SlideToTranslate(state: state, target: target, label: slideLabel,
                              onStart: start, onStop: stop, onSetup: { path.append(.ps5) })
                 .tourTarget(.start)
                 .padding(.top, 10)
@@ -126,8 +138,14 @@ struct HomeScreen: View {
                 .transition(.opacity)
             }
             if !demoOnly { HStack(spacing: 10) {
-                Shortcut(symbol: "gamecontroller.fill", title: "PS5",
-                         value: model.console.map { $0.name.isEmpty ? "PS5" : $0.name } ?? t("home.status.notPaired")) { path.append(.ps5) }
+                // Xbox (Beta) seçildiyse kısa yol Xbox'ı gösterir (CouchSubs'tan).
+                if model.isXbox {
+                    Shortcut(symbol: "gamecontroller.fill", title: "Xbox · Beta",
+                             value: model.xboxConsole.map { $0.name.isEmpty ? "Xbox" : $0.name } ?? String(localized: "Choose your Xbox")) { path.append(.ps5) }
+                } else {
+                    Shortcut(symbol: "gamecontroller.fill", title: "PS5",
+                             value: model.console.map { $0.name.isEmpty ? "PS5" : $0.name } ?? t("home.status.notPaired")) { path.append(.ps5) }
+                }
                 Shortcut(symbol: onPhone ? "iphone" : "tv", title: t("home.output"),
                          value: onPhone ? t("home.output.phone") : (model.tv?.name ?? "TV")) { path.append(.target) }
                     .tourTarget(.target)
@@ -135,10 +153,32 @@ struct HomeScreen: View {
                     .tourTarget(.packs)
             }
             .padding(.top, 16) }
-            if model.tvAppMissing { MobileNote(text: String(localized: "To install the TV app for the first time, use Nino on a computer once. After that this phone is enough.")) }
+            if !demoOnly {
+                // TV uygulaması bu telefondan kurulur ya da güncellenir (CouchSubs'tan).
+                if let update = model.tvAppUpdate {
+                    TVAppUpdateTile(update: update) { path.append(.tvUpdate) }
+                } else if model.tvAppMissing {
+                    Button { path.append(.tvInstall) } label: {
+                        InfoTile(symbol: "arrow.down.app", title: "Install the TV app from this phone", caption: "Samsung · LG · Android TV")
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
             if model.translatorStatus == .needsDownload, #available(iOS 26, *) { LanguagePackTile() }
             if model.translatorStatus == .unsupported, !Translator.isAvailable {
                 MobileNote(text: String(localized: "Apple's free translation needs iOS 26 or later. Game packs, DeepL and AI translation work on this device."))
+            } else if model.translatorStatus == .unsupported, !model.onlineTranslationActive {
+                // Nino: Apple'ın ücretsiz çevirisinde olmayan dil (Urduca, Bengalce, Filipince).
+                MobileNote(text: String(localized: "Apple's free translation doesn't support this language yet. Turn on AI translation in Settings › Translation; Gemini is free."))
+            }
+            if model.isRunning && !model.isDemo {
+                // İlk altyazı gelene kadar: kolu açınca PS5'te ana hesap seçilmeli (GitHub #231).
+                if model.recentLines.isEmpty && !model.isXbox {
+                    MobileNote(text: String(localized: "When you turn on the controller to play, choose your MAIN account on the PS5. Don't play with the second account Nino signs in with, or the controller won't work in the game."),
+                               tone: Mobile.Palette.secondary)
+                }
+                GameSection(choice: model.gameChoice)
+                if model.sessionState == .streaming { ScreenTranslateButton() }
             }
             if model.isRunning {
                 Text("Keep Nino open on the screen while you play. iOS stops the connection when the app goes to the background; the screen stays on while translating.")
@@ -169,6 +209,7 @@ struct HomeScreen: View {
         .task {
             app.analytics.screen("home")
             await model.refreshTranslatorStatus()
+            await model.checkTVApp()
         }
     }
 
@@ -201,7 +242,8 @@ struct HomeScreen: View {
         case .connecting: (Mobile.Palette.accent, t("home.status.connecting"))
         case .live: (liveGreen, t(onPhone ? "home.status.live" : "home.status.tv"))
         }
-        let name = model.console.map { $0.name.isEmpty ? "PS5" : $0.name } ?? "PS5"
+        let name = model.isXbox ? model.xboxConsole.map { $0.name.isEmpty ? "Xbox" : $0.name } ?? "Xbox"
+            : model.console.map { $0.name.isEmpty ? "PS5" : $0.name } ?? "PS5"
         let shown = model.isDemo ? t("demo.status") : (state == .notPaired ? text : "\(name)  ·  \(text)")
         return HStack(spacing: 8) {
             PulsingDot(color: color, pulses: state == .live || state == .connecting)
@@ -339,7 +381,7 @@ private struct HomeStage: View {
 private struct SlideToTranslate: View {
     @Environment(\.layoutDirection) private var direction
     let state: HomeState
-    let arabic: Bool
+    let target: String
     let label: String
     let onStart: () -> Void
     let onStop: () -> Void
@@ -358,7 +400,7 @@ private struct SlideToTranslate: View {
             let base: CGFloat = on ? travel : 0
             let x = min(max(base + drag, 0), travel)
             let progress = x / travel
-            let (top, bottom) = FlagColors.pair(arabic: arabic)
+            let (top, bottom) = FlagColors.pair(for: target)
             ZStack(alignment: .leading) {
                 Capsule().fill(ink)
                 Capsule().fill(LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)).opacity(progress)
@@ -379,7 +421,7 @@ private struct SlideToTranslate: View {
                         Image(systemName: rtl ? "arrow.left" : "arrow.right")
                             .font(.system(size: 22, weight: .semibold)).foregroundStyle(ink)
                             .opacity(1 - progress)
-                        FlagGlass(arabic: arabic).opacity(progress)
+                        FlagGlass(target: target).opacity(progress)
                     }
                 }
                 .frame(width: knob, height: knob)
@@ -449,14 +491,15 @@ private struct ShimmerText: View {
 
 /// Camlı bayrak küresi: bayrak dairenin içinde, üstünde buzlu parlama ve ince ışıklı kenar.
 private struct FlagGlass: View {
-    let arabic: Bool
+    /// Türkçede çizilmiş ay yıldız, öbür dillerde dilin bayrağı (emoji).
+    let target: String
 
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size.width
             ZStack {
-                if arabic {
-                    Text(verbatim: "🇸🇦").font(.system(size: size * 1.15)).fixedSize()
+                if !TargetLanguage.isTurkish(target) {
+                    Text(verbatim: TargetLanguage.flag(target)).font(.system(size: size * 1.15)).fixedSize()
                 } else {
                     FlagColors.red
                     CrescentStar().frame(width: size * 0.6, height: size * 0.6)

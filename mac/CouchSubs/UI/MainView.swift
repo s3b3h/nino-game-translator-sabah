@@ -26,6 +26,7 @@ struct MainView: View {
                             .frame(width: scene.size.width, height: scene.size.height)
                     }
                     LivingRoomHint()
+                    XboxConnectButton()
                     if model.showsOnComputer {
                         Button("Adjust the subtitle window") { model.overlayAdjusting = true }
                             .buttonStyle(.ghost)
@@ -69,6 +70,7 @@ struct MainView: View {
                         .animation(.spring(response: 0.6, dampingFraction: 0.86), value: model.isRunning)
                         .background(PowerHalo())
                         }
+                        XboxConnectButton()
                         if model.showsOnComputer {
                             Button("Adjust the subtitle window") { model.overlayAdjusting = true }
                                 .buttonStyle(.ghost)
@@ -200,6 +202,7 @@ struct MainControls: View {
                 if model.showsOnTV { TVStatusTile() }
             }
             .fixedSize(horizontal: false, vertical: true)
+            if model.isRunning { GameSection(choice: model.gameChoice) }
             HStack(alignment: .top, spacing: Theme.space("gap")) {
                 StatusTile(symbol: "globe", title: "Translation", value: engineName)
                 StatusTile(symbol: "keyboard", title: "Shortcut", value: String(localized: "Translate the screen (⌥⌘T)"))
@@ -273,7 +276,8 @@ private struct MainWarnings: View {
     private var targetName: String { Locale.current.localizedString(forLanguageCode: model.settings.targetLanguage) ?? model.settings.targetLanguage }
 
     var body: some View {
-        if model.translatorStatus != .ready {
+        // Apple'ın çevirisi bu dili desteklemese de yapay zekâ açıksa satırlar oradan gelir: uyarı gerekmez.
+        if model.translatorStatus != .ready && !(model.translatorStatus == .unsupported && model.onlineTranslationActive) {
             Card {
                 if model.translatorStatus == .needsDownload {
                     Label(String(format: String(localized: "The %@–%@ language pack is not downloaded yet."), sourceName, targetName),
@@ -292,6 +296,8 @@ private struct MainWarnings: View {
                         .foregroundStyle(Color.csWarning)
                     if !Translator.isAvailable {
                         HintText(text: "Apple's free translation needs macOS 26 or later. Game packs, DeepL and AI translation (Settings › Translation) work on this Mac.")
+                    } else {
+                        HintText(text: "Apple's free translation doesn't support this language yet. Turn on AI translation in Settings › Translation; Gemini is free.")
                     }
                 }
             }
@@ -373,6 +379,10 @@ private struct LiveSubtitlesTile: View {
                 }
                 .frame(maxWidth: .infinity)
                 .opacity(0.9)
+                // Çeviri PS5'ten (ikinci hesap) okunurken: kolu açınca ana hesap seçilmeli (CouchSubs GitHub #231).
+                if model.isRunning && model.settings.videoSource == .ps5 {
+                    HintText(text: "When you turn on the controller to play, choose your MAIN account on the PS5. Don't play with the second account Nino signs in with, or the controller won't work in the game.")
+                }
             } else {
                 CurrentLine(translation: model.lastTranslation, source: model.lastSource)
                 if let metrics = model.lastMetrics { MetricsRow(metrics: metrics) }

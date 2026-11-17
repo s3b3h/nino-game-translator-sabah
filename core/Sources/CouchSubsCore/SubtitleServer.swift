@@ -15,6 +15,14 @@ public enum SubtitlePlacement: String, Codable, CaseIterable, Sendable {
     case fixed
 }
 
+/// Altyazı kutusunun kapladığı alan.
+public enum SubtitleBackgroundShape: String, Codable, CaseIterable, Sendable {
+    /// Kutu yazı kadar (ya da örtüyse okunan altyazı bölgesi kadar) yer kaplar.
+    case fit
+    /// Kutu tam genişlikte bir bant: oyundaki İngilizce altyazı yan yana taşsa da görünmez.
+    case band
+}
+
 /// TV'de altyazı yazısının rengi.
 public enum SubtitleTextColor: String, Codable, CaseIterable, Sendable {
     case white
@@ -44,6 +52,20 @@ public enum SubtitleTheme: String, Codable, CaseIterable, Sendable {
 }
 
 /// Android TV'de PS5 görüntüsünün nasıl gösterildiği.
+/// Nino: altyazının yazı tipi. `system` cihazın kendi yazı tipi (eskisi gibi); öbürleri TV sayfasına ve uygulamalara gömülü
+/// OFL lisanslı yazı tipleridir (Barlow, Barlow Condensed, Nunito). Arapça, Tayca, Hintçe harfler bunlarda yoktur, o
+/// harfler cihazın yazı tipiyle çizilir.
+public enum SubtitleFont: String, Codable, CaseIterable, Sendable {
+    /// Cihazın kendi yazı tipi.
+    case system
+    /// Barlow: sade, modern.
+    case modern
+    /// Barlow Condensed: dar ve kalın, aksiyon oyunlarının altyazısına benzer.
+    case condensed
+    /// Nunito: yuvarlak hatlı, yumuşak.
+    case rounded
+}
+
 public enum TVDisplayMode: String, Codable, CaseIterable, Sendable {
     /// HDMI CouchSubs'ın içinde; görüntü hiç gelmezse TV uygulaması kendiliğinden katmana geçer.
     case inApp
@@ -60,29 +82,42 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
     public var placement: SubtitlePlacement
     /// Yazının arkasındaki siyah zeminin koyuluğu, yüzde (0: zemin yok).
     public var background: Int
+    /// Zeminin kapladığı alan; eski TV uygulamaları alanı tanımaz, `fit` gibi davranır.
+    public var backgroundShape: SubtitleBackgroundShape
     public var bold: Bool
     public var textColor: SubtitleTextColor
     /// Yalnız Android TV uygulaması kullanır; diğer TV'ler ve OBS katmanı alanı tanımaz.
     public var displayMode: TVDisplayMode
+    /// Hızlı konuşmada önceki satır(lar) yeni satırın üstünde kısa süre soluk kalsın mı; kapalıysa yeni satır eskisinin
+    /// yerine geçer. TV uygulaması 0.9.16 ve sonrası tanır (Windows: SubtitleStyle.StackPrevious).
+    public var stackPrevious: Bool
     /// Nino: altyazı teması.
     public var theme: SubtitleTheme
     /// Nino: yazı boyu oyunun İngilizce altyazısının yüksekliğine göre her satırda kendiliğinden ayarlanır.
     public var autoSize: Bool
+    /// Nino: yazı tipi. Varsayılan dar/aksiyon (GTA tarzı altyazıya en yakın); kaydı olmayan eski ayarlar da buna geçer.
+    public var font: SubtitleFont
 
-    public init(fontSize: Int = 46, bottomPercent: Int = 7, placement: SubtitlePlacement = .cover, background: Int = 100, bold: Bool = false,
-                textColor: SubtitleTextColor = .white, displayMode: TVDisplayMode = .inApp, theme: SubtitleTheme = .classic, autoSize: Bool = true) {
+    public init(fontSize: Int = 46, bottomPercent: Int = 7, placement: SubtitlePlacement = .cover, background: Int = 100, backgroundShape: SubtitleBackgroundShape = .fit, bold: Bool = false,
+                textColor: SubtitleTextColor = .white, displayMode: TVDisplayMode = .inApp, stackPrevious: Bool = true,
+                theme: SubtitleTheme = .classic, autoSize: Bool = true, font: SubtitleFont = .condensed) {
+        self.font = font
         self.theme = theme
         self.autoSize = autoSize
         self.fontSize = fontSize
         self.bottomPercent = bottomPercent
         self.placement = placement
         self.background = background
+        self.backgroundShape = backgroundShape
         self.bold = bold
         self.textColor = textColor
         self.displayMode = displayMode
+        self.stackPrevious = stackPrevious
     }
 
-    private enum CodingKeys: String, CodingKey { case fontSize, bottomPercent, placement, background, bold, textColor, displayMode, theme, autoSize }
+    private enum CodingKeys: String, CodingKey {
+        case fontSize, bottomPercent, placement, background, backgroundShape, bold, textColor, displayMode, stackPrevious, theme, autoSize, font
+    }
 
     /// Eski sürümün kaydettiği ayarlarda yeni alanlar yoktur; eksikler varsayılanla dolar.
     public init(from decoder: Decoder) throws {
@@ -92,18 +127,21 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
         bottomPercent = try values.decodeIfPresent(Int.self, forKey: .bottomPercent) ?? defaults.bottomPercent
         placement = (try? values.decodeIfPresent(SubtitlePlacement.self, forKey: .placement)) ?? defaults.placement
         background = try values.decodeIfPresent(Int.self, forKey: .background) ?? defaults.background
+        backgroundShape = (try? values.decodeIfPresent(SubtitleBackgroundShape.self, forKey: .backgroundShape)) ?? defaults.backgroundShape
         bold = try values.decodeIfPresent(Bool.self, forKey: .bold) ?? defaults.bold
         textColor = (try? values.decodeIfPresent(SubtitleTextColor.self, forKey: .textColor)) ?? defaults.textColor
         displayMode = (try? values.decodeIfPresent(TVDisplayMode.self, forKey: .displayMode)) ?? defaults.displayMode
+        stackPrevious = try values.decodeIfPresent(Bool.self, forKey: .stackPrevious) ?? defaults.stackPrevious
         theme = (try? values.decodeIfPresent(SubtitleTheme.self, forKey: .theme)) ?? defaults.theme
         autoSize = (try? values.decodeIfPresent(Bool.self, forKey: .autoSize)) ?? defaults.autoSize
+        font = (try? values.decodeIfPresent(SubtitleFont.self, forKey: .font)) ?? defaults.font
     }
 
     /// TV'ye giden `style` olayının gövdesi.
     var json: [String: Any] {
         ["fontSize": fontSize, "bottomPercent": bottomPercent, "placement": placement.rawValue,
-         "background": max(0, min(100, background)), "bold": bold, "textColor": textColor.rawValue,
-         "displayMode": displayMode.rawValue, "theme": theme.rawValue, "autoSize": autoSize]
+         "background": max(0, min(100, background)), "backgroundShape": backgroundShape.rawValue, "bold": bold, "textColor": textColor.rawValue,
+         "displayMode": displayMode.rawValue, "stackPrevious": stackPrevious, "theme": theme.rawValue, "autoSize": autoSize, "font": font.rawValue]
     }
 }
 
@@ -112,6 +150,14 @@ public enum SubtitleEvent: Equatable, Sendable {
     /// `replaces`: satır öncekinin uzamış ya da düzelmiş okumasıdır; öncekinin üstüne yığılmaz, yerine geçer.
     case subtitle(text: String, durationMs: Int, paragraphs: Bool, replaces: Bool = false)
     case clear
+    /// "Ekranı çevir" sonuçları: grupların çevirisi, yukarıdan aşağı, her biri ayrı satırda.
+    case screen(text: String, durationMs: Int)
+    /// "Ekranı çevir" çevirileri kaldırıldı.
+    case screenClear
+    /// Ek alanın (görev, telefon, bildirim) çevirisi; `text` boşsa o alanın kutusu kalkar.
+    case region(id: String, text: String, box: TextBox?)
+    /// Bütün ek alan kutuları kalktı (çeviri durdu).
+    case regionClear
 }
 
 /// TV uygulamasının bağlandığı yerel Server-Sent Events sunucusu.
@@ -251,11 +297,32 @@ public final class SubtitleServer: @unchecked Sendable {
             return json
         }
         broadcast(event: "screen", json: ["duration": durationMs, "items": list])
+        // Altyazı yalnız bilgisayardaysa (TV yok) çeviriler başka hiçbir yere gitmiyordu: tuşa basınca yalnız
+        // "Ekran çevriliyor…" görünüyordu.
+        onEvent?(.screen(text: items.map(\.translation).joined(separator: "\n"), durationMs: durationMs))
+    }
+
+    /// Ek alanın çevirisi: `region` olayı alanın kimliğini (`id`), çeviriyi (`text`; boşsa kutu kalkar), yazının karedeki
+    /// yerini (`box`) ve satır yüksekliğini (`line`, ekrana oranla) taşır. TV çeviriyi o yerde küçük bir kutuda gösterir;
+    /// ana altyazıya dokunmaz. Olayı tanımayan eski TV uygulamaları yok sayar.
+    public func sendRegion(id: String, text: String, box: TextBox?, lineHeight: Double? = nil) {
+        var json: [String: Any] = ["id": id, "text": text]
+        if let box { json["box"] = Self.json(box) }
+        if let lineHeight { json["line"] = Decimal(Int((max(0, min(1, lineHeight)) * 10000).rounded())) / 10000 }
+        broadcast(event: "region", json: json)
+        onEvent?(.region(id: id, text: text, box: box))
+    }
+
+    /// Bütün ek alan kutularını kaldırır.
+    public func clearRegions() {
+        broadcast(event: "region-clear", json: [:])
+        onEvent?(.regionClear)
     }
 
     /// TV'deki "ekranı çevir" çevirilerini kaldırır (altyazıya dokunmaz).
     public func clearScreen() {
         broadcast(event: "screen-clear", json: [:])
+        onEvent?(.screenClear)
     }
 
     /// Dosyayı `path` adresinden verir ("/voices/male_1.wav").
@@ -387,7 +454,7 @@ public final class SubtitleServer: @unchecked Sendable {
         queue.async { self.sendToAll(data, includingTVs: !subtitle || self.tvEnabled) }
     }
 
-    static let subtitleEvents: Set<String> = ["subtitle", "clear", "screen", "screen-clear", "style"]
+    static let subtitleEvents: Set<String> = ["subtitle", "clear", "screen", "screen-clear", "style", "region", "region-clear"]
 
     /// Gönderim hatası alan bağlantı kopmuş sayılır ve listeden çıkarılır. `includingTVs` false ise yalnız izleyiciler
     /// (OBS) alır.
