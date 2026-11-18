@@ -23,13 +23,17 @@ ASSISTANT_DAILY_USD = "2"
 
 # Çeviri havuzu (src/translate.js): anında çeviri ve 30 dakikada bir bağlamla gözden geçirme Claude Sonnet.
 # Günlük en çok harcama (dolar); dolunca uygulamalar kendi çevirileriyle devam eder.
-TRANSLATE_DAILY_USD = "15"
+TRANSLATE_DAILY_USD = "20"
 # Claude yalnız bu oyunlarda çevirir (oyun kimliği bu parçalardan birini içeriyorsa); "*" bütün oyunlar.
 TRANSLATE_GAMES = "grand-theft-auto-vi,gta-vi,gta-6,gta6,mafia"
 # Uygulama sunucunun çevirisini en çok bu kadar bekler (milisaniye), sonra kendi çevirisini gösterir.
 TRANSLATE_DEADLINE_MS = "900"
 # Uygulamalar oyunun yeni çevirilerini bu aralıkla çeker (saniye).
 TRANSLATE_SYNC_SECONDS = "180"
+# Havuz öncelikli oyunlar: uygulama bu oyunlarda satırı önce sunucuya sorar, kullanıcının kendi motorunu (Gemini,
+# DeepL, yapay zekâ) hiç kullanmaz; POOL_FIRST_DEADLINE_MS içinde cevap gelmezse yalnız ücretsiz yerel çeviriye düşer.
+POOL_FIRST_GAMES = "grand-theft-auto-vi,gta-vi,gta-6,gta6"
+POOL_FIRST_DEADLINE_MS = "1500"
 
 # Günde bir: eski parça kimliklerini (tekrar sayılmasın diye tutulur) temizler. 30 dakikada bir: yeni çevirileri gözden geçirir.
 [triggers]

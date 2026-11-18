@@ -493,6 +493,14 @@ export async function reviewTranslations(db, env, now, review = askReview, delay
 }
 
 /** GET /v1/config: uygulamaların uzaktan ayarı (yeni sürüm gerekmeden açılıp kapanır). */
+/** Havuz öncelikli oyunlar: env.POOL_FIRST_GAMES (virgüllü), yoksa GTA 6'nın adları. */
+export const POOL_FIRST_DEFAULT = Object.freeze(["grand-theft-auto-vi", "gta-vi", "gta-6", "gta6"]);
+
+export function poolFirstGames(env) {
+  if (env.POOL_FIRST_GAMES === undefined) return [...POOL_FIRST_DEFAULT];
+  return String(env.POOL_FIRST_GAMES).split(",").map((g) => g.trim().toLowerCase().replace(/-{2,}/g, "-")).filter(Boolean);
+}
+
 export function remoteConfig(env) {
   const num = (v, d) => (Number.isFinite(Number(v)) && v !== undefined && v !== "" ? Number(v) : d);
   return {
@@ -503,6 +511,13 @@ export function remoteConfig(env) {
       syncSeconds: num(env.TRANSLATE_SYNC_SECONDS, 180),
       contextLines: TRANSLATE_LIMITS.maxContext,
       maxLines: TRANSLATE_LIMITS.maxLines,
+    },
+    // Nino: bu oyunlarda uygulama satırı önce sunucuya sorar, kullanıcının kendi motorunu (Gemini, DeepL, yapay zekâ)
+    // hiç çağırmaz; sunucu `deadlineMs` içinde cevap vermezse yalnız cihazın ücretsiz çevirisine düşer. Kimlikler
+    // NinoPool.gameId biçiminde; eşleşme TRANSLATE_GAMES gibi "kimlik bu parçayı içeriyor" kuralıyla.
+    poolFirst: {
+      games: poolFirstGames(env),
+      deadlineMs: num(env.POOL_FIRST_DEADLINE_MS, 1500),
     },
     minVersion: {
       mac: env.MIN_VERSION_MAC ?? "",

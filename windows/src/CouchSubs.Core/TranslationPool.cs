@@ -75,6 +75,24 @@ public sealed class TranslationPool : IDisposable
         [JsonPropertyName("maxLines")] public int MaxLines { get; init; } = 12;
     }
 
+    /// <summary>
+    /// Havuz öncelikli oyunlar (<c>GET /v1/config</c> → <c>poolFirst</c>): bu oyunlarda satır önce sunucuya sorulur,
+    /// kullanıcının kendi motoru (Gemini, DeepL, yapay zekâ) hiç çağrılmaz; sunucu <see cref="DeadlineMs"/> içinde
+    /// cevap vermezse yalnız cihazın ücretsiz çevirisi kullanılır. Varsayılan GTA 6 (sunucuya ulaşılamasa da).
+    /// </summary>
+    public sealed record PoolFirstConfig
+    {
+        [JsonPropertyName("games")] public IReadOnlyList<string> Games { get; init; } = ["grand-theft-auto-vi", "gta-vi", "gta-6", "gta6"];
+        [JsonPropertyName("deadlineMs")] public int DeadlineMs { get; init; } = 1500;
+
+        /// <summary>Oyun listede mi: kimlik (<see cref="NinoPool.GameId"/>) parçalardan birini içeriyorsa (sunucudaki kural).</summary>
+        public bool Contains(string? rawGame)
+        {
+            if (NinoPool.GameId(rawGame) is not { Length: > 0 } id) return false;
+            return Games.Any(part => part.Trim().ToLowerInvariant() is { Length: > 0 } p && id.Contains(p, StringComparison.Ordinal));
+        }
+    }
+
     internal sealed class Cursor
     {
         [JsonPropertyName("since")] public long Since { get; set; }
@@ -92,6 +110,7 @@ public sealed class TranslationPool : IDisposable
     private sealed class ConfigReply
     {
         [JsonPropertyName("translate")] public Config? Translate { get; set; }
+        [JsonPropertyName("poolFirst")] public PoolFirstConfig? PoolFirst { get; set; }
     }
 
     private sealed class TranslateReply
@@ -124,6 +143,7 @@ public sealed class TranslationPool : IDisposable
     private readonly Func<DateTimeOffset> clock;
     private Uri? endpoint;
     private Config config = new();
+    private PoolFirstConfig poolFirst = new();
     private bool enabled;
     private string language;
     private Dictionary<string, Cursor> cursors = [];
@@ -161,6 +181,20 @@ public sealed class TranslationPool : IDisposable
     public Config CurrentConfig
     {
         get { lock (gate) return config; }
+    }
+
+    public PoolFirstConfig CurrentPoolFirst
+    {
+        get { lock (gate) return poolFirst; }
+    }
+
+    /// <summary>
+    /// Oyun havuz öncelikli mi ve sunucu kullanılabilir mi (sunucu açık, adres var). Ortak havuz ayarı kapalı olsa da
+    /// geçerlidir: kullanıcı kararıyla bu oyunlarda çeviri hep sunucudan gelir.
+    /// </summary>
+    public bool IsPoolFirst(string? rawGame)
+    {
+        lock (gate) return config.Enabled && endpoint is not null && poolFirst.Contains(rawGame);
     }
 
     public bool IsEnabled
@@ -255,11 +289,16 @@ public sealed class TranslationPool : IDisposable
             target = endpoint;
         }
         if (await GetAsync(new Uri(target, "v1/config"), token).ConfigureAwait(false) is not { } body) return;
-        Config? translate;
-        try { translate = JsonSerializer.Deserialize<ConfigReply>(body, Json)?.Translate; }
+        ConfigReply? reply;
+        try { reply = JsonSerializer.Deserialize<ConfigReply>(body, Json); }
         catch (JsonException) { return; }
-        if (translate is null) return;
-        lock (gate) config = translate;
+        if (reply?.Translate is not { } translate) return;
+        lock (gate)
+        {
+            config = translate;
+            // Eski sunucu bu bölümü göndermez: varsayılan (GTA 6) kalır.
+            if (reply.PoolFirst is { } first) poolFirst = first;
+        }
     }
 
     // --- Toplu indirme ---
@@ -381,12 +420,14 @@ public sealed class TranslationPool : IDisposable
     public async Task<string?> TranslateAsync(string line, IReadOnlyList<string>? context = null, string? rawGame = null)
     {
         await RefreshConfigAsync().ConfigureAwait(false);
+        // Havuz öncelikli oyunda ortak havuz ayarı kapalı olsa da sorulur.
+        var forced = IsPoolFirst(rawGame);
         if (!NinoPool.Accepts(NinoPool.Clean(line)) || PackKey.Key(line) is not { } key) return null;
         Task<string?> task;
         string lang;
         lock (gate)
         {
-            if (!(enabled && config.Enabled && endpoint is not null)) return null;
+            if (!((enabled || forced) && config.Enabled && endpoint is not null)) return null;
             if (Store.Match(line) is { } known) return known;
             lang = language;
             var flightKey = lang + "\u001F" + key;
@@ -418,6 +459,23 @@ public sealed class TranslationPool : IDisposable
             lock (gate) dirty = true;
         }
         return result;
+    }
+
+    /// <summary>
+    /// Havuz öncelikli oyunda satırı sunucuya sorar ve en çok <see cref="PoolFirstConfig.DeadlineMs"/> bekler. Süre dolarsa,
+    /// sunucu hata verirse ya da günlük bütçe dolduysa null (çağıran ücretsiz yerel çeviriye düşer). Süre dolsa da istek
+    /// sürer; geç gelen çeviri havuza yazılır ve aynı satır için <see cref="TranslateAsync"/> onu bekler.
+    /// </summary>
+    public async Task<string?> TranslateFirstAsync(string line, IReadOnlyList<string>? context, string? rawGame, CancellationToken token = default)
+    {
+        var deadline = TimeSpan.FromMilliseconds(Math.Clamp(CurrentPoolFirst.DeadlineMs, 100, 10_000));
+        var asking = TranslateAsync(line, context, rawGame);
+        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(token);
+        var waited = await Task.WhenAny(asking, Task.Delay(deadline, cancel.Token)).ConfigureAwait(false);
+        token.ThrowIfCancellationRequested();
+        if (waited != asking) return null;
+        cancel.Cancel();
+        return await asking.ConfigureAwait(false);
     }
 
     private async Task<string?> PostAsync(Uri url, string json)
@@ -557,6 +615,17 @@ public sealed class PoolContext(Func<DateTimeOffset>? clock = null)
     private readonly object gate = new();
     private readonly List<(string Text, DateTimeOffset At)> lines = [];
     private readonly Func<DateTimeOffset> clock = clock ?? (() => DateTimeOffset.UtcNow);
+
+    /// <summary>Satırdan önceki (taze) satırlar; satırı eklemez.</summary>
+    public IReadOnlyList<string> Before(string text, int keep = 4)
+    {
+        lock (gate)
+        {
+            var now = clock();
+            var fresh = lines.Where(line => now - line.At <= MaxAge && line.Text != text).Select(line => line.Text).ToList();
+            return fresh.Skip(Math.Max(0, fresh.Count - keep)).ToList();
+        }
+    }
 
     /// <summary>Satırı ekler; ondan önceki (taze) satırları döner.</summary>
     public IReadOnlyList<string> Add(string text, int keep = 4)

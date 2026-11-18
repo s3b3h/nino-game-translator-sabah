@@ -41,6 +41,10 @@ iPhone, Mac, Windows ve TV uygulamaları. Nino ücretsiz ve açık kaynaklıdır
   havuzda saklanır. Oynadığınız oyunu anlamak için Remote Play görüntüsünden küçük bir kare (yaklaşık 768 piksel
   genişlik) arada bir aynı hizmete gönderilir; kare saklanmaz, yalnız oyunun adı kurulum kimliğinize yazılır. Ortak
   havuzu kapatınca ikisi de durur.
+- **Havuz öncelikli oyunlar (şimdilik GTA 6):** Bu oyunlarda altyazı yalnız Nino'nun çeviri havuzundan çevrilir; ekrandaki
+  İngilizce satır, ortak havuz ayarı kapalı olsa da çeviri için sunucumuza (ve oradan Anthropic'e) gider. Kendi DeepL,
+  Gemini ya da yapay zekâ anahtarınız bu oyunlarda kullanılmaz; sunucuya ulaşılamazsa cihazın ücretsiz çevirisi devreye
+  girer. Liste sunucudan gelir ve bu sayfada duyurulur.
 
 **Olmayanlar:** Reklam, reklam kimliği, analiz ya da izleme kodu, hesap sistemi, uygulama içi satın alma yoktur.
 Nino 13 yaş altındaki çocuklara yönelik değildir ve bilerek onlardan veri toplamaz.
@@ -82,6 +86,10 @@ only to read a capture card's picture.
   stored in the pool. To tell which game you play, a small frame of the Remote Play picture (about 768 px wide) is sent
   to the same service now and then; the frame is not stored, only the game's name is saved with your installation ID.
   Turning the shared pool off stops both.
+- **Pool-first games (currently GTA 6):** in these games subtitles are translated only by Nino's translation pool; the
+  English line on screen goes to our server (and from there to Anthropic) for translation even if the shared pool is
+  turned off. Your own DeepL, Gemini or AI key is not used in these games; if the server can't be reached, the free
+  on-device translation is used. The list comes from the server and is announced on this page.
 
 **Not included:** ads, advertising IDs, analytics or tracking code, accounts, in-app purchases. Nino is not directed
 at children under 13 and does not knowingly collect their data.

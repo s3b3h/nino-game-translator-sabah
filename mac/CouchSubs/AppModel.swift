@@ -866,7 +866,9 @@ final class AppModel: ObservableObject {
             // Paketten tanınan oyun; yoksa PS5'in bildirdiği ya da kullanıcının seçtiği oyun (`GameChoice`).
             let game = packs.searchScope ?? sense.current?.name
             Task { await pool.offer(text, game: game) }
-            guard pooled else { return }
+            // Havuz öncelikli oyunda ortak havuz kapalı olsa da sorulur; çevirmen aynı isteği bekler (aynı satır iki kez
+            // sorulmaz), süresinde gelmeyen çeviri de gelince ekrandakinin yerine konur.
+            guard pooled || translations.isPoolFirst(game) else { return }
             let context = recent.add(text)
             // Sunucu o an çevirir (Claude); satır hâlâ ekrandaysa cihazın çevirisinin yerine konur.
             Task {
@@ -1991,7 +1993,7 @@ final class AppModel: ObservableObject {
     /// Ekran çevirisinin neden olmadığı: önce çevrimiçi motorun hatası, sonra ücretsiz çevirinin durumu.
     static func screenFailureReason(_ error: Error, translator: TextTranslator, engine: TranslationEngine,
                                     server: LocalAIServer?) -> String {
-        if let online = translator as? AITranslator {
+        if let online = ((translator as? PoolFirstTranslator)?.engine ?? translator) as? AITranslator {
             if let failure = online.lastFailure { return TranslationCard.describe(failure, engine: engine, server: server) }
             if online.lastLineWasRateLimited {
                 return String(format: String(localized: "%@ has reached its per-minute limit. Try again in a minute."), engine.displayName)
@@ -2092,7 +2094,24 @@ final class AppModel: ObservableObject {
 
     // MARK: - Çevrimiçi çeviri (DeepL ve yapay zekâ)
 
+    /// Nino: havuz öncelikli oyunda (sunucunun listesi, varsayılan GTA 6) çeviri yalnız havuzdan, gelmezse ücretsiz
+    /// çeviriden; kullanıcının anahtarlı motoru çağrılmaz. Ortak havuz ayarı kapalı olsa da (kullanıcı kararı).
     private func makeTranslator() -> TextTranslator {
+        let (source, target) = (settings.sourceLanguage, settings.targetLanguage)
+        let free = Translator(source: source, target: target,
+                              cache: Self.translationCache(engine: Translator.engineID, source: source, target: target))
+        let (translations, packs, sense, recent) = (translations, packs, gameChoice.sense, recentLines)
+        let english = source == "en"
+        return PoolFirstTranslator(engine: makeEngineTranslator(), free: free,
+                                   poolFirst: { english && translations.isPoolFirst(packs.searchScope ?? sense.current?.name) },
+                                   ask: { line in
+                                       await translations.translateFirst(line, context: recent.before(line),
+                                                                         game: packs.searchScope ?? sense.current?.name)
+                                   })
+    }
+
+    /// Kullanıcının seçtiği çevirmen: ücretsiz, DeepL ya da yapay zekâ.
+    private func makeEngineTranslator() -> TextTranslator {
         let (source, target) = (settings.sourceLanguage, settings.targetLanguage)
         // Önceki oturumların çevirileri motor ve dil çifti başına diskte durur; tekrar eden satır hemen gelir.
         let local = Translator(source: source, target: target,

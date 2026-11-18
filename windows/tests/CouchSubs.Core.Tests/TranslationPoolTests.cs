@@ -294,6 +294,79 @@ public sealed class TranslationPoolTests : IDisposable
         Assert.Empty(server.At("/v1/identify"));
     }
 
+
+    // --- Havuz öncelikli oyunlar (poolFirst) ---
+
+    [Fact]
+    public void PoolFirstDefaultsToGta6()
+    {
+        var pool = Make();
+        Assert.True(pool.IsPoolFirst("Grand Theft Auto VI"));
+        Assert.True(pool.IsPoolFirst("GTA VI"));
+        Assert.True(pool.IsPoolFirst("gta6"));
+        Assert.False(pool.IsPoolFirst("Grand Theft Auto V"));
+        Assert.False(pool.IsPoolFirst("Red Dead Redemption 2"));
+        Assert.False(pool.IsPoolFirst(null));
+        Assert.Equal(1500, pool.CurrentPoolFirst.DeadlineMs);
+    }
+
+    [Fact]
+    public async Task PoolFirstListAndDeadlineComeFromServer()
+    {
+        server.Config = """{"translate":{"enabled":true},"poolFirst":{"games":["mafia-the-old-country"],"deadlineMs":700}}""";
+        var pool = Make();
+        await pool.RefreshConfigAsync(force: true);
+        Assert.True(pool.IsPoolFirst("Mafia: The Old Country"));
+        Assert.False(pool.IsPoolFirst("Grand Theft Auto VI"));
+        Assert.Equal(700, pool.CurrentPoolFirst.DeadlineMs);
+    }
+
+    [Fact]
+    public async Task PoolFirstOffWhenServerTurnsTranslationOff()
+    {
+        server.Config = """{"translate":{"enabled":false}}""";
+        var pool = Make();
+        await pool.RefreshConfigAsync(force: true);
+        Assert.False(pool.IsPoolFirst("Grand Theft Auto VI"));
+    }
+
+    [Fact]
+    public async Task PoolFirstGameIsAskedEvenWhenSharingIsOff()
+    {
+        var pool = Make(enabled: false);
+        Assert.Equal("Kapıyı tut.", await pool.TranslateAsync("Hold the gate.", null, "Grand Theft Auto VI"));
+        Assert.Null(await pool.TranslateAsync("Open the door now.", null, "Red Dead Redemption 2"));
+        var post = Assert.Single(server.At("/v1/translate"));
+        Assert.Contains("grand-theft-auto-vi", post.Body);
+    }
+
+    [Fact]
+    public async Task TranslateFirstGivesUpAfterDeadlineButKeepsLateAnswer()
+    {
+        server.Config = """{"translate":{"enabled":true},"poolFirst":{"games":["grand-theft-auto-vi"],"deadlineMs":150}}""";
+        var pool = Make();
+        await pool.RefreshConfigAsync(force: true);
+        server.Hold = new TaskCompletionSource();
+        var started = DateTime.UtcNow;
+        Assert.Null(await pool.TranslateFirstAsync("Hold the gate.", null, "Grand Theft Auto VI"));
+        Assert.InRange((DateTime.UtcNow - started).TotalMilliseconds, 100, 3000);
+        // Geç gelen çeviri kaybolmaz: aynı satırın süren isteği bekler, sonra havuzda.
+        var late = pool.TranslateAsync("Hold the gate.", null, "Grand Theft Auto VI");
+        server.Hold.SetResult();
+        Assert.Equal("Kapıyı tut.", await late);
+        Assert.Single(server.At("/v1/translate"));
+        Assert.Equal("Kapıyı tut.", pool.Store.Match("Hold the gate."));
+    }
+
+    [Fact]
+    public async Task TranslateFirstReturnsNullWhenBudgetIsSpent()
+    {
+        server.Translate = _ => (200, """{"ok":true,"limited":"daily_cap","translations":[{"text":null,"tier":0}]}""");
+        var pool = Make();
+        Assert.Null(await pool.TranslateFirstAsync("Hold the gate.", null, "Grand Theft Auto VI"));
+        server.Translate = _ => (500, "");
+        Assert.Null(await pool.TranslateFirstAsync("Open the door now.", null, "Grand Theft Auto VI"));
+    }
 }
 
 /// <summary>Havuzdan sonradan gelen çeviri yalnız ekrandaki satırın yerine konur (Mac: SubtitlePipeline.upgrade).</summary>

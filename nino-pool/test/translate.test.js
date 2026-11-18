@@ -139,6 +139,18 @@ test("uzaktan ayar", async () => {
   assert.equal(body.translate.enabled, true);
   assert.equal(body.translate.deadlineMs, 700);
   assert.equal(body.minVersion.ios, "0.2.2");
+  // Havuz öncelikli oyunlar: varsayılan GTA 6, bekleme 1500 ms.
+  assert.deepEqual(body.poolFirst.games, ["grand-theft-auto-vi", "gta-vi", "gta-6", "gta6"]);
+  assert.equal(body.poolFirst.deadlineMs, 1500);
+});
+
+test("uzaktan ayar: havuz öncelikli oyunlar ve bekleme değişebilir", async () => {
+  const { env } = setup({ POOL_FIRST_GAMES: " GTA6 , mafia--the-old-country,", POOL_FIRST_DEADLINE_MS: "2000" });
+  const body = await (await handle(new Request("http://pool/v1/config"), env, NOW)).json();
+  assert.deepEqual(body.poolFirst.games, ["gta6", "mafia-the-old-country"]);
+  assert.equal(body.poolFirst.deadlineMs, 2000);
+  const { env: off } = setup({ POOL_FIRST_GAMES: "" });
+  assert.deepEqual((await (await handle(new Request("http://pool/v1/config"), off, NOW)).json()).poolFirst.games, []);
 });
 
 test("yardımcılar", () => {

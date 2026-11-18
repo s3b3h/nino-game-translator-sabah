@@ -249,5 +249,106 @@ class TranslationPoolTest {
         assertTrue(off.calls("/v1/identify").isEmpty())
     }
 
+    @Test fun contextBeforeDoesNotAddTheLine() {
+        var time = 0L
+        val context = PoolContext { time }
+        context.add("Hey.")
+        time += 1000
+        context.add("Back up!")
+        assertEquals(listOf("Hey."), context.before("Back up!"))
+        assertEquals(listOf("Hey.", "Back up!"), context.before("Wait."))
+        assertEquals(listOf("Hey.", "Back up!"), context.add("Wait."))
+        time += 31_000
+        assertEquals(emptyList<String>(), context.before("Go."))
+    }
+
+    // --- Havuz öncelikli oyunlar (poolFirst) ---
+
+    @Test fun poolFirstDefaultsToGta6() {
+        val pool = makePool(FakeServer())
+        assertTrue(pool.isPoolFirst("Grand Theft Auto VI"))
+        assertTrue(pool.isPoolFirst("GTA VI"))
+        assertTrue(pool.isPoolFirst("gta6"))
+        assertFalse(pool.isPoolFirst("Grand Theft Auto V"))
+        assertFalse(pool.isPoolFirst("Red Dead Redemption 2"))
+        assertFalse(pool.isPoolFirst(null))
+        assertEquals(1500, pool.poolFirst.deadlineMs)
+        // Eski sunucu poolFirst göndermez: varsayılan kalır.
+        pool.refreshConfig(force = true)
+        assertTrue(pool.isPoolFirst("Grand Theft Auto VI"))
+        assertEquals(1500, pool.poolFirst.deadlineMs)
+    }
+
+    @Test fun poolFirstListAndDeadlineComeFromServer() {
+        val server = FakeServer()
+        server.config = """{"translate":{"enabled":true},"poolFirst":{"games":["mafia-the-old-country"],"deadlineMs":700}}"""
+        val pool = makePool(server)
+        pool.refreshConfig(force = true)
+        assertTrue(pool.isPoolFirst("Mafia: The Old Country"))
+        assertFalse(pool.isPoolFirst("Grand Theft Auto VI"))
+        assertEquals(700, pool.poolFirst.deadlineMs)
+    }
+
+    @Test fun poolFirstOffWhenServerTurnsTranslationOff() {
+        val server = FakeServer()
+        server.config = """{"translate":{"enabled":false}}"""
+        val pool = makePool(server)
+        pool.refreshConfig(force = true)
+        assertFalse(pool.isPoolFirst("Grand Theft Auto VI"))
+    }
+
+    @Test fun poolFirstGameIsAskedEvenWhenSharingIsOff() {
+        val server = FakeServer()
+        val pool = makePool(server, enabled = false)
+        assertEquals("Kim lan sen?", pool.translate("Who the fuck are you?", emptyList(), "Grand Theft Auto VI"))
+        assertNull(pool.translate("Open the door now.", emptyList(), "Red Dead Redemption 2"))
+        val post = server.calls("/v1/translate").single()
+        assertEquals("grand-theft-auto-vi", JSONObject(post.body!!).getString("game"))
+        // Ortak havuz kapalıyken öbür istekler yine gitmez.
+        pool.sync("Grand Theft Auto VI", force = true)
+        pool.ping("Grand Theft Auto VI")
+        assertFalse(server.paths().any { it.endsWith("/v1/translations") || it.endsWith("/v1/ping") })
+    }
+
+    @Test fun translateFirstGivesUpAfterDeadlineButKeepsLateAnswer() {
+        val server = FakeServer()
+        server.config = """{"translate":{"enabled":true},"poolFirst":{"games":["grand-theft-auto-vi"],"deadlineMs":150}}"""
+        val pool = makePool(server)
+        pool.refreshConfig(force = true)
+        val release = java.util.concurrent.CountDownLatch(1)
+        server.translateReply = {
+            release.await()
+            """{"ok":true,"translations":[{"text":"Kapıyı tut.","tier":1}]}"""
+        }
+        try {
+            val started = System.nanoTime()
+            assertNull(pool.translateFirst("Hold the gate.", emptyList(), "Grand Theft Auto VI"))
+            val waited = (System.nanoTime() - started) / 1_000_000
+            assertTrue("bekleme $waited ms", waited in 100..3000)
+            // Geç gelen çeviri kaybolmaz: aynı satırın süren isteği bekler, sonra havuzda.
+            val late = java.util.concurrent.CompletableFuture.supplyAsync { pool.translate("Hold the gate.", emptyList(), "Grand Theft Auto VI") }
+            release.countDown()
+            assertEquals("Kapıyı tut.", late.get(5, java.util.concurrent.TimeUnit.SECONDS))
+            assertEquals(1, server.calls("/v1/translate").size)
+            assertEquals("Kapıyı tut.", pool.store.match("Hold the gate."))
+        } finally {
+            release.countDown()
+        }
+    }
+
+    @Test fun translateFirstReturnsNullWhenBudgetIsSpentOrServerFails() {
+        val server = FakeServer()
+        server.translateReply = { """{"ok":true,"limited":"daily_cap","translations":[{"text":null,"tier":0}]}""" }
+        val pool = makePool(server)
+        assertNull(pool.translateFirst("Hold the gate.", emptyList(), "Grand Theft Auto VI"))
+        assertEquals(1, server.calls("/v1/translate").size)
+        val broken = TranslationPool(newDirectory(), URL("https://pool.test"), null, "0.2.2", "android", "tr", true,
+            { request -> if (request.url.path.endsWith("/v1/translate")) NinoPool.Response(500, "", null) else server.handle(request) }) { now }
+        assertNull(broken.translateFirst("Open the door now.", emptyList(), "Grand Theft Auto VI"))
+        val offline = TranslationPool(newDirectory(), URL("https://pool.test"), null, "0.2.2", "android", "tr", true,
+            { throw java.io.IOException("çevrimdışı") }) { now }
+        assertNull(offline.translateFirst("Open the door now.", emptyList(), "Grand Theft Auto VI"))
+    }
+
     private fun org.json.JSONArray.toList() = (0 until length()).map { getString(it) }
 }

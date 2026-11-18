@@ -27,6 +27,7 @@ import com.couchsubs.mobile.core.GameSense
 import com.couchsubs.mobile.core.NinoPool
 import com.couchsubs.mobile.core.PackMatch
 import com.couchsubs.mobile.core.PoolContext
+import com.couchsubs.mobile.core.PoolFirstTranslator
 import com.couchsubs.mobile.core.TranslationPool
 import com.couchsubs.mobile.packs.PackStore
 import com.couchsubs.mobile.core.PackLookup
@@ -156,6 +157,10 @@ class TranslationService : Service() {
     @Volatile private var syncTask: java.util.concurrent.ScheduledFuture<*>? = null
     @Volatile private var poolListener: android.content.SharedPreferences.OnSharedPreferenceChangeListener? = null
     private val poolContext = PoolContext()
+    /** Nino: havuza giden satırın oyunu ([setup] kurar; `/v1/translate`'e giden oyunla aynı). */
+    @Volatile private var poolGame: () -> String? = { null }
+    /** Nino: oynanan oyun havuz öncelikli mi (gerçek oyun, sunucu açık, oyun listede; klipte hep hayır). */
+    @Volatile private var poolFirstActive: () -> Boolean = { false }
     /** Nino: oyunu ekrandan tanıma zamanlaması (bkz. [identifyGameIfNeeded]). */
     private val gameCheck = com.couchsubs.mobile.core.ScreenGameCheck()
     private val identifyWork = Executors.newSingleThreadExecutor { Thread(it, "Nino identify").apply { isDaemon = true; priority = Thread.MIN_PRIORITY } }
@@ -309,7 +314,7 @@ class TranslationService : Service() {
         val glossary = if (turkish) Glossary.load(this) else Glossary.Empty
         glossaryInUse = glossary
         val free = MlKitTranslator(cache(MlKitTranslator.ENGINE_ID), glossary, target).also { freeTranslator = it }
-        val translator = TargetAwareTranslator(onlineTranslator(free) ?: free, target)
+        val engine = onlineTranslator(free) ?: free
         val subtitleServer = SubtitleServer().also { server = it }
         subtitleServer.sendsToTv = settings.target == SubtitleTarget.TV
         subtitleServer.onClientsChanged = { count ->
@@ -373,6 +378,11 @@ class TranslationService : Service() {
         // Nino: oyunların altyazı yeri öğrenilir (oyun, gösterilen satırın paketinden anlaşılır).
         val layout = SubtitleLayout(File(filesDir, "subtitle-layout.json"))
         var game = "genel"
+        poolGame = { playedGame ?: game.takeIf { it != "genel" } }
+        // Klipten okunan satırlar sunucuya gitmez: havuz öncelikli oyun yalnız gerçek oyunda.
+        poolFirstActive = { realGame && translationPool.isPoolFirst(poolGame()) }
+        // Nino: havuz öncelikli oyunda (varsayılan GTA 6) çeviri havuzdan, gelmezse ücretsiz ML Kit'ten; motor çağrılmaz.
+        val translator = TargetAwareTranslator(poolFirst(engine, free), target)
         pipeline = SubtitlePipeline(translator, subtitleServer).apply {
             hudTop = layout.hudTop(game)
             // Yarım ya da bozuk okuma hemen çevrilmez; aynı satırın en iyi okuması çevrilir (Windows ve iPhone ile aynı).
@@ -387,7 +397,9 @@ class TranslationService : Service() {
             onPackMissed = { text ->
                 val played = playedGame ?: game.takeIf { it != "genel" }
                 if (turkish) linePool.offer(text, played)
-                if (translationPool.isEnabled) {
+                // Havuz öncelikli oyunda ortak havuz kapalı olsa da sorulur; çevirmen aynı isteği bekler (aynı satır iki
+                // kez sorulmaz), süresinde gelmeyen çeviri de gelince ekrandakinin yerine konur.
+                if (translationPool.isEnabled || poolFirstActive()) {
                     val context = poolContext.add(text)
                     // Sunucu o an çevirir (Claude); satır hâlâ ekrandaysa cihazın çevirisinin yerine konur.
                     try {
@@ -420,7 +432,7 @@ class TranslationService : Service() {
         // ortak havuza önerilmez (arayüz yazıları havuzu kirletmesin). Mac ve iPhone ile aynı.
         val areaReader = SubtitleReader().also { regionReader = it }
         regionWatcher = com.couchsubs.mobile.core.RegionWatcher({ crop -> areaReader.read(crop.pixels as RegionPixels) },
-            TargetAwareTranslator(onlineTranslator(free.separate()) ?: free.separate(), target), subtitleServer).apply {
+            TargetAwareTranslator(free.separate().let { line -> poolFirst(onlineTranslator(line) ?: line, line) }, target), subtitleServer).apply {
             packLookup = { text -> if (turkish && packTitles != null && settings.packsEnabled) PackLookup.match(library, text) else null }
         }
         // Nino: oyunun havuzdaki çevirileri oturum başında ve oyun değişince hemen, sonra dakikada bir iner (sunucunun
@@ -706,7 +718,7 @@ class TranslationService : Service() {
                 val reader = screenReader ?: SubtitleReader().also { screenReader = it }
                 val reading = reader.read(pixels)
                 // Yapay zekâda ekranın bütün yazıları tek istekte gider (bkz. AiTranslator.translateAll).
-                val translator = TargetAwareTranslator(onlineTranslator(free.separate()) ?: free.separate(), target)
+                val translator = TargetAwareTranslator(free.separate().let { line -> poolFirst(onlineTranslator(line) ?: line, line) }, target)
                 val items = ScreenTranslation.translate(reading, translator, { screenGeneration.get() != generation }) { shown ->
                     if (screenGeneration.get() != generation) return@translate
                     val milliseconds = ScreenTranslation.displayMilliseconds(shown)
@@ -773,6 +785,17 @@ class TranslationService : Service() {
         } catch (error: Exception) {
             Log.w(TAG, "debug dump", error)
         }
+    }
+
+    /**
+     * Nino: havuz öncelikli oyunda (sunucunun listesi, varsayılan GTA 6) çeviri yalnız havuzdan, gelmezse ücretsiz yerel
+     * çeviriden ([free]); kullanıcının anahtarlı motoru çağrılmaz. Ortak havuz ayarı kapalı olsa da (kullanıcı kararı).
+     * Windows: AppController.MakePoolFirst.
+     */
+    private fun poolFirst(engine: TextTranslator, free: TextTranslator): TextTranslator {
+        val pool = translations ?: return engine
+        return PoolFirstTranslator(engine, free, { poolFirstActive() }, { line -> pool.translateFirst(line, poolContext.before(line), poolGame()) })
+            .apply { log = { message -> Log.i(TAG, message) } }
     }
 
     /** Çevrimiçi motor seçilip anahtarı girildiyse o, hatada yerel motor; yoksa null. */
@@ -887,6 +910,8 @@ class TranslationService : Service() {
         }
         translations?.let { pool -> Thread { pool.save() }.start() }
         translations = null
+        poolFirstActive = { false }
+        poolGame = { null }
         areasListener?.let(settings::removeListener)
         areasListener = null
         regionWatcher?.reset()

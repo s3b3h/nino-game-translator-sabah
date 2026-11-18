@@ -2194,7 +2194,9 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         if (settings.SourceLanguage != "en") return;
         if (!PacksActive && services.FindInPacks(text) is not null) return;
         services.Pool?.Offer(text, services.GamePacks?.SearchScope);
-        if (!PoolTranslationsActive || services.Translations is not { } translations) return;
+        // Havuz öncelikli oyunda ortak havuz kapalı olsa da sorulur; çevirmen aynı isteği bekler (aynı satır iki kez
+        // sorulmaz), süresinde gelmeyen çeviri de gelince ekrandakinin yerine konur.
+        if (!(PoolTranslationsActive || PoolFirstActive) || services.Translations is not { } translations) return;
         var context = recentLines.Add(text);
         var game = PoolGame();
         _ = Task.Run(async () =>
@@ -2323,7 +2325,24 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     }
 
     /// <summary>Nino: Arapça hedefte Arap harfli satır (PS5'in Arapça menüsü) çevirmene gitmez.</summary>
-    private ITextTranslator MakeTranslator() => new TargetScriptGuard(MakeBaseTranslator(), settings.TargetLanguage);
+    private ITextTranslator MakeTranslator() => new TargetScriptGuard(MakePoolFirst(MakeBaseTranslator()), settings.TargetLanguage);
+
+    /// <summary>
+    /// Nino: havuz öncelikli oyunda (sunucunun listesi, varsayılan GTA 6) çeviri yalnız havuzdan, gelmezse ücretsiz
+    /// yerel çeviriden; kullanıcının anahtarlı motoru çağrılmaz. Ortak havuz ayarı kapalı olsa da (kullanıcı kararı).
+    /// </summary>
+    private ITextTranslator MakePoolFirst(ITextTranslator engine)
+    {
+        if (services.Translations is not { } translations) return engine;
+        return new PoolFirstTranslator(engine, MakeLocalTranslator(), () => PoolFirstActive,
+            (line, token) => translations.TranslateFirstAsync(line, recentLines.Before(line), PoolGame(), token))
+        {
+            Log = SubtitleLog.Write,
+        };
+    }
+
+    /// <summary>Oynanan oyun havuz öncelikli mi (kaynak İngilizce, sunucu açık, oyun listede).</summary>
+    private bool PoolFirstActive => settings.SourceLanguage == "en" && services.Translations?.IsPoolFirst(PoolGame()) == true;
 
     private ITextTranslator MakeBaseTranslator()
     {

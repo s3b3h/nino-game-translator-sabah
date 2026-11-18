@@ -851,7 +851,9 @@ final class PhoneModel: ObservableObject {
             guard (active && disabled.isEmpty) || packs.match(text) == nil else { return }
             let game = packs.searchScope ?? sense.current?.name
             Task { await pool.offer(text, game: game) }
-            guard pooled else { return }
+            // Havuz öncelikli oyunda ortak havuz kapalı olsa da sorulur; çevirmen aynı isteği bekler (aynı satır iki kez
+            // sorulmaz), süresinde gelmeyen çeviri de gelince ekrandakinin yerine konur.
+            guard pooled || translations.isPoolFirst(game) else { return }
             let context = recent.add(text)
             // Sunucu o an çevirir (Claude); satır hâlâ ekrandaysa cihazın çevirisinin yerine konur.
             Task {
@@ -889,7 +891,24 @@ final class PhoneModel: ObservableObject {
         translatorStatus = await Translator.status(source: settings.sourceLanguage, target: settings.targetLanguage)
     }
 
+    /// Nino: havuz öncelikli oyunda (sunucunun listesi, varsayılan GTA 6) çeviri yalnız havuzdan, gelmezse ücretsiz
+    /// çeviriden; kullanıcının anahtarlı motoru çağrılmaz. Ortak havuz ayarı kapalı olsa da (kullanıcı kararı).
     private func makeTranslator() -> TextTranslator {
+        let (source, target) = (settings.sourceLanguage, settings.targetLanguage)
+        let free = Translator(source: source, target: target,
+                              cache: Self.translationCache(engine: Translator.engineID, source: source, target: target))
+        let (translations, packs, sense, recent) = (translations, packs, gameChoice.sense, poolContext)
+        let english = source == "en"
+        return PoolFirstTranslator(engine: makeEngineTranslator(), free: free,
+                                   poolFirst: { english && translations.isPoolFirst(packs.searchScope ?? sense.current?.name) },
+                                   ask: { line in
+                                       await translations.translateFirst(line, context: recent.before(line),
+                                                                         game: packs.searchScope ?? sense.current?.name)
+                                   })
+    }
+
+    /// Kullanıcının seçtiği çevirmen: ücretsiz, DeepL ya da yapay zekâ.
+    private func makeEngineTranslator() -> TextTranslator {
         let (source, target) = (settings.sourceLanguage, settings.targetLanguage)
         let local = Translator(source: source, target: target,
                                cache: Self.translationCache(engine: Translator.engineID, source: source, target: target))
@@ -1106,7 +1125,7 @@ final class PhoneModel: ObservableObject {
         screenState = .idle
         server.clear()
         let reason: String
-        if let online = translator as? AITranslator, online.lastLineWasRateLimited {
+        if let online = ((translator as? PoolFirstTranslator)?.engine ?? translator) as? AITranslator, online.lastLineWasRateLimited {
             reason = String(format: String(localized: "%@ has reached its per-minute limit. Try again in a minute."), settings.translationEngine.displayName)
         } else {
             switch error as? TranslatorError {

@@ -4,7 +4,8 @@
 //   - oyun başlarken o oyunun bütün çevirileri tek seferde, sonra birkaç dakikada bir yalnız değişenler iner;
 //   - pakette ve havuzda olmayan satır sunucuya sorulur; sunucu o an çevirir, herkes için saklar.
 // Havuzdaki çeviri, hazır paketten sonra ve cihazın kendi çevirisinden önce kullanılır (11 dilin hepsinde).
-// Ayarlar'daki ortak havuz kapalıysa hiçbir şey gönderilmez ve indirilmez.
+// Ayarlar'daki ortak havuz kapalıysa hiçbir şey gönderilmez ve indirilmez; yalnız havuz öncelikli oyunlarda (sunucunun
+// `poolFirst` listesi, varsayılan GTA 6) satır yine sunucuya sorulur (kullanıcı kararı; bkz. [PoolFirstTranslator]).
 package com.couchsubs.mobile.core
 
 import org.json.JSONArray
@@ -18,6 +19,11 @@ import java.net.URLEncoder
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /** Bellekteki çeviriler (anahtar → çeviri). Altyazı hattı eşzamanlı sorduğu için kilitli; diske dil başına yazılır. */
 class PoolTranslations {
@@ -71,6 +77,22 @@ class TranslationPool(
         val contextLines: Int = 4,
         val maxLines: Int = 12,
     )
+
+    /**
+     * Havuz öncelikli oyunlar (`GET /v1/config` → `poolFirst`): bu oyunlarda satır önce sunucuya sorulur, kullanıcının
+     * kendi motoru (Gemini, DeepL, yapay zekâ) hiç çağrılmaz; sunucu [deadlineMs] içinde cevap vermezse yalnız cihazın
+     * ücretsiz çevirisi kullanılır. Varsayılan GTA 6 (sunucuya ulaşılamasa da). Windows: PoolFirstConfig.
+     */
+    data class PoolFirstConfig(
+        val games: List<String> = listOf("grand-theft-auto-vi", "gta-vi", "gta-6", "gta6"),
+        val deadlineMs: Int = 1500,
+    ) {
+        /** Oyun listede mi: kimlik ([NinoPool.gameId]) parçalardan birini içeriyorsa (sunucudaki kural). */
+        fun contains(rawGame: String?): Boolean {
+            val id = NinoPool.gameId(rawGame) ?: return false
+            return games.any { part -> part.trim().lowercase().let { it.isNotEmpty() && id.contains(it) } }
+        }
+    }
 
     /** Giden istek (testlerde sahte sunucuya gider). [body] yalnız POST'ta. */
     data class Request(val method: String, val url: URL, val body: String?)
@@ -131,6 +153,10 @@ class TranslationPool(
     private val syncLock = Any()
     @Volatile var config = Config()
         private set
+    @Volatile var poolFirst = PoolFirstConfig()
+        private set
+    /** Havuz öncelikli oyunda süresinde gelmeyen cevap beklenmez; istek bu iş parçacıklarında sürer. */
+    private val firstWork = Executors.newCachedThreadPool { Thread(it, "Nino pool first").apply { isDaemon = true } }
     @Volatile var isEnabled: Boolean = enabled
         private set
     @Volatile private var endpoint: URL? = endpoint
@@ -178,6 +204,12 @@ class TranslationPool(
     /** Havuz şu an kullanılabilir mi (ayar açık, sunucu açık, adres var). */
     val isActive: Boolean get() = isEnabled && config.enabled && endpoint != null
 
+    /**
+     * Oyun havuz öncelikli mi ve sunucu kullanılabilir mi (sunucu açık, adres var). Ortak havuz ayarı kapalı olsa da
+     * geçerlidir: kullanıcı kararıyla bu oyunlarda çeviri hep sunucudan gelir.
+     */
+    fun isPoolFirst(rawGame: String?): Boolean = config.enabled && endpoint != null && poolFirst.contains(rawGame)
+
     /** Sunucunun ayarını en çok 10 dakikada bir sorar (bloklar). */
     fun refreshConfig(force: Boolean = false) {
         val base = endpoint ?: return
@@ -187,7 +219,8 @@ class TranslationPool(
             configChecked = now
         }
         val data = get(URL(base, "/v1/config")) ?: return
-        val translate = try { JSONObject(data).optJSONObject("translate") } catch (error: Exception) { null } ?: return
+        val reply = try { JSONObject(data) } catch (error: Exception) { null } ?: return
+        val translate = reply.optJSONObject("translate") ?: return
         val defaults = Config()
         config = Config(
             enabled = translate.optBoolean("enabled", defaults.enabled),
@@ -196,6 +229,12 @@ class TranslationPool(
             contextLines = translate.optInt("contextLines", defaults.contextLines),
             maxLines = translate.optInt("maxLines", defaults.maxLines),
         )
+        // Eski sunucu bu bölümü göndermez: varsayılan (GTA 6) kalır.
+        reply.optJSONObject("poolFirst")?.let { first ->
+            val current = PoolFirstConfig()
+            val games = first.optJSONArray("games")?.let { list -> (0 until list.length()).mapNotNull { list.opt(it) as? String } }
+            poolFirst = PoolFirstConfig(games ?: current.games, first.optInt("deadlineMs", current.deadlineMs))
+        }
     }
 
     // --- Toplu indirme ---
@@ -299,12 +338,14 @@ class TranslationPool(
 
     /**
      * Satırı sunucuya sorar; sunucu biliyorsa ya da o an çevirirse çeviri döner ve havuza eklenir. Aynı satır aynı anda
-     * iki kez sorulmaz. Ulaşılamazsa, sınır dolduysa ya da havuz kapalıysa null (bloklar).
+     * iki kez sorulmaz. Ulaşılamazsa, sınır dolduysa ya da havuz kapalıysa null (bloklar). Havuz öncelikli oyunda
+     * ([isPoolFirst]) ortak havuz ayarı kapalı olsa da sorulur.
      */
     fun translate(line: String, context: List<String> = emptyList(), rawGame: String? = null): String? {
         refreshConfig()
         val base = endpoint
-        if (!isActive || base == null || !NinoPool.accepts(NinoPool.clean(line))) return null
+        val forced = isPoolFirst(rawGame)
+        if (!((isEnabled || forced) && config.enabled) || base == null || !NinoPool.accepts(NinoPool.clean(line))) return null
         val key = PackKey.key(line) ?: return null
         store.match(line)?.let { return it }
         val lang = synchronized(lock) { language }
@@ -323,9 +364,9 @@ class TranslationPool(
                 // Sunucu çeviremediyse "text": null (org.json'un optString'i bunu "null" yazısı yapar).
                 if (first != null && first.has("text") && !first.isNull("text")) result = first.optString("text").takeIf { it.isNotEmpty() }
             }
-            // Cevap gelirken havuz kapatıldıysa çeviri ne saklanır ne gösterilir.
+            // Cevap gelirken havuz kapatıldıysa çeviri ne saklanır ne gösterilir (havuz öncelikli oyun hariç).
             synchronized(lock) {
-                if (!isEnabled) result = null
+                if (!isEnabled && !forced) result = null
                 result?.let { text ->
                     store.merge(lang, mapOf(key to text))
                     dirty = true
@@ -336,6 +377,28 @@ class TranslationPool(
             mine.complete(result)
         }
         return result
+    }
+
+    /**
+     * Havuz öncelikli oyunda satırı sunucuya sorar ve en çok [PoolFirstConfig.deadlineMs] bekler. Süre dolarsa, sunucu
+     * hata verirse ya da günlük bütçe dolduysa null (çağıran ücretsiz yerel çeviriye düşer). Süre dolsa da istek sürer;
+     * geç gelen çeviri havuza yazılır ve aynı satır için [translate] onu bekler. Bekleyen iş parçacığı kesilirse
+     * (okuma hattı satırı bıraktı) [InterruptedException] (bloklar). Windows: TranslateFirstAsync.
+     */
+    fun translateFirst(line: String, context: List<String> = emptyList(), rawGame: String? = null): String? {
+        val deadline = poolFirst.deadlineMs.coerceIn(100, 10_000).toLong()
+        val asking = try {
+            CompletableFuture.supplyAsync({ translate(line, context, rawGame) }, firstWork)
+        } catch (stopped: RejectedExecutionException) {
+            return null
+        }
+        return try {
+            asking.get(deadline, TimeUnit.MILLISECONDS)
+        } catch (late: TimeoutException) {
+            null
+        } catch (error: ExecutionException) {
+            null
+        }
     }
 
     // --- Disk ---
@@ -416,6 +479,12 @@ class PoolContext(private val clock: () -> Long = System::currentTimeMillis) {
 
     private val lock = Any()
     private val lines = ArrayList<Pair<String, Long>>()
+
+    /** Satırdan önceki (taze) satırlar; satırı eklemez. */
+    fun before(text: String, keep: Int = 4): List<String> = synchronized(lock) {
+        val now = clock()
+        lines.filter { now - it.second <= MAX_AGE_MS && it.first != text }.map { it.first }.takeLast(keep)
+    }
 
     /** Satırı ekler; ondan önceki (taze) satırları döner. */
     fun add(text: String, keep: Int = 4): List<String> = synchronized(lock) {

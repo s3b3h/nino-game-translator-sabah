@@ -62,6 +62,50 @@ public actor TranslationPool {
         public init() {}
     }
 
+    /// Havuz öncelikli oyunlar (`GET /v1/config` → `poolFirst`): bu oyunlarda satır önce sunucuya sorulur, kullanıcının
+    /// kendi motoru (DeepL, yapay zekâ) hiç çağrılmaz; sunucu `deadlineMs` içinde cevap vermezse yalnız cihazın ücretsiz
+    /// çevirisi kullanılır. Varsayılan GTA 6 (sunucuya ulaşılamasa da). Windows: TranslationPool.PoolFirstConfig.
+    public struct PoolFirst: Codable, Equatable, Sendable {
+        public var games = ["grand-theft-auto-vi", "gta-vi", "gta-6", "gta6"]
+        public var deadlineMs = 1500
+        public init() {}
+
+        /// Eksik alan varsayılanla kalır (sunucu yalnız birini gönderse de).
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            if let games = try container.decodeIfPresent([String].self, forKey: .games) { self.games = games }
+            if let deadline = try container.decodeIfPresent(Int.self, forKey: .deadlineMs) { deadlineMs = deadline }
+        }
+
+        /// Oyun listede mi: kimlik (`NinoPool.gameID`) parçalardan birini içeriyorsa (sunucudaki kural).
+        public func contains(_ rawGame: String?) -> Bool {
+            guard let id = NinoPool.gameID(rawGame), !id.isEmpty else { return false }
+            return games.contains { part in
+                let piece = part.trimmingCharacters(in: .whitespaces).lowercased()
+                return !piece.isEmpty && id.contains(piece)
+            }
+        }
+    }
+
+    /// Havuz öncelikli kararı eşzamanlı okunur (çevirmen her satırda sorar); aktörün dışında kilitle tutulur.
+    final class PoolFirstState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var first = PoolFirst()
+        private var serverOn = true
+        private var reachable = false
+
+        func update(first: PoolFirst? = nil, serverOn: Bool? = nil, reachable: Bool? = nil) {
+            lock.withLock {
+                if let first { self.first = first }
+                if let serverOn { self.serverOn = serverOn }
+                if let reachable { self.reachable = reachable }
+            }
+        }
+
+        var current: PoolFirst { lock.withLock { first } }
+        func active(_ game: String?) -> Bool { lock.withLock { serverOn && reachable && first.contains(game) } }
+    }
+
     struct Cursor: Codable, Equatable {
         var since: Int = 0
         var after: String = ""
@@ -78,6 +122,7 @@ public actor TranslationPool {
 
     /// Altyazı hattının eşzamanlı baktığı çeviriler.
     public nonisolated let store = PoolTranslations()
+    nonisolated let poolFirstState = PoolFirstState()
     public private(set) var config = Config()
     public private(set) var isEnabled: Bool
 
@@ -105,6 +150,7 @@ public actor TranslationPool {
                 clock: @escaping @Sendable () -> Date = Date.init) {
         self.directory = directory
         self.endpoint = endpoint
+        poolFirstState.update(reachable: endpoint != nil)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         self.install = install ?? Self.installID(in: directory)
         self.app = app
@@ -164,7 +210,17 @@ public actor TranslationPool {
         store.replace(language: language, texts: saved?.texts ?? [:])
     }
 
-    public func setEndpoint(_ url: URL?) { endpoint = url }
+    public func setEndpoint(_ url: URL?) {
+        endpoint = url
+        poolFirstState.update(reachable: url != nil)
+    }
+
+    /// Şu anki havuz öncelikli ayarı (sunucudan; gelmediyse varsayılan).
+    public nonisolated var poolFirst: PoolFirst { poolFirstState.current }
+
+    /// Oyun havuz öncelikli mi ve sunucu kullanılabilir mi. Ortak havuz ayarı kapalı olsa da geçerlidir: kullanıcı
+    /// kararıyla bu oyunlarda çeviri hep sunucudan gelir.
+    public nonisolated func isPoolFirst(_ game: String?) -> Bool { poolFirstState.active(game) }
 
     /// Havuz şu an kullanılabilir mi (ayar açık, sunucu açık, adres var).
     public var isActive: Bool { isEnabled && config.enabled && endpoint != nil }
@@ -175,10 +231,15 @@ public actor TranslationPool {
         let now = clock().timeIntervalSince1970
         guard force || now - configChecked > 600 else { return }
         configChecked = now
-        struct Reply: Decodable { var translate: Config? }
+        struct Reply: Decodable {
+            var translate: Config?
+            var poolFirst: PoolFirst?
+        }
         guard let data = await get(endpoint.appendingPathComponent("v1/config")),
               let reply = try? JSONDecoder().decode(Reply.self, from: data), let translate = reply.translate else { return }
         config = translate
+        // Eski sunucu `poolFirst` göndermez: varsayılan (GTA 6) kalır.
+        poolFirstState.update(first: reply.poolFirst, serverOn: translate.enabled)
     }
 
     // MARK: - Toplu indirme
@@ -248,7 +309,10 @@ public actor TranslationPool {
     /// iki kez sorulmaz. Ulaşılamazsa, sınır dolduysa ya da havuz kapalıysa nil.
     public func translate(_ line: String, context: [String] = [], game rawGame: String? = nil) async -> String? {
         await refreshConfig()
-        guard isActive, let endpoint, NinoPool.accepts(NinoPool.clean(line)), let key = PackKey.key(line) else { return nil }
+        // Havuz öncelikli oyunda ortak havuz ayarı kapalı olsa da sorulur.
+        let forced = isPoolFirst(rawGame)
+        guard isEnabled || forced, config.enabled, let endpoint, NinoPool.accepts(NinoPool.clean(line)),
+              let key = PackKey.key(line) else { return nil }
         if let known = store.match(line) { return known }
         let lang = language
         let flightKey = lang + "\u{1F}" + key
@@ -280,6 +344,23 @@ public actor TranslationPool {
             dirty = true
         }
         return result
+    }
+
+    /// Havuz öncelikli oyunda satırı sunucuya sorar ve en çok `poolFirst.deadlineMs` bekler. Süre dolarsa, sunucu hata
+    /// verirse ya da günlük bütçe dolduysa nil (çağıran ücretsiz yerel çeviriye düşer). Süre dolsa da istek sürer; geç gelen
+    /// çeviri havuza yazılır ve aynı satır için `translate` onu bekler.
+    public nonisolated func translateFirst(_ line: String, context: [String] = [], game rawGame: String? = nil) async -> String? {
+        let deadline = UInt64(min(max(poolFirst.deadlineMs, 100), 10_000)) * 1_000_000
+        let asking = Task { await self.translate(line, context: context, game: rawGame) }
+        let once = FirstAnswer()
+        return await withCheckedContinuation { (done: CheckedContinuation<String?, Never>) in
+            once.set(done)
+            Task { once.finish(await asking.value) }
+            Task {
+                try? await Task.sleep(nanoseconds: deadline)
+                once.finish(nil)
+            }
+        }
     }
 
     // MARK: - Oyunu ekrandan tanıma
@@ -338,6 +419,37 @@ public actor TranslationPool {
     }
 }
 
+/// İki yarıştan (cevap, süre) ilk gelen sonucu bir kez verir.
+private final class FirstAnswer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<String?, Never>?
+    private var finished = false
+    private var early: String??
+
+    func set(_ value: CheckedContinuation<String?, Never>) {
+        let ready: String?? = lock.withLock {
+            if let early { finished = true; return early }
+            continuation = value
+            return nil
+        }
+        if let ready { value.resume(returning: ready) }
+    }
+
+    func finish(_ value: String?) {
+        let target: CheckedContinuation<String?, Never>? = lock.withLock {
+            guard !finished else { return nil }
+            guard let continuation else {
+                if early == nil { early = .some(value) }
+                return nil
+            }
+            finished = true
+            self.continuation = nil
+            return continuation
+        }
+        target?.resume(returning: value)
+    }
+}
+
 /// Havuza sorulan satırların bağlamı: son birkaç satır (çok eskiyse atılır). Sunucu kısa satırı ("Do it.") bununla
 /// doğru hitap ve anlamla çevirir.
 public final class PoolContext: @unchecked Sendable {
@@ -347,6 +459,14 @@ public final class PoolContext: @unchecked Sendable {
     private let clock: () -> Date
 
     public init(clock: @escaping () -> Date = Date.init) { self.clock = clock }
+
+    /// Satırdan önceki (taze) satırlar; satırı eklemez.
+    public func before(_ text: String, keep: Int = 4) -> [String] {
+        lock.withLock {
+            let now = clock()
+            return Array(lines.filter { now.timeIntervalSince($0.at) <= Self.maxAge && $0.text != text }.suffix(keep).map(\.text))
+        }
+    }
 
     /// Satırı ekler; ondan önceki (taze) satırları döner.
     public func add(_ text: String, keep: Int = 4) -> [String] {
