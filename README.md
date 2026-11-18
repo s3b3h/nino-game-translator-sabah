@@ -371,6 +371,8 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 
 **TV uygulamam güncel mi?** TV'de Nino'yu açın ve kumandada **OK**'e basın. Panelin en üstünde **V3.2** yazmıyorsa TV uygulamanız eski. Telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın.
 
+**iPhone'da ekran kapanınca bağlantı kopuyor.** iOS kilitlenen ya da arka plana geçen uygulamayı durdurur; bu Apple'ın kuralı. Çeviri sürerken Nino ekranı kendisi açık tutar ve parlaklığı kısar. Telefonu kilitlemeyin, başka uygulamaya geçmeyin, mümkünse şarja takın. Telefonu serbest bırakmak isterseniz bilgisayardaki ya da Android telefondaki Nino'yu kullanın; Android'de arka planda da çalışır.
+
 **Samsung ya da LG akıllı monitörüm var, olur mu?** Samsung akıllı monitörler (M serisi, 2016 sonrası) Samsung TV gibi çalışır. Akıllı olmayan monitörde altyazıyı telefonda ya da bilgisayar ekranında gösterin.
 
 **Altyazının siyah kutusunu kaldırabilir miyim? Yazı tipini değiştirebilir miyim?** Evet: **Ayarlar › Altyazı görünümü**'nde arka planı %0 yapın ve **Yazı tipi**'nden Aksiyon (GTA tarzı), Modern, Yuvarlak ya da Sade'yi seçin.

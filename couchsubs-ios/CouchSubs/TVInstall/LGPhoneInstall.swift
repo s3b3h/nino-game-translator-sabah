@@ -592,11 +592,11 @@ struct LGInstallSection: View {
         let typed = passphrase.trimmingCharacters(in: .whitespaces)
         phase = .working(.connecting)
         working = true
-        UIApplication.shared.isIdleTimerDisabled = true
+        ScreenAwake.set(true, for: .tvInstall)
         Task {
             defer {
                 working = false
-                UIApplication.shared.isIdleTimerDisabled = false
+                ScreenAwake.set(false, for: .tvInstall)
             }
             do {
                 let result = try await runInstall({ progress in

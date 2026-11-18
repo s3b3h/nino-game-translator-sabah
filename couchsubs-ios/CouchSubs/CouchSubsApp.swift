@@ -26,7 +26,7 @@ struct CouchSubsApp: App {
         let model = testing ? PhoneModel(store: EphemeralStore(), packs: library)
             : Self.demoStore().map { PhoneModel(store: $0, packs: library) } ?? PhoneModel(packs: library)
         // Çeviri sürerken ekran kararmaz: iOS kilitlenen ya da arka plana geçen uygulamayı askıya alır.
-        model.keepScreenAwake = { UIApplication.shared.isIdleTimerDisabled = $0 }
+        model.keepScreenAwake = { ScreenAwake.set($0, for: .translation) }
         // PS5 bağlantısı koptuğunda yerel bildirim (Profil'deki tercih; testlerde kapalı).
         if !testing {
             model.requestNotificationPermission = { ConnectionAlert.requestPermission() }
@@ -76,6 +76,7 @@ struct CouchSubsApp: App {
         .onChange(of: scenePhase) { phase in
             switch phase {
             case .active:
+                ScreenAwake.apply()
                 model.becameActive(afterBackground: wasInBackground)
                 wasInBackground = false
             case .background:

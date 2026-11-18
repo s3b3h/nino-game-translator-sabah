@@ -291,11 +291,11 @@ struct SamsungInstallSection: View {
         guard !target.isEmpty else { return }
         phase = .working(.connecting)
         working = true
-        UIApplication.shared.isIdleTimerDisabled = true
+        ScreenAwake.set(true, for: .tvInstall)
         Task {
             defer {
                 working = false
-                UIApplication.shared.isIdleTimerDisabled = false
+                ScreenAwake.set(false, for: .tvInstall)
             }
             do {
                 let result = try await runInstall({ progress in
@@ -474,11 +474,11 @@ struct AndroidTVInstallSection: View {
         replaceNeeded = false
         phase = .working(pairing != nil ? .pairing : .connecting)
         working = true
-        UIApplication.shared.isIdleTimerDisabled = true
+        ScreenAwake.set(true, for: .tvInstall)
         Task {
             defer {
                 working = false
-                UIApplication.shared.isIdleTimerDisabled = false
+                ScreenAwake.set(false, for: .tvInstall)
             }
             do {
                 guard TVPackages.androidVersion != nil else { throw AndroidInstallFailure(error: .packageMissing) }

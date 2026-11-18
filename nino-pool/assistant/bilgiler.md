@@ -64,6 +64,11 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
 - Çeviri havuzu: herkesin oyunda gördüğü İngilizce satırlar sunucuda toplanır, bir kez yüksek kaliteli yapay zekâyla
   Türkçeye çevrilir ve aynı satırı gören herkese anında gider (şimdilik GTA 6 için). Küfür ve argo sansürsüz, oyundaki
   sertlikte çevrilir. Oyunu Nino kendisi tanır (ekrandan ve altyazılardan); kullanıcının seçmesi gerekmez.
+- iPhone'da ekran kapanıyor, bir süre sonra bağlantı kopuyor: iOS, kilitlenen ya da arka plana geçen uygulamayı
+  durdurur; bu Apple'ın kuralıdır, hiçbir uygulama aşamaz. Çeviri sürerken Nino ekranı kendisi açık tutar ve
+  parlaklığı kısar. Telefonu kilitlemeyin, başka uygulamaya geçmeyin; şarja takılı bırakmak en
+  iyisi. Ekranın hiç açık kalmasını istemeyenler bilgisayardaki (Mac/Windows) ya da Android telefondaki Nino'yu
+  kullanabilir; Android'de Nino arka planda da çalışır.
 - Mac "doğrulanamadı" diyor: Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç. Windows "bilgisayarınızı korudu":
   Ek bilgi › Yine de çalıştır.
 - Mac PS5'i bulamıyor: Sistem Ayarları › Gizlilik ve Güvenlik › Yerel Ağ'da Nino'ya izin verin.
