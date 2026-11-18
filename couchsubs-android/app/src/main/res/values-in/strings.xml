@@ -285,6 +285,9 @@
     <string name="tvapp_update_title">Versi baru aplikasi TV tersedia</string>
     <string name="tvapp_update_body">Nino di TV %1$s versi %2$s, ponsel ini punya %3$s. Pembaruan butuh sekitar satu menit; biarkan TV menyala dan di Wi-Fi yang sama.</string>
     <string name="tvapp_update_button">Perbarui aplikasi TV</string>
+    <string name="app_update_title">Versi baru siap: %1$s</string>
+    <string name="app_update_body">Unduh dan pasang Nino versi terbaru.</string>
+    <string name="app_update_button">Perbarui</string>
     <string name="tvapp_update_short">Pembaruan tersedia: %1$s</string>
     <string name="tvinstall_title">Pasang aplikasi TV</string>
     <string name="tvinstall_body">Memasang aplikasi Nino TV di TV Samsung Anda dari ponsel ini, tanpa komputer. Ponsel dan TV harus berada di Wi-Fi yang sama.</string>

@@ -444,6 +444,9 @@
     <string name="tvapp_update_title">يتوفر إصدار جديد من تطبيق TV</string>
     <string name="tvapp_update_body">إصدار Nino على TV ‏%1$s هو %2$s، وعلى هذا الهاتف %3$s. يستغرق التحديث دقيقة تقريبًا؛ أبقِ TV قيد التشغيل وعلى شبكة Wi-Fi نفسها.</string>
     <string name="tvapp_update_button">تحديث تطبيق TV</string>
+    <string name="app_update_title">إصدار جديد جاهز: %1$s</string>
+    <string name="app_update_body">نزّل أحدث إصدار من Nino وثبّته.</string>
+    <string name="app_update_button">تحديث</string>
     <string name="tvapp_update_short">يتوفر تحديث: %1$s</string>
     <string name="tvinstall_title">تثبيت تطبيق TV</string>
     <string name="tvinstall_body">يثبّت تطبيق Nino على Samsung TV من هذا الهاتف، دون كمبيوتر. يجب أن يكون الهاتف وTV على شبكة Wi‑Fi نفسها.</string>

@@ -285,6 +285,9 @@
     <string name="tvapp_update_title">Đã có phiên bản mới của ứng dụng TV</string>
     <string name="tvapp_update_body">Nino trên TV %1$s là bản %2$s, điện thoại này có bản %3$s. Cập nhật mất khoảng một phút; hãy giữ TV bật và cùng mạng Wi-Fi.</string>
     <string name="tvapp_update_button">Cập nhật ứng dụng TV</string>
+    <string name="app_update_title">Đã có phiên bản mới: %1$s</string>
+    <string name="app_update_body">Tải về và cài đặt Nino bản mới nhất.</string>
+    <string name="app_update_button">Cập nhật</string>
     <string name="tvapp_update_short">Có bản cập nhật: %1$s</string>
     <string name="tvinstall_title">Cài ứng dụng TV</string>
     <string name="tvinstall_body">Cài ứng dụng Nino TV trên TV Samsung ngay từ điện thoại này, không cần máy tính. Điện thoại và TV phải cùng một mạng Wi-Fi.</string>

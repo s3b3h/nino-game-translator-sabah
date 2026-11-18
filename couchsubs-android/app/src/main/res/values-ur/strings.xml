@@ -285,6 +285,9 @@
     <string name="tvapp_update_title">TV ایپ کا نیا ورژن دستیاب ہے</string>
     <string name="tvapp_update_body">%1$s TV پر Nino کا ورژن %2$s ہے، اس فون میں %3$s ہے۔ اپ ڈیٹ میں تقریباً ایک منٹ لگتا ہے؛ TV آن اور اسی Wi-Fi پر رکھیں۔</string>
     <string name="tvapp_update_button">TV ایپ اپ ڈیٹ کریں</string>
+    <string name="app_update_title">نیا ورژن تیار ہے: %1$s</string>
+    <string name="app_update_body">Nino کا تازہ ترین ورژن ڈاؤن لوڈ کر کے انسٹال کریں۔</string>
+    <string name="app_update_button">اپ ڈیٹ کریں</string>
     <string name="tvapp_update_short">اپ ڈیٹ دستیاب ہے: %1$s</string>
     <string name="tvinstall_title">TV ایپ انسٹال کریں</string>
     <string name="tvinstall_body">اس فون سے، کمپیوٹر کے بغیر، آپ کے Samsung TV پر Nino TV ایپ انسٹال کرتا ہے۔ فون اور TV ایک ہی Wi-Fi پر ہونے چاہییں۔</string>

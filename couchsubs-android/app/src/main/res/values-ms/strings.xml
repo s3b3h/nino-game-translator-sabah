@@ -285,6 +285,9 @@
     <string name="tvapp_update_title">Versi baharu apl TV tersedia</string>
     <string name="tvapp_update_body">Nino pada TV %1$s ialah %2$s, telefon ini mempunyai %3$s. Kemas kini mengambil masa kira-kira seminit; pastikan TV dihidupkan dan pada Wi-Fi yang sama.</string>
     <string name="tvapp_update_button">Kemas kini apl TV</string>
+    <string name="app_update_title">Versi baharu sedia: %1$s</string>
+    <string name="app_update_body">Muat turun dan pasang Nino versi terkini.</string>
+    <string name="app_update_button">Kemas kini</string>
     <string name="tvapp_update_short">Kemas kini tersedia: %1$s</string>
     <string name="tvinstall_title">Pasang apl TV</string>
     <string name="tvinstall_body">Memasang apl TV Nino pada TV Samsung anda daripada telefon ini, tanpa komputer. Telefon dan TV mesti berada pada Wi-Fi yang sama.</string>

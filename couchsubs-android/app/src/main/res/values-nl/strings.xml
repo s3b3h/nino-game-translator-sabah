@@ -285,6 +285,9 @@
     <string name="tvapp_update_title">Er is een nieuwe versie van de TV-app beschikbaar</string>
     <string name="tvapp_update_body">Nino op de %1$s-TV is %2$s, deze telefoon heeft %3$s. Bijwerken duurt ongeveer een minuut; houd de TV aan en op hetzelfde wifinetwerk.</string>
     <string name="tvapp_update_button">TV-app bijwerken</string>
+    <string name="app_update_title">Nieuwe versie klaar: %1$s</string>
+    <string name="app_update_body">Download en installeer de nieuwste Nino.</string>
+    <string name="app_update_button">Bijwerken</string>
     <string name="tvapp_update_short">Update beschikbaar: %1$s</string>
     <string name="tvinstall_title">TV-app installeren</string>
     <string name="tvinstall_body">Installeert de Nino TV-app op je Samsung-TV vanaf deze telefoon, zonder computer. De telefoon en de TV moeten op hetzelfde wifinetwerk zitten.</string>

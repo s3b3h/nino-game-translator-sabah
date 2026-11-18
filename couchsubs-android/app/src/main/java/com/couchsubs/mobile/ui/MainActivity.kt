@@ -106,6 +106,8 @@ class MainActivity : ComponentActivity() {
                 // eskiyse ana ekran "TV uygulamasını güncelle" önerir.
                 val tvConnected = status.connectedTvs > 0
                 LaunchedEffect(tvConnected) { TvAppUpdate.check(applicationContext) }
+                // Nino: telefon uygulamasının yeni sürümüne en çok 12 saatte bir bakılır.
+                LaunchedEffect(Unit) { com.couchsubs.mobile.update.AppUpdate.check(applicationContext) }
                 DisposableEffect(navigation) {
                     val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, _ ->
                         destination.route?.let { Telemetry.screen(it.substringBefore('/')) }

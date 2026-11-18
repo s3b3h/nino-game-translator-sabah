@@ -174,6 +174,8 @@ fun MainScreen(
             val onTv = settings.target == SubtitleTarget.TV
             // TV'deki uygulama eskiyse güncelleme önerisi (telefondan kurulur).
             if (!status.running) TvAppUpdateCard(onTvUpdate)
+            // Nino: GitHub'da telefon uygulamasının yeni sürümü varsa sakin bir öneri (Play kopyasında gösterilmez).
+            if (!status.running) AppUpdateCard()
             if (settings.homeStyle == HomeStyle.LIVING_ROOM) {
                 Spacer(Modifier.height(8.dp))
                 // Nino: sahne ve cam düğme Arapça arayüzde aynalanmaz (sürükleme ve görsel soldan sağa).

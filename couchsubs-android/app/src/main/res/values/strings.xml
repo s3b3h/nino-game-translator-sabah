@@ -300,6 +300,9 @@
     <string name="tvapp_update_title">TV uygulamasının yeni sürümü var</string>
     <string name="tvapp_update_body">%1$s TV\'deki Nino %2$s, bu telefondaki %3$s. Güncelleme bir dakika kadar sürer; TV açık ve aynı Wi-Fi\'da kalsın.</string>
     <string name="tvapp_update_button">TV uygulamasını güncelle</string>
+    <string name="app_update_title">Yeni sürüm hazır: %1$s</string>
+    <string name="app_update_body">Nino\'nun yeni sürümünü indirip kurabilirsin.</string>
+    <string name="app_update_button">Güncelle</string>
     <string name="tvapp_update_short">Güncelleme var: %1$s</string>
     <string name="tvinstall_title">TV uygulamasını kurun</string>
     <string name="tvinstall_body">Nino TV uygulamasını Samsung TV\'nize bilgisayar olmadan, bu telefondan kurar. Telefon ve TV aynı Wi-Fi\'da olmalı.</string>
