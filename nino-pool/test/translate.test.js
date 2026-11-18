@@ -240,3 +240,10 @@ test("havuz öncelikli oyunun satırı, uygulama başka oyun sansa da o oyunu d�
   body = await (await post(req(["A brand new line nobody has seen."], { game: "red-dead-redemption-2" }))).json();
   assert.equal(body.game, "red-dead-redemption-2");
 });
+
+test("GTA 6'ya özgü ad geçen satır, uygulama başka oyun sansa da GTA 6 sayılır", async () => {
+  const { post } = setup({ TRANSLATE_GAMES: "grand-theft-auto-vi" });
+  const body = await (await post(req(["Lucia, get in the car."], { game: "red-dead-redemption-2" }))).json();
+  assert.equal(body.game, "grand-theft-auto-vi");
+  assert.ok(body.translations[0].text);
+});

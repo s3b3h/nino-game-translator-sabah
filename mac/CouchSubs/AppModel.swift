@@ -850,7 +850,7 @@ final class AppModel: ObservableObject {
         let sense = gameChoice.sense
         // Havuz öncelikli oyunda (GTA 6) başka oyunların paketlerine bakılmaz: çeviri yalnız havuzdan (Claude). Havuzdaki
         // çeviri ortak havuz kapalıyken de kullanılır.
-        let poolFirst: @Sendable () -> Bool = { translations.isPoolFirst(packs.searchScope ?? sense.current?.name) }
+        let poolFirst: @Sendable () -> Bool = { translations.isPoolFirst(translations.poolGame(sense.current?.name, packs.searchScope)) }
         let english = settings.sourceLanguage == "en"
         pipeline.packLookup = !(active || pooled || english) ? nil : { text in
             let first = poolFirst()
@@ -873,11 +873,12 @@ final class AppModel: ObservableObject {
             Task { await pool.offer(text, game: game) }
             // Havuz öncelikli oyunda ortak havuz kapalı olsa da sorulur; çevirmen aynı isteği bekler (aynı satır iki kez
             // sorulmaz), süresinde gelmeyen çeviri de gelince ekrandakinin yerine konur.
-            guard pooled || translations.isPoolFirst(game) else { return }
+            let poolGame = translations.poolGame(sense.current?.name, game)
+            guard pooled || translations.isPoolFirst(poolGame) else { return }
             let context = recent.add(text)
             // Sunucu o an çevirir (Claude); satır hâlâ ekrandaysa cihazın çevirisinin yerine konur.
             Task {
-                guard let better = await translations.translate(text, context: context, game: game) else { return }
+                guard let better = await translations.translate(text, context: context, game: poolGame) else { return }
                 await MainActor.run { pipeline?.upgrade(source: text, translation: better) }
             }
         }
@@ -893,7 +894,10 @@ final class AppModel: ObservableObject {
     private var identifyLast = Date()
 
     private func identifyGameIfNeeded(_ frame: CGImage) {
-        guard settings.sharePool, settings.sourceLanguage == "en", identifyTask == nil, packs.searchScope == nil else { return }
+        // Paketten tahmin edilen oyun kesin değildir (GTA 6 satırları başka oyunun paketine benzeyebiliyor): havuz öncelikli
+        // oyun bilinmiyorsa ekrandan tanıma kapsam doluyken de denenir.
+        guard settings.sharePool, settings.sourceLanguage == "en", identifyTask == nil,
+              packs.searchScope == nil || !translations.isPoolFirst(translations.poolGame(gameChoice.sense.current?.name, packs.searchScope)) else { return }
         let known = gameChoice.sense.current
         let wait: TimeInterval
         if known == nil {
@@ -1782,15 +1786,19 @@ final class AppModel: ObservableObject {
 
     private var cornerTask: Task<Void, Never>?
     private var cornerLastCheck = Date.distantPast
-    private var cornerTexts = ["", ""]
-    private var cornerItems: [[ScreenTranslation.Item]] = [[], []]
+    private var cornerTexts = ["", "", ""]
+    private var cornerItems: [[ScreenTranslation.Item]] = [[], [], []]
     /// Nino: son çevrilen köşe yazıları. Aynı kutu her okumada biraz farklı çıkar ("STUDIO I" / "STUDIO L"); benzeri
     /// daha önce çevrildiyse çevirmene yeniden gitmez (Gemini'nin günlük hakkı bunlarla bitiyordu).
     private var cornerMemory: [(text: String, items: [ScreenTranslation.Item])] = []
     /// Nino: bir önceki okumada görülen ama henüz çevrilmeyen yazı. Kutu belirirken ya da kaybolurken yarım okunan yazı
     /// çevrilmez; yazı iki okumada aynı (ya da çok benzer) görünürse çevrilir.
-    private var cornerPending = ["", ""]
-    private var cornerEmptyReads = [Int](repeating: 0, count: 2)
+    private var cornerPending = ["", "", ""]
+    private var cornerEmptyReads = [Int](repeating: 0, count: 3)
+    /// Nino: menü okuması (bütün ekran) her köşe okumasında değil, iki okumada bir yapılır.
+    private var menuTurn = false
+    private var menuSeenAt = Date.distantPast
+    private var menuBoxes: [TextBox] = []
     /// Nino: PS5'in kendi (Türkçe) ekranı görüldü; bu zamana kadar köşe yazıları çevrilmez. Ana ekranda oyun kutucuklarının
     /// adları ("RED DEAD REDEMPTION", "share factory") ipucu sanılıp çevriliyordu.
     private var systemScreenUntil = Date.distantPast
@@ -1810,6 +1818,7 @@ final class AppModel: ObservableObject {
         let pooled = settings.sharePool && settings.sourceLanguage == "en"
         let translations = self.translations
         let game = packs.searchScope ?? gameChoice.sense.current?.name
+        let turkishWords = settings.targetLanguage == "tr"
         promptTask = Task { [weak self] in
             let translated = prompts.text.isEmpty ? [] :
                 ((try? await ScreenTranslation.translate(prompts, using: { piece in
@@ -1819,7 +1828,14 @@ final class AppModel: ObservableObject {
                     }
                     return try await translator.translate(piece)
                 })) ?? [])
-            let items = Self.placeAbove(translated)
+            // Simgeler (□ ✕ ○) Türkçede tekrar edilmez: oyunun kendi tuş simgeleri hemen altında görünüyor.
+            let previous = self?.promptItems ?? []
+            // Tuş şeridi ("PHOTO STUDIO □ SELECT ✕ BACK ○"): her parçanın Türkçesi kendi sözcüğünün üstüne ortalanır.
+            let items = Self.steady(Self.placeAbove(translated.flatMap { Self.splitAtIcons($0, knownWords: turkishWords) }.map { item in
+                var plain = item
+                plain.translation = Self.withoutIcons(item.translation)
+                return plain
+            }.filter { !$0.translation.isEmpty }), previous: previous)
             guard let self else { return }
             if !prompts.text.isEmpty {
                 SubtitleLog.write("ipucu: \"\(prompts.text.replacingOccurrences(of: "\n", with: " / "))\" → \(items.map(\.translation).joined(separator: " / "))")
@@ -1850,7 +1866,9 @@ final class AppModel: ObservableObject {
             let left = rightSide ? max(0, item.box.left - extra) : item.box.left
             let right = rightSide ? item.box.right : min(1, item.box.right + extra)
             var bottom = item.box.top - 2 * tvPad - gap
-            for other in placed where other.box.left < right && left < other.box.right
+            let row = bottom
+            // Aynı satırdan bölünen parçalar (tuş şeridi) yan yana kalır; birbirini yukarı itmez.
+            for other in placed where abs(other.box.bottom - row) > 0.005 && other.box.left < right && left < other.box.right
                 && other.box.top - 2 * tvPad - gap < bottom && bottom - height < other.box.bottom + 2 * tvPad + gap {
                 bottom = other.box.top - 2 * tvPad - gap
             }
@@ -1859,6 +1877,88 @@ final class AppModel: ObservableObject {
             placed.append(moved)
         }
         return placed.sorted { $0.box.top < $1.box.top }
+    }
+
+    nonisolated static func isIcon(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.properties.generalCategory {
+        case .otherSymbol, .mathSymbol, .privateUse: return true
+        default: return false
+        }
+    }
+
+    /// Simgelerle ayrılmış parçalar ("PHOTO STUDIO", "SELECT", "BACK").
+    nonisolated static func iconSegments(_ text: String) -> [(text: String, start: Double, end: Double)] {
+        // Simge yaklaşık iki harf genişliğindedir; parçaların satırdaki yeri harf sayısıyla kestirilir.
+        var segments: [(String, Double, Double)] = []
+        var current = "", start = 0.0, position = 0.0
+        func close() {
+            let trimmed = current.trimmingCharacters(in: .whitespaces)
+            if !trimmed.isEmpty {
+                let lead = Double(current.prefix(while: \.isWhitespace).count)
+                segments.append((trimmed, start + lead, start + lead + Double(trimmed.count)))
+            }
+            current = ""
+        }
+        for scalar in text.unicodeScalars {
+            if isIcon(scalar) {
+                close()
+                position += 2
+                start = position
+            } else {
+                if current.isEmpty { start = position }
+                current.unicodeScalars.append(scalar)
+                position += 1
+            }
+        }
+        close()
+        return segments.map { (text: $0.0, start: $0.1 / max(1, position), end: $0.2 / max(1, position)) }
+    }
+
+    /// Bir satırda simgelerle ayrılmış birden çok tuş varsa her biri ayrı öğe olur; Türkçesi kendi İngilizcesinin üstünde,
+    /// ortasına hizalı durur. Parça sayıları tutmazsa satır bölünmez.
+    nonisolated static func splitAtIcons(_ item: ScreenTranslation.Item, knownWords: Bool = false) -> [ScreenTranslation.Item] {
+        let source = iconSegments(item.source), target = iconSegments(item.translation)
+        guard source.count >= 2, source.count == target.count else { return [item] }
+        let width = item.box.right - item.box.left
+        let line = item.box.bottom - item.box.top
+        return zip(source, target).map { english, turkish in
+            let center = item.box.left + width * (english.start + english.end) / 2
+            // Kutu İngilizce sözcük kadar; Türkçe uzunsa (dar yazı tipinde harf başına ~0,42 satır yüksekliği) o kadar.
+            let englishWidth = width * (english.end - english.start)
+            let half = max(englishWidth, Double(turkish.text.count) * line * 0.42 * 9 / 16 + 0.01) / 2
+            let left = min(max(0, center - half), 1 - 2 * half)
+            var piece = item
+            piece.source = english.text
+            // Tek sözcüklük tuş adları ("SELECT", "BACK") yerleşik Türkçesiyle ("Seç", "Geri").
+            piece.translation = (knownWords ? MenuBlock.knownTurkish(english.text) : nil) ?? turkish.text
+            piece.box = TextBox(left: left, top: item.box.top, right: left + 2 * half, bottom: item.box.bottom)
+            return piece
+        }
+    }
+
+    /// Tuş simgeleri ("□", "✕", "○", "△", "⊙") çıkarılır; "L1", "R2" gibi tuş adları kalır.
+    nonisolated static func withoutIcons(_ text: String) -> String {
+        let kept = text.unicodeScalars.filter { scalar in
+            switch scalar.properties.generalCategory {
+            case .otherSymbol, .mathSymbol, .privateUse: return false
+            default: return true
+            }
+        }
+        return String(String.UnicodeScalarView(kept)).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+
+    /// Nino: aynı yazının yeri her okumada birkaç piksel oynuyordu (yazı tanımanın kutusu); Türkçe de titriyordu. Aynı
+    /// çeviri yakın bir yerde yeniden gelirse eski yeri korunur.
+    nonisolated static func steady(_ items: [ScreenTranslation.Item], previous: [ScreenTranslation.Item]) -> [ScreenTranslation.Item] {
+        items.map { item in
+            guard let old = previous.first(where: { $0.translation == item.translation || $0.source == item.source }),
+                  abs(old.box.top - item.box.top) < 0.04, abs(old.box.left - item.box.left) < 0.06,
+                  abs(old.box.right - item.box.right) < 0.06 else { return item }
+            var kept = item
+            kept.box = TextBox(left: old.box.left, top: old.box.top, right: max(old.box.right, item.box.right),
+                               bottom: old.box.top + (item.box.bottom - item.box.top))
+            return kept
+        }
     }
 
     /// Köşe ve ipucu çevirilerini birlikte TV'ye gönderir (ekran çevirisi tek liste ister).
@@ -1874,9 +1974,21 @@ final class AppModel: ObservableObject {
     /// yalnız ortalanmış satırlar alınır (sağdaki menü ve tuş listeleri değil).
     /// Görev şeridi oyunun öğrenilen altyazı şeridinin altından başlar (`hudTop`); altyazısı en altta olan oyunda yoktur.
     private var cornerRegions: [CropRegion] {
-        var regions = [CropRegion(top: 0.0, bottom: 0.36, left: 0.0, right: 0.40)]
+        // Nino: GTA 6'nın yardım kutusu ekranın ortasına kadar iner ("… approach the / water."); son satırı kesilmesin.
+        var regions = [CropRegion(top: 0.0, bottom: 0.48, left: 0.0, right: 0.40)]
         if let hudTop = currentHudTop { regions.append(CropRegion(top: hudTop, bottom: 0.995, left: 0.08, right: 0.92)) }
         return regions
+    }
+
+    /// Nino: görev şeridindeki satır altyazının yerinde ya da altyazıyla aynıysa (altyazı okuyucusu çevirdi) atlanır.
+    nonisolated static func repeatsSubtitle(_ line: TextLine, box: TextBox?, text: String) -> Bool {
+        if let box, let own = line.box, own.top < box.bottom + 0.01, box.top - 0.01 < own.bottom,
+           own.left < box.right, box.left < own.right { return true }
+        let read = TextMatch.normalize(line.text)
+        guard read.count >= 6, !text.isEmpty else { return false }
+        if text.contains(read) || read.contains(text) { return true }
+        let words = Set(read.split(separator: " ")), shown = Set(text.split(separator: " "))
+        return !words.isEmpty && Double(words.intersection(shown).count) / Double(words.count) >= 0.5
     }
 
     /// Alt şeritte ekranın ortasına yakın duran satır görev/öğretici yazısıdır; kenardaki menü yazıları atlanır.
@@ -1896,7 +2008,7 @@ final class AppModel: ObservableObject {
     /// Nino: tuş ipuçları çevrilir; çeviri ipucunun hemen üstünde durur (simge örtülmez).
     private static let translatePrompts = true
 
-    private static let cornerNames = ["sol üst", "görev"]
+    private static let cornerNames = ["sol üst", "görev", "menü"]
 
     /// Köşeleri ~1,5 sn'de bir okur; yazı değiştiyse çevirip TV'de kendi yerine koyar (Ekranı çevir'deki gibi).
     private func watchCorners(_ frame: CGImage) {
@@ -1905,19 +2017,58 @@ final class AppModel: ObservableObject {
         cornerLastCheck = Date()
         // İpucu ve görev satırlarında simge çoğu zaman yazının başında durur ("△ Get back on the wagon").
         let reader = VisionReader(language: settings.sourceLanguage, edgeIcons: true)
-        let regions = cornerRegions
+        // Menü okumasında simge aranmaz: simgeler Türkçeye karışıyordu ("⊙ Mağaza", "0] Fotoğraf Stüdyosu").
+        let menuReader = VisionReader(language: settings.sourceLanguage, edgeIcons: false)
+        let recentMenu = Date().timeIntervalSince(menuSeenAt) < 6 ? menuBoxes : []
+        var regions = cornerRegions
+        while regions.count < 2 { regions.append(CropRegion(top: 1, bottom: 1, left: 0, right: 0)) }
+        // Nino: menüler (duraklatma menüsü) bütün ekranda aranır; iki okumada bir.
+        menuTurn.toggle()
+        let readMenu = menuTurn
+        regions.append(CropRegion(top: 0.03, bottom: 0.95, left: 0.0, right: 1.0))
+        let subtitleBox = lastSubtitleBox
+        let subtitleText = TextMatch.normalize(lastSource)
         cornerTask = Task { [weak self] in
             var readings = [Reading?](repeating: nil, count: regions.count)
+            var menus: [MenuBlock.Group] = []
             for (i, region) in regions.enumerated() {
+                if region.bottom <= region.top { readings[i] = .empty; continue }
+                if i == 2, !readMenu { continue }
                 let place = TextBox(left: region.left, top: region.top, right: region.right, bottom: region.bottom)
+                let use = i == 2 ? menuReader : reader
                 let reading = await Task.detached(priority: .utility) { () -> Reading in
                     let area = RegionCropper.crop(frame, to: region)
-                    return ((try? reader.readLines(area, deep: false)) ?? .empty).withoutOcrNoise().placed(in: place)
+                    return ((try? use.readLines(area, deep: false)) ?? .empty).withoutOcrNoise().placed(in: place)
                 }.value
+                if i == 2 {
+                    menus = MenuBlock.groups(in: Reading(lines: reading.lines.map { line in
+                        var cleaned = line
+                        cleaned.text = MenuBlock.clean(line.text)
+                        return cleaned
+                    }.filter { !$0.text.isEmpty }))
+                    readings[i] = Reading(lines: menus.flatMap(\.lines))
+                    continue
+                }
                 // Sol üst: yalnız ipucu kutusu ya da görev kartı (haritadaki yer adları değil; bkz. CornerBlock).
-                readings[i] = i == 1 ? Reading(lines: reading.lines.filter(Self.isObjectiveLine)) : CornerBlock.tipBox(in: reading)
+                // Görev şeridi: altyazının bulunduğu yerdeki ya da altyazıyla aynı satır ikinci kez çevrilmez (altyazı
+                // okuyucusu onu zaten çevirdi; ikinci okuma bozuk çıkıp altyazının üstüne biniyordu).
+                readings[i] = i == 1 ? Reading(lines: reading.lines.filter { line in
+                    Self.isObjectiveLine(line) && !Self.repeatsSubtitle(line, box: subtitleBox, text: subtitleText)
+                }) : CornerBlock.tipBox(in: reading)
             }
+            // Menü ekrandayken (son 6 sn'de görüldüyse) sol üst kutusu menü satırlarını ikinci kez çevirmez.
             guard let self else { return }
+            if readMenu {
+                let boxes = (readings[2]?.lines ?? []).compactMap(\.box)
+                if !boxes.isEmpty { menuSeenAt = Date(); menuBoxes = boxes }
+            }
+            let menuArea = readMenu ? (readings[2]?.lines ?? []).compactMap(\.box) : recentMenu
+            if !menuArea.isEmpty, let corner = readings[0] {
+                readings[0] = Reading(lines: corner.lines.filter { line in
+                    guard let box = line.box else { return true }
+                    return !menuArea.contains { $0.top < box.bottom + 0.02 && box.top - 0.02 < $0.bottom }
+                })
+            }
             var changed = false
             let translator = makeTranslator()
             for i in 0..<readings.count {
@@ -1928,13 +2079,14 @@ final class AppModel: ObservableObject {
                 // (sahne geçişi, altyazı gelirken parlaklık) silinmez; ~6 sn (4 okuma) üst üste yoksa kalkar.
                 if text.isEmpty, !cornerTexts[i].isEmpty {
                     cornerEmptyReads[i] += 1
-                    if cornerEmptyReads[i] < 4 { continue }
+                    // Menü kapanınca Türkçesi hemen kalkar (menü iki okumada bir okunur).
+                    if cornerEmptyReads[i] < (i == 2 ? 1 : 4) { continue }
                 }
                 cornerEmptyReads[i] = 0
                 if !text.isEmpty {
                     let seen = TextMatch.normalize(text), before = TextMatch.normalize(cornerPending[i])
                     cornerPending[i] = text
-                    guard seen == before || (seen.count >= 30 && TextMatch.isSimilar(seen, before, threshold: 0.8)) else { continue }
+                    guard i == 2 || seen == before || (seen.count >= 30 && TextMatch.isSimilar(seen, before, threshold: 0.8)) else { continue }
                 }
                 cornerPending[i] = ""
                 cornerTexts[i] = text
@@ -1958,9 +2110,44 @@ final class AppModel: ObservableObject {
                 }
                 // Nino: sol üstteki görev kutusu (i == 0, oyunun kendi yazısı) de çeviri havuzundan / Claude'dan gelir;
                 // havuz yoksa ya da cevap gelmezse cihazın çevirisi. Alt şerit yalnız cihazla çevrilir.
-                let pooled = i == 0 && self.settings.sharePool && self.settings.sourceLanguage == "en"
+                let pooled = i != 1 && self.settings.sharePool && self.settings.sourceLanguage == "en"
                 let translations = self.translations
                 let game = self.packs.searchScope ?? self.gameChoice.sense.current?.name
+                if i == 2 {
+                    // Menü: her satır ayrı çevrilir, Türkçesi satırın yanına (sağa yaslıda soluna) sade yazıyla konur.
+                    var items: [ScreenTranslation.Item] = []
+                    let turkishTarget = self.settings.targetLanguage == "tr"
+                    for group in menus {
+                        var texts: [String] = []
+                        for line in group.lines {
+                            let piece = line.text
+                            var translated: String? = turkishTarget ? MenuBlock.knownTurkish(piece) : nil
+                            if translated == nil, pooled {
+                                translated = translations.store.match(piece)
+                                if translated == nil { translated = await translations.translate(piece, game: game) }
+                            }
+                            if translated == nil { translated = try? await translator.translate(piece) }
+                            texts.append(MenuBlock.clean(translated?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""))
+                        }
+                        let boxes = MenuBlock.placeColumn(group, translations: texts)
+                        for (index, line) in group.lines.enumerated() {
+                            let turkish = texts[index]
+                            guard !turkish.isEmpty, TextMatch.normalize(turkish) != TextMatch.normalize(line.text), let box = line.box else { continue }
+                            var item = ScreenTranslation.Item(source: line.text, translation: turkish, box: boxes[index],
+                                                              lineHeight: box.bottom - box.top)
+                            item.plain = true
+                            items.append(item)
+                        }
+                    }
+                    if Task.isCancelled { return }
+                    cornerItems[i] = Self.steady(items, previous: cornerItems[i])
+                    if !items.isEmpty {
+                        cornerMemory.append((key, items))
+                        if cornerMemory.count > 40 { cornerMemory.removeFirst() }
+                    }
+                    SubtitleLog.write("menü: \(items.map { "\($0.source) → \($0.translation)" }.joined(separator: " / "))")
+                    continue
+                }
                 cornerItems[i] = text.isEmpty ? [] :
                     ((try? await ScreenTranslation.translate(reading, using: { piece in
                         if pooled {
@@ -1975,10 +2162,13 @@ final class AppModel: ObservableObject {
                         var moved = item
                         // Bloğun tamamının altına (satırlara değmeden), simgesiz ve kutusuz, oyunun yazısı gibi.
                         let line = item.lineHeight > 0 ? item.lineHeight : 0.03
-                        let lines = Double(max(1, item.translation.split(separator: "\n").count))
+                        // Türkçe kutunun genişliğinde kalır, sığmazsa alt satıra iner (tek uzun satır ekranı kesiyordu).
+                        let right = min(max(item.box.right, item.box.left + 0.3), item.box.left + 0.45)
+                        let oneLine = Double(item.translation.count) * line * 0.55 * 9 / 16
+                        let lines = Double(max(item.translation.split(separator: "\n").count,
+                                               Int((oneLine / max(0.1, right - item.box.left)).rounded(.up))))
                         let top = min(1 - line * lines, item.box.bottom + line * 0.8 + 0.03)
-                        moved.box = TextBox(left: item.box.left, top: top, right: max(item.box.right, item.box.left + 0.3),
-                                            bottom: top + line * lines)
+                        moved.box = TextBox(left: item.box.left, top: top, right: right, bottom: top + line * lines)
                         moved.translation = item.translation.split(separator: "\n").map { Self.withoutLeadingSymbols(String($0)) }
                             .joined(separator: "\n")
                         moved.plain = true
@@ -2001,10 +2191,10 @@ final class AppModel: ObservableObject {
     private func resetCorners() {
         cornerTask?.cancel()
         cornerTask = nil
-        cornerTexts = ["", ""]
-        cornerItems = [[], []]
+        cornerTexts = ["", "", ""]
+        cornerItems = [[], [], []]
         cornerMemory = []
-        cornerPending = ["", ""]
+        cornerPending = ["", "", ""]
         promptTask?.cancel()
         promptTask = nil
         promptText = ""
@@ -2131,12 +2321,14 @@ final class AppModel: ObservableObject {
                               cache: Self.translationCache(engine: Translator.engineID, source: source, target: target))
         let (translations, packs, sense, recent) = (translations, packs, gameChoice.sense, recentLines)
         let english = source == "en"
-        return PoolFirstTranslator(engine: makeEngineTranslator(), free: free,
-                                   poolFirst: { english && translations.isPoolFirst(packs.searchScope ?? sense.current?.name) },
+        let translator = PoolFirstTranslator(engine: makeEngineTranslator(), free: free,
+                                   poolFirst: { english && translations.isPoolFirst(translations.poolGame(sense.current?.name, packs.searchScope)) },
                                    ask: { line in
                                        await translations.translateFirst(line, context: recent.before(line),
-                                                                         game: packs.searchScope ?? sense.current?.name)
+                                                                         game: translations.poolGame(sense.current?.name, packs.searchScope))
                                    })
+        translator.log = { SubtitleLog.write($0) }
+        return translator
     }
 
     /// Kullanıcının seçtiği çevirmen: ücretsiz, DeepL ya da yapay zekâ.

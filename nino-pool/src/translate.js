@@ -90,6 +90,8 @@ export function instructions(lang, { review = false } = {}) {
     "- Profanity, insults, slurs, slang, sexual and violent language MUST be translated at exactly the same intensity. Never soften, censor, euphemize, bleep, add asterisks, omit or add moral comments. Fictional characters swear; a sanitized translation is a wrong translation.",
     "- Keep proper names as they are: people, gangs, places, brands, vehicles, weapons, missions, radio stations. Keep the original spelling.",
     "- Keep numbers, money and units as in the original.",
+    `- Words or short phrases in Spanish or any other language inside the English dialogue ("Mañana", "Gracias", "Vámonos") are translated into ${name} too; only names stay as they are.`,
+    "- Keep sentence structure natural in the target language: e.g. \"the only one that's not a complete piece of shit\" is about the listener being the only decent one, not \"the only complete piece of shit\".",
     "- If a line is a UI prompt or objective (\"Go to\", \"Press\", \"Lose the cops\"), translate it as the game would show it.",
     "- The English comes from screen reading (OCR): fix obvious misreads (\"Youlre\" = \"You're\", \"Donlt\" = \"Don't\", \"Ihäd\" = \"I had\") and drop stray HUD fragments or single stray letters around the dialogue. A speaker label like \"Amy:\" stays as \"Amy:\". If the whole line is unreadable garbage, return it unchanged.",
     "- Output only translations. No quotes, notes, explanations or alternatives.",
@@ -280,6 +282,13 @@ export async function handleTranslate(db, env, body, now, live = askLive) {
   let game = typeof body.game === "string" && GAME.test(body.game) ? body.game.replace(/-{2,}/g, "-") : "";
   const context = (Array.isArray(body.context) ? body.context : []).slice(-TRANSLATE_LIMITS.maxContext)
     .map(clean).filter((c) => c && [...c].length <= TRANSLATE_LIMITS.maxText);
+  // Uygulama başka bir oyun sanıyorsa (benzer satırlı başka oyunun paketi) ama satırda havuz öncelikli oyunun (GTA 6)
+  // kendine özgü bir adı geçiyorsa ("Lucia", "Vice City") o oyun geçerlidir.
+  const firstGame = (id) => poolFirstGames(env).some((part) => String(id ?? "").toLowerCase().includes(part));
+  if (game && !firstGame(game)) {
+    const named = detectGame([...body.lines.map(clean), ...context]);
+    if (named && firstGame(named)) game = "";
+  }
   // Oyun bilinmiyorsa: satırdan/bağlamdan tanınır ya da bu kurulumun son saatlerde tanınan oyunu kullanılır.
   let detected = "";
   if (!game) {
@@ -315,7 +324,6 @@ export async function handleTranslate(db, env, body, now, live = askLive) {
     // her oyunda geçebilecek satırlar sayılmaz). Kuruluma yazılır, sonraki satırlar da o oyundan sayılır.
     // Uygulama başka bir oyun sanıyorsa (ör. benzer satırlı paketten) ama satır havuz öncelikli bir oyunun (GTA 6) uzun bir
     // satırıysa o oyun döner: uygulama cevaptaki oyuna bakıp çeviriyi yalnız havuzdan almaya geçer.
-    const firstGame = (id) => poolFirstGames(env).some((part) => String(id ?? "").toLowerCase().includes(part));
     if (!game || !firstGame(game)) {
       const telling = results.find((r) => r.game && r.text && gameAllowed(env, r.game) && [...String(r.text)].length >= 25
         && (!game || firstGame(r.game)));

@@ -1988,7 +1988,9 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// </summary>
     private void IdentifyGameIfNeeded(Frame frame)
     {
-        if (!IsRunning || !settings.SharePool || settings.SourceLanguage != "en" || services.GamePacks?.SearchScope is not null) return;
+        // Paketten tahmin edilen oyun kesin değildir: havuz öncelikli oyun bilinmiyorsa ekrandan tanıma yine denenir.
+        if (!IsRunning || !settings.SharePool || settings.SourceLanguage != "en"
+            || (services.GamePacks?.SearchScope is not null && PoolFirstActive)) return;
         if (services.Translations is not { IsEnabled: true } translations) return;
         var known = gameSense.Current;
         if (!identifySchedule.TryBegin(known is not null, gameSense.Source)) return;
@@ -2202,7 +2204,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         // sorulmaz), süresinde gelmeyen çeviri de gelince ekrandakinin yerine konur.
         if (!(PoolTranslationsActive || PoolFirstActive) || services.Translations is not { } translations) return;
         var context = recentLines.Add(text);
-        var game = PoolGame();
+        var game = PoolFirstActive ? PoolFirstGame() : PoolGame();
         _ = Task.Run(async () =>
         {
             if (await translations.TranslateAsync(text, context, game).ConfigureAwait(false) is { } better) target.Upgrade(text, better);
@@ -2339,14 +2341,26 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     {
         if (services.Translations is not { } translations) return engine;
         return new PoolFirstTranslator(engine, MakeLocalTranslator(), () => PoolFirstActive,
-            (line, token) => translations.TranslateFirstAsync(line, recentLines.Before(line), PoolGame(), token))
+            (line, token) => translations.TranslateFirstAsync(line, recentLines.Before(line), PoolFirstGame(), token))
         {
             Log = SubtitleLog.Write,
         };
     }
 
     /// <summary>Oynanan oyun havuz öncelikli mi (kaynak İngilizce, sunucu açık, oyun listede).</summary>
-    private bool PoolFirstActive => settings.SourceLanguage == "en" && services.Translations?.IsPoolFirst(PoolGame()) == true;
+    private bool PoolFirstActive => settings.SourceLanguage == "en" && services.Translations?.IsPoolFirst(PoolFirstGame()) == true;
+
+    /// Nino: havuza sorulacak oyun; paketten tahmin edilen oyun (benzer satırlı başka oyunun paketi) PS5'ten, kullanıcıdan
+    /// ya da ekrandan bilinen havuz öncelikli oyunun (GTA 6) önüne geçmez.
+    private string? PoolFirstGame()
+    {
+        var known = gameSense.Current?.Name;
+        var scope = services.GamePacks?.SearchScope;
+        var first = services.Translations?.CurrentPoolFirst;
+        if (first is not null && first.Contains(known)) return known;
+        if (first is not null && first.Contains(scope)) return scope;
+        return scope ?? known;
+    }
 
     private ITextTranslator MakeBaseTranslator()
     {

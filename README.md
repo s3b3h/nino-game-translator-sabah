@@ -55,6 +55,7 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 - 🎯 **GTA 6 tamamen Nino'nun çeviri havuzundan:** GTA 6'da altyazı her zaman ve yalnız güçlü yapay zekâ (Claude) ile yapılmış ortak çeviriden gelir; başka oyunların paketlerine bakılmaz. Kendi Gemini, DeepL ya da ChatGPT anahtarınız bu oyunda hiç kullanılmaz, size masrafı olmaz. Sunucuya ulaşılamazsa cihazın ücretsiz çevirisi devreye girer.
 - 📱 **iPhone'da ekran kapanmıyor:** Çeviri sürerken ekran kendiliğinden kararmaz, bağlantı kopmaz.
 - 📺 **Eski LG TV'lere telefondan kurulum düzeldi** (webOS 4.5).
+- 🧭 **Menüler ve tuş ipuçları Türkçe (Mac):** Duraklatma menüsünün Türkçesi yanında düzgün bir sütunda, tuş şeridinde her tuşun Türkçesi kendi sözcüğünün üstünde; simgeler tekrarlanmaz, yazılar titremez.
 
 ### Nino V3.2
 
@@ -68,7 +69,7 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 
 | Uygulama | Güncel sürüm | Nereden bakılır |
 |---|---|---|
-| Mac, Windows, Android telefon, iPhone | **Nino V3.3** (0.2.4) | Uygulamada **Ayarlar › Hakkında** |
+| Mac, Windows, Android telefon, iPhone | **Nino V3.3** (0.2.5) | Uygulamada **Ayarlar › Hakkında** |
 | TV uygulaması | **Nino V3.2** (0.9.31) | TV'de Nino'yu açın, kumandada **OK**'e basın. Açılan panelin en üstünde, başlığın yanında yazar. |
 
 TV'de Nino'nun panelinde **V3.2** yazmıyorsa TV uygulamanız eski. Telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın. TV'de geliştirici modu (USB hata ayıklama) açıksa sonraki güncellemeler kendiliğinden gelir.

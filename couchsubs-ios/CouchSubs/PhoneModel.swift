@@ -719,7 +719,9 @@ final class PhoneModel: ObservableObject {
     private var identifyLast = Date()
 
     private func identifyGameIfNeeded(_ frame: CGImage) {
-        guard isRunning, settings.sharePool, settings.sourceLanguage == "en", identifyTask == nil, packs.searchScope == nil else { return }
+        // Paketten tahmin edilen oyun kesin değildir: havuz öncelikli oyun bilinmiyorsa ekrandan tanıma yine denenir.
+        guard isRunning, settings.sharePool, settings.sourceLanguage == "en", identifyTask == nil,
+              packs.searchScope == nil || !translations.isPoolFirst(translations.poolGame(gameChoice.sense.current?.name, packs.searchScope)) else { return }
         let known = gameChoice.sense.current
         let wait: TimeInterval
         if known == nil {
@@ -836,7 +838,7 @@ final class PhoneModel: ObservableObject {
         let sense = gameChoice.sense
         // Havuz öncelikli oyunda (GTA 6) başka oyunların paketlerine bakılmaz: çeviri yalnız havuzdan (Claude). Havuzdaki
         // çeviri ortak havuz kapalıyken de kullanılır.
-        let poolFirst: @Sendable () -> Bool = { translations.isPoolFirst(packs.searchScope ?? sense.current?.name) }
+        let poolFirst: @Sendable () -> Bool = { translations.isPoolFirst(translations.poolGame(sense.current?.name, packs.searchScope)) }
         let english = settings.sourceLanguage == "en"
         pipeline.packLookup = packLookup == nil && !pooled && !english ? nil : { text in
             let first = poolFirst()
@@ -858,11 +860,12 @@ final class PhoneModel: ObservableObject {
             Task { await pool.offer(text, game: game) }
             // Havuz öncelikli oyunda ortak havuz kapalı olsa da sorulur; çevirmen aynı isteği bekler (aynı satır iki kez
             // sorulmaz), süresinde gelmeyen çeviri de gelince ekrandakinin yerine konur.
-            guard pooled || translations.isPoolFirst(game) else { return }
+            let poolGame = translations.poolGame(sense.current?.name, game)
+            guard pooled || translations.isPoolFirst(poolGame) else { return }
             let context = recent.add(text)
             // Sunucu o an çevirir (Claude); satır hâlâ ekrandaysa cihazın çevirisinin yerine konur.
             Task {
-                guard let better = await translations.translate(text, context: context, game: game) else { return }
+                guard let better = await translations.translate(text, context: context, game: poolGame) else { return }
                 await MainActor.run { pipeline?.upgrade(source: text, translation: better) }
             }
         }
@@ -904,12 +907,14 @@ final class PhoneModel: ObservableObject {
                               cache: Self.translationCache(engine: Translator.engineID, source: source, target: target))
         let (translations, packs, sense, recent) = (translations, packs, gameChoice.sense, poolContext)
         let english = source == "en"
-        return PoolFirstTranslator(engine: makeEngineTranslator(), free: free,
-                                   poolFirst: { english && translations.isPoolFirst(packs.searchScope ?? sense.current?.name) },
+        let translator = PoolFirstTranslator(engine: makeEngineTranslator(), free: free,
+                                   poolFirst: { english && translations.isPoolFirst(translations.poolGame(sense.current?.name, packs.searchScope)) },
                                    ask: { line in
                                        await translations.translateFirst(line, context: recent.before(line),
-                                                                         game: packs.searchScope ?? sense.current?.name)
+                                                                         game: translations.poolGame(sense.current?.name, packs.searchScope))
                                    })
+        translator.log = { SubtitleLog.write($0) }
+        return translator
     }
 
     /// Kullanıcının seçtiği çevirmen: ücretsiz, DeepL ya da yapay zekâ.

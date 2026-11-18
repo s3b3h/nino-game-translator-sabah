@@ -13,6 +13,6 @@ public enum AppIdentity {
     public static let serverPort: UInt16 = 8787
     /// Nino: herkesin gördüğü sürüm adı, bütün uygulamalarda (Mac, Windows, telefon, TV) aynı.
     public static let label = "V3.3"
-    /// "V3.3 (0.2.4)"
+    /// "V3.3 (0.2.5)"
     public static var displayVersion: String { "\(label) (\(version))" }
 }

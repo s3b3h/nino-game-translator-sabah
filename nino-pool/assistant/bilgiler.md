@@ -54,7 +54,7 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   ya da TV'den) alın; yayın yapıyorsanız OBS yolunu kullanın.
 - TV'ye kurulumda en kolayı telefondaki ya da bilgisayardaki Nino'dur; TV'de geliştirici modu (USB hata ayıklama)
   açıkken uygulamayı kendisi kurar ve günceller.
-- Güncel sürüm: Mac, Windows, Android telefon ve iPhone uygulamaları Nino V3.3 (teknik numara 0.2.4); TV uygulaması
+- Güncel sürüm: Mac, Windows, Android telefon ve iPhone uygulamaları Nino V3.3 (teknik numara 0.2.5); TV uygulaması
   Nino V3.2 (0.9.31). TV'deki sürümü görmek için TV'de Nino'yu açıp kumandada OK'e (ya da menü tuşuna) bas;
   açılan panelin üstünde "V3.2 (0.9.31)" yazar. V3.2 yazmıyorsa (ör. yalnız 0.9.22 gibi bir sayı) TV uygulaması eskidir: telefondaki ya da bilgisayardaki Nino'da "TV'ye kur"a yeniden bas. Geliştirici modu
   (USB hata ayıklama) açık kalırsa güncellemeyi Nino bundan sonra kendisi yapar; bu yüzden kurulumu hep bu yolla öner.

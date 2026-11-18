@@ -239,6 +239,14 @@ public actor TranslationPool {
     /// kararıyla bu oyunlarda çeviri hep sunucudan gelir.
     public nonisolated func isPoolFirst(_ game: String?) -> Bool { poolFirstState.active(game, now: clock().timeIntervalSince1970) }
 
+    /// Adaylardan havuz öncelikli listede olanı; yoksa ilki. Paketten tahmin edilen oyun (benzer satırlı başka oyunun
+    /// paketi) ekrandan ya da PS5'ten bilinen GTA 6'nın önüne geçmesin.
+    public nonisolated func poolGame(_ names: String?...) -> String? {
+        let known = names.compactMap { $0 }.filter { !$0.isEmpty }
+        let first = poolFirst
+        return known.first(where: first.contains) ?? known.first
+    }
+
     /// Sunucunun tanıdığı oyun bu kadar süre geçerli sayılır (saniye).
     static let serverGameSeconds: Double = 600
 
