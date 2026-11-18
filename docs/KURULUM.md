@@ -92,7 +92,7 @@ seçin. Hepsinde TV, telefon/bilgisayar ve konsol **aynı Wi-Fi'da** olmalıdır
 
 | TV'niz | En kolay yol |
 |---|---|
-| **Android TV / Google TV** (TCL, iFFALCON, Sony, Philips, Xiaomi, Hisense, Vestel, Arçelik…) | Telefondan (5.1) ya da bilgisayardan (5.2); olmazsa Downloader (5.3) |
+| **Android TV / Google TV** (TCL, iFFALCON, Sony, Philips, Xiaomi, Hisense, Vestel, Arçelik…) | Telefondan (5.1) ya da bilgisayardan (5.2); olmazsa TV'nin tarayıcısıyla elle (5.3) |
 | **Samsung** TV ya da Samsung **akıllı monitör** (M serisi; 2016 ve sonrası) | Telefondan (5.1) ya da bilgisayardan (5.2) |
 | **LG** TV (webOS) | Telefondan (5.1) ya da bilgisayardan (5.2) — deneysel |
 
@@ -130,7 +130,10 @@ seçin. Hepsinde TV, telefon/bilgisayar ve konsol **aynı Wi-Fi'da** olmalıdır
 Mac ya da Windows'taki Nino, kurulumun TV adımında TV'nizi bulur ve uygulamayı kendisi kurar. TV'deki ayar 5.1'deki
 ile aynıdır (Android TV'de hata ayıklama, Samsung'da geliştirici modu, LG'de Developer Mode).
 
-### 5.3 Elle kurulum: Downloader (yalnız Android TV / Google TV)
+### 5.3 Elle kurulum: TV'nin tarayıcısıyla (yalnız Android TV / Google TV)
+
+TV'nin tarayıcısında en üstteki **adres (URL) çubuğuna** `https://is.gd/ninotvapk` yazmanız yeter; inen dosyayı açıp kurun.
+TV'nizin tarayıcısı dosya indirmiyorsa ücretsiz **Downloader** uygulamasıyla şöyle yapın:
 
 1. TV'de **Google Play**'den ücretsiz **Downloader** uygulamasını kurun ve açın.
 2. Downloader'a izin verin: **Ayarlar › Uygulamalar › Güvenlik ve kısıtlamalar › Bilinmeyen kaynaklar › Downloader**'ı

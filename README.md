@@ -9,7 +9,7 @@ Tamamen ücretsiz · açık kaynak · reklamsız · abonelik yok · hesap yok</p
 <p align="center">
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip"><b>⬇️ Mac</b></a> &nbsp;·&nbsp;
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe"><b>⬇️ Windows</b></a> &nbsp;·&nbsp;
-  <a href="https://yunusdemirbag.github.io/nino-game-translator/"><b>📺 Android TV</b></a> (TV'de Downloader'a <code>is.gd/ninotvapk</code> yazın)<br>
+  <a href="https://yunusdemirbag.github.io/nino-game-translator/"><b>📺 Android TV</b></a> (telefondaki ya da bilgisayardaki Nino TV'ye kendisi kurar)<br>
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk">⬇️ Android telefon</a> &nbsp;·&nbsp;
   📱 iPhone: App Store incelemesinde &nbsp;·&nbsp;
   ▶️ Google Play: kapalı testte &nbsp;·&nbsp;
@@ -171,7 +171,7 @@ Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)** · PS5 ve Andr
 - **Telefondan (bilgisayarsız):** Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a basın (Android TV, Samsung ve LG). Telefon TV'yi Wi-Fi'da bulur, uygulamayı kurar ve açar; ekrandaki adımlar TV'nizin markasına göre anlatılır. Android TV'de bir kez **Ayarlar › Sistem › Hakkında › Android TV işletim sistemi yapısı**'na 7 kez basıp **Geliştirici seçenekleri**'nde hata ayıklamayı açmanız ve TV'deki izin sorusuna **Tamam** demeniz yeter.
 - **Bilgisayardan:** Mac ya da Windows'taki Nino aynı şekilde kendisi kurar.
 
-Elle kurmak isterseniz: TV'de Google Play'den ücretsiz **Downloader**'ı açın, **Ana Sayfa**'daki adres kutusuna **`https://is.gd/ninotvapk`** yazıp **Git**'e basın ve inen dosyayı kurun (Downloader'ın Tarayıcı sekmesine yazarsanız Google'da arar). Doğrudan link: [Nino TV indirme sayfası](https://yunusdemirbag.github.io/nino-game-translator/) · [`Nino-TV.apk`](https://yunusdemirbag.github.io/nino-game-translator/tv.apk).
+Elle kurmak isterseniz: TV'de bir tarayıcı açın (TV'nin kendi tarayıcısı ya da Google Play'den ücretsiz **Downloader**). En üstteki **adres (URL) çubuğuna** şunu yazın ve inen dosyayı kurun: **`https://is.gd/ninotvapk`**. Google'ın arama kutusuna değil, adres çubuğuna yazın; Downloader'da bu, soldaki **Ana Sayfa**'daki kutudur. Doğrudan link: [Nino TV indirme sayfası](https://yunusdemirbag.github.io/nino-game-translator/) · [`Nino-TV.apk`](https://yunusdemirbag.github.io/nino-game-translator/tv.apk).
 
 **Android telefon (bilgisayar yerine):** [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)'yı telefonda indirip kurun, ikinci PSN hesabıyla **Sony İle Giriş Yapın**, PS5'teki 8 haneli kodu yazın ve oyunu açınca **kaydırın**.
 
@@ -316,7 +316,7 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 
 **Dublajda yanlış ses çıkıyor.** Oyunun ses ayarlarında konuşma sesini kısın ama tamamen kapatmayın; Nino kimin konuştuğunu o sesten anlar.
 
-**TV'ye uygulamayı nasıl kurarım?** En kolayı Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur** (Android TV, Samsung, LG). Bilgisayardaki Nino da kendisi kurar. Elle kurmak için TV'deki Downloader'ın **Ana Sayfa**'sına `https://is.gd/ninotvapk` yazın. Adım adım: [Kurulum Rehberi › TV](docs/KURULUM.md#5-tv-uygulamasını-kurma).
+**TV'ye uygulamayı nasıl kurarım?** En kolayı Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur** (Android TV, Samsung, LG). Bilgisayardaki Nino da kendisi kurar. Elle kurmak için TV'deki tarayıcının adres (URL) çubuğuna `https://is.gd/ninotvapk` yazın. Adım adım: [Kurulum Rehberi › TV](docs/KURULUM.md#5-tv-uygulamasını-kurma).
 
 **Samsung ya da LG akıllı monitörüm var, olur mu?** Samsung akıllı monitörler (M serisi, 2016 sonrası) Samsung TV gibi çalışır. Akıllı olmayan monitörde altyazıyı telefonda ya da bilgisayar ekranında gösterin.
 
