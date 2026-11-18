@@ -2,6 +2,7 @@
 
 import CoreGraphics
 import Foundation
+import CoreML
 import Vision
 
 public protocol TextReader: Sendable {
@@ -49,6 +50,10 @@ public struct VisionReader: TextReader {
         // iş parçacığı bırakılır) ve bu kare atlanır. Sonraki kare yeni kapıdan okunur.
         let gate = Self.watch.gate
         guard gate.lock(before: Date().addingTimeInterval(Self.gateWait)) else {
+            // Takılma Neural Engine'de (TextRecognition bir semaforda sonsuza dek bekliyor; sonraki her istek aynı
+            // dedektörün sırasına girip o da takılıyordu). Bundan sonraki okumalar işlemcide (CPU) yapılır: ayrı bir
+            // dedektör açılır, altyazı Nino'yu kapatıp açmadan sürer.
+            Self.watch.switchToCPU()
             Self.watch.cancelRunning()
             guard gate.lock(before: Date().addingTimeInterval(1)) else {
                 Self.watch.replace(gate)
@@ -74,6 +79,11 @@ public struct VisionReader: TextReader {
         private let lock = NSLock()
         private var current = NSLock()
         private var running: [ObjectIdentifier: VNRequest] = [:]
+        private var cpu = false
+
+        /// Neural Engine takıldıysa okumalar işlemcide yapılır (bu oturum boyunca).
+        var usesCPU: Bool { lock.withLock { cpu } }
+        func switchToCPU() { lock.withLock { cpu = true } }
 
         var gate: NSLock { lock.withLock { current } }
 
@@ -91,6 +101,21 @@ public struct VisionReader: TextReader {
     }
 
     static let watch = Watch()
+
+    /// İsteği yalnız işlemcide çalıştırır (Neural Engine ve GPU kullanılmaz).
+    static func runOnCPU(_ request: VNRequest) {
+        if #available(macOS 14.0, iOS 17.0, *) {
+            if let devices = try? request.supportedComputeStageDevices {
+                for (stage, choices) in devices {
+                    if let cpu = choices.first(where: { if case .cpu = $0 { return true } else { return false } }) {
+                        request.setComputeDevice(cpu, for: stage)
+                    }
+                }
+                return
+            }
+        }
+        request.usesCPUOnly = true
+    }
 
     /// Satırsız eski biçim (testler için): bulunan yazı tek metin olarak döner.
     public static func firstReading(of image: CGImage, using recognize: @escaping @Sendable (CGImage) throws -> String) throws -> String {
@@ -147,6 +172,7 @@ public struct VisionReader: TextReader {
             request.recognitionLevel = .accurate
             request.recognitionLanguages = [language]
             request.usesLanguageCorrection = true
+            if Self.watch.usesCPU { Self.runOnCPU(request) }
             Self.watch.started(request)
             defer { Self.watch.finished(request) }
             try VNImageRequestHandler(cgImage: image).perform([request])

@@ -111,6 +111,8 @@ enum ButtonIcons {
             let request = VNRecognizeTextRequest()
             request.recognitionLevel = level
             request.usesLanguageCorrection = false
+            // Neural Engine takıldıysa simge okuması da işlemcide (bkz. VisionReader.Watch).
+            if VisionReader.watch.usesCPU { VisionReader.runOnCPU(request) }
             let text: String = autoreleasepool {
                 try? VNImageRequestHandler(cgImage: big).perform([request])
                 return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined()

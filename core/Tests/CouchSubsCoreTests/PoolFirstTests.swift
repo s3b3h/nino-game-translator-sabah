@@ -3,6 +3,8 @@
 // hiç çağrılmaz (Windows: PoolFirstTranslatorTests ve TranslationPoolTests'in poolFirst bölümü).
 import Foundation
 import XCTest
+import Vision
+import CoreText
 @testable import CouchSubsCore
 
 final class PoolFirstTests: XCTestCase {
@@ -198,5 +200,27 @@ final class VisionWatchTests: XCTestCase {
         watch.replace(stuck)
         XCTAssertTrue(watch.gate === fresh)
         stuck.unlock()
+    }
+}
+
+final class VisionCPUTests: XCTestCase {
+    /// İşlemciye geçen istek yine okur (Neural Engine takılınca kullanılan yol).
+    func testCPURequestStillReads() throws {
+        let size = CGSize(width: 600, height: 120)
+        let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0,
+                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        context.setFillColor(CGColor(red: 0, green: 0, blue: 0, alpha: 1))
+        context.fill(CGRect(origin: .zero, size: size))
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: "Get in the car", attributes: [
+            .font: CTFontCreateWithName("Helvetica-Bold" as CFString, 48, nil),
+            .foregroundColor: CGColor(red: 1, green: 1, blue: 1, alpha: 1)]))
+        context.textPosition = CGPoint(x: 30, y: 40)
+        CTLineDraw(line, context)
+        let image = context.makeImage()!
+        let request = VNRecognizeTextRequest()
+        VisionReader.runOnCPU(request)
+        try VNImageRequestHandler(cgImage: image).perform([request])
+        let text = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ")
+        XCTAssertTrue(text.lowercased().contains("car"), text)
     }
 }
