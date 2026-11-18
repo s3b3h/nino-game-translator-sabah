@@ -119,6 +119,9 @@ class SubtitlePipeline(
     private var held: Held? = null
     private var lastSent: Sent? = null
     private var lastClearAt = Long.MIN_VALUE
+    /** Son gösterilen çevirinin nereden geldiği ("paket", "havuz", "motor") ve yeri; [upgrade] için. */
+    private var lastOrigin: String? = null
+    private var lastBox: TextBox? = null
 
     /**
      * Yarım ya da bozuk okuma kısa süre bekletilip aynı satırın en iyi okuması mı çevrilsin (Windows'ta yazım denetimiyle
@@ -140,6 +143,8 @@ class SubtitlePipeline(
     @Volatile var onPackMissed: ((String) -> Unit)? = null
     /** Yeni çeviri gösterilince. */
     @Volatile var onPairShown: ((ShownPair) -> Unit)? = null
+    /** Nino: ekrandaki satırın çevirisi havuzdan gelen daha iyisiyle değişti ([upgrade]); yeni satır sayılmaz. */
+    @Volatile var onPairUpgraded: ((ShownPair) -> Unit)? = null
     /** Her çeviri denemesinden sonra (başarılıysa null). */
     @Volatile var onTranslationResult: ((Throwable?) -> Unit)? = null
 
@@ -177,9 +182,15 @@ class SubtitlePipeline(
         frameOcrMs = ocrMs
         // Nino: harfsiz satırlar (mermi sayısı "91 / 200") ve en alttaki görev şeridi altyazı değildir.
         val limit = hudTop
+        // Nino: konuşan adıyla başlayan satır ("ENZO: …") ve hemen altındaki devam satırı her zaman altyazıdır;
+        // öğrenilen çizgi yanlış kalsa da (Mafia'da altyazı çizginin altındaydı) atılmaz (Mac ile aynı).
+        val spoken = raw.lines.filter { SpeakerPrefix.split(it.text) != null }.mapNotNull { it.box }
         var visible = Reading(raw.lines.filter { line ->
+            val box = line.box
             line.text.count { it.isLetter() } >= 2 &&
-                (limit == null || line.box == null || area.top + line.box.top * (area.bottom - area.top) < limit)
+                (limit == null || box == null || SpeakerPrefix.split(line.text) != null ||
+                    spoken.any { box.top >= it.top && box.top - it.bottom < maxOf(0.02, (box.bottom - box.top) * 1.5) } ||
+                    area.top + box.top * (area.bottom - area.top) < limit)
         })
         visible = synchronized(lock) { withoutStaleLines(visible, now()) }
         // Kumanda ipuçları ve yazı tanıma çöpleri çevrilmez; yalnız altyazı bloğu çevrilir.
@@ -405,7 +416,7 @@ class SubtitlePipeline(
 
     private fun showPacked(request: Request, packed: PackMatch): (() -> Unit)? {
         waiting.clear()
-        packHits++
+        if (!packed.pooled) packHits++
         val source = request.source
         val translated = present(packed.text, request)
         val shouldSend = stabilizer.shouldSend(source, translated)
@@ -414,9 +425,13 @@ class SubtitlePipeline(
         lastShown = request.number
         sender.sendSubtitle(translated, 15000, request.box, revisesShown(source))
         lastShownSource = source
+        // Nino: havuzdan (sunucunun çevirisi) gelen satır paket sayılmaz (oyun tanıma ve paket sayımı için).
+        val origin = if (packed.pooled) "havuz" else "paket"
+        lastOrigin = origin
+        lastBox = request.box
         val shown = onPairShown
         val total = totalMs(request)
-        return { shown?.invoke(ShownPair(source, translated, "paket", packed.packId, request.ocrMs, null, total, request.box)) }
+        return { shown?.invoke(ShownPair(source, translated, origin, packed.packId, request.ocrMs, null, total, request.box)) }
     }
 
     private fun restore(source: String, box: TextBox?): (() -> Unit)? {
@@ -473,7 +488,7 @@ class SubtitlePipeline(
         val source = request.source
         val input = request.prefix?.body ?: source
         val started = now()
-        val sentence = try {
+        var sentence = try {
             translator.translate(input)
         } catch (error: Exception) {
             synchronized(lock) {
@@ -491,6 +506,11 @@ class SubtitlePipeline(
         }
         if (request.abandoned) return
         onTranslationResult?.invoke(null)
+        // Nino: çeviri sürerken havuzdan (sunucunun Claude çevirisi) gelmişse o gösterilir. Paket araması hattın kilidi
+        // altında yapılır (okuma iş parçacığıyla aynı anda kütüphaneye bakılmasın).
+        val pooled = synchronized(lock) { packMatch(request) }
+        val origin = if (pooled?.pooled == true) "havuz" else "motor"
+        if (pooled != null) sentence = pooled.text
         val translated = present(sentence, request)
         val translationMs = maxOf(0, (now() - started).toInt())
         var total: Int? = null
@@ -506,9 +526,35 @@ class SubtitlePipeline(
             lastShown = request.number
             sender.sendSubtitle(translated, if (onScreen) 15000 else readingTime(translated), request.box, revisesShown(source))
             lastShownSource = source
+            lastOrigin = origin
+            lastBox = request.box
             total = totalMs(request)
         }
-        onPairShown?.invoke(ShownPair(source, translated, "motor", null, request.ocrMs, translationMs, total, request.box))
+        onPairShown?.invoke(ShownPair(source, translated, origin, null, request.ocrMs, translationMs, total, request.box))
+    }
+
+    /**
+     * Nino: sunucunun çeviri havuzundan sonradan gelen (daha iyi) çeviri. Satır hâlâ ekrandaysa TV'de ve telefonda
+     * yerine konur (TV mesajındaki `replaces`); kalktıysa yalnız sonraki gösterimler için hatırlanır. Paketten gelen
+     * satıra dokunulmaz. Mac/iPhone: SubtitlePipeline.upgrade ile aynı.
+     */
+    fun upgrade(source: String, translation: String) {
+        if (translation.isEmpty()) return
+        var upgraded: ShownPair? = null
+        synchronized(lock) {
+            val index = pairs.indexOfLast { it.source == source }
+            if (index < 0) return
+            val pair = pairs[index]
+            val old = pair.translation ?: return
+            val presented = SpeakerPrefix.present(translation, source, showSpeakerNames())
+            if (presented == old) return
+            pairs[index] = pair.copy(translation = presented)
+            if (pair.number != lineOnScreen || pair.number != lastShown || lastOrigin == "paket" || lastShownSource != source) return
+            sender.sendSubtitle(presented, 15000, lastBox, true)
+            lastOrigin = "havuz"
+            upgraded = ShownPair(source, presented, "havuz", box = lastBox)
+        }
+        upgraded?.let { pair -> onPairUpgraded?.invoke(pair) }
     }
 
     private fun remember(number: Int, source: String, translation: String?) {
@@ -526,6 +572,8 @@ class SubtitlePipeline(
         lastClearAt = Long.MIN_VALUE
         waiting.clear()
         lastShownSource = null
+        lastOrigin = null
+        lastBox = null
         pairs.clear()
         if (stabilizer.reset() == StabilizerAction.Clear) sender.clear()
     }

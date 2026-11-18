@@ -43,6 +43,8 @@ data class LiveStatus(
     val game: String? = null,
     /** "Hangi oyunu oynuyorsunuz?" kartı açık. */
     val askingGame: Boolean = false,
+    /** Nino: çevirinin başladığı an (TV'ye "started" gönderildi; duvar saati, ms); telefonda 7 sn "Çeviri başladı" balonu. 0: yok. */
+    val startedNoticeAt: Long = 0,
 ) {
     /**
      * Sunucunun olayı telefon ekranına: yeni satır öncekini üste iter; aynı cümlenin uzamış ya da düzelmiş okuması
@@ -76,5 +78,12 @@ object LiveState {
         // Paketten gelen son satırın oyunu, oturum boyunca "… paketi kullanılıyor" olarak kalır.
         it.copy(recent = (listOf(pair) + it.recent).take(RECENT), packInUse = packTitle ?: it.packInUse,
             shownLines = it.shownLines + 1, packLines = it.packLines + if (pair.origin == "paket") 1 else 0)
+    }
+
+    /** Nino: son satırın çevirisi havuzdan gelen daha iyisiyle değişti; listedeki satır yenilenir, sayılar değişmez. */
+    fun upgraded(pair: ShownPair) = state.update {
+        val first = it.recent.firstOrNull()
+        if (first == null || first.source != pair.source) it
+        else it.copy(recent = listOf(first.copy(translation = pair.translation, origin = pair.origin)) + it.recent.drop(1))
     }
 }

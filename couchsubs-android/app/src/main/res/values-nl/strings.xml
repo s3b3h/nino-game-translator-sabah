@@ -651,4 +651,6 @@
     <string name="assistant_network">Ik kon de server niet bereiken. Controleer je internet en probeer het opnieuw.</string>
     <string name="assistant_too_large">Dat bericht is te groot geworden. Haal een screenshot weg en probeer het opnieuw.</string>
     <string name="assistant_invalid">Ik kon dat bericht niet versturen. Pas het wat aan en probeer het opnieuw.</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">Nino: Ondertitelvertaling Gestart. Veel Speelplezier!</string>
 </resources>

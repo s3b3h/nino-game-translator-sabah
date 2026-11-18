@@ -651,4 +651,6 @@
     <string name="assistant_network">เราติดต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่นะ</string>
     <string name="assistant_too_large">ข้อความนี้ใหญ่เกินไป ลบภาพหน้าจอออกหนึ่งภาพแล้วลองใหม่นะ</string>
     <string name="assistant_invalid">เราส่งข้อความนี้ไม่ได้ ลองแก้นิดหน่อยแล้วส่งใหม่นะ</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">Nino: เริ่มแปลคำบรรยายแล้ว ขอให้สนุกกับเกม!</string>
 </resources>

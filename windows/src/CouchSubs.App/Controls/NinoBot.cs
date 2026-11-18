@@ -166,3 +166,87 @@ public sealed class AskNinoButton : Button
         IsKeyboardFocusedChanged += (_, _) => focus.Visibility = IsKeyboardFocused ? Visibility.Visible : Visibility.Collapsed;
     }
 }
+
+/// <summary>
+/// Nino: çeviri başlayınca robotun yanında 7 sn görünen hap biçimli balon ("Nino: Altyazı Çevirisi Başladı. Keyifli
+/// Oyunlar!"). Mac AskNinoButton ile aynı: 17 pt kalın beyaz yazı, %55 siyah kapsül; soldan kayarak gelir, solarak gider.
+/// Tıklamaları engellemez.
+/// </summary>
+public sealed class NinoStartedBubble : Border
+{
+    public static readonly TimeSpan Shown = TimeSpan.FromSeconds(7);
+
+    private readonly DispatcherTimer timer = new() { Interval = Shown };
+    private readonly TranslateTransform slide = new();
+
+    public NinoStartedBubble(string text)
+    {
+        IsHitTestVisible = false;
+        Focusable = false;
+        Visibility = Visibility.Collapsed;
+        Opacity = 0;
+        CornerRadius = new CornerRadius(999);
+        Background = new SolidColorBrush(Color.FromArgb(0x8C, 0, 0, 0));
+        BorderBrush = new SolidColorBrush(Color.FromArgb(0x24, 0xFF, 0xFF, 0xFF));
+        BorderThickness = new Thickness(1);
+        Padding = new Thickness(20, 13, 20, 13);
+        RenderTransform = slide;
+        Child = new TextBlock
+        {
+            Text = text,
+            FontSize = 17,
+            FontWeight = FontWeights.Bold,
+            Foreground = Brushes.White,
+            TextWrapping = TextWrapping.NoWrap,
+        };
+        AutomationProperties.SetName(this, text);
+        AutomationProperties.SetLiveSetting(this, AutomationLiveSetting.Polite);
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            Hide(TimeSpan.FromMilliseconds(400));
+        };
+    }
+
+    /// <summary>Balonu gösterir; 7 sn sonra kendiliğinden kaybolur.</summary>
+    public void Show()
+    {
+        timer.Stop();
+        Visibility = Visibility.Visible;
+        if (NinoBot.ReduceMotion)
+        {
+            BeginAnimation(OpacityProperty, null);
+            slide.BeginAnimation(TranslateTransform.XProperty, null);
+            Opacity = 1;
+            slide.X = 0;
+        }
+        else
+        {
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300)) { EasingFunction = ease });
+            slide.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(-24, 0, TimeSpan.FromMilliseconds(400)) { EasingFunction = ease });
+        }
+        timer.Start();
+    }
+
+    /// <summary>Balonu hemen (çeviri durunca) ya da yavaşça (süre dolunca) gizler.</summary>
+    public void Hide(TimeSpan? fade = null)
+    {
+        timer.Stop();
+        if (Visibility != Visibility.Visible) return;
+        if (NinoBot.ReduceMotion || fade is null)
+        {
+            BeginAnimation(OpacityProperty, null);
+            Opacity = 0;
+            Visibility = Visibility.Collapsed;
+            return;
+        }
+        var animation = new DoubleAnimation(0, fade.Value) { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+        animation.Completed += (_, _) =>
+        {
+            // Bu arada yeniden gösterildiyse gizlenmez.
+            if (!timer.IsEnabled) Visibility = Visibility.Collapsed;
+        };
+        BeginAnimation(OpacityProperty, animation);
+    }
+}

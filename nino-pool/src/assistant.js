@@ -42,9 +42,21 @@ export function usageCost(model, usage) {
   );
 }
 
+/** Hesap bilgisi gizlenir: e-posta adresleri ve "şifre/parola/password" sonrasındaki sözcük. Bildirime ve hazır cevaba girmez. */
+export function maskSecrets(text) {
+  return String(text ?? "")
+    .replace(/[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/gu, "[e-posta]")
+    .replace(/((?:şifre|sifre|parola|password|pass|pw)\S*\s*[:=]?\s*)\S+/giu, "$1[gizli]");
+}
+
+function hasSecret(text) {
+  return maskSecrets(text) !== String(text ?? "");
+}
+
 /** Hazır cevap anahtarı: yalnız resimsiz, tek mesajlık ilk soru için; aksi hâlde null. */
 async function answerKey(input) {
   if (input.messages.length !== 1 || input.messages[0].images.length) return null;
+  if (hasSecret(input.messages[0].text)) return null;
   const text = input.messages[0].text.toLocaleLowerCase("tr").normalize("NFKC")
     .replace(/[\p{P}\p{S}]+/gu, " ").replace(/\s+/g, " ").trim();
   if (!text) return null;
@@ -84,12 +96,31 @@ How to answer:
   Google TV, Samsung or LG TV, smart or plain monitor, TV brand and model), and what runs Nino (Mac, Windows PC,
   Android phone, iPhone). When they answer (e.g. "monitor, PS5, phone"), pick the right path from the knowledge and
   give a short, numbered plan for exactly that setup.
+- Installing the TV app: the way we recommend is always automatic, from the phone or computer Nino (it installs and
+  later updates the TV app by itself). Never suggest third-party downloader apps. Guide it one step at a time:
+  1) if you don't know it yet, first ask only for the TV brand and model (or a photo of Settings › About);
+  2) then explain ONLY how to turn on developer mode / USB debugging for THAT brand (for Android TV / Google TV:
+     Settings › System › About › tap "Android TV OS build" 7 times, then Developer options › USB debugging on),
+     and ask the user to say when it is done;
+  3) next step: tell the user to press "Install on TV" / "Kur ve aç" in Nino (phone: Profil › Nino'yu TV'ye Kur); ONLY
+     THEN the TV asks "Allow USB debugging?": tick "Always allow from this computer" › Allow;
+  4) last: confirm Nino opened on the TV, and remind them to leave USB debugging on so Nino can update the TV app.
+  If the brand is already given, go straight to that brand's steps; never ask for the brand or model again.
+  Give at most 2-3 steps per message, wait for the user's answer, and if they get stuck ask for a photo of the TV screen.
+  Manual install from the TV browser (https://is.gd/ninotvapk) is only a last resort; mention that it won't update
+  itself then.
 - When something goes wrong, find WHERE it fails before answering: which step of the setup, what the screen shows,
   the exact error text, app versions. Ask ONE focused question at a time (never a long questionnaire) and ask for a
   screenshot when it would help; when the user sends one, read it carefully (menus, error text, which app/screen).
   Then give the most likely fix first, then the next one if that doesn't help.
 - Stay on topic: Nino, consoles, TVs, monitors, capture cards, streaming with Nino. Politely decline other topics.
-- Never ask for passwords, PSN/Microsoft credentials, API keys or payment details.
+- Never ask for passwords, PSN/Microsoft credentials, API keys or payment details. If the user writes a password,
+  email or account details, never repeat them in your reply or in the report summary.
+- Only use menu paths and button names that appear in the NINO KNOWLEDGE; if you don't know one, describe it in plain
+  words instead of inventing a name.
+- Ask exactly ONE question per message (one question mark). Even troubleshooting checklists are numbered steps.
+- For an unsupported device, console or feature, send the "request" report right away and say you sent it; don't ask
+  whether to send it.
 
 Reports to the Nino team (the bug pool):
 - Send a report RIGHT AWAY (no need to ask permission) when:
@@ -311,11 +342,11 @@ export async function handleAssistant(db, env, body, now, ask = askModel) {
   const summary = typeof answer?.report?.summary === "string" ? answer.report.summary.trim() : "";
   if (summary) {
     // Bildirim: modelin özeti, sohbetin metni ve sohbetteki son en çok 3 ekran görüntüsü.
-    const transcript = input.messages.map((m) => `${m.role === "user" ? "Kullanıcı" : "Nino"}: ${m.text}${m.images.length ? ` [${m.images.length} ekran görüntüsü]` : ""}`).join("\n");
+    const transcript = input.messages.map((m) => `${m.role === "user" ? "Kullanıcı" : "Nino"}: ${maskSecrets(m.text)}${m.images.length ? ` [${m.images.length} ekran görüntüsü]` : ""}`).join("\n");
     const images = input.messages.flatMap((m) => m.images).slice(-3);
     const saved = await receiveReport(db, env, {
       v: 1, install: input.install, app: input.app, platform: input.platform, language: input.language,
-      text: `[Yardımcı · ${KIND_LABELS[answer.report.kind] ?? "Sorun"}] ${summary}\n\n--- Sohbet ---\n${transcript}\nNino: ${reply}`.slice(0, 4000), images,
+      text: `[Yardımcı · ${KIND_LABELS[answer.report.kind] ?? "Sorun"}] ${maskSecrets(summary)}\n\n--- Sohbet ---\n${transcript}\nNino: ${maskSecrets(reply)}`.slice(0, 4000), images,
     }, now);
     if (saved.status === 200) reportId = saved.body.id;
   }

@@ -651,4 +651,6 @@
     <string name="assistant_network">সার্ভারে পৌঁছাতে পারিনি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।</string>
     <string name="assistant_too_large">মেসেজটা অনেক বড় হয়ে গেছে। একটা স্ক্রিনশট সরিয়ে আবার চেষ্টা করুন।</string>
     <string name="assistant_invalid">এই মেসেজটা পাঠাতে পারিনি। একটু বদলে আবার চেষ্টা করুন।</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">নিনো: সাবটাইটেল অনুবাদ শুরু হয়েছে। খেলা উপভোগ করুন!</string>
 </resources>

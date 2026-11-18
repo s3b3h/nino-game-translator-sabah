@@ -36,10 +36,17 @@ public enum CornerBlock {
             }
             blocks.append([line])
         }
-        guard let best = blocks.max(by: { Self.words($0) < Self.words($1) }), Self.words(best) >= minimumWords else {
+        guard let best = blocks.max(by: { Self.words($0) < Self.words($1) }),
+              Self.words(best) >= minimumWords || (Self.words(best) >= 2 && Self.startsWithMarker(best)) else {
             return Reading(lines: [])
         }
         return Reading(lines: best)
+    }
+
+    /// Nino: görev işaretiyle ("◆ Escape the mine") başlayan kısa satır da görevdir; harita adlarının işareti yoktur.
+    static func startsWithMarker(_ block: [TextLine]) -> Bool {
+        guard let first = block.first?.text.trimmingCharacters(in: .whitespaces).first else { return false }
+        return !first.isLetter && !first.isNumber && !first.isWhitespace && "\"'(".contains(first) == false
     }
 
     static func words(_ block: [TextLine]) -> Int {

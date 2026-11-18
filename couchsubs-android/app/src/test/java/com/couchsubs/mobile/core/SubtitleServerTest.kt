@@ -2,6 +2,7 @@
 package com.couchsubs.mobile.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.BufferedReader
@@ -124,5 +125,71 @@ class SubtitleServerTest {
         server.sendSubtitle("Merhaba", 1000, null)
         server.clear()
         assertEquals(listOf(SubtitleEvent.Subtitle("Merhaba", 1000), SubtitleEvent.Cleared), events)
+    }
+
+    /** `/events` akışını açar ve kısa süre içinde gelenleri döner (başlık ve ilk olaylar). */
+    private fun openEvents(port: Int, query: String = "", waitMs: Int = 400): String =
+        Socket("127.0.0.1", port).use { socket ->
+            socket.soTimeout = waitMs
+            socket.getOutputStream().write("GET /events$query HTTP/1.1\r\nHost: x\r\n\r\n".toByteArray())
+            val out = java.io.ByteArrayOutputStream()
+            val buffer = ByteArray(4096)
+            try {
+                while (true) {
+                    val count = socket.getInputStream().read(buffer)
+                    if (count <= 0) break
+                    out.write(buffer, 0, count)
+                }
+            } catch (timeout: java.net.SocketTimeoutException) {
+            }
+            out.toString("UTF-8").also { assertTrue(it, it.contains("retry: 2000")) }
+        }
+
+    @Test
+    fun startedIsReplayedToTvsConnectingWithinTwentySeconds() {
+        var now = 1_000_000L
+        val server = SubtitleServer(0, clock = { now })
+        val port = server.start()
+        try {
+            // Çeviri başlamadan bağlanan TV "started" almaz.
+            assertFalse(openEvents(port).contains("event: started"))
+            server.sendStarted()
+            now += 19_000
+            val early = openEvents(port)
+            assertTrue(early, early.contains("event: started\ndata: {}\n\n"))
+            // İzleyici (OBS) balonu almaz.
+            assertFalse(openEvents(port, "?viewer=obs").contains("event: started"))
+            now += 1_000
+            assertFalse(openEvents(port).contains("event: started"))
+        } finally {
+            server.stop()
+        }
+    }
+
+    @Test
+    fun startedIsBroadcastToConnectedTvsEvenWhenSubtitlesGoToThePhone() {
+        val server = SubtitleServer(0)
+        val port = server.start()
+        server.sendsToTv = false
+        try {
+            Socket("127.0.0.1", port).use { socket ->
+                socket.soTimeout = 2000
+                socket.getOutputStream().write("GET /events HTTP/1.1\r\nHost: x\r\n\r\n".toByteArray())
+                val reader = BufferedReader(InputStreamReader(socket.getInputStream(), Charsets.UTF_8))
+                assertTrue(reader.readLine().startsWith("HTTP/1.1 200"))
+                // Bağlantı listeye girene kadar bekle.
+                val deadline = System.currentTimeMillis() + 2000
+                while (server.connectedClients == 0 && System.currentTimeMillis() < deadline) Thread.sleep(10)
+                server.sendStarted()
+                var found = false
+                while (!found) {
+                    val line = reader.readLine() ?: break
+                    found = line == "event: started"
+                }
+                assertTrue(found)
+            }
+        } finally {
+            server.stop()
+        }
     }
 }

@@ -79,6 +79,13 @@ public final class GameChoice: ObservableObject {
         publish()
     }
 
+    /// Nino: oyun ekrandan tanındı (Claude). Sorulacak soru gereksizleşir.
+    public func seen(_ name: String) {
+        sense.setSeen(name)
+        asking = false
+        publish()
+    }
+
     /// Kullanıcı bir oyun seçti ya da adını yazdı.
     public func choose(_ name: String) {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)

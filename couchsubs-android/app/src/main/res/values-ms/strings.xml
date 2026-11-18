@@ -651,4 +651,6 @@
     <string name="assistant_network">Saya tidak dapat menghubungi pelayan. Semak internet kamu dan cuba lagi.</string>
     <string name="assistant_too_large">Mesej itu terlalu besar. Buang satu tangkapan skrin dan cuba lagi.</string>
     <string name="assistant_invalid">Saya tidak dapat menghantar mesej itu. Ubah sedikit dan cuba lagi.</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">Nino: Terjemahan Sari Kata Bermula. Selamat Bermain!</string>
 </resources>

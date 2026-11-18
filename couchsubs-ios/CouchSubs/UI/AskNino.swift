@@ -16,9 +16,56 @@ enum AskNinoChat {
 /// Sağ altta yüzen yuvarlak robot düğmesi.
 struct AskNinoButton: View {
     @Environment(\.locale) private var locale
+    @EnvironmentObject private var model: PhoneModel
     @State private var showing = false
+    /// Nino: çeviri başlayınca robotun solunda 7 sn "Altyazı Çevirisi Başladı" balonu.
+    @State private var startedBubble = false
+    @State private var bubbleTask: Task<Void, Never>?
+
+    static let startedTexts: [String: String] = [
+        "ar": "نينو: بدأت ترجمة الحوارات. استمتع باللعب!",
+        "bn": "নিনো: সাবটাইটেল অনুবাদ শুরু হয়েছে। খেলা উপভোগ করুন!",
+        "fil": "Nino: Nagsimula na ang Pagsasalin ng Subtitle. Mag-enjoy sa Laro!",
+        "hi": "नीनो: सबटाइटल अनुवाद शुरू हो गया। खेल का मज़ा लें!",
+        "id": "Nino: Terjemahan Subtitle Dimulai. Selamat Bermain!",
+        "ms": "Nino: Terjemahan Sari Kata Bermula. Selamat Bermain!",
+        "nl": "Nino: Ondertitelvertaling Gestart. Veel Speelplezier!",
+        "th": "Nino: เริ่มแปลคำบรรยายแล้ว ขอให้สนุกกับเกม!",
+        "tr": "Nino: Altyazı Çevirisi Başladı. Keyifli Oyunlar!",
+        "ur": "نینو: سب ٹائٹل کا ترجمہ شروع ہو گیا۔ کھیل کا لطف اٹھائیں!",
+        "vi": "Nino: Đã Bắt Đầu Dịch Phụ Đề. Chúc Chơi Vui!"
+    ]
+
+    private var startedText: String {
+        Self.startedTexts[locale.language.languageCode?.identifier ?? "en"] ?? "Nino: Subtitle Translation Started. Enjoy the Game!"
+    }
 
     var body: some View {
+        HStack(spacing: 10) {
+            if startedBubble {
+                Text(startedText)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
+                    .padding(.horizontal, 16).padding(.vertical, 11)
+                    .background(Capsule().fill(Color.black.opacity(0.7)))
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+            robot
+        }
+        .onChange(of: model.isRunning) { running in
+            bubbleTask?.cancel()
+            guard running else { withAnimation(.easeOut(duration: 0.25)) { startedBubble = false }; return }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { startedBubble = true }
+            bubbleTask = Task {
+                try? await Task.sleep(nanoseconds: 7_000_000_000)
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.4)) { startedBubble = false }
+            }
+        }
+    }
+
+    private var robot: some View {
         Button { showing = true } label: {
             NinoBotFace(size: 46, bobbing: true)
                 .frame(width: 62, height: 62)

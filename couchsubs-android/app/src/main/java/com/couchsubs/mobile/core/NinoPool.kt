@@ -96,7 +96,7 @@ class NinoPool(
             if (game == null) return null
             val mapped = game.lowercase().map { c ->
                 if ((c in 'a'..'z') || (c in '0'..'9') || c == '.' || c == '_' || c == '-') c else '-'
-            }.joinToString("").trim('-', '.', '_')
+            }.joinToString("").replace(Regex("-{2,}"), "-").trim('-', '.', '_')
             return mapped.takeIf { it.isNotEmpty() }?.take(64)
         }
 

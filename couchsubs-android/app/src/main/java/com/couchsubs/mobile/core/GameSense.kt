@@ -14,7 +14,7 @@ import java.util.Locale
  * Mac ve iPhone'daki GameSense.swift ve Windows'taki GameSense.cs ile aynı kurallar.
  */
 class GameSense {
-    enum class Source { CONSOLE, PACK, USER }
+    enum class Source { CONSOLE, PACK, USER, SCREEN }
 
     private val lock = Any()
     private val recent = ArrayDeque<String?>()
@@ -24,9 +24,14 @@ class GameSense {
     private var packId: String? = null
     private var chosen: RunningGame? = null
     private var asked = false
+    /**
+     * Nino: ekrandan tanınan oyun (Remote Play karesi → sunucu). Paket eşleşmesinden sonra gelir: paketi olan oyunda satırlar
+     * zaten doğru oyunu söyler; paketi olmayan yeni oyunda tek kaynak budur (Mac: GameSense.seen).
+     */
+    private var seen: RunningGame? = null
 
-    /** Havuza giden oyun: PS5'in bildirdiği, yoksa kullanıcının seçtiği, yoksa paketten tanınan. */
-    val current: RunningGame? get() = synchronized(lock) { console ?: chosen ?: pack }
+    /** Havuza giden oyun: PS5'in bildirdiği, yoksa kullanıcının seçtiği, yoksa paketten tanınan, yoksa ekrandan tanınan. */
+    val current: RunningGame? get() = synchronized(lock) { console ?: chosen ?: pack ?: seen }
 
     val source: Source?
         get() = synchronized(lock) {
@@ -34,6 +39,7 @@ class GameSense {
                 console != null -> Source.CONSOLE
                 chosen != null -> Source.USER
                 pack != null -> Source.PACK
+                seen != null -> Source.SCREEN
                 else -> null
             }
         }
@@ -79,6 +85,9 @@ class GameSense {
         asked = true
     }
 
+    /** Ekrandan tanınan oyun (bkz. [seen]); null siler. */
+    fun setSeen(name: String?) = synchronized(lock) { seen = RunningGame.named(name) }
+
     /** Yeni çeviri oturumu: paket penceresi ve soru sıfırlanır; kullanıcının seçimi uygulama açık kaldıkça kalır. */
     fun startSession() = synchronized(lock) {
         recent.clear()
@@ -90,7 +99,7 @@ class GameSense {
 
     /** Kart gösterilmeli mi: ayar açık, bu oturumda sorulmadı, oyun hiçbir yoldan bilinmiyor ve çeviri iki dakikadır sürüyor. */
     fun shouldAsk(runningForMs: Long, enabled: Boolean): Boolean = synchronized(lock) {
-        enabled && !asked && console == null && pack == null && chosen == null && runningForMs >= ASK_AFTER_MS
+        enabled && !asked && console == null && pack == null && chosen == null && seen == null && runningForMs >= ASK_AFTER_MS
     }
 
     /** Kart gösterildi ya da "Sorma"ya basıldı: bu oturumda bir daha sorulmaz. */

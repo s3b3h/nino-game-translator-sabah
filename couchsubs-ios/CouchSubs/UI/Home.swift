@@ -120,8 +120,8 @@ struct SubtitleScreen: View {
                         .subtitleDirection(line.text)
                 }
             }
-            .padding(.horizontal, Mobile.Space.screen)
-            .padding(.bottom, Mobile.Space.screen * 2)
+            .padding(.horizontal, Mobile.isPad ? Mobile.Space.screen * 3 : Mobile.Space.screen)
+            .padding(.bottom, Mobile.Space.screen * (Mobile.isPad ? 4 : 2))
             // Ek alanların (görev, telefon, bildirim) çevirisi oyundaki yerinde küçük kutuda (TV'deki gibi).
             GeometryReader { proxy in
                 ForEach(model.phoneRegions) { region in
@@ -162,7 +162,8 @@ struct SubtitleScreen: View {
                 .padding(.bottom, Mobile.Space.inline)
         }
         .overlay(alignment: .topLeading) {
-            MobilePill(text: statusText, live: model.sessionState == .streaming || model.isDemo)
+            // Nino: siyah zeminde okunsun diye açık renk (koyu lacivert yazı görünmüyordu).
+            MobilePill(text: statusText, live: model.sessionState == .streaming || model.isDemo, onDark: true)
                 .padding(Mobile.Space.screen)
         }
         .overlay(alignment: .topTrailing) {
@@ -221,6 +222,8 @@ enum Orientation {
     @MainActor
     static func request(_ mask: UIInterfaceOrientationMask) {
         // Nino: ana ekran dikey kilitli; tam ekran altyazı açılınca yalnız yatay izin verilir.
+        // iPad'de ekran hiç zorla döndürülmez: her yön serbest, altyazı ekranı dikeyde de yatayda da çalışır.
+        guard !Mobile.isPad else { return }
         NinoAppDelegate.orientations = mask
         guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
         scene.windows.first?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
@@ -262,6 +265,7 @@ struct CoachTour: View {
                         .position(x: rect.midX, y: rect.midY)
                 }
                 card
+                    .frame(maxWidth: Mobile.isPad ? Mobile.readableWidth : .infinity)
                     .padding(.horizontal, Mobile.Space.screen)
                     .frame(maxWidth: .infinity)
                     .position(x: proxy.size.width / 2, y: cardY(rect: rect, height: proxy.size.height))

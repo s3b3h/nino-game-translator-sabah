@@ -9,6 +9,13 @@
 //   GET  /v1/reports[/id[/images/i]], POST /v1/reports/id/status   bildirimler (Authorization: Bearer EXPORT_TOKEN)
 //   POST /v1/assistant          Nino yardımcısı (kurulum sohbeti; model sunucu ayarıyla seçilir)
 //   GET  /v1/assistant          yardımcı açık mı ({ok, enabled})
+//   POST /v1/translate          çeviri havuzu: satırların çevirisi (yoksa o an çevrilir)
+//   GET  /v1/translations       çeviri havuzu: oyunun çevirileri, ?since= sonrası değişenler
+//   POST /v1/identify           oyunu ekrandan tanır (Remote Play karesi → oyun adı)
+//   GET  /v1/config             uygulamaların uzaktan ayarı (çeviri havuzu açık mı, bekleme süresi, en düşük sürüm)
+//   GET  /v1/ping               uygulama çeviri sürerken dakikada bir "buradayım" (panelde şu an oynayan)
+//   GET  /v1/stats              panelin sayıları (Authorization: Bearer EXPORT_TOKEN)
+//   GET  /panel                 Nino paneli (veri içermez; anahtarla /v1/stats'tan çeker)
 //   GET  /reports               bildirimleri okuma sayfası (veri içermez; anahtarla /v1/reports'tan çeker)
 // IP adresi hiçbir yere yazılmaz.
 
@@ -17,6 +24,10 @@ import { LIMITS } from "./validate.js";
 import { REPORT_LIMITS, receiveReport, listReports, getReport, getReportImage, setReportStatus } from "./reports.js";
 import { REPORTS_PAGE } from "./reports-page.js";
 import { ASSISTANT_LIMITS, handleAssistant, assistantEnabled } from "./assistant.js";
+import { touchInstall, handlePing, collectStats } from "./stats.js";
+import { ADMIN_PAGE } from "./admin-page.js";
+import { IDENTIFY_LIMITS, handleIdentify } from "./identify.js";
+import { TRANSLATE_LIMITS, handleTranslate, listTranslations, reviewTranslations, remoteConfig, addCost } from "./translate.js";
 
 function json(status, body, headers = {}) {
   return new Response(JSON.stringify(body), {
@@ -48,7 +59,7 @@ async function readBody(request, max = LIMITS.maxBodyBytes) {
   }
 }
 
-export async function handle(request, env, now = Math.floor(Date.now() / 1000), ask) {
+export async function handle(request, env, now = Math.floor(Date.now() / 1000), ask, translateLive, identifyAsk) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "");
 
@@ -60,8 +71,68 @@ export async function handle(request, env, now = Math.floor(Date.now() / 1000), 
     if (body.tooLarge) return json(413, { ok: false, error: "too_large" });
     if (body.bad) return json(400, { ok: false, error: "bad_json" });
     const result = await receiveBatch(env.DB, env, body.value, now);
+    if (result.status === 200) {
+      await touchInstall(env.DB, env, body.value?.install, now, { platform: body.value?.platform, app: body.value?.app }).catch(() => {});
+    }
     const headers = result.retryAfter ? { "retry-after": String(result.retryAfter) } : {};
     return json(result.status, result.body, headers);
+  }
+
+  if (path === "/v1/ping" && request.method === "GET") {
+    await handlePing(env.DB, env, url.searchParams, now);
+    return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+  }
+
+  if (path === "/v1/stats" && request.method === "GET") {
+    if (!env.EXPORT_TOKEN) return json(503, { ok: false, error: "export_disabled" });
+    if (!authorized(request, env)) return json(401, { ok: false, error: "unauthorized" });
+    return json(200, await collectStats(env.DB, env, now));
+  }
+
+  if (path === "/panel" && request.method === "GET") {
+    return new Response(ADMIN_PAGE, {
+      headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex",
+        "content-security-policy": "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'" },
+    });
+  }
+
+  if (path === "/v1/config" && request.method === "GET") {
+    return json(200, remoteConfig(env), { "cache-control": "public, max-age=300" });
+  }
+
+  if (path === "/v1/identify" && request.method === "POST") {
+    const body = await readBody(request, IDENTIFY_LIMITS.maxBodyBytes);
+    if (body.tooLarge) return json(413, { ok: false, error: "too_large" });
+    if (body.bad) return json(400, { ok: false, error: "bad_json" });
+    const result = await handleIdentify(env.DB, env, body.value, now, identifyAsk, addCost);
+    return json(result.status, result.body);
+  }
+
+  if (path === "/v1/translate") {
+    if (request.method !== "POST") return json(405, { ok: false, error: "method" });
+    const body = await readBody(request, TRANSLATE_LIMITS.maxBodyBytes);
+    if (body.tooLarge) return json(413, { ok: false, error: "too_large" });
+    if (body.bad) return json(400, { ok: false, error: "bad_json" });
+    const result = await handleTranslate(env.DB, env, body.value, now, translateLive);
+    if (result.status === 200) {
+      await touchInstall(env.DB, env, body.value?.install, now, {
+        platform: body.value?.platform, app: body.value?.app, playing: true, game: body.value?.game, lang: body.value?.lang,
+      }).catch(() => {});
+    }
+    return json(result.status, result.body);
+  }
+
+  // Yönetici: gözden geçirmeyi hemen çalıştırır (?delay=saniye, varsayılan zamanlanmışla aynı).
+  if (path === "/v1/review" && request.method === "POST") {
+    if (!env.EXPORT_TOKEN) return json(503, { ok: false, error: "export_disabled" });
+    if (!authorized(request, env)) return json(401, { ok: false, error: "unauthorized" });
+    const delay = Number.parseInt(url.searchParams.get("delay") ?? "", 10);
+    return json(200, { ok: true, ...(await reviewTranslations(env.DB, env, now, undefined, Number.isFinite(delay) ? delay : undefined)) });
+  }
+
+  if (path === "/v1/translations" && request.method === "GET") {
+    const result = await listTranslations(env.DB, url.searchParams, now);
+    return json(result.status, result.body, result.status === 200 ? { "cache-control": "public, max-age=60" } : {});
   }
 
   if (path === "/v1/assistant") {
@@ -71,6 +142,7 @@ export async function handle(request, env, now = Math.floor(Date.now() / 1000), 
     if (body.tooLarge) return json(413, { ok: false, error: "too_large" });
     if (body.bad) return json(400, { ok: false, error: "bad_json" });
     const result = await handleAssistant(env.DB, env, body.value, now, ask);
+    await touchInstall(env.DB, env, body.value?.install, now, { platform: body.value?.platform, app: body.value?.app }).catch(() => {});
     const headers = result.retryAfter ? { "retry-after": String(result.retryAfter) } : {};
     return json(result.status, result.body, headers);
   }
@@ -136,8 +208,20 @@ export async function handle(request, env, now = Math.floor(Date.now() / 1000), 
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     try {
+      // Oyunun bütün çevirileri (ilk indirme) kenar önbellekte bir dakika tutulur: yüzlerce oyuncu aynı anda
+      // başlasa da veritabanına bir kez gidilir.
+      const url = new URL(request.url);
+      if (request.method === "GET" && url.pathname === "/v1/translations" && (url.searchParams.get("since") ?? "0") === "0"
+          && typeof caches !== "undefined") {
+        const cache = caches.default;
+        const hit = await cache.match(request);
+        if (hit) return hit;
+        const response = await handle(request, env);
+        if (response.status === 200) ctx?.waitUntil?.(cache.put(request, response.clone()));
+        return response;
+      }
       return await handle(request, env);
     } catch (error) {
       // 5xx: istemci parçayı saklar ve artan aralıklarla yeniden dener.
@@ -145,7 +229,10 @@ export default {
       return json(503, { ok: false, error: "server" }, { "retry-after": "60" });
     }
   },
-  async scheduled(_event, env) {
-    await prune(env.DB, Math.floor(Date.now() / 1000));
+  async scheduled(event, env) {
+    const now = Math.floor(Date.now() / 1000);
+    // Gözden geçirme 30 dakikada bir (wrangler.toml), bakım günde bir.
+    if (event?.cron === "17 3 * * *") await prune(env.DB, now);
+    else console.log("gözden geçirme", JSON.stringify(await reviewTranslations(env.DB, env, now)));
   },
 };

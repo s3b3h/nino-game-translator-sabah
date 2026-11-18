@@ -228,6 +228,11 @@ class NinoPoolTest {
         assertEquals("Hello there.", NinoPool.clean("  Hello​\n  there.  "))
         assertEquals("gta-v", NinoPool.gameId("GTA V"))
         assertNull(NinoPool.gameId(" "))
+        // Art arda tireler teke iner (Mac ile aynı).
+        assertEquals("mafia-the-old-country", NinoPool.gameId("Mafia: The Old Country"))
+        assertEquals("marvel-s-spider-man-2", NinoPool.gameId("Marvel's Spider-Man 2"))
+        assertEquals("death-stranding-2-on-the-beach", NinoPool.gameId("Death Stranding 2: On the Beach"))
+        assertEquals("a-b", NinoPool.gameId("--a -- b--"))
     }
 
     @Test fun endpointFromFile() {

@@ -156,7 +156,7 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
     private string Present(string translation, Request request) => SpeakerPrefix.Present(translation, request.Source, ShowSpeakerNames);
     /// <summary>Hiçbir pakette bulunmayan kararlı satır (ortak havuz için).</summary>
     public event Action<string>? PackMissed;
-    /// <summary>Son gösterilen çevirinin nereden geldiği: "paket" ya da "motor" (günlük ve sayım için).</summary>
+    /// <summary>Son gösterilen çevirinin nereden geldiği: "paket", "motor" ya da "havuz" (günlük ve sayım için).</summary>
     public string? LastOrigin { get; private set; }
     /// <summary>Bu hatta paketten gelen satır sayısı.</summary>
     public int PackHits { get; private set; }
@@ -834,9 +834,17 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
         TranslationResult?.Invoke(null);
 
         LineMetrics metrics;
+        IReadOnlyList<SpokenLine>? pooledSpeech = null;
         lock (gate)
         {
             if (request.Session != session || request.Abandoned) return;
+            // Nino: çeviri sürerken havuzdan (sunucunun Claude çevirisi) gelmişse o gösterilir.
+            if (FindPack(source) is { } pooled)
+            {
+                sentence = pooled.Text;
+                translated = Present(sentence, request);
+                pooledSpeech = pooled.Spoken;
+            }
             var shouldSend = stabilizer.ShouldSend(input, sentence);
             Remember(request.Number, source, shouldSend ? translated : null);
             if (request.Number <= lastShown || !shouldSend || request.Superseded)
@@ -866,7 +874,36 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
         }
         MetricsReady?.Invoke(metrics);
         PairShown?.Invoke(source, translated);
-        if (SpeechReady is { } speech) speech(SpeakerPrefix.Voiced(translator.SpokenLines(input), request.Prefix));
+        if (SpeechReady is { } speech) speech(pooledSpeech ?? SpeakerPrefix.Voiced(translator.SpokenLines(input), request.Prefix));
+    }
+
+    /// <summary>
+    /// Nino: sunucunun çeviri havuzundan sonradan gelen (daha iyi) çeviri. Satır hâlâ ekrandaysa TV'de ve uygulamada yerine
+    /// konur (TV mesajındaki <c>replaces</c>); kalktıysa yalnız sonraki gösterimler için hatırlanır. Paketten gelen satıra
+    /// dokunulmaz.
+    /// </summary>
+    public void Upgrade(string source, string translation)
+    {
+        Action? after = null;
+        lock (gate)
+        {
+            if (translation.Length == 0) return;
+            var index = pairs.FindLastIndex(pair => pair.Source == source);
+            if (index < 0) return;
+            var pair = pairs[index];
+            if (pair.Translation is null) return;
+            var presented = SpeakerPrefix.Present(translation, source, ShowSpeakerNames);
+            if (presented == pair.Translation) return;
+            pairs[index] = pair with { Translation = presented };
+            if (pair.Number != lineOnScreen || pair.Number != lastShown || LastOrigin == "paket" || LastPair?.Source != source) return;
+            Write($"#{pair.Number} havuzdan daha iyi çevirisi geldi, yerine kondu");
+            sender.SendSubtitle(presented, 15000, LastBox, replaces: true);
+            LastPair = (source, presented);
+            LastOrigin = "havuz";
+            var shown = PairShown;
+            after = () => shown?.Invoke(source, presented);
+        }
+        after?.Invoke();
     }
 
     private void Remember(int number, string source, string? translation)

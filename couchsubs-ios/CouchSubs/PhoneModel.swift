@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import CoreGraphics
+import ImageIO
 import CouchSubsCore
 import Foundation
 import Combine
@@ -47,11 +48,16 @@ final class PhoneModel: ObservableObject {
             server.sendStyle(settings.style)
             if settings.output != oldValue.output { outputChanged() }
             if settings.gamePacks != oldValue.gamePacks, let pipeline { connectPacks(to: pipeline) }
-            if settings.targetLanguage != oldValue.targetLanguage { targetLanguageChanged() }
+            if settings.targetLanguage != oldValue.targetLanguage {
+                let (translations, target) = (translations, settings.targetLanguage)
+                Task { await translations.setLanguage(target) }
+                targetLanguageChanged()
+            }
             pipeline?.showSpeakerNames = settings.showSpeakerNames
             if settings.sharePool != oldValue.sharePool {
-                let (pool, enabled) = (pool, settings.sharePool)
-                Task { await pool.setEnabled(enabled) }
+                let (pool, enabled, translations) = (pool, settings.sharePool, translations)
+                Task { await pool.setEnabled(enabled); await translations.setEnabled(enabled) }
+                if let pipeline { connectPacks(to: pipeline) }
             }
             let translationChanged = settings.onlineTranslation != oldValue.onlineTranslation
                 || settings.targetLanguage != oldValue.targetLanguage
@@ -176,6 +182,12 @@ final class PhoneModel: ObservableObject {
     /// Oyun paketleri: uygulamayla gelenler ve sunucudan indirilen güncel sürümleri (ücretsiz, herkese).
     let packs: GamePackLibrary
     private let pool: NinoPool
+    /// Nino: sunucunun çeviri havuzu (Claude çevirileri; paketten sonra, cihazın çevirisinden önce).
+    private let translations: TranslationPool
+    private var translationSync: Task<Void, Never>?
+    private let poolContext = PoolContext()
+    /// Ek alanların (görev, bildirim) paket araması: yalnız oyun paketi, havuz yok.
+    private var regionPackLookup: ((String) -> PackMatch?)?
     /// Sorun Bildir: havuzla aynı rastgele kuruluş kimliği (sunucu tuzlayıp özetler).
     func reportInstallID() async -> String { await pool.installID }
     /// Oynanan oyun: PS5'in bildirdiği, kullanıcının seçtiği ya da paketten tanınan (havuza giden satırlar bu oyunla gider).
@@ -232,6 +244,9 @@ final class PhoneModel: ObservableObject {
         // Nino'nun kendi havuzu; CouchSubs'tan kalan pool.json kuyruğu bir kez ona aktarılır.
         pool = NinoPool(directory: poolFile.deletingLastPathComponent().appendingPathComponent("pool", isDirectory: true),
                         app: AppIdentity.version, platform: "ios", enabled: curated.sharePool && !testing, legacyFile: poolFile)
+        translations = TranslationPool(directory: poolFile.deletingLastPathComponent().appendingPathComponent("translations", isDirectory: true),
+                                       app: AppIdentity.version, platform: "ios", language: curated.targetLanguage,
+                                       enabled: curated.sharePool && !testing)
         probesGame = !testing
         gameChoice = GameChoice(defaults: defaults)
         savedKeys = Set(TranslationEngine.allCases.filter { engine in
@@ -244,6 +259,8 @@ final class PhoneModel: ObservableObject {
         gameChoice.onChange = { [weak self] game in
             // Bu oyunun (havuzdan otomatik) paketi sunucuda yeni çıkmış olabilir.
             if game != nil { self?.onGameStarted() }
+            // Nino: yeni oyunun havuzdaki çevirileri hemen iner.
+            if let self, self.pipeline != nil { self.startTranslationSync() }
         }
         gameChoice.packTitles = { [weak self] in GameCatalog.packGames(self?.installedPacks ?? []) }
         // Elle seçilen oyunda satırlar yalnız o oyunun paketinde aranır, paketi yoksa hiç aranmaz (#218).
@@ -457,6 +474,10 @@ final class PhoneModel: ObservableObject {
             return self.settings.askGame && self.settings.sharePool
         }
         isRunning = true
+        server.sendStarted()
+        identifyTries = 0
+        identifyChecks = 0
+        identifyLast = Date()
         startedAt = Date()
         runningSince = startedAt
         recentLines = []
@@ -517,6 +538,8 @@ final class PhoneModel: ObservableObject {
         keeper?.stop()
         keeper = nil
         pipeline?.reset()
+        translationSync?.cancel()
+        translationSync = nil
         pipeline = nil
         regionWatcher?.reset()
         regionWatcher = nil
@@ -651,6 +674,7 @@ final class PhoneModel: ObservableObject {
         regionWatcher?.reset()
         regionWatcher = nil
         connectPacks(to: pipeline)
+        startTranslationSync()
         onlineIssue = nil
         pipeline.warmUp()
         self.pipeline = pipeline
@@ -667,9 +691,10 @@ final class PhoneModel: ObservableObject {
     private func handle(_ frame: CGImage, capturedAt: Int) async {
         framePreview.image = frame
         guard let current = pipeline else { return }
+        identifyGameIfNeeded(frame)
         // Ek alanlar ayrı ve seyrek okunur (saniyede bir); altyazı okumasını beklemez, onu bekletmez.
         let areas = settings.activeExtraAreas
-        if regionWatcher == nil, !areas.isEmpty { regionWatcher = makeRegionWatcher(packLookup: current.packLookup) }
+        if regionWatcher == nil, !areas.isEmpty { regionWatcher = makeRegionWatcher(packLookup: regionPackLookup) }
         regionWatcher?.offer(frame, areas: areas)
         // Önceki kare hâlâ işleniyorsa bu kare atlanır. Tek okuma bitmezse çeviri tamamen duruyor, "Durdur / Başlat"
         // düzeltmiyordu (Mac'te görüldü, 2026-11-13); takılan okuma hattı yeniden kurdurur.
@@ -682,6 +707,59 @@ final class PhoneModel: ObservableObject {
         guard case .enter(let token) = entry, let pipeline else { return }
         await pipeline.process(frame, region: settings.region, capturedAt: capturedAt)
         frameGate.leave(token)
+    }
+
+    // MARK: - Oyunu ekrandan tanıma (Mac'teki ile aynı)
+
+    /// Claude kareye bakıp oyunun adını söyler: başlangıçtan ~8 sn sonra, olmazsa dakikada bir, en çok 6 kez. Tanıdıktan
+    /// sonra 5 dk sonra bir kez doğrular, sonra 20 dakikada bir bakar (oyun değişmiş olabilir).
+    private var identifyTask: Task<Void, Never>?
+    private var identifyTries = 0
+    private var identifyChecks = 0
+    private var identifyLast = Date()
+
+    private func identifyGameIfNeeded(_ frame: CGImage) {
+        guard isRunning, settings.sharePool, settings.sourceLanguage == "en", identifyTask == nil, packs.searchScope == nil else { return }
+        let known = gameChoice.sense.current
+        let wait: TimeInterval
+        if known == nil {
+            guard identifyTries < 6 else { return }
+            wait = identifyTries == 0 ? 8 : 60
+        } else if gameChoice.sense.source == .screen {
+            guard identifyChecks < 12 else { return }
+            wait = identifyChecks == 0 ? 5 * 60 : 20 * 60
+        } else {
+            return
+        }
+        guard Date().timeIntervalSince(identifyLast) > wait else { return }
+        identifyLast = Date()
+        if known == nil { identifyTries += 1 } else { identifyChecks += 1 }
+        guard let jpeg = Self.smallJPEG(frame, maxWidth: 768) else { return }
+        let translations = self.translations
+        identifyTask = Task { [weak self] in
+            let name = await translations.identify(jpeg: jpeg)
+            guard let self else { return }
+            self.identifyTask = nil
+            guard let name else { return }
+            if let known, NinoPool.gameID(known.name) == NinoPool.gameID(name) { return }
+            SubtitleLog.write("oyun ekrandan tanındı: \(name)")
+            self.gameChoice.seen(name)
+            self.startTranslationSync()
+        }
+    }
+
+    static func smallJPEG(_ image: CGImage, maxWidth: Int) -> Data? {
+        let scale = min(1, Double(maxWidth) / Double(image.width))
+        let width = Int(Double(image.width) * scale), height = Int(Double(image.height) * scale)
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+        context.interpolationQuality = .medium
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let small = context.makeImage() else { return nil }
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, "public.jpeg" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, small, [kCGImageDestinationLossyCompressionQuality: 0.6] as CFDictionary)
+        return CGImageDestinationFinalize(destination) ? data as Data : nil
     }
 
     // MARK: - Geçmiş
@@ -742,25 +820,61 @@ final class PhoneModel: ObservableObject {
     private func connectPacks(to pipeline: SubtitlePipeline) {
         let packs = self.packs
         let pool = self.pool
+        let translations = self.translations
+        let store = translations.store
+        let recent = poolContext
         let active = packsActive
         let disabled = disabledPacks
+        // Nino: sunucunun çeviri havuzu bütün dillerde, kaynak İngilizceyken ve ortak havuz açıkken.
+        let pooled = settings.sharePool && settings.sourceLanguage == "en"
         // Kapatılan paket: paketler tek sözlükte birleştiği için eşleşmeyi veren paket, bulanık aramanın kapsamından
         // (son tam eşleşmenin paketi) okunur; o paket kapalıysa satır motorla çevrilir.
-        pipeline.packLookup = !active ? nil : disabled.isEmpty ? { packs.match($0) } : { text in
+        let packLookup: ((String) -> PackMatch?)? = !active ? nil : disabled.isEmpty ? { packs.match($0) } : { text in
             guard let found = packs.match(text) else { return nil }
             return packs.searchScope.map(disabled.contains) == true ? nil : found
         }
-        // Ek alanlar da pakette aranır ama havuza önerilmez (arayüz yazıları havuzu kirletmesin).
-        regionWatcher?.packLookup = pipeline.packLookup
+        pipeline.packLookup = packLookup == nil && !pooled ? nil : { text in
+            if let found = packLookup?(text) { return found }
+            guard pooled, let translated = store.match(text) else { return nil }
+            return PackMatch(text: translated, spoken: [SpokenLine(english: text, turkish: translated)])
+        }
+        // Ek alanlar yalnız pakette aranır; havuza gitmez (arayüz ve bildirim yazıları kişisel olabilir).
+        regionPackLookup = packLookup
+        regionWatcher?.packLookup = regionPackLookup
         guard settings.sourceLanguage == "en" else {
             pipeline.onPackMiss = nil
             return
         }
-        pipeline.onPackMiss = { text in
+        let sense = gameChoice.sense
+        pipeline.onPackMiss = { [weak pipeline] text in
             // Kapalı paketteki satır da havuza önerilmez (zaten çevrili).
             guard (active && disabled.isEmpty) || packs.match(text) == nil else { return }
-            let game = packs.searchScope
+            let game = packs.searchScope ?? sense.current?.name
             Task { await pool.offer(text, game: game) }
+            guard pooled else { return }
+            let context = recent.add(text)
+            // Sunucu o an çevirir (Claude); satır hâlâ ekrandaysa cihazın çevirisinin yerine konur.
+            Task {
+                guard let better = await translations.translate(text, context: context, game: game) else { return }
+                await MainActor.run { pipeline?.upgrade(source: text, translation: better) }
+            }
+        }
+    }
+
+    /// Nino: oyunun havuzdaki çevirilerini oyun başlarken ve birkaç dakikada bir indirir.
+    private func startTranslationSync() {
+        translationSync?.cancel()
+        guard settings.sharePool, settings.sourceLanguage == "en" else { return }
+        let (translations, packs, sense) = (translations, packs, gameChoice.sense)
+        translationSync = Task {
+            await translations.ping(game: packs.searchScope ?? sense.current?.name)
+            await translations.sync(game: packs.searchScope ?? sense.current?.name, force: true)
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 60 * 1_000_000_000)
+                guard !Task.isCancelled else { break }
+                await translations.ping(game: packs.searchScope ?? sense.current?.name)
+                await translations.sync(game: packs.searchScope ?? sense.current?.name)
+            }
         }
     }
 

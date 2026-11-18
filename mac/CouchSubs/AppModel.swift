@@ -481,13 +481,18 @@ final class AppModel: ObservableObject {
             }
             if settings.videoSource != oldValue.videoSource { videoSourceChanged() }
             if settings.dubbing != oldValue.dubbing { dubbingSettingsChanged(from: oldValue.dubbing) }
-            if settings.targetLanguage != oldValue.targetLanguage { targetLanguageChanged() }
+            if settings.targetLanguage != oldValue.targetLanguage {
+                let (translations, target) = (translations, settings.targetLanguage)
+                Task { await translations.setLanguage(target) }
+                targetLanguageChanged()
+            }
             if settings.gamePacks != oldValue.gamePacks, let pipeline { connectPacks(to: pipeline) }
             pipeline?.showSpeakerNames = settings.showSpeakerNames
             if settings.appearance != oldValue.appearance { settings.appearance.apply() }
             if settings.sharePool != oldValue.sharePool {
-                let (pool, enabled) = (pool, settings.sharePool)
-                Task { await pool.setEnabled(enabled) }
+                let (pool, enabled, translations) = (pool, settings.sharePool, translations)
+                Task { await pool.setEnabled(enabled); await translations.setEnabled(enabled) }
+                if let pipeline { connectPacks(to: pipeline) }
             }
             let translationChanged = settings.onlineTranslation != oldValue.onlineTranslation
                 || settings.onlineEngine != oldValue.onlineEngine || settings.geminiModel != oldValue.geminiModel
@@ -584,6 +589,12 @@ final class AppModel: ObservableObject {
     @Published var installedPacks: [GamePackLibrary.Info] = []
     private let pool: NinoPool
     private var poolDriver: NinoPoolDriver?
+    /// Nino: sunucunun çeviri havuzu (Claude çevirileri; paketten sonra, cihazın çevirisinden önce).
+    private let translations: TranslationPool
+    private var translationSync: Task<Void, Never>?
+    private let recentLines = PoolContext()
+    /// Ek alanların (görev, bildirim) paket araması: yalnız oyun paketi, havuz yok.
+    private var regionPackLookup: ((String) -> PackMatch?)?
     /// Sorun Bildir: havuzla aynı rastgele kuruluş kimliği (sunucu tuzlayıp özetler).
     func reportInstallID() async -> String { await pool.installID }
     /// Oynanan oyun: PS5'in bildirdiği, kullanıcının seçtiği ya da paketten tanınan (havuza giden satırlar bu oyunla gider).
@@ -677,6 +688,9 @@ final class AppModel: ObservableObject {
         // Nino'nun kendi havuzu (NinoPool); CouchSubs'tan kalan pool.json kuyruğu bir kez ona aktarılır.
         pool = NinoPool(directory: poolFile.deletingLastPathComponent().appendingPathComponent("pool", isDirectory: true),
                         app: AppIdentity.version, platform: "mac", enabled: curated.sharePool && !testing, legacyFile: poolFile)
+        translations = TranslationPool(directory: poolFile.deletingLastPathComponent().appendingPathComponent("translations", isDirectory: true),
+                                       app: AppIdentity.version, platform: "mac", language: curated.targetLanguage,
+                                       enabled: curated.sharePool && !testing)
         probesGame = !testing
         gameChoice = GameChoice(defaults: defaults)
         if !testing {
@@ -693,10 +707,19 @@ final class AppModel: ObservableObject {
             engine.storeKey.flatMap { store.load(String.self, for: $0) }?.isEmpty == false
         })
         attachServer()
+        #if !APP_STORE
+        // Çeviri sürerken, kurulum ekranındayken ve indirme sürerken güncelleme beklemeye alınır.
+        AppUpdater.isBusy = { [weak self] in
+            guard let self else { return false }
+            return self.pipeline != nil || self.step != .done || self.dubbingDownload != nil
+        }
+        #endif
         // Nino: NinoPool oyunu her satırla birlikte alır (`offer(_:game:)`; bkz. connectPacks), ayrıca bildirilmez.
         gameChoice.onChange = { [weak self] game in
             // Bu oyunun (havuzdan otomatik) paketi sunucuda yeni çıkmış olabilir.
             if game != nil { self?.packsForGame() }
+            // Nino: yeni oyunun havuzdaki çevirileri hemen iner.
+            if let self, self.pipeline != nil { self.startTranslationSync() }
         }
         gameChoice.packTitles = { [weak self] in GameCatalog.packGames(self?.installedPacks ?? []) }
         // Elle seçilen oyunda satırlar yalnız o oyunun paketinde aranır, paketi yoksa hiç aranmaz (#218).
@@ -818,21 +841,121 @@ final class AppModel: ObservableObject {
     private func connectPacks(to pipeline: SubtitlePipeline) {
         let packs = self.packs
         let pool = self.pool
+        let translations = self.translations
+        let store = translations.store
+        let recent = recentLines
         let active = settings.gamePacks && settings.sourceLanguage == "en" && settings.targetLanguage == "tr"
-        pipeline.packLookup = active ? { packs.match($0) } : nil
+        // Nino: sunucunun çeviri havuzu bütün dillerde, kaynak İngilizceyken ve ortak havuz açıkken.
+        let pooled = settings.sharePool && settings.sourceLanguage == "en"
+        pipeline.packLookup = active || pooled ? { text in
+            if active, let found = packs.match(text) { return found }
+            guard pooled, let translated = store.match(text) else { return nil }
+            return PackMatch(text: translated, spoken: [SpokenLine(english: text, turkish: translated)])
+        } : nil
         pipeline.packName = { packs.searchScope }
-        // Ek alanlar da pakette aranır ama havuza önerilmez (arayüz yazıları havuzu kirletmesin).
-        regionWatcher?.packLookup = pipeline.packLookup
+        // Ek alanlar yalnız pakette aranır; havuza gitmez (arayüz ve bildirim yazıları kişisel olabilir).
+        regionPackLookup = active ? { packs.match($0) } : nil
+        regionWatcher?.packLookup = regionPackLookup
         guard settings.sourceLanguage == "en" else {
             pipeline.onPackMiss = nil
             return
         }
         let sense = gameChoice.sense
-        pipeline.onPackMiss = { text in
+        pipeline.onPackMiss = { [weak pipeline] text in
             guard active || packs.match(text) == nil else { return }
             // Paketten tanınan oyun; yoksa PS5'in bildirdiği ya da kullanıcının seçtiği oyun (`GameChoice`).
             let game = packs.searchScope ?? sense.current?.name
             Task { await pool.offer(text, game: game) }
+            guard pooled else { return }
+            let context = recent.add(text)
+            // Sunucu o an çevirir (Claude); satır hâlâ ekrandaysa cihazın çevirisinin yerine konur.
+            Task {
+                guard let better = await translations.translate(text, context: context, game: game) else { return }
+                await MainActor.run { pipeline?.upgrade(source: text, translation: better) }
+            }
+        }
+    }
+
+    /// Nino: oyun bilinmiyorsa (PS5 bildirmiyor, hazır paketten de tanınmadı) Remote Play karesinden tanınır: sunucuda
+    /// Claude kareye bakıp oyunun adını söyler. Çeviri başladıktan ~8 sn sonra, olmazsa dakikada bir, en çok 6 kez.
+    /// Tanıdıktan sonra arka planda yedek olarak yeniden bakar: 5 dk sonra bir kez doğrular (başka bir sahneden), sonra
+    /// 20 dakikada bir (oyun değiştirilmiş olabilir). Altyazılar havuzdan da oyunu tanıtır; bu yalnız ek güvence.
+    private var identifyTask: Task<Void, Never>?
+    private var identifyTries = 0
+    private var identifyChecks = 0
+    private var identifyLast = Date()
+
+    private func identifyGameIfNeeded(_ frame: CGImage) {
+        guard settings.sharePool, settings.sourceLanguage == "en", identifyTask == nil, packs.searchScope == nil else { return }
+        let known = gameChoice.sense.current
+        let wait: TimeInterval
+        if known == nil {
+            guard identifyTries < 6 else { return }
+            wait = identifyTries == 0 ? 8 : 60
+        } else if gameChoice.sense.source == .screen {
+            guard identifyChecks < 12 else { return }
+            wait = identifyChecks == 0 ? 5 * 60 : 20 * 60
+        } else {
+            return  // konsol, kullanıcı ya da hazır paket söylüyor; bakmaya gerek yok
+        }
+        guard Date().timeIntervalSince(identifyLast) > wait else { return }
+        identifyLast = Date()
+        if known == nil { identifyTries += 1 } else { identifyChecks += 1 }
+        guard let jpeg = Self.smallJPEG(frame, maxWidth: 768) else { return }
+        let translations = self.translations
+        identifyTask = Task { [weak self] in
+            let name = await translations.identify(jpeg: jpeg)
+            guard let self else { return }
+            self.identifyTask = nil
+            guard let name else {
+                SubtitleLog.write(known == nil ? "oyun ekrandan tanınamadı (deneme \(self.identifyTries))"
+                                               : "oyun yeniden bakışta seçilemedi; \(known!.name) olarak kalıyor")
+                return
+            }
+            if let known, NinoPool.gameID(known.name) == NinoPool.gameID(name) {
+                SubtitleLog.write("oyun doğrulandı: \(name)")
+                return
+            }
+            SubtitleLog.write(known == nil ? "oyun ekrandan tanındı: \(name)" : "oyun değişmiş: \(known!.name) → \(name)")
+            self.gameChoice.seen(name)
+            self.startTranslationSync()
+        }
+    }
+
+    /// Çevirinin başındaki oyun simgeleri (◆, ✦, OCR'ın okuduğu işaretler) atılır; Türkçede yalnız metin gösterilir.
+    static func withoutLeadingSymbols(_ text: String) -> String {
+        String(text.drop { !$0.isLetter && !$0.isNumber && $0 != "\"" && $0 != "'" && $0 != "(" })
+    }
+
+    /// Kareyi küçültüp JPEG yapar (oyun tanıma için; ~50 KB).
+    static func smallJPEG(_ image: CGImage, maxWidth: Int) -> Data? {
+        let scale = min(1, Double(maxWidth) / Double(image.width))
+        let width = Int(Double(image.width) * scale), height = Int(Double(image.height) * scale)
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+        context.interpolationQuality = .medium
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let small = context.makeImage() else { return nil }
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, "public.jpeg" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, small, [kCGImageDestinationLossyCompressionQuality: 0.6] as CFDictionary)
+        return CGImageDestinationFinalize(destination) ? data as Data : nil
+    }
+
+    /// Nino: oyunun havuzdaki çevirilerini oyun başlarken ve birkaç dakikada bir indirir.
+    private func startTranslationSync() {
+        translationSync?.cancel()
+        guard settings.sharePool, settings.sourceLanguage == "en" else { return }
+        let (translations, packs, sense) = (translations, packs, gameChoice.sense)
+        translationSync = Task {
+            await translations.ping(game: packs.searchScope ?? sense.current?.name)
+            await translations.sync(game: packs.searchScope ?? sense.current?.name, force: true)
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 60 * 1_000_000_000)
+                guard !Task.isCancelled else { break }
+                await translations.ping(game: packs.searchScope ?? sense.current?.name)
+                await translations.sync(game: packs.searchScope ?? sense.current?.name)
+            }
         }
     }
 
@@ -1166,6 +1289,12 @@ final class AppModel: ObservableObject {
     /// Android TV: ağda ADB'si açık TV'yi bulur, uygulamayı kurar ve açar.
     private func refreshAndroidApp(_ tv: LGTV) async {
         guard let bundled = services.bundledApp(for: .androidTV) else { return }
+        // Nino: TV uygulaması zaten bağlı ve güncelse dokunulmaz. Eskiden her "Başlat"ta yeniden açılıyor, kullanıcı oyundayken
+        // (PS5 girişinde) TV'yi Nino'nun bilgi ekranına atıyordu.
+        if tvClients > 0, !needsInstall(bundled) {
+            tvApp = .upToDate(installedAppVersion ?? bundled.version)
+            return
+        }
         var host = tv.host
         let reachable = host.isEmpty ? false : await services.isAndroidDebugOn(host: host)
         if !reachable {
@@ -1442,6 +1571,7 @@ final class AppModel: ObservableObject {
         }
         keepAwake()
         isRunning = true
+        server.sendStarted()
         if screenHotkey == nil { screenHotkey = GlobalHotkey(.translateScreen) { [weak self] in self?.translateScreen() } }
         screenHotkey?.enabled = true
         updateClickThroughHotkey()
@@ -1653,6 +1783,7 @@ final class AppModel: ObservableObject {
     /// Nino: bir önceki okumada görülen ama henüz çevrilmeyen yazı. Kutu belirirken ya da kaybolurken yarım okunan yazı
     /// çevrilmez; yazı iki okumada aynı (ya da çok benzer) görünürse çevrilir.
     private var cornerPending = ["", ""]
+    private var cornerEmptyReads = [Int](repeating: 0, count: 2)
     /// Nino: PS5'in kendi (Türkçe) ekranı görüldü; bu zamana kadar köşe yazıları çevrilmez. Ana ekranda oyun kutucuklarının
     /// adları ("RED DEAD REDEMPTION", "share factory") ipucu sanılıp çevriliyordu.
     private var systemScreenUntil = Date.distantPast
@@ -1669,9 +1800,26 @@ final class AppModel: ObservableObject {
         guard Self.translatePrompts, settings.translateCorners, prompts.text != promptText, promptTask == nil else { return }
         promptText = prompts.text
         let translator = makeTranslator()
+        let pooled = settings.sharePool && settings.sourceLanguage == "en"
+        let translations = self.translations
+        let game = packs.searchScope ?? gameChoice.sense.current?.name
         promptTask = Task { [weak self] in
-            let items = prompts.text.isEmpty ? [] :
-                ((try? await ScreenTranslation.translate(prompts, using: { try await translator.translate($0) })) ?? [])
+            let translated = prompts.text.isEmpty ? [] :
+                ((try? await ScreenTranslation.translate(prompts, using: { piece in
+                    if pooled {
+                        if let known = translations.store.match(piece) { return known }
+                        if let fresh = await translations.translate(piece, game: game) { return fresh }
+                    }
+                    return try await translator.translate(piece)
+                })) ?? [])
+            // Nino: çeviri ipucunun üstüne değil hemen üstüne konur; oyunun ipucu ve tuş simgesi (□) altta görünür kalır.
+            let items = translated.map { item -> ScreenTranslation.Item in
+                var moved = item
+                let height = max(item.box.bottom - item.box.top, item.lineHeight)
+                let bottom = max(height, item.box.top - 0.006)
+                moved.box = TextBox(left: item.box.left, top: max(0, bottom - height), right: item.box.right, bottom: bottom)
+                return moved
+            }
             guard let self else { return }
             if !prompts.text.isEmpty {
                 SubtitleLog.write("ipucu: \"\(prompts.text.replacingOccurrences(of: "\n", with: " / "))\" → \(items.map(\.translation).joined(separator: " / "))")
@@ -1686,7 +1834,7 @@ final class AppModel: ObservableObject {
     private func sendOverlays() {
         guard isRunning else { return }
         let all = cornerItems.flatMap { $0 } + promptItems
-        if all.isEmpty { server.clearScreen() } else { server.sendScreen(all, durationMs: 120_000) }
+        if all.isEmpty { server.clearScreen() } else { server.sendScreen(all, durationMs: 120_000, overlay: true) }
     }
     /// Sol üst: oyunun ipucu kutusu ("HELP"); ekranın en üstünden başlar (RDR2'de ilk satır en üstte, %4'ün üstünde).
     /// Kullanıcı isteği: yalnız altyazı ve sol üstteki ipucu kutusu çevrilir; alt bant (menü, tuş listesi) kapalı,
@@ -1703,6 +1851,8 @@ final class AppModel: ObservableObject {
     /// Alt şeritte ekranın ortasına yakın duran satır görev/öğretici yazısıdır; kenardaki menü yazıları atlanır.
     private static func isObjectiveLine(_ line: TextLine) -> Bool {
         guard let box = line.box else { return false }
+        // Konuşan adıyla başlayan satır altyazıdır (ana okuyucu alır); görev kutusunda ikinci kez gösterilmez.
+        if SpeakerPrefix.split(line.text) != nil { return false }
         let center = (box.left + box.right) / 2
         return center > 0.32 && center < 0.68
     }
@@ -1712,7 +1862,8 @@ final class AppModel: ObservableObject {
     /// Şu anki oyun (çeviri paketinden); bilinmiyorsa "genel".
     private var currentGame: String { packs.searchScope ?? "genel" }
     private var currentHudTop: Double? { layoutStore.current.hudTop(for: currentGame) }
-    private static let translatePrompts = false
+    /// Nino: tuş ipuçları çevrilir; çeviri ipucunun hemen üstünde durur (simge örtülmez).
+    private static let translatePrompts = true
 
     private static let cornerNames = ["sol üst", "görev"]
 
@@ -1741,7 +1892,14 @@ final class AppModel: ObservableObject {
             for i in 0..<readings.count {
                 guard let reading = readings[i] else { continue }
                 let text = reading.text
-                if text == cornerTexts[i] { continue }
+                if text == cornerTexts[i] { cornerEmptyReads[i] = 0; continue }
+                // Kullanıcı isteği: görev yazısı ekranda durdukça Türkçesi de durur. Okuma bir iki kez boş dönünce
+                // (sahne geçişi, altyazı gelirken parlaklık) silinmez; ~6 sn (4 okuma) üst üste yoksa kalkar.
+                if text.isEmpty, !cornerTexts[i].isEmpty {
+                    cornerEmptyReads[i] += 1
+                    if cornerEmptyReads[i] < 4 { continue }
+                }
+                cornerEmptyReads[i] = 0
                 if !text.isEmpty {
                     let seen = TextMatch.normalize(text), before = TextMatch.normalize(cornerPending[i])
                     cornerPending[i] = text
@@ -1767,8 +1925,35 @@ final class AppModel: ObservableObject {
                     cornerItems[i] = known.items
                     continue
                 }
+                // Nino: sol üstteki görev kutusu (i == 0, oyunun kendi yazısı) de çeviri havuzundan / Claude'dan gelir;
+                // havuz yoksa ya da cevap gelmezse cihazın çevirisi. Alt şerit yalnız cihazla çevrilir.
+                let pooled = i == 0 && self.settings.sharePool && self.settings.sourceLanguage == "en"
+                let translations = self.translations
+                let game = self.packs.searchScope ?? self.gameChoice.sense.current?.name
                 cornerItems[i] = text.isEmpty ? [] :
-                    ((try? await ScreenTranslation.translate(reading, using: { try await translator.translate($0) })) ?? [])
+                    ((try? await ScreenTranslation.translate(reading, using: { piece in
+                        if pooled {
+                            if let known = translations.store.match(piece) { return known }
+                            if let fresh = await translations.translate(piece, game: game) { return fresh }
+                        }
+                        return try await translator.translate(piece)
+                    })) ?? [])
+                // Nino: sol üstteki görevin çevirisi görevin üstüne değil hemen altına konur (oyunun yazısı ve işareti görünür).
+                if i == 0 {
+                    cornerItems[i] = cornerItems[i].map { item in
+                        var moved = item
+                        // Bloğun tamamının altına (satırlara değmeden), simgesiz ve kutusuz, oyunun yazısı gibi.
+                        let line = item.lineHeight > 0 ? item.lineHeight : 0.03
+                        let lines = Double(max(1, item.translation.split(separator: "\n").count))
+                        let top = min(1 - line * lines, item.box.bottom + line * 0.8 + 0.03)
+                        moved.box = TextBox(left: item.box.left, top: top, right: max(item.box.right, item.box.left + 0.3),
+                                            bottom: top + line * lines)
+                        moved.translation = item.translation.split(separator: "\n").map { Self.withoutLeadingSymbols(String($0)) }
+                            .joined(separator: "\n")
+                        moved.plain = true
+                        return moved
+                    }
+                }
                 // Nino: bu arada çeviri dili değiştiyse (resetCorners) eski dildeki sonuç belleğe yazılmaz.
                 if Task.isCancelled { return }
                 if !text.isEmpty, !cornerItems[i].isEmpty {
@@ -1882,6 +2067,10 @@ final class AppModel: ObservableObject {
         regionWatcher?.reset()
         regionWatcher = nil
         connectPacks(to: pipeline)
+        identifyTries = 0
+        identifyChecks = 0
+        identifyLast = Date()
+        startTranslationSync()
         activeLanguages = (settings.sourceLanguage, settings.targetLanguage)
     }
 
@@ -2085,12 +2274,18 @@ final class AppModel: ObservableObject {
             SubtitleLog.write("sağlık: " + summary.replacingOccurrences(of: "\n", with: " · "))
             SubtitleLog.write("oturum bitti")
         }
+        translationSync?.cancel()
+        translationSync = nil
         pipeline = nil
         regionWatcher?.reset()
         regionWatcher = nil
         // Yeni "Başlat" eski oturumdan kalan (belki takılmış) okumayı beklemeden temiz başlar.
         frameGate.reset()
         activeLanguages = nil
+        #if !APP_STORE
+        // Nino: çeviri sürerken inen güncelleme şimdi kurulur (uygulama yeniden açılır).
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { AppUpdater.installIfReady() }
+        #endif
         screenHotkey?.enabled = false
         screenTask?.cancel()
         screenTask = nil
@@ -2254,11 +2449,11 @@ final class AppModel: ObservableObject {
         #if DEBUG
         NinoDebugFrames.capture(frame, region: settings.region, box: lastSubtitleBox, source: lastSource, translation: lastTranslation)
         #endif
-        if isRunning { watchCorners(frame) }
+        if isRunning { watchCorners(frame); identifyGameIfNeeded(frame) }
         guard pipeline != nil else { return }
         // Ek alanlar ayrı ve seyrek okunur (saniyede bir); altyazı okumasını beklemez, onu bekletmez.
         let areas = settings.activeExtraAreas
-        if regionWatcher == nil, !areas.isEmpty, let pipeline { regionWatcher = makeRegionWatcher(packLookup: pipeline.packLookup) }
+        if regionWatcher == nil, !areas.isEmpty, let pipeline { regionWatcher = makeRegionWatcher(packLookup: regionPackLookup) }
         regionWatcher?.offer(frame, areas: areas)
         // Önceki kare hâlâ işleniyorsa bu kare atlanır; okuma kareleri biriktirmez.
         var entry = frameGate.enter(now: SubtitleStabilizer.uptimeMs())

@@ -351,3 +351,14 @@ final class TestClock: @unchecked Sendable {
     var now = 1_000_000
     func read() -> Int { now }
 }
+
+extension SubtitleStabilizerTests {
+    /// Nino: başına önceki satırdan çöp eklenmiş okuma ekrandaki satırı değiştirmez (TV'de 1/2 satır gidip gelmesin).
+    func testPrefixedRereadDoesNotFlipShownLine() {
+        XCTAssertTrue(SubtitleStabilizer.isPrefixedReread("CESADE. TAl CESARE: Told me you wanted to make yourself useful.",
+                                                          of: "CESARE: Told me you wanted to make yourself useful."))
+        XCTAssertFalse(SubtitleStabilizer.isPrefixedReread("CESARE: Told me you wanted to make yourself useful.",
+                                                           of: "CESARE: Told me you wanted to make yourself useful."))
+        XCTAssertFalse(SubtitleStabilizer.isPrefixedReread("Hey. Busy.", of: "Busy."), "kısa satırda değil")
+    }
+}

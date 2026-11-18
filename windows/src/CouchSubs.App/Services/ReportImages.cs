@@ -85,6 +85,31 @@ internal static class ReportImages
         return [FromClipboard];
     }
 
+    /// <summary>
+    /// Nino: oyunu ekrandan tanıma için kare (BGRA) en çok <paramref name="maxWidth"/> genişliğe küçültülüp JPEG yapılır
+    /// (Mac AppModel.smallJPEG). Kodlanamazsa ya da kare boşsa null.
+    /// </summary>
+    public static byte[]? SmallJpeg(Frame frame, int maxWidth, int quality)
+    {
+        if (frame.Width <= 0 || frame.Height <= 0 || frame.Pixels.Length < frame.Stride * frame.Height) return null;
+        try
+        {
+            BitmapSource source = BitmapSource.Create(frame.Width, frame.Height, 96, 96, PixelFormats.Bgr32, null, frame.Pixels, frame.Stride);
+            var scale = Math.Min(1.0, (double)maxWidth / frame.Width);
+            if (scale < 1) source = new TransformedBitmap(source, new ScaleTransform(scale, scale));
+            var encoder = new JpegBitmapEncoder { QualityLevel = Math.Clamp(quality, 1, 100) };
+            encoder.Frames.Add(BitmapFrame.Create(source));
+            using var output = new MemoryStream();
+            encoder.Save(output);
+            return output.ToArray();
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or InvalidOperationException
+                                          or System.Runtime.InteropServices.COMException or OutOfMemoryException)
+        {
+            return null;
+        }
+    }
+
     private static byte[] Encode(BitmapSource source, int maxSide, int quality)
     {
         var (width, height) = ProblemReport.FitSize(source.PixelWidth, source.PixelHeight, maxSide);

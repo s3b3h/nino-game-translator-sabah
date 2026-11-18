@@ -651,4 +651,6 @@
     <string name="assistant_network">Aku tidak bisa terhubung ke server. Cek internetmu lalu coba lagi.</string>
     <string name="assistant_too_large">Pesan itu jadi terlalu besar. Hapus satu tangkapan layar lalu coba lagi.</string>
     <string name="assistant_invalid">Aku tidak bisa mengirim pesan itu. Ubah sedikit lalu coba lagi.</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">Nino: Terjemahan Subtitle Dimulai. Selamat Bermain!</string>
 </resources>

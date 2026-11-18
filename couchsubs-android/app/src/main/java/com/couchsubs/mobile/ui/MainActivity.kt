@@ -26,6 +26,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.unit.dp
 import com.couchsubs.mobile.Services
 import com.couchsubs.mobile.account.Telemetry
@@ -222,6 +225,21 @@ class MainActivity : ComponentActivity() {
                         .navigationBarsPadding()
                         .padding(end = 20.dp, bottom = if (route == Routes.MAIN) 96.dp else 92.dp)) {
                         navigation.navigate(Routes.ASSISTANT) { launchSingleTop = true }
+                    }
+                }
+                // Nino: çeviri başlayınca 7 sn "Çeviri başladı" balonu: robot görünüyorsa yanında, yoksa ekranın üstünde.
+                if (!showSplash && status.running && status.startedNoticeAt > 0) {
+                    if (route in Routes.ASSISTANT_BUTTON) {
+                        androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
+                            .navigationBarsPadding()
+                            .padding(start = 20.dp, end = 20.dp + 60.dp + 10.dp, bottom = if (route == Routes.MAIN) 96.dp else 92.dp)
+                            .heightIn(min = 60.dp),
+                            contentAlignment = androidx.compose.ui.Alignment.CenterEnd) {
+                            StartedNotice(status.startedNoticeAt, androidx.compose.ui.Modifier.widthIn(max = 250.dp))
+                        }
+                    } else {
+                        StartedNotice(status.startedNoticeAt, androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.TopCenter)
+                            .statusBarsPadding().padding(top = 12.dp, start = 20.dp, end = 20.dp))
                     }
                 }
                 if (showSplash) NinoSplash { showSplash = false }

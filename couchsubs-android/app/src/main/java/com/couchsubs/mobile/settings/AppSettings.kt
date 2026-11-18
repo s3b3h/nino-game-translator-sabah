@@ -278,7 +278,9 @@ class AppSettings(private val appContext: Context) {
      */
     val style: SubtitleStyle
         get() = SubtitleStyle(fontSize = scaledFontSize(tvFontSize, subtitleScale), placement = tvPlacement,
-            bottomPercent = tvBottomPercent, background = tvBackground, backgroundShape = tvBackgroundShape, textColor = textColor, stackPrevious = stackPrevious,
+            bottomPercent = tvBottomPercent,
+            // Nino: örtme kipinde saydam kutu İngilizce yazıyı gizleyemez (iki yazı karışır); bu kipte kutu hep koyu.
+            background = if (tvPlacement == SubtitlePlacement.COVER && tvBackground < 60) 100 else tvBackground, backgroundShape = tvBackgroundShape, textColor = textColor, stackPrevious = stackPrevious,
             displayMode = tvDisplayMode, font = subtitleFont)
 
     /** Altyazının arandığı bölge (Ayarlar › Altyazı alanı; iPhone ile aynı hazır seçimler ve Özel). */
@@ -325,6 +327,15 @@ class AppSettings(private val appContext: Context) {
     fun onTargetChanged(action: () -> Unit): SharedPreferences.OnSharedPreferenceChangeListener {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "target") action()
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        return listener
+    }
+
+    /** Nino: ortak havuz ayarı değişince çağrılır; çeviri sürerken kapatılırsa havuza hemen hiçbir şey sorulmaz. */
+    fun onSharePoolChanged(action: () -> Unit): SharedPreferences.OnSharedPreferenceChangeListener {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sharePool") action()
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
         return listener

@@ -663,4 +663,6 @@
     <string name="assistant_network">I couldn\'t reach the server. Check your internet and try again.</string>
     <string name="assistant_too_large">That message got too big. Remove a screenshot and try again.</string>
     <string name="assistant_invalid">I couldn\'t send that message. Change it a little and try again.</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">Nino: Subtitle Translation Started. Enjoy the Game!</string>
 </resources>

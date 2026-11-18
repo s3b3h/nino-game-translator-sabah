@@ -651,4 +651,6 @@
     <string name="assistant_network">Hindi ko maabot ang server. I-check ang internet mo at subukan ulit.</string>
     <string name="assistant_too_large">Masyadong lumaki ang mensaheng iyan. Mag-alis ng isang screenshot at subukan ulit.</string>
     <string name="assistant_invalid">Hindi ko maipadala ang mensaheng iyan. Baguhin nang kaunti at subukan ulit.</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">Nino: Nagsimula na ang Pagsasalin ng Subtitle. Mag-enjoy sa Laro!</string>
 </resources>

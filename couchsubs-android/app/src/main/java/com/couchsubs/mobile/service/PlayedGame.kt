@@ -70,6 +70,13 @@ object PlayedGame {
         publish()
     }
 
+    /** Nino: oyun ekrandan tanındı (Remote Play karesi → sunucu). Sorulacak soru gereksizleşir. */
+    fun seen(name: String) {
+        sense.setSeen(name)
+        LiveState.update { it.copy(askingGame = false) }
+        publish()
+    }
+
     /** Kullanıcı bir oyun seçti ya da adını yazdı. */
     fun choose(name: String) {
         val clean = RunningGame.normalizedName(name) ?: return

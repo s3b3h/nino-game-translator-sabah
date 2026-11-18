@@ -19,8 +19,41 @@ struct AskNinoButton: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.locale) private var locale
     @State private var hovering = false
+    /// Nino: çeviri başlayınca robotun yanında 7 sn "Altyazı Çevirisi Başladı" balonu.
+    @State private var startedBubble = false
+    @State private var bubbleTask: Task<Void, Never>?
 
     var body: some View {
+        HStack(spacing: 12) {
+            robot
+            if startedBubble {
+                Text(AskNino.text("Nino: Subtitle Translation Started. Enjoy the Game!", locale))
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 20).padding(.vertical, 13)
+                    .background(Capsule().fill(Color.black.opacity(0.55)))
+                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.14)))
+                    .fixedSize()
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
+        }
+        .onChange(of: model.isRunning) { running in
+            bubbleTask?.cancel()
+            guard running, model.step == .done else {
+                withAnimation(.easeOut(duration: 0.25)) { startedBubble = false }
+                return
+            }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { startedBubble = true }
+            bubbleTask = Task {
+                try? await Task.sleep(nanoseconds: 7_000_000_000)
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.4)) { startedBubble = false }
+            }
+        }
+    }
+
+    private var robot: some View {
         Button { model.showAssistant = true } label: {
             NinoBotFace(size: 44, bobbing: true)
                 .frame(width: 60, height: 60)

@@ -91,8 +91,11 @@ public sealed partial class AndroidTvInstaller(string host, string keyDirectory,
         {
             // Bu izni vermeyen eski bir CouchSubs'ın kurduğu güncel uygulama da izni alsın.
             await GrantOverlayAsync(adb, cancellationToken);
-            // Nino: kurulu ve güncelse de uygulama açılır (deneme altyazısı ve çeviri başlarken TV uygulaması hazır olsun).
-            await adb.RunAsync($"shell:am start -n {PackageName}/.MainActivity", cancellationToken: cancellationToken);
+            // Nino: kurulu ve güncelse uygulama yalnız çalışmıyorsa açılır. Zaten çalışıyorsa (katman ya da uygulama açık)
+            // dokunulmaz; eskiden her başlatmada öne açılıyor, oyundaki kullanıcıyı Nino'nun bilgi ekranına atıyordu.
+            var pid = await adb.RunAsync($"shell:pidof {PackageName}", cancellationToken: cancellationToken);
+            if (string.IsNullOrWhiteSpace(pid))
+                await adb.RunAsync($"shell:am start -n {PackageName}/.MainActivity", cancellationToken: cancellationToken);
             return (installed, false);
         }
         // Nino: CouchSubs'ın Play yolu (PlayStoreRedirect.cs) kullanılmaz: com.couchsubs.tv Play'de CouchSubs'ın TV

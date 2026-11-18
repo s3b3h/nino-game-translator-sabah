@@ -246,8 +246,17 @@ public final class SubtitlePipeline {
         // Nino: harfsiz satırlar (mermi sayısı "91 / 200", saat) altyazı değildir.
         var visible = Reading(lines: lastReading.lines.filter { $0.text.filter(\.isLetter).count >= 2 })
         if let hudTop {
+            // Nino: konuşan adıyla başlayan satır ("ENZO: …") her zaman altyazıdır; öğrenilen çizgi yanlış kalsa da
+            // (Mafia'da altyazı çizginin altındaydı, görev kutusuna düşüyordu) altyazı olarak okunur. Hemen altındaki
+            // devam satırı (iki satırlık altyazının ikincisi) da onunla gelir.
+            let spoken = visible.lines.compactMap { line -> TextBox? in
+                SpeakerPrefix.split(line.text) != nil ? line.box : nil
+            }
             visible = Reading(lines: visible.lines.filter { line in
                 guard let box = line.box else { return true }
+                if SpeakerPrefix.split(line.text) != nil { return true }
+                let height = box.bottom - box.top
+                if spoken.contains(where: { box.top >= $0.top && box.top - $0.bottom < max(0.02, height * 1.5) }) { return true }
                 return place.top + box.top * (place.bottom - place.top) < hudTop
             })
         }
@@ -579,6 +588,24 @@ public final class SubtitlePipeline {
         }
     }
 
+    /// Nino: sunucunun çeviri havuzundan sonradan gelen (daha iyi) çeviri. Satır hâlâ ekrandaysa TV'de ve uygulamada
+    /// yerine konur (TV mesajındaki `replaces`); kalktıysa yalnız sonraki gösterimler için hatırlanır. Paketten gelen
+    /// satıra dokunulmaz.
+    public func upgrade(source: String, translation: String) {
+        guard !translation.isEmpty, let index = pairs.lastIndex(where: { $0.source == source }) else { return }
+        let pair = pairs[index]
+        guard pair.translation != nil else { return }
+        let presented = SpeakerPrefix.present(translation, source: source, show: showSpeakerNames)
+        guard presented != pair.translation else { return }
+        pairs[index].translation = presented
+        guard pair.number == lineOnScreen, pair.number == lastShown, lastOrigin != "paket", lastPair?.source == source else { return }
+        log("#\(pair.number) havuzdan daha iyi çevirisi geldi, yerine kondu")
+        server.sendSubtitle(presented, durationMs: 15000, box: lastBox, replaces: true)
+        lastPair = (source, presented)
+        lastOrigin = "havuz"
+        onPair?(source, presented)
+    }
+
     /// Süren bütün çevirilerin bitmesini bekler.
     public func waitForTranslations() async {
         while inFlight != nil, let pump { await pump.value }
@@ -605,7 +632,9 @@ public final class SubtitlePipeline {
             let work = Task { try await TranslationProbe.$current.withValue(probe) { try await translator.translate(input) } }
             self.work = work
             defer { self.work = nil }
-            let sentence = try await work.value
+            var sentence = try await work.value
+            // Nino: çeviri sürerken havuzdan (sunucunun Claude çevirisi) gelmişse o gösterilir.
+            if let pooled = packMatch(request) { sentence = pooled.text }
             let translated = present(sentence, request)
             let finished = now()
             let result = "\(probe.outcome()) \(finished - started) ms"

@@ -203,6 +203,11 @@ struct HomeScreen: View {
             #if DEBUG
             // Hata ayıklama: COUCHSUBS_START_DEMO=1 ile demo açılışta başlar (ekran görüntüsü için).
             if ProcessInfo.processInfo.environment["COUCHSUBS_START_DEMO"] == "1" { model.startDemo() }
+            // COUCHSUBS_FULLSCREEN=1: demo tam ekran altyazıyla açılır (iPad/iPhone tam ekran denetimi için).
+            if ProcessInfo.processInfo.environment["COUCHSUBS_FULLSCREEN"] == "1" {
+                model.startDemo()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { showSubtitles = true }
+            }
             #endif
         }
         .onDisappear { sideways.stop() }

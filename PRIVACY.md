@@ -36,6 +36,11 @@ iPhone, Mac, Windows ve TV uygulamaları. Nino ücretsiz ve açık kaynaklıdır
   Giden yalnız: satırın metni, hangi oyuna yakın olduğu, kaç kez görüldüğü, rastgele üretilmiş bir kurulum kimliği,
   uygulama sürümü ve işletim sistemi. Ad, e-posta, PSN bilgisi, görüntü ya da ses gönderilmez. Sunucu IP adresini
   kaydetmez. Kapatınca gönderim durur ve bekleyen satırlar silinir.
+- **Çeviri havuzu ve oyun tanıma (V3.2'den beri, ortak havuz açıkken):** Havuzdaki İngilizce satırlar, herkese aynı
+  çeviriyi verebilmek için sunucumuzda yapay zekâ çeviri hizmetine (Anthropic, Claude) gönderilip çevrilir; çeviri
+  havuzda saklanır. Oynadığınız oyunu anlamak için Remote Play görüntüsünden küçük bir kare (yaklaşık 768 piksel
+  genişlik) arada bir aynı hizmete gönderilir; kare saklanmaz, yalnız oyunun adı kurulum kimliğinize yazılır. Ortak
+  havuzu kapatınca ikisi de durur.
 
 **Olmayanlar:** Reklam, reklam kimliği, analiz ya da izleme kodu, hesap sistemi, uygulama içi satın alma yoktur.
 Nino 13 yaş altındaki çocuklara yönelik değildir ve bilerek onlardan veri toplamaz.
@@ -72,6 +77,11 @@ only to read a capture card's picture.
   text, the nearest game pack, how often it was seen, a random installation ID, the app version and the operating
   system are sent. No name, email, PSN data, picture or audio. The server does not log IP addresses. Turning it off
   stops sending and deletes pending lines.
+- **Translation pool and game recognition (since V3.2, while the shared pool is on):** pool lines are translated on
+  our server by an AI translation service (Anthropic, Claude) so everyone gets the same translation; the translation is
+  stored in the pool. To tell which game you play, a small frame of the Remote Play picture (about 768 px wide) is sent
+  to the same service now and then; the frame is not stored, only the game's name is saved with your installation ID.
+  Turning the shared pool off stops both.
 
 **Not included:** ads, advertising IDs, analytics or tracking code, accounts, in-app purchases. Nino is not directed
 at children under 13 and does not knowingly collect their data.

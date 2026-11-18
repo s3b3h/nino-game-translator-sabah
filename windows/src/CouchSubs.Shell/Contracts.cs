@@ -546,12 +546,19 @@ public interface IAppServices
     PackMatch? FindInPacks(string text) => null;
     /// <summary>Ortak havuz; testlerde null (hiçbir şey gönderilmez).</summary>
     NinoPool? Pool => null;
+    /// <summary>Nino çeviri havuzu (sunucunun Claude çevirileri); testlerde null (hiçbir şey sorulmaz, indirilmez).</summary>
+    TranslationPool? Translations => null;
     /// <summary>PS5'te o an çalışan oyun (yalnız bağlı PS5'e keşif sorusu); bilinmiyorsa ve testlerde null.</summary>
     Task<RunningGame?> RunningGameAsync(string host) => Task.FromResult<RunningGame?>(null);
     /// <summary>Paket sunucusundan yeni paketler; adres yapılandırılmadıysa ve testlerde null.</summary>
     PackUpdater? PackUpdates => null;
     /// <summary>Altyazı geçmişinin dosyası (%LOCALAPPDATA%\CouchSubs\history.json); testlerde null (diske yazılmaz).</summary>
     string? HistoryFile => null;
+    /// <summary>
+    /// Nino: kareyi en çok <paramref name="maxWidth"/> piksel genişliğe küçültüp JPEG yapar (oyunu ekrandan tanımak için;
+    /// ~50 KB). Kodlayıcı uygulamadadır (WPF); bu derlemede ya da testlerde yoksa null (oyun ekrandan tanınmaz).
+    /// </summary>
+    byte[]? SmallJpeg(Frame frame, int maxWidth, int quality) => null;
 }
 
 /// <param name="Launched">false ise TV uygulaması açılamadı; büyük olasılıkla TV'de kurulu değil.</param>

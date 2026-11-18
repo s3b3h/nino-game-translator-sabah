@@ -62,8 +62,9 @@ Aşağıdaki örnekte ikinci hesabın adı **"Ceviri Altyazi"**dir. Siz istediğ
 3. **İkinci hesabınızla giriş yapın.** Şifrenizi yalnızca Sony'nin kendi sayfasına yazarsınız; Nino şifrenizi görmez.
 4. **PS5'inizi bağlayın.** PS5'te ikinci hesaptayken **Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir**'i seçin.
    TV'de görünen **8 haneli kodu** Nino'ya yazın ve **Bağlan**'a basın. Kod yaklaşık 5 dakika geçerlidir.
-5. **TV'nizi bağlayın.** **Android TV / Google TV**'yi seçin. Nino, TV uygulamasını TV'ye kendisi kurar ve açar;
-   TV bir kez izin isterse kumandayla onaylayın.
+5. **TV'nizi bağlayın.** **Android TV / Google TV**'yi seçin. Nino, TV uygulamasını TV'ye kendisi kurar ve açar.
+   Bunun için TV'de bir kez **USB hata ayıklama** açık olmalı ([nasıl açılır?](KURULUM.md#5-tv-uygulamasını-kurma)).
+   TV izin isterse kumandayla **İzin ver**'e basın.
 
 ---
 
@@ -108,4 +109,5 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 | Oyun açılırken yasal uyarılar ya da menü yazıları çevriliyor | Nino yalnız oyunun altyazı alanını okur; açılış ekranları geçince düzelir. Ayarlar › Altyazı alanı'ndan alanı daraltabilirsiniz. |
 | Ekranda **"Uzaktan Oynama bağlandı"** bildirimi çıkıyor | İkinci hesapla Ayarlar › Sistem › Uzaktan Oynama'da **Uzaktan Oynama Bağlantı Durumunu Gizle**'yi açın. |
 | PS5 bulunamıyor | PS5 açık ya da dinlenme modunda olmalı ve aynı Wi-Fi'da olmalı. Mac'te **Sistem Ayarları › Gizlilik ve Güvenlik › Yerel Ağ**'da Nino'ya izin verin. Gerekirse PS5'in IP adresini elle girin. |
+| TV'deki Nino eski mi? | TV'de Nino'yu açıp kumandada **OK**'e basın. Panelin en üstünde **V3.2** yazmıyorsa bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın. |
 | Her şeyi baştan kurmak istiyorum | Nino'da **Ayarlar › Sıfırla**. |

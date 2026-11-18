@@ -273,11 +273,12 @@ public actor NinoPool {
     }
 
     /// Paket kimliği sunucunun beklediği biçimde: küçük harf, harf/rakam/.-_ dışı tire, en çok 64 karakter.
-    static func gameID(_ game: String?) -> String? {
+    public static func gameID(_ game: String?) -> String? {
         guard let game else { return nil }
         let mapped = String(game.lowercased().map { ch -> Character in
             (ch.isASCII && (ch.isLetter || ch.isNumber)) || ch == "." || ch == "_" || ch == "-" ? ch : "-"
-        }).trimmingCharacters(in: CharacterSet(charactersIn: "-._"))
+        }).replacingOccurrences(of: "-{2,}", with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-._"))
         return mapped.isEmpty ? nil : String(mapped.prefix(64))
     }
 

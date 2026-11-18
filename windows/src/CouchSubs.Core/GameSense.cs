@@ -17,7 +17,7 @@ namespace CouchSubs.Core;
 /// </summary>
 public sealed class GameSense
 {
-    public enum GameSource { Console, Pack, User }
+    public enum GameSource { Console, Pack, User, Screen }
 
     /// <summary>Bakılan son satır sayısı ve tanımak için aynı paketten gelmesi gereken satır sayısı.</summary>
     public const int Window = 20;
@@ -34,17 +34,23 @@ public sealed class GameSense
     private RunningGame? pack;
     private string? packId;
     private RunningGame? chosen;
+    /// <summary>
+    /// Nino: ekrandan tanınan oyun (Remote Play karesi → sunucuda Claude). Paket eşleşmesinden sonra gelir: paketi olan
+    /// oyunda satırlar zaten doğru oyunu söyler; paketi olmayan yeni oyunda (GTA 6) tek kaynak budur. Mac ile aynı.
+    /// </summary>
+    private RunningGame? seen;
     private bool asked;
 
-    /// <summary>Havuza giden oyun: PS5'in bildirdiği, yoksa kullanıcının seçtiği, yoksa paketten tanınan.</summary>
-    public RunningGame? Current { get { lock (gate) return console ?? chosen ?? pack; } }
+    /// <summary>Havuza giden oyun: PS5'in bildirdiği, yoksa kullanıcının seçtiği, yoksa paketten, yoksa ekrandan tanınan.</summary>
+    public RunningGame? Current { get { lock (gate) return console ?? chosen ?? pack ?? seen; } }
 
     public GameSource? Source
     {
         get
         {
             lock (gate)
-                return console is not null ? GameSource.Console : chosen is not null ? GameSource.User : pack is not null ? GameSource.Pack : null;
+                return console is not null ? GameSource.Console : chosen is not null ? GameSource.User : pack is not null ? GameSource.Pack
+                    : seen is not null ? GameSource.Screen : null;
         }
     }
 
@@ -88,6 +94,12 @@ public sealed class GameSense
         }
     }
 
+    /// <summary>Nino: ekrandan tanınan oyun (en düşük öncelik); null siler.</summary>
+    public void SetSeen(string? name)
+    {
+        lock (gate) seen = RunningGame.Named(name);
+    }
+
     /// <summary>Kullanıcının seçimi ("Hangi oyunu oynuyorsunuz?" ya da "Değiştir"); null seçimi siler.</summary>
     public void Choose(string? name)
     {
@@ -114,7 +126,7 @@ public sealed class GameSense
     /// <summary>Kart gösterilmeli mi: ayar açık, bu oturumda sorulmadı, oyun hiçbir yoldan bilinmiyor ve çeviri iki dakikadır sürüyor.</summary>
     public bool ShouldAsk(TimeSpan runningFor, bool enabled)
     {
-        lock (gate) return enabled && !asked && console is null && pack is null && chosen is null && runningFor >= AskAfter;
+        lock (gate) return enabled && !asked && console is null && pack is null && chosen is null && seen is null && runningFor >= AskAfter;
     }
 
     /// <summary>Kart gösterildi ya da "Sorma"ya basıldı: bu oturumda bir daha sorulmaz.</summary>
@@ -126,6 +138,80 @@ public sealed class GameSense
     /// <summary>Kimliğiyle toplanmış otomatik paket ("pool-ppsa01234", "pool-cusa00419-00") oyunun kimliğini taşır.</summary>
     public static string? TitleIdFromPack(string id) =>
         id.StartsWith("pool-", StringComparison.Ordinal) ? RunningGame.NormalizedTitleId(id["pool-".Length..].Replace('-', '_')) : null;
+}
+
+/// <summary>
+/// Nino: oyunu ekrandan tanıma zamanlaması (Mac AppModel.identifyGameIfNeeded ile aynı kurallar). Oyun bilinmiyorsa çeviri
+/// başladıktan ~8 sn sonra, olmazsa dakikada bir, en çok 6 kez bakılır. Oyun ekrandan tanındıysa arka planda yedek olarak
+/// 5 dk sonra bir kez, sonra 20 dakikada bir (en çok 12) yeniden bakılır. Konsol, kullanıcı ya da paket söylüyorsa bakılmaz.
+/// Aynı anda tek istek.
+/// </summary>
+public sealed class ScreenIdentifySchedule(Func<DateTime>? clock = null)
+{
+    public const int MaxTries = 6;
+    public const int MaxChecks = 12;
+    public static readonly TimeSpan FirstTry = TimeSpan.FromSeconds(8);
+    public static readonly TimeSpan RetryEvery = TimeSpan.FromSeconds(60);
+    public static readonly TimeSpan FirstCheck = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan CheckEvery = TimeSpan.FromMinutes(20);
+
+    private readonly object gate = new();
+    private readonly Func<DateTime> now = clock ?? (() => DateTime.UtcNow);
+    private DateTime last = (clock ?? (() => DateTime.UtcNow))();
+    private bool inFlight;
+
+    /// <summary>Oyun bilinmezken yapılan deneme sayısı (günlük için).</summary>
+    public int Tries { get; private set; }
+    /// <summary>Oyun bilinirken yapılan yeniden bakış sayısı.</summary>
+    public int Checks { get; private set; }
+
+    /// <summary>Yeni çeviri oturumu: sayaçlar sıfırlanır, ilk bakış ~8 sn sonra.</summary>
+    public void Reset()
+    {
+        lock (gate)
+        {
+            Tries = 0;
+            Checks = 0;
+            last = now();
+        }
+    }
+
+    /// <summary>
+    /// Şimdi bakılmalı mı. <paramref name="known"/>: oyun bir yoldan biliniyor mu; <paramref name="source"/>: nereden.
+    /// true dönerse istek başlamış sayılır; bitince <see cref="Finish"/> çağrılmalı.
+    /// </summary>
+    public bool TryBegin(bool known, GameSense.GameSource? source)
+    {
+        lock (gate)
+        {
+            if (inFlight) return false;
+            TimeSpan wait;
+            if (!known)
+            {
+                if (Tries >= MaxTries) return false;
+                wait = Tries == 0 ? FirstTry : RetryEvery;
+            }
+            else if (source == GameSense.GameSource.Screen)
+            {
+                if (Checks >= MaxChecks) return false;
+                wait = Checks == 0 ? FirstCheck : CheckEvery;
+            }
+            else return false; // konsol, kullanıcı ya da hazır paket söylüyor; bakmaya gerek yok
+            var at = now();
+            if (at - last <= wait) return false;
+            last = at;
+            if (known) Checks++;
+            else Tries++;
+            inFlight = true;
+            return true;
+        }
+    }
+
+    /// <summary>Bakış bitti (sonuç ne olursa olsun).</summary>
+    public void Finish()
+    {
+        lock (gate) inFlight = false;
+    }
 }
 
 /// <summary>

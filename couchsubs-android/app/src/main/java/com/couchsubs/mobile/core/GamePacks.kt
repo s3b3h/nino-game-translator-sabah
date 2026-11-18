@@ -290,8 +290,11 @@ class GamePack private constructor(
     }
 }
 
-/** Pakette bulunan satırın Türkçesi ve hangi paketten geldiği (ana ekrandaki "… paketi kullanılıyor" için). */
-data class PackMatch(val text: String, val packId: String? = null)
+/**
+ * Pakette bulunan satırın Türkçesi ve hangi paketten geldiği (ana ekrandaki "… paketi kullanılıyor" için).
+ * Nino: [pooled] ise çeviri paketten değil sunucunun çeviri havuzundan ([TranslationPool]) gelmiştir.
+ */
+data class PackMatch(val text: String, val packId: String? = null, val pooled: Boolean = false)
 
 /**
  * Uygulamayla gelen ve kullanıcının klasörüne bırakılan paketler (Windows: GamePackLibrary). Sıra: uygulamanınkiler,

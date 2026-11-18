@@ -651,4 +651,6 @@
     <string name="assistant_network">میں سرور تک نہیں پہنچ سکا۔ اپنا انٹرنیٹ چیک کر کے دوبارہ کوشش کریں۔</string>
     <string name="assistant_too_large">یہ پیغام بہت بڑا ہو گیا۔ ایک اسکرین شاٹ ہٹا کر دوبارہ کوشش کریں۔</string>
     <string name="assistant_invalid">میں یہ پیغام بھیج نہیں سکا۔ اسے تھوڑا بدل کر دوبارہ کوشش کریں۔</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">نینو: سب ٹائٹل کا ترجمہ شروع ہو گیا۔ کھیل کا لطف اٹھائیں!</string>
 </resources>

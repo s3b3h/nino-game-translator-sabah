@@ -14,8 +14,8 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.2.1"
-    CURRENT_PROJECT_VERSION: "4"
+    MARKETING_VERSION: "0.2.2"
+    CURRENT_PROJECT_VERSION: "7"
     # Nino: Apple geliştirici takımı burada değil; gerçek iPhone'a kurarken Xcode'da kendi takımınızı seçin
     # (Signing & Capabilities) ya da DEVELOPMENT_TEAM=... ile derleyin. Simülatör imza istemez.
     DEVELOPMENT_TEAM: ""
@@ -129,8 +129,8 @@ targets:
         # Kodun modül adı aynı kalır (testler "@testable import CouchSubs" der).
         PRODUCT_MODULE_NAME: CouchSubs
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        # Yalnız iPhone: iPad'de iPhone uyumluluk kipinde açılır (App Store iPad ekran görüntüsü istemez).
-        TARGETED_DEVICE_FAMILY: "1"
+        # iPhone ve iPad.
+        TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_EMIT_LOC_STRINGS: YES
         DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
   CouchSubsTests:

@@ -25,7 +25,7 @@ struct NinoCredits: View {
             VStack(spacing: Theme.space("s")) {
                 LogoView(size: 96).shadow(color: Color.csAccent.opacity(0.35), radius: 18)
                 Text(verbatim: "Nino Game Translator").font(.system(size: 30, weight: .bold, design: .rounded))
-                Text(verbatim: "Version \(AppIdentity.version)").font(.csCallout).foregroundStyle(Color.csSecondary)
+                Text(verbatim: "Version \(AppIdentity.displayVersion)").font(.csCallout).foregroundStyle(Color.csSecondary)
             }
 
             VStack(spacing: 0) {

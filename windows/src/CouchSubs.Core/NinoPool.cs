@@ -336,8 +336,9 @@ public sealed class NinoPool : IDisposable
     public static string? GameId(string? game)
     {
         if (game is null) return null;
-        var mapped = new string(game.ToLowerInvariant().Select(c => (char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-') ? c : '-').ToArray())
-            .Trim('-', '.', '_');
+        var mapped = new string(game.ToLowerInvariant().Select(c => (char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-') ? c : '-').ToArray());
+        // Art arda tireler teke iner (Mac ile aynı): "Mafia: The Old Country" → "mafia-the-old-country".
+        mapped = System.Text.RegularExpressions.Regex.Replace(mapped, "-{2,}", "-").Trim('-', '.', '_');
         return mapped.Length == 0 ? null : mapped[..Math.Min(mapped.Length, 64)];
     }
 

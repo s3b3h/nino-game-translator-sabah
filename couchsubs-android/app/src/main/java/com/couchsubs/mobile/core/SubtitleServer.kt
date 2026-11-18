@@ -92,6 +92,9 @@ class SubtitleServer(
     companion object {
         const val DEFAULT_PORT = 8787
 
+        /** Nino: çeviri başladıktan bu kadar süre içinde bağlanan TV'ye "started" olayı yeniden gönderilir (Mac ile aynı). */
+        const val STARTED_REPLAY_MS = 20_000L
+
         /** Bağlantı canlı tutma: yorum satırını EventSource görmez; adlı "ping" olayını TV görür. */
         const val PING_FRAME = ": ping\n\nevent: ping\ndata: {}\n\n"
 
@@ -164,6 +167,8 @@ class SubtitleServer(
     private var listener: ServerSocket? = null
     private var pinger: ScheduledExecutorService? = null
     private var lastStyle: SubtitleStyle? = null
+    /** Nino: çevirinin başladığı an ([sendStarted]); bu andan [STARTED_REPLAY_MS] içinde bağlanan TV de balonu görür. */
+    private var startedAt: Long? = null
 
     /** Bağlı TV sayısı değişince çağrılır (sunucunun iş parçacığında). */
     @Volatile var onClientsChanged: ((Int) -> Unit)? = null
@@ -231,6 +236,19 @@ class SubtitleServer(
     fun clearScreen() {
         broadcast(frame("screen-clear", emptyMap()), subtitle = true)
         onEvent?.invoke(SubtitleEvent.ScreenCleared)
+    }
+
+    /**
+     * Nino: çeviri başladı; TV kısa bir "Çeviri başladı" balonu gösterir (eski TV'ler yok sayar). TV çeviri başladıktan
+     * hemen sonra bağlanırsa (sunucu yeni açıldı, TV yeniden bağlanıyor) balonu yine görür (Mac: SubtitleServer.sendStarted).
+     * Altyazı olayı değildir: altyazı telefona yönlendirilmiş olsa da TV'ye gider.
+     */
+    fun sendStarted() {
+        val targets = synchronized(lock) {
+            startedAt = clock()
+            clients.toList()
+        }
+        send(frame("started", emptyMap()), targets)
     }
 
     fun sendStyle(style: SubtitleStyle) {
@@ -307,6 +325,8 @@ class SubtitleServer(
         val count = synchronized(client) {
             val count = synchronized(lock) {
                 lastStyle?.let { head.append(styleFrame(it)) }
+                val started = startedAt
+                if (!viewer && started != null && clock() - started < STARTED_REPLAY_MS) head.append(frame("started", emptyMap()))
                 clients.add(client)
                 clients.count { !it.viewer }
             }
@@ -341,6 +361,10 @@ class SubtitleServer(
     private fun broadcast(frame: String, subtitle: Boolean = false) {
         val toTvs = !subtitle || sendsToTv
         val targets = synchronized(lock) { clients.filter { toTvs || it.viewer } }
+        send(frame, targets)
+    }
+
+    private fun send(frame: String, targets: List<Client>) {
         if (targets.isEmpty()) return
         try {
             sender.execute { for (client in targets) if (!write(client, frame)) remove(client) }

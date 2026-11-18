@@ -11,7 +11,7 @@ import Foundation
 /// Hiçbiri yoksa çeviri başladıktan iki dakika sonra bir kez "Hangi oyunu oynuyorsunuz?" sorulur (`shouldAsk`).
 /// Android'deki GameSense.kt ve Windows'taki CouchSubs.Core/GameSense.cs ile aynı kurallar.
 public final class GameSense: @unchecked Sendable {
-    public enum Source: String, Sendable { case console, pack, user }
+    public enum Source: String, Sendable { case console, pack, user, screen }
 
     /// Bakılan son satır sayısı ve tanımak için aynı paketten gelmesi gereken satır sayısı.
     public static let window = 20
@@ -33,10 +33,14 @@ public final class GameSense: @unchecked Sendable {
     public init() {}
 
     /// Havuza giden oyun: PS5'in bildirdiği, yoksa kullanıcının seçtiği, yoksa paketten tanınan.
-    public var current: RunningGame? { lock.withLock { console ?? chosen ?? pack } }
+    /// Nino: ekrandan tanınan oyun (Remote Play karesi → Claude). Paket eşleşmesinden sonra gelir: paketi olan oyunda
+    /// satırlar zaten doğru oyunu söyler; paketi olmayan yeni oyunda (GTA 6) tek kaynak budur.
+    private var seen: RunningGame?
+
+    public var current: RunningGame? { lock.withLock { console ?? chosen ?? pack ?? seen } }
 
     public var source: Source? {
-        lock.withLock { console != nil ? .console : chosen != nil ? .user : pack != nil ? .pack : nil }
+        lock.withLock { console != nil ? .console : chosen != nil ? .user : pack != nil ? .pack : seen != nil ? .screen : nil }
     }
 
     /// Paket aramasının sınırlanacağı oyun (`GamePackLibrary.limit(toGame:)`): kullanıcı elle seçtiyse ve PS5 bir oyun
@@ -79,6 +83,11 @@ public final class GameSense: @unchecked Sendable {
     }
 
     /// Kullanıcının seçimi ("Hangi oyunu oynuyorsunuz?" ya da "Değiştir"); nil seçimi siler.
+    /// Ekrandan tanınan oyun (bkz. `seen`).
+    public func setSeen(_ name: String?) {
+        lock.withLock { seen = name.flatMap { RunningGame(name: $0) } }
+    }
+
     public func choose(_ name: String?) {
         lock.withLock {
             chosen = RunningGame(name: name)
@@ -100,7 +109,7 @@ public final class GameSense: @unchecked Sendable {
     /// Kart gösterilmeli mi: ayar açık, bu oturumda sorulmadı, oyun hiçbir yoldan bilinmiyor ve çeviri iki dakikadır sürüyor.
     public func shouldAsk(runningFor seconds: TimeInterval, enabled: Bool) -> Bool {
         lock.withLock {
-            enabled && !asked && console == nil && pack == nil && chosen == nil && seconds >= Self.askAfter
+            enabled && !asked && console == nil && pack == nil && chosen == nil && seen == nil && seconds >= Self.askAfter
         }
     }
 

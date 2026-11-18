@@ -134,4 +134,88 @@ public class GameSenseTests
         Assert.Equal("Grand Theft Auto VI", GameCatalog.Suggestions("gta 6", [], null)[0]);
         Assert.Empty(GameCatalog.Suggestions("zzzz", [], null));
     }
+
+    /// Nino: ekrandan tanınan oyun en düşük önceliktir (konsol, kullanıcı ve paket önce gelir).
+    [Fact]
+    public void ScreenGameHasLowestPriority()
+    {
+        var sense = new GameSense();
+        sense.SetSeen("Grand Theft Auto VI");
+        Assert.Equal("Grand Theft Auto VI", sense.Current?.Name);
+        Assert.Equal(GameSense.GameSource.Screen, sense.Source);
+        for (var i = 0; i < GameSense.Threshold; i++) sense.NoteLine("gta-v", "Grand Theft Auto V");
+        Assert.Equal("Grand Theft Auto V", sense.Current?.Name);
+        Assert.Equal(GameSense.GameSource.Pack, sense.Source);
+        sense.Choose("Elden Ring");
+        Assert.Equal(GameSense.GameSource.User, sense.Source);
+        sense.SetConsole(RunningGame.Named("Astro Bot"));
+        Assert.Equal(GameSense.GameSource.Console, sense.Source);
+        sense.SetConsole(null);
+        sense.Choose(null);
+        sense.StartSession();
+        // Mac ile aynı: yeni oturum ekrandan tanınanı silmez (yeniden bakış doğrular ya da değiştirir).
+        Assert.Equal("Grand Theft Auto VI", sense.Current?.Name);
+        sense.SetSeen(null);
+        Assert.Null(sense.Current);
+        Assert.Null(sense.Source);
+    }
+
+    /// Nino: oyun bilinmezken ~8 sn sonra, sonra dakikada bir, en çok 6 kez; aynı anda tek istek.
+    [Fact]
+    public void ScreenIdentifyTriesWhileGameIsUnknown()
+    {
+        var now = new DateTime(2026, 11, 18, 12, 0, 0, DateTimeKind.Utc);
+        var schedule = new ScreenIdentifySchedule(() => now);
+        Assert.False(schedule.TryBegin(false, null));
+        now += TimeSpan.FromSeconds(9);
+        Assert.True(schedule.TryBegin(false, null));
+        now += TimeSpan.FromSeconds(120);
+        Assert.False(schedule.TryBegin(false, null)); // önceki istek sürüyor
+        schedule.Finish();
+        Assert.True(schedule.TryBegin(false, null));
+        schedule.Finish();
+        while (schedule.Tries < ScreenIdentifySchedule.MaxTries)
+        {
+            now += TimeSpan.FromSeconds(59);
+            Assert.False(schedule.TryBegin(false, null));
+            now += TimeSpan.FromSeconds(2);
+            Assert.True(schedule.TryBegin(false, null));
+            schedule.Finish();
+        }
+        Assert.Equal(ScreenIdentifySchedule.MaxTries, schedule.Tries);
+        now += TimeSpan.FromHours(1);
+        Assert.False(schedule.TryBegin(false, null));
+    }
+
+    /// Nino: oyun ekrandan tanındıysa 5 dk sonra bir kez, sonra 20 dakikada bir (en çok 12); başka kaynaktaysa hiç bakılmaz.
+    [Fact]
+    public void ScreenIdentifyRechecksOnlyScreenGames()
+    {
+        var now = new DateTime(2026, 11, 18, 12, 0, 0, DateTimeKind.Utc);
+        var schedule = new ScreenIdentifySchedule(() => now);
+        now += TimeSpan.FromHours(1);
+        Assert.False(schedule.TryBegin(true, GameSense.GameSource.Pack));
+        Assert.False(schedule.TryBegin(true, GameSense.GameSource.Console));
+        Assert.False(schedule.TryBegin(true, GameSense.GameSource.User));
+        schedule.Reset();
+        now += TimeSpan.FromMinutes(4);
+        Assert.False(schedule.TryBegin(true, GameSense.GameSource.Screen));
+        now += TimeSpan.FromMinutes(2);
+        Assert.True(schedule.TryBegin(true, GameSense.GameSource.Screen));
+        schedule.Finish();
+        now += TimeSpan.FromMinutes(19);
+        Assert.False(schedule.TryBegin(true, GameSense.GameSource.Screen));
+        now += TimeSpan.FromMinutes(2);
+        Assert.True(schedule.TryBegin(true, GameSense.GameSource.Screen));
+        schedule.Finish();
+        for (var i = 2; i < ScreenIdentifySchedule.MaxChecks; i++)
+        {
+            now += TimeSpan.FromMinutes(21);
+            Assert.True(schedule.TryBegin(true, GameSense.GameSource.Screen));
+            schedule.Finish();
+        }
+        now += TimeSpan.FromMinutes(21);
+        Assert.False(schedule.TryBegin(true, GameSense.GameSource.Screen));
+        Assert.Equal(ScreenIdentifySchedule.MaxChecks, schedule.Checks);
+    }
 }

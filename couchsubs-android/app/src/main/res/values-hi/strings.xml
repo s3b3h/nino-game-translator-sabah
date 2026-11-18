@@ -651,4 +651,6 @@
     <string name="assistant_network">मैं सर्वर तक नहीं पहुँच पाया। अपना इंटरनेट चेक करके फिर कोशिश करें।</string>
     <string name="assistant_too_large">यह मैसेज बहुत बड़ा हो गया। एक स्क्रीनशॉट हटाकर फिर कोशिश करें।</string>
     <string name="assistant_invalid">मैं यह मैसेज भेज नहीं पाया। इसे थोड़ा बदलकर फिर कोशिश करें।</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">नीनो: सबटाइटल अनुवाद शुरू हो गया। खेल का मज़ा लें!</string>
 </resources>

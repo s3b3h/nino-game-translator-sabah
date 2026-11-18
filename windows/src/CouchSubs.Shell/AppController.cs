@@ -92,10 +92,16 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// Mac ve iPhone'daki GameChoice ile aynı davranış).
     /// </summary>
     private readonly GameSense gameSense = new();
+    /// <summary>Nino: oyunu Remote Play karesinden tanıma zamanlaması (Mac identifyGameIfNeeded).</summary>
+    private readonly ScreenIdentifySchedule identifySchedule = new();
     private RunningGame? publishedGame;
     private string? playedGame;
     private bool askingGame;
     private CancellationTokenSource? gameAsk;
+    /// <summary>Nino: oyunun havuzdaki çevirilerini indiren döngü (çeviri sürerken).</summary>
+    private CancellationTokenSource? translationSync;
+    /// <summary>Nino: havuza sorulan satırın bağlamı (önceki birkaç satır).</summary>
+    private readonly PoolContext recentLines = new();
     private Timer? packTimer;
     private string metricsText = "";
     /// <summary>Çevrilen satırların geçmişi (arayüz iş parçacığında değişir).</summary>
@@ -467,10 +473,21 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
             if (old.Dubbing != value.Dubbing) DubbingSettingsChanged(old.Dubbing);
             // Nino: çeviri dili Türkçe dışına geçince açık dublaj durur.
             if (old.TargetLanguage != value.TargetLanguage && !DubbingActive) StopDubber();
+            // Nino: havuz o dilin çevirilerini yükler (hat yeniden kurulmadan önce).
+            if (old.TargetLanguage != value.TargetLanguage) services.Translations?.SetLanguage(value.TargetLanguage);
             if (old.GamePacks != value.GamePacks && pipeline is not null) ConnectPacks(pipeline);
             if (pipeline is not null) pipeline.ShowSpeakerNames = value.ShowSpeakerNames;
             if ((old.MisreadWaitMs != value.MisreadWaitMs || old.PartialWaitMs != value.PartialWaitMs) && pipeline is not null) ApplyWaits(pipeline);
-            if (old.SharePool != value.SharePool) services.Pool?.SetEnabled(value.SharePool);
+            if (old.SharePool != value.SharePool)
+            {
+                services.Pool?.SetEnabled(value.SharePool);
+                services.Translations?.SetEnabled(value.SharePool);
+                if (pipeline is not null)
+                {
+                    ConnectPacks(pipeline);
+                    StartTranslationSync();
+                }
+            }
             if (old.TranslationDevice != value.TranslationDevice)
             {
                 GpuFallbackWarning = false;
@@ -1561,6 +1578,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
 
             sleep.Begin(KeepsDisplayOn);
             IsRunning = true;
+            // Nino: TV kısa bir "Çeviri başladı" balonu gösterir (geç bağlanan TV 20 sn içinde yine görür).
+            server.SendStarted();
             UpdateTroubleClocks();
         }
         catch (Exception error)
@@ -1688,6 +1707,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         session = null;
         UpdateGameProbe(connected: false);
         StopGameSense();
+        StopTranslationSync();
+        services.Translations?.Save();
         keeper?.Stop();
         keeper = null;
         pipeline?.Reset();
@@ -1713,6 +1734,13 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         StopDubber();
         if (isRunning) sleep.End();
         IsRunning = false;
+        // Nino: çeviri sürerken bulunan güncelleme şimdi kurulur (uygulama yeniden açılır).
+        if (autoInstallPending && UpdateVersion is { } pendingVersion && !AutoInstallTried(pendingVersion))
+        {
+            autoInstallPending = false;
+            RememberAutoInstall(pendingVersion);
+            post(() => _ = InstallUpdateAsync());
+        }
         SessionState = SessionState.Disconnected(DisconnectKind.Stopped);
         WindowStatus = GameWindowStatus.Stopped;
         WindowApp = null;
@@ -1849,6 +1877,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         packTimer?.Dispose();
         // Havuzdaki satırlar zaten diskte; kapanışta ağ beklenmez, açılışta gönderilir.
         services.Pool?.Dispose();
+        services.Translations?.Dispose();
     }
 
     // --- Oyun paketleri ve ortak havuz ---
@@ -1917,6 +1946,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         PlayedGame = current?.Name;
         if (current == publishedGame) return;
         publishedGame = current;
+        // Nino: yeni oyunun havuzdaki çevirileri hemen iner.
+        if (pipeline is not null) StartTranslationSync();
         // Nino: NinoPool oyunu her satırla ayrıca alır (OfferToPool).
         if (current is not null && services.PackUpdates is { } packUpdater) _ = RefreshPacksAsync(packUpdater, maxAge: PackUpdater.GameCheckInterval);
     }
@@ -1925,6 +1956,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     private void StartGameSense()
     {
         gameSense.StartSession();
+        identifySchedule.Reset();
         publishedGame = null;
         AskingGame = false;
         PublishGame();
@@ -1945,6 +1977,56 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
                 post(() => { if (!token.IsCancellationRequested) AskingGame = true; });
                 return;
             }
+        }, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Nino: oyun bilinmiyorsa (PS5 bildirmiyor, paketten de tanınmadı) Remote Play karesinden tanınır: sunucuda Claude
+    /// kareye bakıp oyunun adını söyler. Zamanlama <see cref="ScreenIdentifySchedule"/>'da. Ekrandan tanınan oyun en düşük
+    /// önceliktir (konsol, kullanıcı ve paket önce gelir). Başka bir oyun söylenirse ona geçilir; tanınamazsa eskisi kalır.
+    /// UI iş parçacığında çağrılır.
+    /// </summary>
+    private void IdentifyGameIfNeeded(Frame frame)
+    {
+        if (!IsRunning || !settings.SharePool || settings.SourceLanguage != "en" || services.GamePacks?.SearchScope is not null) return;
+        if (services.Translations is not { IsEnabled: true } translations) return;
+        var known = gameSense.Current;
+        if (!identifySchedule.TryBegin(known is not null, gameSense.Source)) return;
+        var tries = identifySchedule.Tries;
+        _ = Task.Run(async () =>
+        {
+            string? name = null;
+            try
+            {
+                if (services.SmallJpeg(frame, 768, 60) is { } jpeg) name = await translations.IdentifyAsync(jpeg).ConfigureAwait(false);
+            }
+            catch (Exception error)
+            {
+                SubtitleLog.Write($"oyun ekrandan tanınamadı: {error.GetType().Name}");
+            }
+            finally
+            {
+                identifySchedule.Finish();
+            }
+            post(() =>
+            {
+                if (!IsRunning) return;
+                if (name is null)
+                {
+                    SubtitleLog.Write(known is null ? $"oyun ekrandan tanınamadı (deneme {tries})"
+                                                    : $"oyun yeniden bakışta seçilemedi; {known.Name} olarak kalıyor");
+                    return;
+                }
+                if (known is not null && NinoPool.GameId(known.Name) == NinoPool.GameId(name))
+                {
+                    SubtitleLog.Write($"oyun doğrulandı: {name}");
+                    return;
+                }
+                SubtitleLog.Write(known is null ? $"oyun ekrandan tanındı: {name}" : $"oyun değişmiş: {known.Name} → {name}");
+                gameSense.SetSeen(name);
+                AskingGame = false;
+                PublishGame();
+            });
         }, CancellationToken.None);
     }
 
@@ -1969,6 +2051,11 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
                 post(() => InstalledPacks = packs.Packs);
             });
         StartPackUpdates();
+        if (services.Translations is { } translations)
+        {
+            translations.SetLanguage(settings.TargetLanguage);
+            translations.SetEnabled(settings.SharePool);
+        }
         if (services.Pool is not { } pool) return;
         pool.SetEnabled(settings.SharePool);
         // Dakikada bir ve ağ gelince denenir; sunucu onaylayana kadar satırlar diskte bekler.
@@ -2044,7 +2131,52 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         }, CancellationToken.None);
     }
 
-    private void ConnectPacks(SubtitlePipeline target) => target.PackLookup = PacksActive ? services.FindInPacks : null;
+    /// <summary>Nino: sunucunun çeviri havuzu bütün dillerde, kaynak İngilizceyken ve ortak havuz açıkken.</summary>
+    private bool PoolTranslationsActive => settings.SharePool && settings.SourceLanguage == "en" && services.Translations is not null;
+
+    /// <summary>Önce oyun paketi (yalnız İngilizce→Türkçe), sonra havuzdaki çeviri; ikisinde de yoksa motor çevirir.</summary>
+    private void ConnectPacks(SubtitlePipeline target)
+    {
+        var active = PacksActive;
+        var store = PoolTranslationsActive ? services.Translations?.Store : null;
+        target.PackLookup = active || store is not null ? text =>
+        {
+            if (active && services.FindInPacks(text) is { } found) return found;
+            // Havuzdaki çeviri sunucuda yapıldı; Türkçe düzeltmeleri (motorun içinde) ona uygulanmaz.
+            return store?.Match(text) is { } translated ? new PackMatch(translated, [new SpokenLine(text, translated)]) : null;
+        } : null;
+    }
+
+    /// <summary>Nino: oyunun havuzdaki çevirilerini oturum başlarken ve oyun değişince hemen, sonra dakikada bir indirir.</summary>
+    private void StartTranslationSync()
+    {
+        StopTranslationSync();
+        if (!PoolTranslationsActive || services.Translations is not { } translations) return;
+        var cancel = new CancellationTokenSource();
+        translationSync = cancel;
+        var token = cancel.Token;
+        _ = Task.Run(async () =>
+        {
+            await translations.SyncAsync(PoolGame(), force: true, token).ConfigureAwait(false);
+            while (!token.IsCancellationRequested)
+            {
+                // Sunucuya "buradayım" (dakikada bir; ortak havuz kapalıysa gönderilmez).
+                await translations.PingAsync(PoolGame(), token).ConfigureAwait(false);
+                try { await Task.Delay(TimeSpan.FromSeconds(60), token).ConfigureAwait(false); }
+                catch (OperationCanceledException) { return; }
+                await translations.SyncAsync(PoolGame(), token: token).ConfigureAwait(false);
+            }
+        }, CancellationToken.None);
+    }
+
+    private void StopTranslationSync()
+    {
+        translationSync?.Cancel();
+        translationSync = null;
+    }
+
+    /// <summary>Paketten tanınan oyun; yoksa PS5'in bildirdiği ya da kullanıcının seçtiği oyun.</summary>
+    private string? PoolGame() => services.GamePacks?.SearchScope ?? gameSense.Current?.Name;
 
     /// <summary>Gelişmiş ayarlardaki bekleme süreleri (0–2 sn).</summary>
     private void ApplyWaits(SubtitlePipeline target)
@@ -2053,12 +2185,22 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         target.CleanWait = Math.Clamp(settings.PartialWaitMs, 0, 2000);
     }
 
-    /// <summary>Pakette olmayan İngilizce satır havuza önerilir (paketler kapalıysa da yalnız hiçbir pakette olmayanlar).</summary>
-    private void OfferToPool(string text)
+    /// <summary>
+    /// Pakette olmayan İngilizce satır havuza önerilir (paketler kapalıysa da yalnız hiçbir pakette olmayanlar). Nino: ortak
+    /// havuz açıksa sunucuya da sorulur; sunucu o an çevirir (Claude), satır hâlâ ekrandaysa cihazın çevirisinin yerine konur.
+    /// </summary>
+    private void OfferToPool(SubtitlePipeline target, string text)
     {
-        if (settings.SourceLanguage != "en" || services.Pool is not { } pool) return;
+        if (settings.SourceLanguage != "en") return;
         if (!PacksActive && services.FindInPacks(text) is not null) return;
-        pool.Offer(text, services.GamePacks?.SearchScope);
+        services.Pool?.Offer(text, services.GamePacks?.SearchScope);
+        if (!PoolTranslationsActive || services.Translations is not { } translations) return;
+        var context = recentLines.Add(text);
+        var game = PoolGame();
+        _ = Task.Run(async () =>
+        {
+            if (await translations.TranslateAsync(text, context, game).ConfigureAwait(false) is { } better) target.Upgrade(text, better);
+        }, CancellationToken.None);
     }
 
     // --- İç işleyiş ---
@@ -2109,7 +2251,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         // Model bu arada inmiş olabilir; her çeviri sonucu durumu günceller.
         built.TranslationResult += error => post(() => TranslatorStatus = error ?? TranslatorStatus.Ready);
         built.SpeechReady += lines => post(() => Speak(lines));
-        built.PackMissed += OfferToPool;
+        built.PackMissed += text => OfferToPool(built, text);
         built.Log = SubtitleLog.Write;
         built.PackName = () => services.GamePacks?.SearchScope;
         ConnectPacks(built);
@@ -2117,6 +2259,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         OnlineIssue = null;
         pipeline = built;
         UpdateRegionWatcher();
+        StartTranslationSync();
     }
 
     /// <summary>Sürekli okunan ek bölgeleri okuyup çeviren; çeviri sürerken ve en az bir bölge sürekli okunurken var.</summary>
@@ -2400,7 +2543,11 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         var arrived = Environment.TickCount64;
         try
         {
-            post(() => LastFrame = frame);
+            post(() =>
+            {
+                LastFrame = frame;
+                IdentifyGameIfNeeded(frame);
+            });
             // Duraklatıldıysa kare yalnız ek bölgeler ve serbest alan için saklanır; altyazı okunmaz.
             if (subtitlesPaused) return;
             // Önceki kare hâlâ işleniyorsa bu kare atlanır; okuma kareleri biriktirmez.
@@ -2608,12 +2755,57 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// <summary>Kurulum dosyasıyla kurulduysa tek tıkla güncellenir; değilse sürüm sayfası açılır.</summary>
     public bool CanUpdateItself => services.Updater?.CanUpdateItself == true;
 
-    /// <summary>Açılışta bir kez; ağ yoksa sessizce geçer.</summary>
+    private static string AutoInstallFile => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", "auto-update-tried.txt");
+
+    private static bool AutoInstallTried(string version)
+    {
+        try { return File.Exists(AutoInstallFile) && File.ReadAllText(AutoInstallFile).Trim() == version; }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { return false; }
+    }
+
+    private static void RememberAutoInstall(string version)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(AutoInstallFile)!);
+            File.WriteAllText(AutoInstallFile, version);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+    }
+
+    /// <summary>Nino: yeni sürüm sorulmadan kurulur; çeviri sürüyorsa oyun bölünmesin diye çeviri durunca.</summary>
+    private bool autoInstallPending;
+    private bool updateLoopStarted;
+
+    /// <summary>Açılışta ve sonra üç saatte bir; ağ yoksa sessizce geçer. Yeni sürüm bulunursa kendiliğinden kurulur.</summary>
     public async Task CheckForUpdateAsync()
     {
         if (services.Updater is not { } updater) return;
         try { UpdateVersion = await updater.CheckAsync(); }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException or InvalidOperationException) { }
+        // Her sürüm yalnız bir kez kendiliğinden kurulmaya çalışılır; olmazsa (kurulum açılmadıysa) düğme kalır, döngüye girmez.
+        if (UpdateVersion is { } version && updater.CanUpdateItself && !AutoInstallTried(version))
+        {
+            if (IsRunning) autoInstallPending = true;
+            else
+            {
+                RememberAutoInstall(version);
+                await InstallUpdateAsync();
+            }
+        }
+        if (!updateLoopStarted)
+        {
+            updateLoopStarted = true;
+            _ = Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(TimeSpan.FromHours(3));
+                    post(() => _ = CheckForUpdateAsync());
+                }
+            });
+        }
     }
 
     public async Task InstallUpdateAsync()

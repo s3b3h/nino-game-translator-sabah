@@ -657,4 +657,6 @@
     <string name="assistant_network">لم أتمكن من الوصول إلى الخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.</string>
     <string name="assistant_too_large">أصبحت هذه الرسالة كبيرة جدًا. احذف لقطة شاشة وحاول مرة أخرى.</string>
     <string name="assistant_invalid">لم أتمكن من إرسال هذه الرسالة. غيّرها قليلًا وحاول مرة أخرى.</string>
+    <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
+    <string name="translation_started_notice">نينو: بدأت ترجمة الحوارات. استمتع باللعب!</string>
 </resources>

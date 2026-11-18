@@ -22,6 +22,8 @@ public enum ScreenTranslation {
         public var translation: String
         public var box: TextBox
         public var lineHeight: Double
+        /// Nino: kutusuz, oyunun kendi yazısı gibi gölgeli sade yazı (sol üstteki görevin altına konan çeviri).
+        public var plain = false
 
         public init(source: String, translation: String, box: TextBox, lineHeight: Double) {
             self.source = source

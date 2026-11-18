@@ -22,6 +22,14 @@ public partial class ShellWindow : Window
     {
         HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom,
     };
+    /// <summary>Nino: çeviri başlayınca robotun yanında 7 sn "Altyazı Çevirisi Başladı" balonu (yalnız ana ekranda).</summary>
+    private readonly NinoStartedBubble startedBubble = new(Localizer.Current["Nino: Subtitle Translation Started. Enjoy the Game!"])
+    {
+        HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom,
+        // Robotun (sol 36, alt 84, 60 px) sağında, dikeyde ortasında.
+        Margin = new Thickness(36 + AskNinoButton.Diameter + 12, 0, 0, 84 + 6),
+    };
+    private bool wasRunning;
 
     public ShellWindow(AppController controller)
     {
@@ -30,6 +38,8 @@ public partial class ShellWindow : Window
         // Nino: "Nino'ya Sor" hem ana ekranda hem kurulum sihirbazında (takılınan yer) görünür.
         askNino.Click += (_, _) => AskNinoWindow.Open(controller);
         Root.Children.Add(askNino);
+        Root.Children.Add(startedBubble);
+        wasRunning = controller.IsRunning;
         controller.PropertyChanged += OnChanged;
         // Bilgisayar uykudan uyanınca bağlantılar hemen yenilenir.
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
@@ -67,6 +77,7 @@ public partial class ShellWindow : Window
     private void OnChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(AppController.Step)) ShowScreen();
+        if (e.PropertyName == nameof(AppController.IsRunning)) UpdateStartedBubble();
         if (e.PropertyName is nameof(AppController.IsRunning) or nameof(AppController.HotkeysPaused) or nameof(AppController.Settings))
             ApplyHotkeys();
     }
@@ -105,6 +116,17 @@ public partial class ShellWindow : Window
         // Ana ekranda sağ altta fiş ve kablo durur (PS5 ve Xbox sahnesi); robot sol alta geçer.
         askNino.HorizontalAlignment = main ? HorizontalAlignment.Left : HorizontalAlignment.Right;
         askNino.Margin = main ? new Thickness(36, 0, 0, 84) : new Thickness(0, 0, 44, 100);
+        if (!main) startedBubble.Hide();
+    }
+
+    /// <summary>Çeviri yeni başladıysa ve ana ekrandaysak balon 7 sn gösterilir; çeviri durunca hemen kalkar.</summary>
+    private void UpdateStartedBubble()
+    {
+        var running = controller.IsRunning;
+        var started = running && !wasRunning;
+        wasRunning = running;
+        if (started && controller.Step == OnboardingStep.Done) startedBubble.Show();
+        else if (!running) startedBubble.Hide(TimeSpan.FromMilliseconds(250));
     }
 
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)

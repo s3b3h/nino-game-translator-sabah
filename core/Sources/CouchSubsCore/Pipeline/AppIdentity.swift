@@ -11,4 +11,8 @@ public enum AppIdentity {
     public static let sourceURL = URL(string: "https://github.com/yunusdemirbag/nino-game-translator")!
     public static var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0" }
     public static let serverPort: UInt16 = 8787
+    /// Nino: herkesin gördüğü sürüm adı, bütün uygulamalarda (Mac, Windows, telefon, TV) aynı.
+    public static let label = "V3.2"
+    /// "V3.2 (0.2.2)"
+    public static var displayVersion: String { "\(label) (\(version))" }
 }

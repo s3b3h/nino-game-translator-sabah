@@ -755,7 +755,7 @@ private struct UpdatesCard: View {
                 LogoView(size: 44)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: "Nino Game Translator").font(.csHeadline)
-                    Text(String(format: String(localized: "Version %@"), AppIdentity.version))
+                    Text(String(format: String(localized: "Version %@"), AppIdentity.displayVersion))
                         .font(.csCallout).foregroundStyle(Color.csSecondary)
                 }
                 Spacer()

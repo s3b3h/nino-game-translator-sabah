@@ -72,6 +72,10 @@ html, body {
   overflow: hidden;
 }
 #screen .item.paragraphs { text-align: left; text-align: start; white-space: pre-line; }
+/* Nino: oyunun görev yazısının altına konan Türkçe: kutu yok, oyunun yazısı gibi gölgeli sade yazı. */
+#screen .item.plain { background: rgba(0, 0, 0, 0.38); box-shadow: 0 0 10px 6px rgba(0, 0, 0, 0.38); padding: 2px 8px;
+  border-radius: 8px; text-align: left; font-weight: 600; line-height: 1.3; text-shadow: 0 0 3px #000, 0 2px 3px #000;
+  overflow: visible; width: auto !important; max-width: 46%; }
 
 /* Ek alanlar (görev, telefon, bildirim): çeviri İngilizce yazının yerinde küçük bir kutuda; altyazının ve "ekranı
    çevir"in altında kalır. */
@@ -730,3 +734,28 @@ body.covering #subtitle-text, body.covering #subtitle-prev-text, body.covering #
 body[data-font="modern"] #subtitle, body[data-font="modern"] #screen { font-family: "Nino Modern", "LG Smart UI", "Museo Sans", "SamsungOne", "Tizen Sans", Roboto, Arial, "Noto Naskh Arabic", "Noto Sans Arabic", "Droid Arabic Naskh", sans-serif; }
 body[data-font="condensed"] #subtitle, body[data-font="condensed"] #screen { font-family: "Nino Condensed", "LG Smart UI", "Museo Sans", "SamsungOne", "Tizen Sans", Roboto, Arial, "Noto Naskh Arabic", "Noto Sans Arabic", "Droid Arabic Naskh", sans-serif; letter-spacing: 0.01em; }
 body[data-font="rounded"] #subtitle, body[data-font="rounded"] #screen { font-family: "Nino Rounded", "LG Smart UI", "Museo Sans", "SamsungOne", "Tizen Sans", Roboto, Arial, "Noto Naskh Arabic", "Noto Sans Arabic", "Droid Arabic Naskh", sans-serif; }
+
+/* Nino: "Çeviri başladı": sol üstte robot ve yanında balon (5 sn). */
+#started-notice {
+  position: fixed; left: 3.5%; top: 6%; z-index: 50;
+  display: flex; align-items: center; gap: 1.4vh;
+  opacity: 0; transform: translateY(-12px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
+}
+#started-notice.show { opacity: 1; transform: translateY(0); }
+#started-notice .bot {
+  width: 8.5vh; height: 8.5vh; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  display: flex; align-items: center; justify-content: center;
+}
+#started-notice .bot img { width: 78%; height: 78%; object-fit: contain; }
+#started-notice .bubble {
+  padding: 0.75em 1.4em; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72); color: #fff;
+  font-size: 2.6vh; font-weight: 700; letter-spacing: 0.01em;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  white-space: nowrap;
+}

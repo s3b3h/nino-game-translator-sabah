@@ -7,6 +7,11 @@ import SwiftUI
 import UIKit
 
 enum Mobile {
+    /// Nino: iPad'de çalışıyor mu (iPad'de menüler ortada okunaklı genişlikte, altyazı daha büyük).
+    static var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    /// iPad'de menü içeriğinin en geniş hâli (Ayarlar uygulaması gibi ortada bir sütun).
+    static let readableWidth: CGFloat = 680
+
     enum Space {
         static let screen: CGFloat = 20
         static let gap: CGFloat = 12
@@ -72,7 +77,8 @@ enum Mobile {
         /// Altyazı içeriği: dikeyde canlı satır 28, yatay altyazı ekranında 36; kullanıcı %80–%160 ölçekler.
         /// Nino: yazı tipi kullanıcının seçtiği (varsayılan Dar/Aksiyon), TV'deki gibi.
         static func subtitle(landscape: Bool, scale: Double, font: SubtitleFont) -> Font {
-            .subtitle(font, size: (landscape ? 36 : 28) * min(1.6, max(0.8, scale)), weight: .semibold)
+            // Nino: iPad'de TV'nin yanından okunacak kadar büyük (dikey ve yatayda aynı).
+            .subtitle(font, size: (landscape ? (Mobile.isPad ? 60 : 36) : (Mobile.isPad ? 36 : 28)) * min(1.6, max(0.8, scale)), weight: .semibold)
         }
     }
 }
@@ -302,6 +308,8 @@ struct MobilePill: View {
     var dot = false
     var live = false
     var compact = false
+    /// Nino: siyah zemin üstünde (tam ekran altyazı) açık renk yazı.
+    var onDark = false
 
     var body: some View {
         if dot || live {
@@ -309,7 +317,7 @@ struct MobilePill: View {
                 MobileLiveDot(pulses: live)
                 Text(verbatim: text).font(Mobile.TypeScale.caption).monospacedDigit().lineLimit(1)
             }
-            .foregroundStyle(Mobile.Palette.text)
+            .foregroundStyle(onDark ? Color.white.opacity(0.75) : Mobile.Palette.text)
         } else {
             Text(verbatim: text)
                 .font(Mobile.TypeScale.caption)
@@ -515,18 +523,21 @@ struct MobileScreen<Header: View, Content: View, Bottom: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+                .readableWidth()
                 .padding(.horizontal, Mobile.Space.screen)
-                .padding(.top, Mobile.Space.inline)
+                .padding(.top, Mobile.Isolated.topInset)
             ScrollView {
                 VStack(alignment: .leading, spacing: Mobile.Space.gap) { content }
+                    .readableWidth()
                     .padding(.horizontal, Mobile.Space.screen)
                     .padding(.top, Mobile.Space.gap)
                     .padding(.bottom, Mobile.Space.screen)
             }
             .scrollIndicators(.hidden)
             VStack(spacing: Mobile.Space.gap) { bottom }
+                .readableWidth()
                 .padding(.horizontal, Mobile.Space.screen)
-                .padding(.bottom, Mobile.Space.screen)
+                .padding(.bottom, Mobile.Isolated.bottomInset)
         }
         .foregroundStyle(Mobile.Palette.text)
         .background(MobileBackground())
@@ -586,6 +597,25 @@ struct MobileNote: View {
             .font(Mobile.TypeScale.caption)
             .foregroundStyle(tone)
             .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+extension Mobile {
+    /// iPad'de üstte ve altta biraz daha nefes payı.
+    enum Isolated {
+        static var topInset: CGFloat { Mobile.isPad ? Mobile.Space.screen : Mobile.Space.inline }
+        static var bottomInset: CGFloat { Mobile.isPad ? Mobile.Space.screen * 2 : Mobile.Space.screen }
+    }
+}
+
+extension View {
+    /// Nino: iPad'de içeriği ortada okunaklı bir sütunda tutar; iPhone'da tam genişlik (değişmez).
+    @ViewBuilder func readableWidth() -> some View {
+        if Mobile.isPad {
+            frame(maxWidth: Mobile.readableWidth).frame(maxWidth: .infinity)
+        } else {
+            self
+        }
     }
 }
 

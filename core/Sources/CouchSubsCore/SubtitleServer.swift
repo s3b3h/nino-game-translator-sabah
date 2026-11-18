@@ -135,6 +135,9 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
         theme = (try? values.decodeIfPresent(SubtitleTheme.self, forKey: .theme)) ?? defaults.theme
         autoSize = (try? values.decodeIfPresent(Bool.self, forKey: .autoSize)) ?? defaults.autoSize
         font = (try? values.decodeIfPresent(SubtitleFont.self, forKey: .font)) ?? defaults.font
+        // Nino: oyunun altyazısını örtme kipinde saydam kutu İngilizce yazıyı gizleyemez, iki yazı birbirine karışır
+        // (tema değiştirirken kutu %0'da kalabiliyordu). Bu kipte kutu her zaman koyudur.
+        if placement == .cover, background < 60 { background = 100 }
     }
 
     /// TV'ye giden `style` olayının gövdesi.
@@ -172,6 +175,7 @@ public final class SubtitleServer: @unchecked Sendable {
     /// OBS katmanı gibi TV olmayan izleyiciler: olayları alır ama "TV bağlı" sayısına katılmaz.
     private var viewers: Set<ObjectIdentifier> = []
     private var lastStyle: SubtitleStyle?
+    private var startedAt: Date?
     private var pingTimer: DispatchSourceTimer?
     /// `GET` ile verilen dosyalar: dublaj sesleri ve seslendirme modelinin ses örnekleri.
     private var files: [String: (data: Data, type: String)] = [:]
@@ -282,6 +286,13 @@ public final class SubtitleServer: @unchecked Sendable {
         return ["left": round(box.left), "top": round(box.top), "right": round(box.right), "bottom": round(box.bottom)]
     }
 
+    /// Nino: bilgisayarda çeviri başladı; TV kısa bir "Çeviri başladı" balonu gösterir (eski TV'ler yok sayar).
+    /// TV, çeviri başladıktan hemen sonra bağlanırsa (bilgisayar yeni açıldı, TV yeniden bağlanıyor) balonu yine görür.
+    public func sendStarted() {
+        queue.async { self.startedAt = Date() }
+        broadcast(event: "started", json: [:])
+    }
+
     public func clear() {
         broadcast(event: "clear", json: [:])
         onEvent?(.clear)
@@ -289,14 +300,18 @@ public final class SubtitleServer: @unchecked Sendable {
 
     /// "Ekranı çevir" sonuçları: `screen` olayı her çeviriyi yazının yeri (`box`), tipik satır yüksekliği (`line`,
     /// ekrana oranla) ve çok parçalıysa `paragraphs` ile taşır. TV öncekinin yerine bunları koyar.
-    public func sendScreen(_ items: [ScreenTranslation.Item], durationMs: Int) {
+    /// `overlay`: köşe/ipucu çevirisi (oyun sürerken sürekli gelir); TV o an görünen altyazıyı silmez.
+    public func sendScreen(_ items: [ScreenTranslation.Item], durationMs: Int, overlay: Bool = false) {
         let round = { (value: Double) in Decimal(Int((max(0, min(1, value)) * 10000).rounded())) / 10000 }
         let list: [[String: Any]] = items.map { item in
             var json: [String: Any] = ["box": Self.json(item.box), "line": round(item.lineHeight), "text": item.translation]
             if item.paragraphs { json["paragraphs"] = true }
+            if item.plain { json["plain"] = true }
             return json
         }
-        broadcast(event: "screen", json: ["duration": durationMs, "items": list])
+        var payload: [String: Any] = ["duration": durationMs, "items": list]
+        if overlay { payload["overlay"] = true }
+        broadcast(event: "screen", json: payload)
         // Altyazı yalnız bilgisayardaysa (TV yok) çeviriler başka hiçbir yere gitmiyordu: tuşa basınca yalnız
         // "Ekran çevriliyor…" görünüyordu.
         onEvent?(.screen(text: items.map(\.translation).joined(separator: "\n"), durationMs: durationMs))
@@ -418,6 +433,9 @@ public final class SubtitleServer: @unchecked Sendable {
         head += "retry: 2000\n\n"
         if let style = lastStyle {
             head += Self.frame(event: "style", json: style.json)
+        }
+        if let startedAt, Date().timeIntervalSince(startedAt) < 20, !viewer {
+            head += Self.frame(event: "started", json: [:])
         }
         connection.send(content: Data(head.utf8), completion: .contentProcessed { _ in })
 

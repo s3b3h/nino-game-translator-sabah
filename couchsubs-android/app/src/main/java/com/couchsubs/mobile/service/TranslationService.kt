@@ -25,6 +25,9 @@ import com.couchsubs.mobile.core.active
 import com.couchsubs.mobile.core.GamePackLibrary
 import com.couchsubs.mobile.core.GameSense
 import com.couchsubs.mobile.core.NinoPool
+import com.couchsubs.mobile.core.PackMatch
+import com.couchsubs.mobile.core.PoolContext
+import com.couchsubs.mobile.core.TranslationPool
 import com.couchsubs.mobile.packs.PackStore
 import com.couchsubs.mobile.core.PackLookup
 import com.couchsubs.mobile.core.ScreenTranslation
@@ -143,6 +146,19 @@ class TranslationService : Service() {
     @Volatile private var reader: SubtitleReader? = null
     @Volatile private var pool: NinoPool? = null
     private var poolNetwork: android.net.ConnectivityManager.NetworkCallback? = null
+    /** Nino: sunucunun çeviri havuzu (bütün dillerde; ortak havuz açıkken). */
+    @Volatile private var translations: TranslationPool? = null
+    /** Havuza sorulan satırlar (sunucu o an çevirir); okuma iş parçacığını bekletmesin diye ayrı. */
+    private val poolWork = Executors.newFixedThreadPool(2) { Thread(it, "Nino pool translate").apply { isDaemon = true } }
+    /** Havuzun toplu indirmesi ve "buradayım" isteği (dakikada bir). */
+    private val poolSync = Executors.newSingleThreadScheduledExecutor { Thread(it, "Nino pool sync").apply { isDaemon = true } }
+    private val syncLock = Any()
+    @Volatile private var syncTask: java.util.concurrent.ScheduledFuture<*>? = null
+    @Volatile private var poolListener: android.content.SharedPreferences.OnSharedPreferenceChangeListener? = null
+    private val poolContext = PoolContext()
+    /** Nino: oyunu ekrandan tanıma zamanlaması (bkz. [identifyGameIfNeeded]). */
+    private val gameCheck = com.couchsubs.mobile.core.ScreenGameCheck()
+    private val identifyWork = Executors.newSingleThreadExecutor { Thread(it, "Nino identify").apply { isDaemon = true; priority = Thread.MIN_PRIORITY } }
     @Volatile private var freeTranslator: MlKitTranslator? = null
     @Volatile private var packs: GamePackLibrary? = null
     private val ocr = Executors.newSingleThreadExecutor { Thread(it, "CouchSubs OCR").apply { isDaemon = true } }
@@ -327,6 +343,12 @@ class TranslationService : Service() {
         val linePool = NinoPool(File(filesDir, "pool"), BuildConfig.VERSION_NAME,
             enabled = settings.sharePool && realGame, legacyFile = File(filesDir, "line-pool.json"))
         pool = linePool
+        // Nino: sunucunun çeviri havuzu bütün çeviri dillerinde çalışır (paketlerden sonra, cihaz çevirisinden önce).
+        // Klipte kullanılmaz (oyun yazısı değildir; satırlar sunucuya gitmesin).
+        // Adres havuz klasöründeki endpoint.txt'den (deneme sunucusu) ya da canlı sunucudan, NinoPool ile aynı.
+        val translationPool = TranslationPool(File(filesDir, "translation-pool"), NinoPool.configuredEndpoint(File(filesDir, "pool")),
+            app = BuildConfig.VERSION_NAME, language = target, enabled = settings.sharePool && realGame)
+        translations = translationPool
         // Havuza giden satırın oyunu: PS5'in bildirdiği / seçilen oyun (PlayedGame), yoksa son eşleşen paket.
         var playedGame: String? = null
         // Paketler burada açılır (ilk altyazı beklemesin); kapalıysa hiç açılmaz. Bellek yetmezse paketsiz sürülür:
@@ -356,9 +378,26 @@ class TranslationService : Service() {
             // Yarım ya da bozuk okuma hemen çevrilmez; aynı satırın en iyi okuması çevrilir (Windows ve iPhone ile aynı).
             holdReadings = true
             // Oyun paketleri Türkçedir: yalnız Türkçe çeviride kullanılır.
-            packLookup = { text -> if (turkish && packTitles != null && settings.packsEnabled) PackLookup.match(library, text) else null }
+            // Önce paket (yalnız Türkçe), sonra havuz (bütün diller; havuz kapalıysa boştur), en son motor.
+            packLookup = { text ->
+                (if (turkish && packTitles != null && settings.packsEnabled) PackLookup.match(library, text) else null)
+                    ?: translationPool.store.match(text)?.let { PackMatch(it, pooled = true) }
+            }
             showSpeakerNames = { settings.showSpeakerNames }
-            onPackMissed = { text -> if (turkish) linePool.offer(text, playedGame ?: game.takeIf { it != "genel" }) }
+            onPackMissed = { text ->
+                val played = playedGame ?: game.takeIf { it != "genel" }
+                if (turkish) linePool.offer(text, played)
+                if (translationPool.isEnabled) {
+                    val context = poolContext.add(text)
+                    // Sunucu o an çevirir (Claude); satır hâlâ ekrandaysa cihazın çevirisinin yerine konur.
+                    try {
+                        poolWork.execute {
+                            translationPool.translate(text, context, played)?.let { better -> pipeline?.upgrade(text, better) }
+                        }
+                    } catch (stopped: java.util.concurrent.RejectedExecutionException) { }
+                }
+            }
+            onPairUpgraded = { pair -> LiveState.upgraded(pair) }
             onPairShown = { pair ->
                 pair.packId?.let { game = it }
                 pair.box?.let { box ->
@@ -383,6 +422,40 @@ class TranslationService : Service() {
         regionWatcher = com.couchsubs.mobile.core.RegionWatcher({ crop -> areaReader.read(crop.pixels as RegionPixels) },
             TargetAwareTranslator(onlineTranslator(free.separate()) ?: free.separate(), target), subtitleServer).apply {
             packLookup = { text -> if (turkish && packTitles != null && settings.packsEnabled) PackLookup.match(library, text) else null }
+        }
+        // Nino: oyunun havuzdaki çevirileri oturum başında ve oyun değişince hemen, sonra dakikada bir iner (sunucunun
+        // syncSeconds aralığıyla kendini sınırlar); aynı döngüde sunucuya "buradayım" denir.
+        fun restartSync() = synchronized(syncLock) {
+            syncTask?.cancel(false)
+            syncTask = null
+            if (!translationPool.isEnabled) return@synchronized
+            var first = true
+            syncTask = try {
+                poolSync.scheduleWithFixedDelay({
+                    val force = first
+                    first = false
+                    val played = playedGame ?: game.takeIf { it != "genel" }
+                    try {
+                        translationPool.sync(played, force)
+                        translationPool.ping(played)
+                    } catch (error: Exception) {
+                        Log.w(TAG, "çeviri havuzu", error)
+                    }
+                }, 0, 60, TimeUnit.SECONDS)
+            } catch (stopped: java.util.concurrent.RejectedExecutionException) { null }
+        }
+        restartSync()
+        // Çeviri sürerken ortak havuz kapatılırsa hemen hiçbir şey sorulmaz, gönderilmez; açılırsa yeniden başlar.
+        poolListener = settings.onSharePoolChanged {
+            val on = settings.sharePool && realGame
+            try {
+                poolSync.execute {
+                    // Satır kuyruğu yalnız kullanıcı havuzu kapatınca silinir; klipte kuyruğa dokunulmaz (bkz. NinoPool).
+                    if (!settings.sharePool) linePool.setEnabled(false) else if (realGame) linePool.setEnabled(true)
+                    translationPool.setEnabled(on)
+                    restartSync()
+                }
+            } catch (stopped: java.util.concurrent.RejectedExecutionException) { }
         }
         background.scheduleWithFixedDelay({ linePool.flush() }, 5_000L, NinoPool.TICK_INTERVAL_MS, TimeUnit.MILLISECONDS)
         // Ağ gelince bekleyen parçalar hemen denenir.
@@ -432,6 +505,7 @@ class TranslationService : Service() {
                 }
             }) { task -> runCatching { regionWork.execute(task) } }
             FramePreview.offer(frame, now)
+            if (realGame) identifyGameIfNeeded(frame, translationPool, library)
         }
         val onState: (SessionState) -> Unit = { state ->
             streaming = state == SessionState.Streaming
@@ -460,7 +534,10 @@ class TranslationService : Service() {
             // Elle seçilen oyunda satırlar yalnız o oyunun paketinde aranır, paketi yoksa hiç aranmaz (#218).
             PlayedGame.packs = library
             PlayedGame.onChange = { game ->
+                val changed = playedGame != game?.name
                 playedGame = game?.name
+                // Nino: yeni oyunun havuzdaki çevirileri hemen iner.
+                if (changed) restartSync()
                 // Yeni oyun: o oyunun (havuzdan otomatik) paketi sunucuda yeni çıkmış olabilir; inerse bu oturumun
                 // paketleri hemen yeniden okunur (iPhone'daki gibi).
                 if (game != null) Services.refreshPacks(force = false, maxAgeMs = PackStore.GAME_CHECK_MS) {
@@ -474,6 +551,7 @@ class TranslationService : Service() {
             }
             PlayedGame.start(xboxConsole?.name?.ifEmpty { "Xbox" } ?: console?.takeIf { !captureCard }?.let { it.name.ifEmpty { it.host } }
                 ?: getString(R.string.capture_card), settings, startedAt)
+            gameCheck.reset()
             // Oyun iki dakikada tanınmazsa kart açılır (ayar ve ortak havuz açıksa, oturumda bir kez).
             background.scheduleWithFixedDelay({ PlayedGame.checkAsk(System.currentTimeMillis()) }, 15, 15, TimeUnit.SECONDS)
             // Bağlıyken iki dakikada bir PS5'e çalışan oyun sorulur (Xbox'ta bu soru yok; oyun paketten tanınır).
@@ -506,12 +584,67 @@ class TranslationService : Service() {
             Backend.breadcrumb(if (xboxConsole != null) "çeviri: Xbox oturumu açılıyor" else "çeviri: PS5 oturumu açılıyor")
             source.start()
         }
+        // Nino: çeviri başladı; TV kısa bir "Çeviri başladı" balonu gösterir (sonradan bağlanan TV de 20 sn içinde görür),
+        // telefonda da robotun yanında 7 sn balon çıkar (Mac ile aynı).
+        subtitleServer.sendStarted()
+        LiveState.update { it.copy(startedNoticeAt = System.currentTimeMillis()) }
         background.scheduleWithFixedDelay({
             session?.let { s ->
                 LiveState.health.frameTotal(s.framesReceived)
                 LiveState.update { it.copy(framesReceived = s.framesReceived) }
             }
         }, 2, 2, TimeUnit.SECONDS)
+    }
+
+    // --- Oyunu ekrandan tanıma ---
+
+    /**
+     * Nino: oyun bilinmiyorsa (PS5 bildirmiyor, hazır paketten de tanınmadı) Remote Play karesinden tanınır: sunucu kareye
+     * bakıp oyunun adını söyler. Zamanlama [com.couchsubs.mobile.core.ScreenGameCheck]'te (8 sn sonra, olmazsa dakikada bir,
+     * en çok 6 kez; tanıdıktan sonra 5 dk sonra bir kez, sonra 20 dakikada bir doğrular). Yalnız ortak havuz açıkken ve
+     * hazır paket oyunu söylemiyorken. Kare iş parçacığında çağrılır: kare burada küçültülerek kopyalanır, JPEG ve istek
+     * ayrı iş parçacığında. Mac: AppModel.identifyGameIfNeeded.
+     */
+    private fun identifyGameIfNeeded(frame: com.couchsubs.mobile.remoteplay.VideoFrame, pool: TranslationPool, library: GamePackLibrary) {
+        if (!gameCheck.mayBeDue() || !pool.isEnabled || !settings.sharePool || library.searchScope != null) return
+        val known = PlayedGame.sense.current
+        if (!gameCheck.due(PlayedGame.sense.source)) return
+        val gray = try {
+            com.couchsubs.mobile.core.ScreenGameCheck.grayNv21(frame.buffer.duplicate(), frame.width, frame.height, frame.rowStride)
+        } catch (error: RuntimeException) { null }
+        if (gray == null) {
+            gameCheck.finish()
+            return
+        }
+        try {
+            identifyWork.execute {
+                try {
+                    val jpeg = java.io.ByteArrayOutputStream().use { out ->
+                        android.graphics.YuvImage(gray.nv21, android.graphics.ImageFormat.NV21, gray.width, gray.height, null)
+                            .compressToJpeg(android.graphics.Rect(0, 0, gray.width, gray.height), 60, out)
+                        out.toByteArray()
+                    }
+                    val name = pool.identify(jpeg)
+                    if (destroyed) return@execute
+                    when {
+                        name == null -> Log.i(TAG, if (known == null) "oyun ekrandan tanınamadı (deneme ${gameCheck.attempts})"
+                            else "oyun yeniden bakışta seçilemedi; ${known.name} olarak kalıyor")
+                        known != null && NinoPool.gameId(known.name) == NinoPool.gameId(name) -> Log.i(TAG, "oyun doğrulandı: $name")
+                        else -> {
+                            Log.i(TAG, if (known == null) "oyun ekrandan tanındı: $name" else "oyun değişmiş: ${known.name} → $name")
+                            Backend.breadcrumb("oyun ekrandan tanındı")
+                            PlayedGame.seen(name)
+                        }
+                    }
+                } catch (error: Exception) {
+                    Log.w(TAG, "oyun tanıma", error)
+                } finally {
+                    gameCheck.finish()
+                }
+            }
+        } catch (stopped: java.util.concurrent.RejectedExecutionException) {
+            gameCheck.finish()
+        }
     }
 
     // --- Ekranı çevir ---
@@ -746,6 +879,14 @@ class TranslationService : Service() {
         styleListener = null
         targetListener?.let(settings::removeListener)
         targetListener = null
+        poolListener?.let(settings::removeListener)
+        poolListener = null
+        synchronized(syncLock) {
+            syncTask?.cancel(false)
+            syncTask = null
+        }
+        translations?.let { pool -> Thread { pool.save() }.start() }
+        translations = null
         areasListener?.let(settings::removeListener)
         areasListener = null
         regionWatcher?.reset()
@@ -785,6 +926,9 @@ class TranslationService : Service() {
         background.shutdownNow()
         ocr.shutdownNow()
         regionWork.shutdownNow()
+        poolWork.shutdownNow()
+        identifyWork.shutdownNow()
+        poolSync.shutdownNow()
         screenGeneration.incrementAndGet()
         screenTask?.cancel(true)
         screenWork.shutdownNow()

@@ -11,9 +11,9 @@ database_id = "2d7c0031-0899-4f72-ad6a-802580e34369"
 migrations_dir = "migrations"
 
 [vars]
-# Ücretsiz katmanın günlük yazma sınırı (100 000 satır yazımı) aşılmasın diye günde kabul edilen en çok satır.
+# Günde kabul edilen en çok satır (18 Kasım 2026'dan beri Workers Paid: ayda 50 milyon yazma dahil).
 # Aşılınca sunucu 429 ile ertesi güne kadar beklemesini söyler; satırlar cihazlarda kuyrukta bekler, kaybolmaz.
-DAILY_LINE_BUDGET = "15000"
+DAILY_LINE_BUDGET = "300000"
 # Bir kurulumun saatte gönderebileceği en çok parça.
 INSTALL_HOURLY_BATCHES = "60"
 # Nino yardımcısı: Claude Haiku 5.5. Anahtar sır olarak durur (wrangler secret put ANTHROPIC_API_KEY); yoksa yardımcı kapalıdır.
@@ -21,6 +21,16 @@ ASSISTANT_PROVIDER = "anthropic"
 # Günlük en çok harcama (dolar). Aynı ilk sorular hazır cevaptan ücretsiz verilir.
 ASSISTANT_DAILY_USD = "2"
 
-# Eski parça kimliklerini (tekrar sayılmasın diye tutulur) her gün temizler.
+# Çeviri havuzu (src/translate.js): anında çeviri ve 30 dakikada bir bağlamla gözden geçirme Claude Sonnet.
+# Günlük en çok harcama (dolar); dolunca uygulamalar kendi çevirileriyle devam eder.
+TRANSLATE_DAILY_USD = "15"
+# Claude yalnız bu oyunlarda çevirir (oyun kimliği bu parçalardan birini içeriyorsa); "*" bütün oyunlar.
+TRANSLATE_GAMES = "grand-theft-auto-vi,gta-vi,gta-6,gta6,mafia"
+# Uygulama sunucunun çevirisini en çok bu kadar bekler (milisaniye), sonra kendi çevirisini gösterir.
+TRANSLATE_DEADLINE_MS = "900"
+# Uygulamalar oyunun yeni çevirilerini bu aralıkla çeker (saniye).
+TRANSLATE_SYNC_SECONDS = "180"
+
+# Günde bir: eski parça kimliklerini (tekrar sayılmasın diye tutulur) temizler. 30 dakikada bir: yeni çevirileri gözden geçirir.
 [triggers]
-crons = ["17 3 * * *"]
+crons = ["17 3 * * *", "*/30 * * * *"]

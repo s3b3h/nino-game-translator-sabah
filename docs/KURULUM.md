@@ -1,7 +1,10 @@
 # Nino Kurulum Rehberi
 
-Bu rehber, Nino'yu ilk kez kuracak herkes için hazırlanmıştır. Teknik bilgi gerekmez; adımları sırayla izlemeniz
-yeterlidir. Kurulum yaklaşık **5–10 dakika** sürer.
+Bu rehber, Nino'yu ilk kez kuracak herkes için. Teknik bilgi gerekmez. Adımları sırayla izleyin.
+Kurulum yaklaşık **5–10 dakika** sürer.
+
+> **Güncel sürüm: Nino V3.2.** Mac, Windows, Android telefon ve iPhone uygulamaları 0.2.2, TV uygulaması 0.9.31.
+> Telefonda ve bilgisayarda sürümü **Ayarlar › Hakkında**'da görürsünüz. TV'de: [TV uygulamam güncel mi?](#tv-uygulamam-güncel-mi)
 
 > 🌍 **11 dil:** 🇹🇷 Türkçe · 🇸🇦 العربية · 🇮🇳 हिन्दी · 🇮🇩 Bahasa Indonesia · 🇹🇭 ไทย · 🇻🇳 Tiếng Việt · 🇵🇰 اردو · 🇧🇩 বাংলা ·
 > 🇲🇾 Bahasa Melayu · 🇵🇭 Filipino · 🇳🇱 Nederlands. Karşılama ekranının sağ üstündeki bayraktan seçin; hem çeviri hem
@@ -15,7 +18,7 @@ yeterlidir. Kurulum yaklaşık **5–10 dakika** sürer.
 |---|---|---|
 | PS5'iniz **akıllı TV'ye ya da akıllı monitöre** bağlı (Android TV / Google TV, Samsung, LG) | **Mac ya da Windows + TV** (önerilen) | Mac ya da Windows bilgisayar, TV'de Nino uygulaması, ikinci (ücretsiz) PSN hesabı |
 | Bilgisayarınız yok ama TV'niz akıllı | **Telefon + TV** | Android telefon, TV'de Nino uygulaması, ikinci PSN hesabı |
-| PS5'iniz **sıradan bir monitöre / eski TV'ye** bağlı | **Telefon ekranında altyazı** | Android telefon (ya da iPhone), ikinci PSN hesabı |
+| PS5'iniz **sıradan bir monitöre / eski TV'ye** bağlı | **Telefon ekranında altyazı** | Android telefon ya da iPhone, ikinci PSN hesabı |
 | Elinizde **HDMI Capture Card** var | **Mac/Windows + Capture Card** | Mac ya da Windows bilgisayar, Capture Card (Remote Play ve ikinci hesap gerekmez) |
 | **Yayın** yapıyorsunuz (OBS, TikTok LIVE Studio) | **Windows + Capture Card + OBS** (bkz. Bölüm 7) | Kart OBS'e bağlı kalır, Nino altyazıyı OBS projektöründen okur |
 | **Xbox Series X\|S**'te oynuyorsunuz | **Android telefon** (ya da Mac/Windows'ta Xbox penceresi) | Microsoft hesabınız; ikinci hesap gerekmez (bkz. Bölüm 6) |
@@ -29,16 +32,25 @@ Hepsinde konsol (PS5 ya da Xbox), telefon/bilgisayar ve TV **aynı Wi-Fi ağınd
 
 > 📷 PS5 ve Android TV için adım adım fotoğraflı anlatım: **[Android TV Rehberi](KURULUM-ANDROID-TV.md)**
 
+**Mac**
 1. **[Nino-Mac.zip](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)**
-   dosyasını indirin, açın ve **Nino**'yu **Uygulamalar** klasörüne sürükleyin.
-2. Nino'yu açın. Mac "doğrulanamadı" derse: **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**.
-3. Nino sizi adım adım yönlendirir: ikinci PSN hesabıyla giriş → PS5'i 8 haneli kodla eşleme → TV seçimi.
-4. **Capture Card'ınız varsa:** İlk açılışta ya da **Ayarlar › Bağlantı**'da görüntü kaynağı olarak **Capture Card**'ı
-   seçin. Bu yolda Remote Play ve ikinci PSN hesabı gerekmez; kartı PS5 ile TV/monitör arasına bağlayın.
-5. Mac uygulaması yeni sürümleri kendiliğinden indirip kurar.
+   dosyasını indirip açın.
+2. **Nino**'yu **Uygulamalar** klasörüne sürükleyin.
+3. Nino'yu açın. Mac "doğrulanamadı" derse: **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**.
+4. Nino sizi adım adım yönlendirir: ikinci PSN hesabıyla giriş → PS5'i 8 haneli kodla eşleme → TV seçimi.
+5. TV seçiminde Nino, TV uygulamasını TV'ye kendisi kurar. Bunun için TV'de bir kez geliştirici modu açılır
+   (bkz. [Bölüm 5](#5-tv-uygulamasını-kurma)).
 
-**Windows:** **[Nino-Windows-Setup.exe](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)**
-dosyasını çalıştırın ("bilgisayarınızı korudu" uyarısında **Ek bilgi › Yine de çalıştır**). Kurulum Mac ile aynıdır.
+**Windows**
+1. **[Nino-Windows-Setup.exe](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)**
+   dosyasını indirip çalıştırın.
+2. "Bilgisayarınızı korudu" uyarısı çıkarsa: **Ek bilgi › Yine de çalıştır**.
+3. Gerisi Mac ile aynıdır.
+
+**Capture Card'ınız varsa:** İlk açılışta ya da **Ayarlar › Bağlantı**'da görüntü kaynağı olarak **Capture Card**'ı
+seçin. Kartı PS5 ile TV/monitör arasına bağlayın. Bu yolda Remote Play ve ikinci PSN hesabı gerekmez.
+
+Mac ve Windows'taki Nino yeni sürümleri kendiliğinden indirip kurar.
 
 ---
 
@@ -48,7 +60,8 @@ dosyasını çalıştırın ("bilgisayarınızı korudu" uyarısında **Ek bilgi
 1. Telefonda şu bağlantıyı açın:
    **[Nino-Telefon.apk](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)**
 2. İnen dosyaya dokunun. Telefon izin isterse **"Bu kaynaktan yüklemeye izin ver"** seçeneğini açın ve **Yükle**'ye basın.
-3. Daha önce Nino kuruluysa yeni sürüm eskisinin üstüne kurulur; ayarlarınız korunur.
+3. Daha önce Nino kuruluysa yeni sürüm eskisinin üstüne kurulur. Ayarlarınız korunur.
+4. Sürümü görmek için: Nino'da **Ayarlar › Hakkında**. Güncel sürüm **V3.2** (0.2.2).
 
 ### 3.2 İlk açılış
 1. **Karşılama:** Üç kısa sayfa Nino'yu tanıtır. Sağ üstteki bayraktan çeviri dilini seçin (11 dil; Türkçe en üstte).
@@ -75,77 +88,96 @@ dosyasını çalıştırın ("bilgisayarınızı korudu" uyarısında **Ek bilgi
 
 ---
 
-## 4. iPhone
+## 4. iPhone ve iPad
 
-iPhone uygulaması App Store incelemesindedir. Yayınlanınca bağlantısı burada olacaktır. Kurulum adımları Android
-ile aynıdır.
+iPhone uygulaması App Store incelemesinde. O zamana kadar **TestFlight** ile ücretsiz kurabilirsiniz:
+1. App Store'dan Apple'ın **TestFlight** uygulamasını kurun.
+2. Bu bağlantıyı iPhone'da açın: **[TestFlight ile Nino](https://testflight.apple.com/join/1K3Q1KXp)**.
+3. **Yükle**'ye dokunun.
+
+Kurulum adımları Android ile aynıdır (Bölüm 3.2).
 
 > **Google Play:** Android uygulaması Google Play'de kapalı testte. Herkese açılınca bağlantısı burada olacak; o zamana
 > kadar APK ile kurun (Bölüm 3).
 
 ---
 
+<a name="5-tv-uygulaması-android-tv--google-tv"></a>
+
 ## 5. TV uygulamasını kurma
 
-Altyazının TV'de, oyunun üstünde görünmesi için TV'ye bir kez **Nino TV** uygulaması kurulur. TV'nize göre en kolay yolu
-seçin. Hepsinde TV, telefon/bilgisayar ve konsol **aynı Wi-Fi'da** olmalıdır.
+Altyazının TV'de, oyunun üstünde görünmesi için TV'ye bir kez **Nino TV** uygulaması kurulur.
 
-| TV'niz | En kolay yol |
+**Önerilen yol:** TV'de bir kez geliştirici modunu açın. Sonra telefondaki ya da bilgisayardaki Nino uygulamayı TV'ye
+kendisi kurar ve **sonraki güncellemeleri de kendisi yapar**. TV, telefon/bilgisayar ve konsol **aynı Wi-Fi'da** olmalıdır.
+
+| TV'niz | Ne yapılır |
 |---|---|
-| **Android TV / Google TV** (TCL, iFFALCON, Sony, Philips, Xiaomi, Hisense, Vestel, Arçelik…) | Telefondan (5.1) ya da bilgisayardan (5.2); olmazsa TV'nin tarayıcısıyla elle (5.3) |
-| **Samsung** TV ya da Samsung **akıllı monitör** (M serisi; 2016 ve sonrası) | Telefondan (5.1) ya da bilgisayardan (5.2) |
-| **LG** TV (webOS) | Telefondan (5.1) ya da bilgisayardan (5.2) — deneysel |
+| **Android TV / Google TV** (TCL, iFFALCON, Sony, Philips, Xiaomi, Hisense, Vestel, Arçelik…) | USB hata ayıklamayı açın (5.1) |
+| **Samsung** TV ya da Samsung **akıllı monitör** (M serisi; 2016 ve sonrası) | Geliştirici modunu açın (5.1) |
+| **LG** TV (webOS) — deneysel | Developer Mode uygulamasını açın (5.1) |
+
+Takılırsanız uygulamadaki **Nino'ya Sor** yardımcısı TV'nizin markasını sorar ve geliştirici modunu adım adım anlatır.
 
 ### 5.1 Telefondan kurulum (bilgisayar gerekmez)
 
 <p align="center"><img src="nino/v020/android-tv-kur.jpg" width="260" alt="Telefonda TV uygulamasını kurun ekranı: Samsung, LG, Android TV"></p>
 
-1. Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a dokunun (ya da kurulumdaki "Altyazılar Nerede Görünsün?"
-   ekranında **TV uygulamasını kurun**). Telefon ağdaki TV'leri arar; markanızı seçin.
-2. Ekrandaki adımları izleyin. Her marka için TV'de **bir kez** yapılan ayar şudur:
+Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a dokunun. (Ya da kurulumdaki "Altyazılar Nerede Görünsün?"
+ekranında **TV uygulamasını kurun**.) Telefon ağdaki TV'leri arar. Markanızı seçin ve aşağıdaki adımları izleyin.
 
-**Android TV / Google TV**
-1. TV'de **Ayarlar › Sistem › Hakkında**'ya gidin, **Android TV işletim sistemi yapısı** satırına art arda **7 kez** basın.
-   "Artık geliştiricisiniz" yazar.
-2. **Ayarlar › Sistem › Geliştirici seçenekleri**'nde **USB hata ayıklama**'yı açın (varsa **Kablosuz hata ayıklama**'yı da).
-3. Telefonda **Kur ve aç**'a basın. TV'de **"USB hata ayıklamasına izin verilsin mi?"** sorusu çıkar:
-   **"Bu cihazdan her zaman izin ver"**i işaretleyip **İzin ver**'e basın.
-4. Nino TV'de açılır. Güncellemeler için hata ayıklamayı açık bırakın.
+#### Android TV / Google TV
+1. TV'de **Ayarlar › Sistem › Hakkında**'ya gidin. (Bazı TV'lerde: **Ayarlar › Cihaz Tercihleri › Hakkında**.)
+2. **Android TV işletim sistemi yapısı** (ya da **Android TV OS derlemesi**) satırına art arda **7 kez** basın. "Artık geliştiricisiniz" yazar.
+3. **Ayarlar › Sistem › Geliştirici seçenekleri**'ne girin.
+4. **USB hata ayıklama**'yı açın. Varsa **Kablosuz hata ayıklama**'yı da açın.
+5. Telefonda **Kur ve aç**'a basın.
+6. TV'de "USB hata ayıklamasına izin verilsin mi?" sorusu çıkar. **Her zaman izin ver** kutusunu işaretleyin.
+7. **İzin ver**'e basın. Nino TV'de açılır.
 
-**Samsung TV / akıllı monitör**
-1. TV'de **Uygulamalar** ekranını açın, kumandada **1 2 3 4 5**'e basın. **Geliştirici modu** penceresi açılır.
-2. **Developer mode**'u **On** yapın; **Host PC IP** alanına telefonda gösterilen adresi yazın ve **OK**'e basın.
-3. TV'yi **yeniden başlatın**: güç tuşunu TV kapanana kadar ~2 saniye basılı tutun, sonra açın (kısa basmak yetmez).
-4. Telefonda **Kur ve aç**'a basın. İlk kurulumda bir kez **ücretsiz Samsung hesabıyla** giriş istenir.
+Hata ayıklamayı açık bırakın. Böylece TV uygulaması kendiliğinden güncellenir.
 
-**LG TV (deneysel)**
+#### Samsung TV / akıllı monitör
+1. TV'de **Uygulamalar** ekranını açın.
+2. Kumandada **1 2 3 4 5**'e basın. **Geliştirici modu** penceresi açılır.
+3. **Developer mode**'u **On** yapın.
+4. **Host PC IP** alanına telefonda gösterilen adresi yazın ve **OK**'e basın.
+5. TV'yi yeniden başlatın: güç tuşunu TV kapanana kadar ~2 saniye basılı tutun, sonra açın. (Kısa basmak yetmez.)
+6. Telefonda **Kur ve aç**'a basın. İlk kurulumda bir kez **ücretsiz Samsung hesabıyla** giriş istenir.
+
+#### LG TV (deneysel)
 1. webostv.developer.lge.com'da ücretsiz **LG geliştirici hesabı** açın.
-2. TV'de LG Content Store'dan **Developer Mode** uygulamasını kurun, hesabınızla girin, **Dev Mode Status**'u açın.
-3. Uygulamayı yeniden açıp **Key Server**'ı açın; sol altta 6 karakterli **Passphrase** görünür. Bunu telefona yazıp
-   **Kur ve aç**'a basın.
-4. Geliştirici modu en çok 1000 saat açık kalır; süre dolmadan Developer Mode uygulamasında **EXTEND**'e basın.
+2. TV'de LG Content Store'dan **Developer Mode** uygulamasını kurun.
+3. Uygulamada hesabınızla girin ve **Dev Mode Status**'u açın.
+4. Uygulamayı yeniden açın ve **Key Server**'ı açın. Sol altta 6 karakterli **Passphrase** görünür.
+5. Bu kodu telefona yazın ve **Kur ve aç**'a basın.
+6. Geliştirici modu en çok 1000 saat açık kalır. Süre dolmadan Developer Mode uygulamasında **EXTEND**'e basın.
 
 ### 5.2 Bilgisayardan kurulum
 
-Mac ya da Windows'taki Nino, kurulumun TV adımında TV'nizi bulur ve uygulamayı kendisi kurar. TV'deki ayar 5.1'deki
-ile aynıdır (Android TV'de hata ayıklama, Samsung'da geliştirici modu, LG'de Developer Mode).
+Mac ya da Windows'taki Nino, kurulumun TV adımında TV'nizi bulur ve uygulamayı kendisi kurar. TV'de yapılacak ayar
+5.1'deki ile aynıdır.
 
-### 5.3 Elle kurulum: TV'nin tarayıcısıyla (yalnız Android TV / Google TV)
+### TV uygulamam güncel mi?
 
-TV'nin tarayıcısında en üstteki **adres (URL) çubuğuna** `https://is.gd/ninotvapk` yazmanız yeter; inen dosyayı açıp kurun.
-TV'nizin tarayıcısı dosya indirmiyorsa ücretsiz **Downloader** uygulamasıyla şöyle yapın:
+1. TV'de Nino'yu açın.
+2. Kumandada **OK**'e basın. Bir panel açılır.
+3. Panelin en üstünde, başlığın yanında sürüm yazar. Güncel sürüm: **V3.2** (0.9.31).
 
-1. TV'de **Google Play**'den ücretsiz **Downloader** uygulamasını kurun ve açın.
-2. Downloader'a izin verin: **Ayarlar › Uygulamalar › Güvenlik ve kısıtlamalar › Bilinmeyen kaynaklar › Downloader**'ı
-   açın (bazı TV'lerde Downloader ilk açılışta bunu kendisi sorar).
-3. Downloader'ın soldaki menüsünden **Ana Sayfa**'yı (Home) seçin. Ortadaki adres kutusuna tam olarak şunu yazın ve
-   **Git**'e basın:
-   **`https://is.gd/ninotvapk`**
-   ⚠️ **Tarayıcı** sekmesine yazmayın; oraya yazınca Google'da arar. Olmazsa tam adres:
-   `https://yunusdemirbag.github.io/nino-game-translator/tv.apk`
-4. Dosya iner ve kurulum penceresi açılır: **Yükle**'ye, sonra **Aç**'a basın.
-5. Bazı TV'lerde (ör. TCL): **Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster ›
-   Nino** iznini açın. (Telefondan ya da bilgisayardan kurulumda bu izni Nino kendisi verir.)
+**V3.2 yazmıyorsa** TV uygulamanız eski. Telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın.
+Geliştirici modu açıksa Nino güncellemeyi kendisi yapar.
+
+### 5.3 Son çare: TV'nin tarayıcısıyla elle kurulum (yalnız Android TV / Google TV)
+
+Yukarıdaki yollar olmazsa:
+1. TV'nin tarayıcısında en üstteki **adres (URL) çubuğuna** `https://is.gd/ninotvapk` yazın.
+   (Tam adres: `https://yunusdemirbag.github.io/nino-game-translator/tv.apk`)
+2. İnen dosyayı açıp kurun.
+3. Bazı TV'lerde (ör. TCL) şu izni de açın: **Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların
+   üzerinde göster › Nino**.
+
+Bu yolla kurulan uygulama **kendiliğinden güncellenmez**. Güncellemek için USB hata ayıklamayı açıp Nino'da **TV'ye kur**'a
+basın ya da bu adımları tekrarlayın.
 
 TV'de Nino'yu açtığınızda TV, konsolun bağlı olduğu HDMI girişini gösterir ve altyazıyı oyunun üstüne yazar.
 
@@ -220,7 +252,7 @@ kalır (oyunun İngilizce altyazısı da alttan görünür).
 | Telefon ısınıyor | Telefonu şarjda ve serin bir yerde tutun; ekran parlaklığı tam ekranda kendiliğinden azalır. |
 | Xbox listede görünmüyor | Xbox'ta Uzak özellikler açık mı, aynı Microsoft hesabıyla mı giriş yaptınız? Güç modunu "Uyku" yapın. |
 | Sadece görmek istiyorum | Ana ekranda **"PS5'siz Deneyin"**e dokunun; örnek altyazılarla uygulamayı gezebilirsiniz. |
-| Downloader indirmiyor, Google açılıyor | Adresi **Tarayıcı** sekmesine yazmışsınız. Soldan **Ana Sayfa**'yı seçip `https://is.gd/ninotvapk` yazın. |
+| TV'deki Nino eski görünüyor | TV'de Nino panelinde **V3.2** yazmıyorsa telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın. |
 | TV "USB hata ayıklama" sorusunu göstermiyor | Geliştirici seçeneklerinde hata ayıklamanın açık olduğundan emin olun; TV'yi kapatıp açın ve tekrar deneyin. |
 | Samsung TV telefonu kabul etmiyor | Geliştirici modu penceresindeki **Host PC IP** telefonun adresi mi? Değiştirdikten sonra TV'yi güç tuşunu basılı tutarak yeniden başlatın. |
 | OBS'te iki altyazı çıkıyor | Nino penceresini değil, kartın kendisini OBS'e ekleyin ve Bölüm 7'deki yolu izleyin. |

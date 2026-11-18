@@ -47,4 +47,14 @@ public class LocalizerTests
         var missing = Localizer.MissingTranslations("tr");
         Assert.True(missing.Count == 0, string.Join(", ", missing));
     }
+
+    /// Nino: çeviri başlayınca robotun yanındaki balon (Mac ile aynı anahtar).
+    [Fact]
+    public void TranslationStartedBubbleIsTranslated()
+    {
+        const string key = "Nino: Subtitle Translation Started. Enjoy the Game!";
+        Assert.Equal("Nino: Altyazı Çevirisi Başladı. Keyifli Oyunlar!", Localizer.ForLanguage("tr")[key]);
+        Assert.Equal(key, Localizer.ForLanguage("en")[key]);
+        Assert.NotEqual(key, Localizer.ForLanguage("ar")[key]);
+    }
 }

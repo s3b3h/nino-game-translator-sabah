@@ -120,7 +120,7 @@ public struct SubtitleStabilizer {
             ? candidateCount >= stableFrames && time - candidateSince >= Self.garbledStableMs
             : candidateCount >= stableFrames || Self.endsSentence(rawText)
         // Gönderilenin gürültülü yeniden okuması yeni satır değildir; TV'de aynı cümle iki kez görünmesin.
-        if Self.isSame(text, sent) {
+        if Self.isSame(text, sent) || Self.isPrefixedReread(text, of: sent) {
             remember(signature, box)
             return .none
         }
@@ -172,6 +172,14 @@ public struct SubtitleStabilizer {
         guard !garbledPending.isEmpty else { return }
         note = .garbledDropped(garbledPending)
         garbledPending = ""
+    }
+
+    /// Nino: okuma, gönderilen satırın başına önceki satırdan kalan çöp eklenmiş hali mi ("CESADE. TAl CESARE: Told me…"
+    /// ↔ "CESARE: Told me…"). Altyazı geçişinde iki okuma kare kare değişince TV'de çeviri 1 satır / 2 satır gidip
+    /// geliyordu (Mafia, 2026-11-18); ekrandaki satır korunur.
+    static func isPrefixedReread(_ text: String, of rows: String) -> Bool {
+        let read = TextMatch.normalize(text), shown = TextMatch.normalize(rows)
+        return shown.count >= 12 && read.count > shown.count && read.hasSuffix(shown)
     }
 
     /// Okuma, bu satırların (gürültülü) yeniden okuması mı; sonuna sözcük eklenmiş hali yenidir.

@@ -10,12 +10,40 @@ import Foundation
 import Sparkle
 
 /// Nino'nun tek Sparkle güncelleyicisi (bkz. project.yml: SUFeedURL, SUPublicEDKey, SUAutomaticallyUpdate).
+/// Nino: yeni sürüm indiğinde sorulmadan kurulur ve uygulama yeniden açılır; çeviri sürüyorsa oyun bölünmesin diye
+/// çeviri durdurulunca kurulur.
 @MainActor
 enum AppUpdater {
+    static let delegate = AutoInstallDelegate()
     static let controller = SPUStandardUpdaterController(
         // Testlerde başlamaz (test sürecinde güncelleme penceresi açılmasın).
         startingUpdater: ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
-        updaterDelegate: nil, userDriverDelegate: nil)
+        updaterDelegate: delegate, userDriverDelegate: nil)
+
+    /// Çeviri sürüyor mu (AppModel verir); sürüyorsa kurulum bekler.
+    static var isBusy: () -> Bool = { false }
+
+    /// Çeviri durunca çağrılır: bekleyen güncelleme varsa şimdi kurulur.
+    static func installIfReady() { delegate.installIfIdle() }
+}
+
+/// İnmiş güncellemeyi uygulama kapanmayı beklemeden kurar (Sparkle "kapanınca kur" yerine hemen kur ve yeniden aç).
+final class AutoInstallDelegate: NSObject, SPUUpdaterDelegate {
+    private var pending: (() -> Void)?
+
+    func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
+                 immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
+        pending = immediateInstallHandler
+        DispatchQueue.main.async { MainActor.assumeIsolated { self.installIfIdle() } }
+        return true
+    }
+
+    @MainActor
+    func installIfIdle() {
+        guard let install = pending, !AppUpdater.isBusy() else { return }
+        pending = nil
+        install()
+    }
 }
 #endif
 

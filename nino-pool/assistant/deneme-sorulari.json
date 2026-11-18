@@ -1,6 +1,6 @@
 [
   {"lang": "tr", "q": "Samsung tv android tv sayılıyor mu", "must": ["Tizen|Android TV değil|değildir"], "mustNot": []},
-  {"lang": "tr", "q": "tv apk indirdim nasıl kuracağım bilmiyorum downloader google'da arıyor", "must": ["Ana Sayfa|Home", "is.gd/ninotvapk"], "mustNot": []},
+  {"lang": "tr", "q": "tv'ye nino'yu nasıl kuracağım", "must": ["geliştirici|hata ayıklama"], "mustNot": []},
   {"lang": "tr", "q": "bende akıllı olmayan bir monitör var nino olur mu", "must": ["telefon|bilgisayar"], "mustNot": []},
   {"lang": "tr", "q": "obs linkini yazınca iki altyazı çıkıyor nasıl tek yaparız, windows kullanıyorum capture card ile", "must": ["projektör|projector"], "mustNot": []},
   {"lang": "tr", "q": "xbox uzaktan oynatınca tvnin sesi kesiliyor", "must": ["kulaklık|soundbar|capture|kart"], "mustNot": []},

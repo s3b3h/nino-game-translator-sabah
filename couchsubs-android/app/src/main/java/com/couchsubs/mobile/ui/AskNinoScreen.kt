@@ -228,6 +228,40 @@ fun AskNinoButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     ) { NinoBot(46.dp, bob = true) }
 }
 
+/**
+ * Nino: çeviri başlayınca robotun yanında 7 sn "Nino: Altyazı Çevirisi Başladı. Keyifli Oyunlar!" balonu (Mac:
+ * AskNinoButton'un balonu). Kalın beyaz yazı, %55 siyah kapsül; kayarak gelir, solarak gider. [startedAt]: balonun
+ * başladığı an (duvar saati, ms; [com.couchsubs.mobile.service.LiveStatus.startedNoticeAt]); 0 ya da 7 sn'den eskiyse
+ * görünmez (ekran dönünce ya da geri gelince yeniden çıkmaz).
+ */
+@Composable
+fun StartedNotice(startedAt: Long, modifier: Modifier = Modifier) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(startedAt) {
+        val remaining = if (startedAt <= 0) 0L else STARTED_NOTICE_MS - (System.currentTimeMillis() - startedAt)
+        if (remaining <= 0) {
+            visible = false
+            return@LaunchedEffect
+        }
+        visible = true
+        delay(remaining)
+        visible = false
+    }
+    androidx.compose.animation.AnimatedVisibility(
+        visible, modifier,
+        enter = androidx.compose.animation.slideInHorizontally { it / 3 } + androidx.compose.animation.fadeIn(),
+        exit = androidx.compose.animation.fadeOut(tween(600)),
+    ) {
+        Text(stringResource(R.string.translation_started_notice), color = androidx.compose.ui.graphics.Color.White,
+            fontSize = 14.sp, fontWeight = FontWeight.Bold, lineHeight = 18.sp,
+            modifier = Modifier.background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), RoundedCornerShape(50))
+                .padding(horizontal = 14.dp, vertical = 8.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite })
+    }
+}
+
+private const val STARTED_NOTICE_MS = 7_000L
+
 /** Metin ve tıklanabilir http(s) bağlantıları. */
 private fun linkified(text: String): AnnotatedString = buildAnnotatedString {
     append(text)

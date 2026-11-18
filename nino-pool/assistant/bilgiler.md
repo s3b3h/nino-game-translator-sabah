@@ -52,8 +52,18 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   OBS tarayıcı kaynağıyla (Nino'nun OBS adresi) ekleyin (rehberde Bölüm 7). Bu yol şimdilik Windows'ta.
 - Nino'dan geçen oyun sesi bozuk/kalitesiz (capture card ile bilgisayarda oynarken): sesi kartın kendi yolundan (OBS
   ya da TV'den) alın; yayın yapıyorsanız OBS yolunu kullanın.
-- Downloader indirmiyor, Google araması açılıyor: adres Tarayıcı sekmesine yazılmış. Soldan Ana Sayfa'yı seçip
-  https://is.gd/ninotvapk yazın.
+- TV'ye kurulumda en kolayı telefondaki ya da bilgisayardaki Nino'dur; TV'de geliştirici modu (USB hata ayıklama)
+  açıkken uygulamayı kendisi kurar ve günceller.
+- Bütün uygulamaların güncel sürümü Nino V3.2 (Mac, Windows, Android telefon, iPhone ve TV; teknik numara bilgisayar ve
+  telefonda 0.2.2, TV'de 0.9.31). TV'deki sürümü görmek için TV'de Nino'yu açıp kumandada OK'e (ya da menü tuşuna) bas;
+  açılan panelin üstünde "V3.2 (0.9.31)" yazar. V3.2 yazmıyorsa (ör. yalnız 0.9.22 gibi bir sayı) TV uygulaması eskidir: telefondaki ya da bilgisayardaki Nino'da "TV'ye kur"a yeniden bas. Geliştirici modu
+  (USB hata ayıklama) açık kalırsa güncellemeyi Nino bundan sonra kendisi yapar; bu yüzden kurulumu hep bu yolla öner.
+- Üçüncü parti indirme uygulamaları (ör. "Downloader") önerilmez.
+- iPhone ve iPad: App Store'da yayınlanana kadar TestFlight ile kurulur. Önce App Store'dan ücretsiz TestFlight
+  uygulamasını indir, sonra bu bağlantıyı aç: https://testflight.apple.com/join/1K3Q1KXp
+- Çeviri havuzu: herkesin oyunda gördüğü İngilizce satırlar sunucuda toplanır, bir kez yüksek kaliteli yapay zekâyla
+  Türkçeye çevrilir ve aynı satırı gören herkese anında gider (şimdilik GTA 6 için). Küfür ve argo sansürsüz, oyundaki
+  sertlikte çevrilir. Oyunu Nino kendisi tanır (ekrandan ve altyazılardan); kullanıcının seçmesi gerekmez.
 - Mac "doğrulanamadı" diyor: Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç. Windows "bilgisayarınızı korudu":
   Ek bilgi › Yine de çalıştır.
 - Mac PS5'i bulamıyor: Sistem Ayarları › Gizlilik ve Güvenlik › Yerel Ağ'da Nino'ya izin verin.

@@ -3,15 +3,16 @@
 <h1 align="center">Nino Game Translator</h1>
 
 <p align="center"><b>Türkçe desteği olmayan PS5 ve Xbox oyunlarını Türkçe oynayın.</b><br>
-Oyundaki İngilizce altyazıyı anlık olarak Türkçeye (ya da Arapçaya) çevirir ve TV'de, oyunun tam üstünde gösterir.<br>
-Tamamen ücretsiz · açık kaynak · reklamsız · abonelik yok · hesap yok</p>
+Oyundaki İngilizce altyazıyı anında Türkçeye (ve 10 dile daha) çevirir. Çeviriyi TV'de, oyunun tam üstünde gösterir.<br>
+Tamamen ücretsiz · açık kaynak · reklamsız · abonelik yok · hesap yok<br>
+Güncel sürüm: <b>Nino V3.2</b></p>
 
 <p align="center">
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip"><b>⬇️ Mac</b></a> &nbsp;·&nbsp;
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe"><b>⬇️ Windows</b></a> &nbsp;·&nbsp;
   <a href="https://yunusdemirbag.github.io/nino-game-translator/"><b>📺 Android TV</b></a> (telefondaki ya da bilgisayardaki Nino TV'ye kendisi kurar)<br>
   <a href="https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk">⬇️ Android telefon</a> &nbsp;·&nbsp;
-  📱 iPhone: App Store incelemesinde &nbsp;·&nbsp;
+  <a href="https://testflight.apple.com/join/1K3Q1KXp">📱 iPhone / iPad (TestFlight)</a> &nbsp;·&nbsp;
   ▶️ Google Play: kapalı testte &nbsp;·&nbsp;
   <a href="docs/KURULUM.md"><b>📘 Kurulum Rehberi</b></a> &nbsp;·&nbsp;
   <a href="#fotoğraflı-kurulum-ps5--android-tv"><b>📷 Fotoğraflı Kurulum (PS5 + Android TV)</b></a>
@@ -45,11 +46,32 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 - **TV'de oynuyorsanız:** Önerilen kurulum **Mac ya da Windows + TV uygulaması**.
 - **Capture Card'ınız varsa:** Mac ya da Windows görüntüyü karttan alır; Remote Play ve ikinci PSN hesabı gerekmez.
 - **Xbox'ta oynuyorsanız:** Android telefon Xbox'ın ev yayınını Microsoft hesabınızla okur; Mac ve Windows Xbox penceresini okur. Ayrıntılar aşağıda, [Xbox](#xbox) bölümünde.
-- **Bilgisayarınız yoksa ya da monitörde oynuyorsanız:** **Android telefon** (yakında iPhone) aynı işi yapar; altyazıyı TV'ye gönderir ya da kendi ekranında gösterir.
+- **Bilgisayarınız yoksa ya da monitörde oynuyorsanız:** **Android telefon** ya da **iPhone** aynı işi yapar. Altyazıyı TV'ye gönderir ya da kendi ekranında gösterir.
 
 ## Yenilikler
 
-**0.2.0** (Mac, Windows ve Android telefon; kurulu Nino kendiliğinden güncellenir):
+### Nino V3.2
+
+- 📚 **Çeviri havuzu:** Bir altyazı satırı bir kez, güçlü bir yapay zekâ ile özenle çevrilir. Sonra herkes bu çeviriyi kullanır. İlk oyun GTA 6.
+- 🎮 **Oyunu kendisi tanır:** Nino hangi oyunu oynadığınızı ekrandan anlar.
+- ✅ **"Nino: Altyazı Çevirisi Başladı. Keyifli Oyunlar!"** Çeviri başlayınca bu yazı hem TV'de hem uygulamada görünür.
+- 🔠 **TV'de yeni altyazı boyu.**
+- 🤖 **Kurulum yardımcısı robot:** TV'nizin markasını sorar. Geliştirici modunu adım adım anlatır.
+
+**Sürümünüz güncel mi?**
+
+| Uygulama | Güncel sürüm | Nereden bakılır |
+|---|---|---|
+| Mac, Windows, Android telefon, iPhone | **Nino V3.2** (0.2.2) | Uygulamada **Ayarlar › Hakkında** |
+| TV uygulaması | **Nino V3.2** (0.9.31) | TV'de Nino'yu açın, kumandada **OK**'e basın. Açılan panelin en üstünde, başlığın yanında yazar. |
+
+TV'de Nino'nun panelinde **V3.2** yazmıyorsa TV uygulamanız eski. Telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın. TV'de geliştirici modu (USB hata ayıklama) açıksa sonraki güncellemeler kendiliğinden gelir.
+
+Mac, Windows ve Android telefondaki Nino kendini kendiliğinden günceller.
+
+<details>
+<summary><b>Önceki sürüm (0.2.0) yenilikleri</b></summary>
+
 
 - 🌍 **11 çeviri dili:** 🇹🇷 Türkçe (en başta), 🇸🇦 Arapça, 🇮🇳 Hintçe, 🇮🇩 Endonezce, 🇹🇭 Tayca, 🇻🇳 Vietnamca, 🇵🇰 Urduca, 🇧🇩 Bengalce, 🇲🇾 Malayca, 🇵🇭 Filipince, 🇳🇱 Felemenkçe. Bayraklı menüden seçilir; uygulamanın menüleri de o dile geçer.
 - 🔤 **Altyazı yazı tipi:** Aksiyon (GTA tarzı, yeni varsayılan), Modern, Yuvarlak ya da Sade. TV'de, bilgisayarda, telefonda ve OBS'te aynı yazı tipi.
@@ -75,7 +97,10 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
   <img src="docs/nino/tanitim/v3/ekran/nino-v3-5.jpg" width="170" alt="Her cihazda: PS5 ve Xbox">&nbsp;
 </p>
 
-> Önceki sürümün (0.1.9) yenilikleri:
+</details>
+
+<details>
+<summary><b>0.1.9'da yenilikler</b></summary>
 
 - **🎮 İlk ekranda konsol seçimi (Mac):** "Hangi konsolda oynuyorsunuz?" **PS5** seçilirse ikinci hesap ve eşleştirme adımları, **Xbox** seçilirse "Xbox'ınızı Bu Mac'e Getirin" sayfası gelir (xbox.com/play ya da Greenlight). Konsol sonradan **Ayarlar › Bağlantı**'dan değiştirilir.
 - **🟩 Xbox'a özel ana ekran:** Xbox seçilince salon sahnesinde Xbox durur; fiş ve priz aynı çalışır.
@@ -85,6 +110,8 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 - **🇸🇦 Mac'te tam Arapça:** Arapça bayrağı seçilince arayüz de Arapçaya döner ve sağdan sola dizilir.
 - **🔄 Sıfırla:** Ayarların en altında ayrı bir bölüm: "TV'den itibaren yeniden kur" ya da "Her şeyi sıfırla" (kurulum konsol seçiminden başlar).
 - **Düzeltmeler:** PS5 menü adları Türkçe arayüzle aynı ("Uzaktan Oynama", "Uzaktan Oynama Bağlantı Durumunu Gizle"); "Monitörde Remote Play ile oynuyorum"; TV'siz kullanım için "TV'm Yok, Bu Mac'in Ekranında Göster".
+
+</details>
 
 <details>
 <summary><b>Yeni kurulum ekranları (Mac)</b></summary>
@@ -141,7 +168,7 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 | **Mac** (Apple Silicon: M1 ve sonrası) | ✅ Hazır, en çok denenen |
 | **Windows 10/11** bilgisayar | ✅ Hazır |
 | **Android telefon** (Android 8 ve üzeri) | ✅ Hazır, yeni tasarım |
-| **iPhone** | 🔜 App Store incelemesinde |
+| **iPhone / iPad** | 🧪 [TestFlight](https://testflight.apple.com/join/1K3Q1KXp) ile deneme sürümü; App Store incelemesinde |
 
 | Altyazının çıktığı yer | Durum |
 |---|---|
@@ -163,17 +190,38 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 
 Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)** · PS5 ve Android TV için fotoğraflı anlatım: **[aşağıda](#fotoğraflı-kurulum-ps5--android-tv)**
 
-**Mac:** [`Nino-Mac.zip`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)'i indirin, Nino'yu **Uygulamalar**'a sürükleyin ve açın ("doğrulanamadı" derse **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**). Nino adım adım yol gösterir: ikinci PSN hesabıyla giriş, PS5'i 8 haneli kodla eşleme, TV seçimi. TV'de USB hata ayıklama açıksa TV uygulamasını da Mac kurar.
+**Mac**
+1. [`Nino-Mac.zip`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)'i indirin.
+2. Nino'yu **Uygulamalar** klasörüne sürükleyin ve açın.
+3. Mac "doğrulanamadı" derse: **Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç**.
+4. Nino size adım adım yol gösterir: ikinci PSN hesabıyla giriş, PS5'i 8 haneli kodla eşleme, TV seçimi.
 
-**Windows:** [`Nino-Windows-Setup.exe`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)'yi çalıştırın ("bilgisayarınızı korudu" derse **Ek bilgi › Yine de çalıştır**). Kurulum Mac ile aynıdır.
+**Windows**
+1. [`Nino-Windows-Setup.exe`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)'yi indirip çalıştırın.
+2. "Bilgisayarınızı korudu" uyarısı çıkarsa: **Ek bilgi › Yine de çalıştır**.
+3. Gerisi Mac ile aynıdır.
 
-**TV (Android TV / Google TV):** TV uygulamasını yazı yazmadan kurmanın iki yolu var:
-- **Telefondan (bilgisayarsız):** Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a basın (Android TV, Samsung ve LG). Telefon TV'yi Wi-Fi'da bulur, uygulamayı kurar ve açar; ekrandaki adımlar TV'nizin markasına göre anlatılır. Android TV'de bir kez **Ayarlar › Sistem › Hakkında › Android TV işletim sistemi yapısı**'na 7 kez basıp **Geliştirici seçenekleri**'nde hata ayıklamayı açmanız ve TV'deki izin sorusuna **Tamam** demeniz yeter.
-- **Bilgisayardan:** Mac ya da Windows'taki Nino aynı şekilde kendisi kurar.
+**Android telefon (bilgisayar yerine)**
+1. [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)'yı telefonda indirip kurun.
+2. İkinci PSN hesabıyla **Sony İle Giriş Yapın**.
+3. PS5'teki 8 haneli kodu yazın.
+4. Oyunu açınca çubuğu **kaydırın**.
 
-Elle kurmak isterseniz: TV'de bir tarayıcı açın (TV'nin kendi tarayıcısı ya da Google Play'den ücretsiz **Downloader**). En üstteki **adres (URL) çubuğuna** şunu yazın ve inen dosyayı kurun: **`https://is.gd/ninotvapk`**. Google'ın arama kutusuna değil, adres çubuğuna yazın; Downloader'da bu, soldaki **Ana Sayfa**'daki kutudur. Doğrudan link: [Nino TV indirme sayfası](https://yunusdemirbag.github.io/nino-game-translator/) · [`Nino-TV.apk`](https://yunusdemirbag.github.io/nino-game-translator/tv.apk).
+**iPhone / iPad**
+1. App Store'dan Apple'ın **TestFlight** uygulamasını kurun.
+2. Bu bağlantıyı iPhone'da açın: **[TestFlight ile Nino](https://testflight.apple.com/join/1K3Q1KXp)**.
+3. **Yükle**'ye dokunun. Kurulum adımları Android ile aynıdır.
 
-**Android telefon (bilgisayar yerine):** [`Nino-Telefon.apk`](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)'yı telefonda indirip kurun, ikinci PSN hesabıyla **Sony İle Giriş Yapın**, PS5'teki 8 haneli kodu yazın ve oyunu açınca **kaydırın**.
+**TV (Android TV / Google TV)**
+
+TV uygulamasını telefondaki ya da bilgisayardaki Nino kendisi kurar. Önerilen yol budur: bir kez ayarlarsınız, TV uygulaması sonra **kendiliğinden güncellenir**. TV'de bir kez şunları yapın:
+1. TV'de **Ayarlar › Sistem › Hakkında**'ya girin. (Bazı TV'lerde: **Ayarlar › Cihaz Tercihleri › Hakkında**.)
+2. **Android TV işletim sistemi yapısı** (ya da **Android TV OS derlemesi**) satırına art arda **7 kez** basın. "Artık geliştiricisiniz" yazar.
+3. **Ayarlar › Sistem › Geliştirici seçenekleri**'ne girin ve **USB hata ayıklama**'yı açın.
+4. Nino'da **TV'ye kur**'a basın. Telefonda: **Profil › Nino'yu TV'ye Kur**.
+5. TV'de "USB hata ayıklamasına izin verilsin mi?" sorusu çıkar. **Her zaman izin ver** kutusunu işaretleyin ve **İzin ver**'e basın.
+
+Samsung ve LG için adımlar [Kurulum Rehberi](docs/KURULUM.md#5-tv-uygulamasını-kurma)'nde. Takılırsanız uygulamadaki **Nino'ya Sor** yardımcısı TV'nizin markasını sorar ve adım adım anlatır.
 
 **Xbox:** Telefonda ve Mac'te ilk ekranda **Xbox**'ı seçin (telefonda Microsoft hesabınızla giriş yapılır); Windows'ta **"Xbox'ta oynuyorum"**a tıklayın. Adımlar: [Kurulum Rehberi › Xbox](docs/KURULUM.md#6-xbox-ile-kullanım-yeni-deneysel).
 
@@ -216,8 +264,9 @@ Aşağıdaki örnekte ikinci hesabın adı **"Ceviri Altyazi"**dir. Siz istediğ
 3. **İkinci hesabınızla giriş yapın.** Şifrenizi yalnızca Sony'nin kendi sayfasına yazarsınız; Nino şifrenizi görmez.
 4. **PS5'inizi bağlayın.** PS5'te ikinci hesaptayken **Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir**'i seçin.
    TV'de görünen **8 haneli kodu** Nino'ya yazın ve **Bağlan**'a basın. Kod yaklaşık 5 dakika geçerlidir.
-5. **TV'nizi bağlayın.** **Android TV / Google TV**'yi seçin. Nino, TV uygulamasını TV'ye kendisi kurar ve açar;
-   TV bir kez izin isterse kumandayla onaylayın.
+5. **TV'nizi bağlayın.** **Android TV / Google TV**'yi seçin. Nino, TV uygulamasını TV'ye kendisi kurar ve açar.
+   Bunun için TV'de bir kez **USB hata ayıklama** açık olmalı ([nasıl açılır?](docs/KURULUM.md#5-tv-uygulamasını-kurma)).
+   TV izin isterse kumandayla **İzin ver**'e basın.
 
 
 ### Adım 4 — TV'de Nino uygulaması
@@ -259,6 +308,7 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 | Oyun açılırken yasal uyarılar ya da menü yazıları çevriliyor | Nino yalnız oyunun altyazı alanını okur; açılış ekranları geçince düzelir. Ayarlar › Altyazı alanı'ndan alanı daraltabilirsiniz. |
 | Ekranda **"Uzaktan Oynama bağlandı"** bildirimi çıkıyor | İkinci hesapla Ayarlar › Sistem › Uzaktan Oynama'da **Uzaktan Oynama Bağlantı Durumunu Gizle**'yi açın. |
 | PS5 bulunamıyor | PS5 açık ya da dinlenme modunda olmalı ve aynı Wi-Fi'da olmalı. Mac'te **Sistem Ayarları › Gizlilik ve Güvenlik › Yerel Ağ**'da Nino'ya izin verin. Gerekirse PS5'in IP adresini elle girin. |
+| TV'deki Nino eski mi? | TV'de Nino'yu açıp kumandada **OK**'e basın. Panelin en üstünde **V3.2** yazmıyorsa bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın. |
 | Her şeyi baştan kurmak istiyorum | Nino'da **Ayarlar › Sıfırla**. |
 
 ## Telefon uygulaması
@@ -300,6 +350,7 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 - Altyazı okuma (yazı tanıma) ve ücretsiz çeviri cihazınızda yapılır.
 - Gemini, DeepL gibi bir çeviri hizmeti seçerseniz yalnızca altyazı metni, **sizin anahtarınızla** o hizmete gider.
 - **Ortak havuz:** Hazır pakette bulunmayan İngilizce altyazı satırları (yalnız metin, adsız) yeni oyun paketleri hazırlamak için Nino'nun kendi havuzuna gönderilir. Ayarlar'dan kapatabilirsiniz; kapatınca bekleyen satırlar da silinir.
+- **Çeviri havuzu ve oyun tanıma (ortak havuz açıkken):** Havuzdaki satırlar sunucumuzda yapay zekâyla (Anthropic, Claude) çevrilir. Oyunu anlamak için arada bir oyun ekranından küçük bir kare aynı hizmete gider; saklanmaz. Ortak havuzu kapatınca ikisi de durur.
 - Nino hesap açtırmaz, reklam göstermez, sizi izlemez. Ayrıntılar: [PRIVACY.md](PRIVACY.md).
 
 ## Sık sorulanlar
@@ -316,7 +367,9 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 
 **Dublajda yanlış ses çıkıyor.** Oyunun ses ayarlarında konuşma sesini kısın ama tamamen kapatmayın; Nino kimin konuştuğunu o sesten anlar.
 
-**TV'ye uygulamayı nasıl kurarım?** En kolayı Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur** (Android TV, Samsung, LG). Bilgisayardaki Nino da kendisi kurar. Elle kurmak için TV'deki tarayıcının adres (URL) çubuğuna `https://is.gd/ninotvapk` yazın. Adım adım: [Kurulum Rehberi › TV](docs/KURULUM.md#5-tv-uygulamasını-kurma).
+**TV'ye uygulamayı nasıl kurarım?** TV'de bir kez geliştirici modunu (Android TV'de USB hata ayıklama) açın. Sonra telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a ya da bilgisayardaki Nino'da **TV'ye kur**'a basın. Nino uygulamayı kurar ve sonra kendisi günceller. Adım adım: [Kurulum Rehberi › TV](docs/KURULUM.md#5-tv-uygulamasını-kurma). Hiçbiri olmazsa son çare: TV'nin tarayıcısında adres çubuğuna `https://is.gd/ninotvapk` yazın (bu yolla kurulan uygulama kendiliğinden güncellenmez; güncellemek için USB hata ayıklamayı açıp **TV'ye kur**'a basın).
+
+**TV uygulamam güncel mi?** TV'de Nino'yu açın ve kumandada **OK**'e basın. Panelin en üstünde **V3.2** yazmıyorsa TV uygulamanız eski. Telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın.
 
 **Samsung ya da LG akıllı monitörüm var, olur mu?** Samsung akıllı monitörler (M serisi, 2016 sonrası) Samsung TV gibi çalışır. Akıllı olmayan monitörde altyazıyı telefonda ya da bilgisayar ekranında gösterin.
 
@@ -367,4 +420,4 @@ Geliştiren: **Yunus Demirbağ** · Destekleyenler: **M. Akif Demirbağ**
 
 ### English
 
-**Nino** translates the English subtitles of PS5 and Xbox games into Turkish (or Arabic) in real time and shows them on your TV, right on top of the game, or on your phone. An Android phone (or a Mac, a Windows PC, or an iPhone) watches the game through Remote Play (with a second, free PSN account), reads the subtitles, translates them and sends them to the Nino app on the TV. On Xbox (experimental) the Android app signs in with your Microsoft account and watches the Xbox home stream; Mac and Windows read the Xbox window. Free, open source (AGPL-3.0), no ads, no subscriptions. Based on CouchSubs by Sinan Yorulmaz.
+**Nino** translates the English subtitles of PS5 and Xbox games into Turkish (and 10 other languages) in real time and shows them on your TV, right on top of the game, or on your phone. An Android phone (or a Mac, a Windows PC, or an iPhone) watches the game through Remote Play (with a second, free PSN account), reads the subtitles, translates them and sends them to the Nino app on the TV. On Xbox (experimental) the Android app signs in with your Microsoft account and watches the Xbox home stream; Mac and Windows read the Xbox window. Free, open source (AGPL-3.0), no ads, no subscriptions. Based on CouchSubs by Sinan Yorulmaz.

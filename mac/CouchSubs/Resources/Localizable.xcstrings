@@ -99565,6 +99565,76 @@
           }
         }
       }
+    },
+    "Nino: Subtitle Translation Started. Enjoy the Game!" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino: Altyazı Çevirisi Başladı. Keyifli Oyunlar!"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نينو: بدأت ترجمة الحوارات. استمتع باللعب!"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "নিনো: সাবটাইটেল অনুবাদ শুরু হয়েছে। খেলা উপভোগ করুন!"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino: Nagsimula na ang Pagsasalin ng Subtitle. Mag-enjoy sa Laro!"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नीनो: सबटाइटल अनुवाद शुरू हो गया। खेल का मज़ा लें!"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino: Terjemahan Subtitle Dimulai. Selamat Bermain!"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino: Terjemahan Sari Kata Bermula. Selamat Bermain!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino: Ondertitelvertaling Gestart. Veel Speelplezier!"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino: เริ่มแปลคำบรรยายแล้ว ขอให้สนุกกับเกม!"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نینو: سب ٹائٹل کا ترجمہ شروع ہو گیا۔ کھیل کا لطف اٹھائیں!"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino: Đã Bắt Đầu Dịch Phụ Đề. Chúc Chơi Vui!"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -56,7 +56,15 @@ public sealed class LiveServices : IAppServices
     public NinoPool? Pool { get; } = new(Path.Combine(AppPaths.Data, "pool"),
         AppVersion.Current(System.Reflection.Assembly.GetEntryAssembly() ?? typeof(LiveServices).Assembly),
         legacyFile: Path.Combine(AppPaths.Data, "pool.json"));
+    // Nino çeviri havuzu (%LOCALAPPDATA%\CouchSubs\pool-translations; "translations" klasörü motorların önbelleği). Dil ve
+    // açık/kapalı ayarı AppController açılışta verir.
+    public TranslationPool? Translations { get; } = new(Path.Combine(AppPaths.Data, "pool-translations"),
+        NinoPool.ConfiguredEndpoint(Path.Combine(AppPaths.Data, "pool")),
+        AppVersion.Current(System.Reflection.Assembly.GetEntryAssembly() ?? typeof(LiveServices).Assembly),
+        "windows", "tr", enabled: false);
     public string? HistoryFile { get; } = Path.Combine(AppPaths.Data, "history.json");
+    // Nino: oyunu ekrandan tanımak için küçük JPEG (BGRA kare → en çok maxWidth genişlik; WPF kodlayıcısı).
+    public byte[]? SmallJpeg(Frame frame, int maxWidth, int quality) => ReportImages.SmallJpeg(frame, maxWidth, quality);
     public Task<RunningGame?> RunningGameAsync(string host) => ConsoleDiscovery.RunningGameAsync(host);
     // Paket sunucusu yapılandırıldıysa (COUCHSUBS_PACKS_URL ya da derlemedeki CouchSubsPacksUrl) indirilen paketler
     // kullanıcının paket klasörüne gider; adres yoksa kapalı.

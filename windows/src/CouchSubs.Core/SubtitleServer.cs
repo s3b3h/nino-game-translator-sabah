@@ -153,6 +153,14 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
     private TcpListener? listener;
     private Timer? pingTimer;
     private SubtitleStyle? lastStyle;
+    /// <summary>Nino: çevirinin başladığı an (<see cref="SendStarted"/>); bu sürede bağlanan TV "started" olayını yine alır.</summary>
+    private DateTime? startedAt;
+
+    /// <summary>Çeviri başladıktan bu kadar süre içinde bağlanan TV'ye "started" olayı yeniden gönderilir (Mac ile aynı).</summary>
+    internal static readonly TimeSpan StartedReplay = TimeSpan.FromSeconds(20);
+
+    /// <summary>Saat; testlerde ileri alınır.</summary>
+    internal Func<DateTime> Clock { get; set; } = () => DateTime.UtcNow;
     /// <summary>GET ile verilen dosyalar: dublaj sesleri ve seslendirme modelinin ses örnekleri.</summary>
     private readonly Dictionary<string, (byte[] Data, string Type)> files = new(StringComparer.Ordinal);
     private readonly Queue<string> speechPaths = new();
@@ -239,6 +247,18 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
     /// Bölme sondaki sıfırları atar (0.8750 → 0.875).
     private static decimal Round(double value) =>
         Math.Round((decimal)Math.Clamp(value, 0, 1), 4) / 1.000000000000000000000000000000000m;
+
+    /// <summary>
+    /// Nino: bilgisayarda çeviri başladı; TV kısa bir "Çeviri başladı" balonu gösterir (eski TV'ler yok sayar). TV, çeviri
+    /// başladıktan hemen sonra (20 sn içinde) bağlanırsa balonu yine görür. Altyazı olayı değildir; herkese gider.
+    /// </summary>
+    public void SendStarted()
+    {
+        lock (gate) startedAt = Clock();
+        Broadcast(StartedFrame);
+    }
+
+    internal const string StartedFrame = "event: started\ndata: {}\n\n";
 
     public void Clear()
     {
@@ -429,6 +449,7 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
         lock (gate)
         {
             if (lastStyle is { } style) head.Append(StyleFrame(style));
+            if (!viewer && startedAt is { } started && Clock() - started < StartedReplay) head.Append(StartedFrame);
             clients.Add(client);
             count = TvCount();
         }
@@ -504,7 +525,8 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
     private static string StyleFrame(SubtitleStyle style) =>
         Frame("style", new SortedDictionary<string, object>
         {
-            ["background"] = Math.Clamp(style.Background, 0, 100),
+            // Nino: örtme kipinde saydam kutu İngilizce yazıyı gizleyemez (iki yazı karışır); bu kipte kutu hep koyu.
+            ["background"] = style.Placement == SubtitlePlacement.Cover && style.Background < 60 ? 100 : Math.Clamp(style.Background, 0, 100),
             ["backgroundShape"] = style.BackgroundShape.ToString().ToLowerInvariant(),
             ["bold"] = style.Bold,
             ["bottomPercent"] = style.BottomPercent,

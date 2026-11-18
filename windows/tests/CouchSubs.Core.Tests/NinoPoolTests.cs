@@ -342,6 +342,11 @@ public sealed class NinoPoolTests : IDisposable
         Assert.False(NinoPool.Accepts(string.Concat(Enumerable.Repeat("Long sentence. ", 40))));
         Assert.Equal("Hello there.", NinoPool.Clean("  Hello​\n  there.  "));
         Assert.Equal("gta-v", NinoPool.GameId("GTA V"));
+        // Art arda tireler teke iner (Mac ile aynı).
+        Assert.Equal("mafia-the-old-country", NinoPool.GameId("Mafia: The Old Country"));
+        Assert.Equal("mafia-the-old-country", NinoPool.GameId("mafia--the-old-country"));
+        Assert.Equal("marvel-s-spider-man-2", NinoPool.GameId("Marvel's  Spider-Man 2"));
+        Assert.Equal("death-stranding-2-on-the-beach", NinoPool.GameId("  Death Stranding 2: On the Beach!! "));
         Assert.Null(NinoPool.GameId("  "));
         Assert.Null(NinoPool.GameId(null));
     }

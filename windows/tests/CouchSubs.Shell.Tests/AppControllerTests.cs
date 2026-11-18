@@ -1237,6 +1237,23 @@ public class AppControllerRunTests
         controller.Dispose();
     }
 
+    /// Nino: çeviri başlayınca TV "Çeviri başladı" balonunu gösterir; hemen sonra bağlanan TV de olayı alır.
+    [Fact]
+    public async Task StartTellsTvTranslationStarted()
+    {
+        var (controller, _, _) = Ready();
+        await controller.StartAsync();
+        Assert.True(controller.IsRunning);
+        using var http = new HttpClient();
+        using var response = await http.GetAsync($"http://127.0.0.1:{controller.ServerPort}/events", HttpCompletionOption.ResponseHeadersRead);
+        using var reader = new StreamReader(await response.Content.ReadAsStreamAsync());
+        var sawStarted = false;
+        while (await reader.ReadLineAsync() is { } line)
+            if (line == "event: started") { sawStarted = true; break; }
+        Assert.True(sawStarted);
+        controller.Dispose();
+    }
+
     [Fact]
     public void SettingsArePersistedOutsideTheSecureStore()
     {

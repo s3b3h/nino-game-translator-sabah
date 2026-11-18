@@ -6,7 +6,9 @@
   'use strict';
 
   // TV uygulamasının sürümü: appinfo.json, tv-tizen/config.xml ve tv-android/app/build.gradle ile aynı tutulur.
-  var APP_VERSION = '0.9.22';
+  var APP_VERSION = '0.9.31';
+  // Nino: herkesin göreceği sürüm adı (bütün uygulamalarda aynı: V3.2). Teknik numara parantez içinde.
+  var APP_LABEL = 'V3.2';
   var t = window.t;
   var config = window.COUCHSUBS_CONFIG || {};
   var platform = window.COUCHSUBS_PLATFORM;
@@ -315,8 +317,9 @@
   // Uzun çeviri ekranda tek uzun satır olarak taşmasın: satır başına en çok 42 karakter, en çok 3 satır, kelime
   // sınırından ve dengeli bölünür; 3 satıra sığmazsa yazı biraz küçülür (en çok %75'e kadar). Konuşan adı ("ARTHUR:")
   // sonraki sözcükle birleşik kalır, hep ilk satırdadır. Mac, Windows, Android ve OBS (SubtitleWrap) aynı kuralları uygular.
-  var WRAP_MAX_CHARS = 42;
-  var WRAP_MAX_LINES = 3;
+  // Nino: satır daha geniş, en çok iki satır (üç satırlık kutu kalın görünüyordu; Türkçe çeviri İngilizceden uzun).
+  var WRAP_MAX_CHARS = 56;
+  var WRAP_MAX_LINES = 2;
   var WRAP_MIN_SCALE = 0.75;
   var fontBase = 46;
 
@@ -401,6 +404,21 @@
 
   // paragraphs: görev paneli gibi başlık ve maddeli yazılar satır satır, sola yaslı gösterilir.
   // replaces: bilgisayar bu satırı öncekinin uzamış ya da düzelmiş okuması saydı (bkz. replacesCurrent).
+  var startedTimer = null;
+  function showStartedNotice() {
+    var el = $('started-notice');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'started-notice';
+      el.innerHTML = '<span class="bot"><img src="nino-bot.png" alt=""></span><span class="bubble"></span>';
+      document.body.appendChild(el);
+    }
+    el.querySelector('.bubble').textContent = t('translationStarted');
+    el.className = 'show';
+    clearTimeout(startedTimer);
+    startedTimer = setTimeout(function () { el.className = ''; }, 7000);
+  }
+
   function showSubtitle(text, duration, box, paragraphs, replaces) {
     var now = Date.now();
     var current = rawText('subtitle-text');
@@ -596,10 +614,11 @@
     return bottom;
   }
 
-  function showScreen(items, duration) {
+  function showScreen(items, duration, overlay) {
     var host = $('screen');
-    // "Ekran çevriliyor…" yazısı sonuçların üstünde kalmasın.
-    hideSubtitle('screen');
+    // "Ekran çevriliyor…" yazısı sonuçların üstünde kalmasın. Nino: köşe/ipucu çevirisi (overlay) gelince altyazı
+    // silinmez; ikisi aynı anda görünür.
+    if (overlay !== true) hideSubtitle('screen');
     host.innerHTML = '';
     host.className = '';
     var width = window.innerWidth || 1920;
@@ -610,6 +629,8 @@
       if (!box || !item.text) continue;
       var el = document.createElement('div');
       el.className = item.paragraphs === true ? 'item paragraphs' : 'item';
+      // Nino: kutusuz sade yazı (oyunun görev yazısının altındaki Türkçesi): pay yok, sola yaslı, yalnız gölge.
+      if (item.plain === true) el.className += ' plain';
       setRich(el, item.text);
       // Nino: oyunun süslü İngilizce harfleri OCR kutusundan taşar; örtü solda ve dikeyde daha geniş,
       // sağda (düğme simgesine doğru) dar tutulur ki simge örtülmesin.
@@ -748,12 +769,23 @@
     el.style.right = (Math.max(SIDE_MIN, 1 - center - half) * 100) + '%';
 
     if (autoSize) {
-      // Nino: İngilizce satırın yüksekliğinden yazı boyu (birden çok satırlı kutuda satır başına).
-      // Oyun altyazılarında satır aralığı ekran yüksekliğinin ~%3,5'i; 0.045 iki satırı tek satır sanıp yazıyı iki kat
-      // büyütüyordu. Yazı boyu satır yüksekliğinin ~%78'i (harf boyu + satır arası payı).
-      var lineCount = Math.max(1, Math.round((box.bottom - box.top) / 0.035));
-      var size = Math.round((box.bottom - box.top) * height / lineCount * 0.78);
-      size = Math.max(18, Math.min(Math.round(height * 0.045), size));
+      // Nino: oyunun tek satırlık altyazı yüksekliği bu oturumda öğrenilir (son kutuların alçak olanları); kutunun
+      // kaç satır olduğu buna göre sayılır. Eskiden sabit bir satır aralığı (%3,5) varsayılıyordu: satırları sık olan
+      // oyunda (Mafia) iki satırlık altyazı tek satır sanılıp yazı iki katına çıkıyor, boy satırdan satıra zıplıyordu.
+      // Boy, son birkaç satırın ortancasıdır (zıplamaz) ve okunaklı olsun diye en az 27 pikseldir.
+      var boxHeight = box.bottom - box.top;
+      autoHeights.push(boxHeight);
+      if (autoHeights.length > 24) autoHeights.shift();
+      var sortedHeights = autoHeights.slice().sort(function (a, b) { return a - b; });
+      var single = sortedHeights[Math.floor((sortedHeights.length - 1) * 0.3)];
+      var lineCount = Math.max(1, Math.round(boxHeight / Math.max(0.01, single)));
+      // Kullanıcı isteği: oyunun yazısından %5, sonra %3, sonra %5 daha büyük (0.9 → 0.945 → 0.973 → 1.022).
+      var measured = Math.round(boxHeight * height / lineCount * 1.022);
+      autoSizes.push(measured);
+      if (autoSizes.length > 7) autoSizes.shift();
+      var sortedSizes = autoSizes.slice().sort(function (a, b) { return a - b; });
+      var size = sortedSizes[Math.floor(sortedSizes.length / 2)];
+      size = Math.max(27, Math.min(Math.round(height * 0.0508), size));
       $('subtitle-text').style.fontSize = size + 'px';
       $('subtitle-prev-text').style.fontSize = Math.round(size * 0.8) + 'px';
       $('subtitle-prev2-text').style.fontSize = Math.round(size * 0.8) + 'px';
@@ -779,9 +811,13 @@
   // Örtü İngilizce satırın kutusunu (biraz paylı) kaplar. Türkçe daha uzun ya da daha çok satırsa örtü çevirinin
   // kutusunu da içine alacak kadar büyür: eskiden çevirinin yarı saydam zemini siyah örtüden taşıyor, ekranda boyları
   // farklı iki kutu görünüyordu. Örtü çevirinin zeminini tamamen kapladığından ikisi tek bir siyah kutu gibi görünür.
-  var COVER_PAD = 0.02;
+  // Nino: örtünün payı inceldi (kutu kalın görünmesin).
+  var COVER_PAD = 0.012;
   // Nino: yazı boyu İngilizce satırın yüksekliğine uydurulur (varsayılan açık).
   var autoSize = true;
+  // Nino: otomatik boy için son kutu yükseklikleri ve ölçülen boylar (bkz. layout).
+  var autoHeights = [];
+  var autoSizes = [];
 
   function placeCover(cover, box, text) {
     var width = document.documentElement.clientWidth || window.innerWidth || 1920;
@@ -974,8 +1010,10 @@
       renderDiag();
       if (data.text) showSubtitle(data.text, data.duration, data.box, data.paragraphs === true, data.replace === true);
     });
+    // Nino: bilgisayarda çeviri başladı; 7 sn sol üstte robot ve balon.
+    onEvent('started', function () { showStartedNotice(); });
     onEvent('clear', onClear);
-    onEvent('screen', function (data) { showScreen(data.items, data.duration); });
+    onEvent('screen', function (data) { showScreen(data.items, data.duration, data.overlay); });
     onEvent('screen-clear', hideScreen);
     onEvent('region', showRegion);
     onEvent('region-clear', hideRegions);
@@ -1637,7 +1675,7 @@
   showHdmi(hdmiPort);
   if (!savedPort) autoSelectConsole();
 
-  $('app-version').textContent = APP_VERSION;
+  $('app-version').textContent = APP_LABEL + ' (' + APP_VERSION + ')';
   renderDiag();
   renderWaitingStatus();
   // Önceki açılışta TV kendiliğinden kaynağa geçtiyse ipucu şimdi gösterilir.

@@ -298,4 +298,40 @@ public class SubtitleServerTests
         using var response = await Http.GetAsync($"http://127.0.0.1:{port}/nope");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    /// Nino: çeviri başlayınca "started" olayı bağlı TV'ye gider; 20 sn içinde bağlanan TV de alır, OBS izleyicisi almaz.
+    [Fact]
+    public async Task StartedIsBroadcastAndReplayedToLateTvsOnly()
+    {
+        using var server = new SubtitleServer(0);
+        var now = DateTime.UtcNow;
+        server.Clock = () => now;
+        var port = await server.StartAsync();
+
+        using var early = await Http.GetAsync($"http://127.0.0.1:{port}/events", HttpCompletionOption.ResponseHeadersRead);
+        await WaitUntil(() => server.ConnectedClients == 1);
+        server.SendStarted();
+        using var earlyReader = new StreamReader(await early.Content.ReadAsStreamAsync());
+        Assert.Equal("event: started", (await ReadLines(earlyReader, "event: started"))[^1]);
+        Assert.Equal("data: {}", await earlyReader.ReadLineAsync());
+
+        // Geç bağlanan TV (19 sn sonra) olayı açılışta alır.
+        now += TimeSpan.FromSeconds(19);
+        using var late = await Http.GetAsync($"http://127.0.0.1:{port}/events", HttpCompletionOption.ResponseHeadersRead);
+        await WaitUntil(() => server.ConnectedClients == 2);
+        using var lateReader = new StreamReader(await late.Content.ReadAsStreamAsync());
+        Assert.Equal("event: started", (await ReadLines(lateReader, "event: started"))[^1]);
+
+        // OBS izleyicisi açılışta almaz.
+        using var obs = await Http.GetAsync($"http://127.0.0.1:{port}/events?viewer=obs", HttpCompletionOption.ResponseHeadersRead);
+        using var obsReader = new StreamReader(await obs.Content.ReadAsStreamAsync());
+        // 20 sn geçince bağlanan TV de almaz.
+        now += TimeSpan.FromSeconds(2);
+        using var tooLate = await Http.GetAsync($"http://127.0.0.1:{port}/events", HttpCompletionOption.ResponseHeadersRead);
+        await WaitUntil(() => server.ConnectedClients == 3);
+        using var tooLateReader = new StreamReader(await tooLate.Content.ReadAsStreamAsync());
+        server.Clear();
+        Assert.DoesNotContain("event: started", await ReadLines(obsReader, "event: clear"));
+        Assert.DoesNotContain("event: started", await ReadLines(tooLateReader, "event: clear"));
+    }
 }
