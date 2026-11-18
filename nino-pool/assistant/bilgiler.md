@@ -54,8 +54,8 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   ya da TV'den) alın; yayın yapıyorsanız OBS yolunu kullanın.
 - TV'ye kurulumda en kolayı telefondaki ya da bilgisayardaki Nino'dur; TV'de geliştirici modu (USB hata ayıklama)
   açıkken uygulamayı kendisi kurar ve günceller.
-- Bütün uygulamaların güncel sürümü Nino V3.2 (Mac, Windows, Android telefon, iPhone ve TV; teknik numara bilgisayar ve
-  telefonda 0.2.2, TV'de 0.9.31). TV'deki sürümü görmek için TV'de Nino'yu açıp kumandada OK'e (ya da menü tuşuna) bas;
+- Güncel sürüm: Mac, Windows, Android telefon ve iPhone uygulamaları Nino V3.3 (teknik numara 0.2.3); TV uygulaması
+  Nino V3.2 (0.9.31). TV'deki sürümü görmek için TV'de Nino'yu açıp kumandada OK'e (ya da menü tuşuna) bas;
   açılan panelin üstünde "V3.2 (0.9.31)" yazar. V3.2 yazmıyorsa (ör. yalnız 0.9.22 gibi bir sayı) TV uygulaması eskidir: telefondaki ya da bilgisayardaki Nino'da "TV'ye kur"a yeniden bas. Geliştirici modu
   (USB hata ayıklama) açık kalırsa güncellemeyi Nino bundan sonra kendisi yapar; bu yüzden kurulumu hep bu yolla öner.
 - Üçüncü parti indirme uygulamaları (ör. "Downloader") önerilmez.
@@ -64,6 +64,9 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
 - Çeviri havuzu: herkesin oyunda gördüğü İngilizce satırlar sunucuda toplanır, bir kez yüksek kaliteli yapay zekâyla
   Türkçeye çevrilir ve aynı satırı gören herkese anında gider (şimdilik GTA 6 için). Küfür ve argo sansürsüz, oyundaki
   sertlikte çevrilir. Oyunu Nino kendisi tanır (ekrandan ve altyazılardan); kullanıcının seçmesi gerekmez.
+- GTA 6'da çeviri (V3.3'ten beri) her zaman Nino'nun çeviri havuzundan gelir; kullanıcının Gemini, DeepL, ChatGPT ya da
+  başka anahtarı bu oyunda kullanılmaz, masraf olmaz. Sunucuya ulaşılamazsa cihazın ücretsiz çevirisi gösterilir. Eski
+  sürümde (V3.2 ve öncesi) önce kendi motoru çevirir; V3.3'e güncellemek gerekir.
 - iPhone'da ekran kapanıyor, bir süre sonra bağlantı kopuyor: iOS, kilitlenen ya da arka plana geçen uygulamayı
   durdurur; bu Apple'ın kuralıdır, hiçbir uygulama aşamaz. Çeviri sürerken Nino ekranı kendisi açık tutar ve
   parlaklığı kısar. Telefonu kilitlemeyin, başka uygulamaya geçmeyin; şarja takılı bırakmak en
