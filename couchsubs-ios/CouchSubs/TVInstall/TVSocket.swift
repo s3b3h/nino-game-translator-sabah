@@ -37,6 +37,9 @@ final class StreamReader {
         return result
     }
 
+    /// Okunmayı bekleyen bayt var mı (tamponda ya da sokette)? Bloklamaz.
+    var hasInput: Bool { !buffer.isEmpty || ((stream as? PosixSocket)?.hasInput ?? false) }
+
     /// Önceden okunmuş ama kullanılmamış baytlar (TLS'e geçerken bırakılır).
     var leftover: [UInt8] { buffer }
 }
@@ -100,6 +103,12 @@ final class PosixSocket: ByteStream {
         if count == 0 { throw StreamClosed() }
         if errno == EAGAIN || errno == EWOULDBLOCK { throw ConnectFailed(description: "zaman aşımı") }
         throw ConnectFailed(description: String(cString: strerror(errno)))
+    }
+
+    /// Sokette okunmayı bekleyen veri (ya da kapanış) var mı? Bloklamaz.
+    var hasInput: Bool {
+        var poller = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+        return fd >= 0 && poll(&poller, 1, 0) > 0
     }
 
     func write(_ bytes: [UInt8]) throws {

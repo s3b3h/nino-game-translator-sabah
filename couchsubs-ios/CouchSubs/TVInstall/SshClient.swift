@@ -245,6 +245,11 @@ final class SshSession {
     private var sessionId: [UInt8] = []
     private var serverSigAlgs: [String]?
     private(set) var serverVersion = ""
+    /// Anahtar değişimi sürerken gelen bağlantı iletileri (kanal verisi vb.); değişim bitince sırayla verilir.
+    private var pending: [[UInt8]] = []
+    private var exchanging = false
+    /// TV'nin bağlantı açıkken başlattığı anahtar yenilemelerinin sayısı (RFC 4253 bölüm 9).
+    private(set) var rekeyCount = 0
 
     private init(socket: PosixSocket) {
         self.socket = socket
@@ -356,35 +361,62 @@ final class SshSession {
     /// Bağlantının genel iletilerini (yoksay, hata ayıklama, karşılama, ext-info, genel istek) karşılar; kalanı döner.
     private func nextMessage() throws -> [UInt8] {
         while true {
-            let payload = try readPacket()
-            guard let type = payload.first else { continue }
-            switch type {
-            case 1:
-                var reader = SshReader(payload)
-                _ = try reader.byte()
-                _ = try reader.uint32()
-                throw SshError(.broken, "TV bağlantıyı kapattı: \((try? reader.text()) ?? "")")
-            case 2, 3, 4, 53:
-                continue
-            case 7:
-                var reader = SshReader(payload)
-                _ = try reader.byte()
-                let count = try reader.uint32()
-                for _ in 0..<count {
-                    let name = try reader.text()
-                    let value = try reader.text()
-                    if name == "server-sig-algs" { serverSigAlgs = value.split(separator: ",").map(String.init) }
-                }
-            case 80:
-                var reader = SshReader(payload)
-                _ = try reader.byte()
-                _ = try reader.string()
-                if try reader.bool() { try sendPacket([82]) }
-            case 20:
-                throw SshError(.broken, "TV anahtarları yeniden değiştirmek istedi (desteklenmiyor)")
-            default:
-                return payload
+            if !exchanging, !pending.isEmpty { return pending.removeFirst() }
+            if let message = try process(try readPacket()) { return message }
+        }
+    }
+
+    /// Bloklamadan: okunmayı bekleyen paketleri işler ve ilk bağlantı iletisini döner; yoksa nil. Komutun girişi
+    /// yüklenirken TV'nin iletileri (pencere, anahtar yenileme) böyle zamanında karşılanır.
+    private func availableMessage() throws -> [UInt8]? {
+        if !exchanging, !pending.isEmpty { return pending.removeFirst() }
+        while reader.hasInput {
+            if let message = try process(try readPacket()) { return message }
+            if !exchanging, !pending.isEmpty { return pending.removeFirst() }
+        }
+        return nil
+    }
+
+    /// Genel iletiyi karşılar (nil); bağlantı ya da anahtar değişimi iletisini çağırana bırakır.
+    private func process(_ payload: [UInt8]) throws -> [UInt8]? {
+        guard let type = payload.first else { return nil }
+        switch type {
+        case 1:
+            var reader = SshReader(payload)
+            _ = try reader.byte()
+            _ = try reader.uint32()
+            throw SshError(.broken, "TV bağlantıyı kapattı: \((try? reader.text()) ?? "")")
+        case 2, 3, 4, 53:
+            return nil
+        case 7:
+            var reader = SshReader(payload)
+            _ = try reader.byte()
+            let count = try reader.uint32()
+            for _ in 0..<count {
+                let name = try reader.text()
+                let value = try reader.text()
+                if name == "server-sig-algs" { serverSigAlgs = value.split(separator: ",").map(String.init) }
             }
+            return nil
+        case 80:
+            var reader = SshReader(payload)
+            _ = try reader.byte()
+            _ = try reader.string()
+            if try reader.bool() { try sendPacket([82]) }
+            return nil
+        case 20:
+            // TV anahtarları yeniliyor (dropbear bunu bağlantı ortasında yapabilir): kendi KEXINIT'imizle cevap
+            // verip değişimi yeniden yaparız; bu sırada gelen kanal iletileri `pending`'de bekler.
+            if exchanging { return payload } // İlk el sıkışmada TV'nin KEXINIT'i; değişim kodu kendisi denetler.
+            try keyExchange(serverInit: payload)
+            rekeyCount += 1
+            return nil
+        default:
+            if exchanging, !Self.isKexMessage(type) {
+                pending.append(payload)
+                return nil
+            }
+            return payload
         }
     }
 
@@ -409,11 +441,24 @@ final class SshSession {
         guard serverVersion.hasPrefix("SSH-2.0-") || serverVersion.hasPrefix("SSH-1.99-") else {
             throw SshError(.broken, "SSH sürümü desteklenmiyor: \(serverVersion)")
         }
+        try keyExchange(serverInit: nil)
+    }
+
+    /// Anahtar değişimi ve kurulum (30-49) iletileri; değişim sırasında yalnız bunlar beklenir.
+    private static func isKexMessage(_ type: UInt8) -> Bool { type == 20 || type == 21 || (30...49).contains(type) }
+
+    /// Anahtar değişimi (RFC 4253 bölüm 7-8). İlk el sıkışmada `serverInit` nil'dir ve TV'nin KEXINIT'i okunur;
+    /// TV yenileme başlattığında (bölüm 9) onun KEXINIT'i verilir. Oturum kimliği ilk değişimin özetiyle kalır,
+    /// paket sıra numaraları sıfırlanmaz; yeni anahtarlara NEWKEYS'te geçilir.
+    private func keyExchange(serverInit receivedInit: [UInt8]?) throws {
+        exchanging = true
+        defer { exchanging = false }
+        let first = sessionId.isEmpty
 
         var kexInit = SshWriter()
         kexInit.byte(20)
         kexInit.bytes += randomBytes(16)
-        kexInit.nameList(SshKex.allCases.map(\.rawValue) + ["ext-info-c"])
+        kexInit.nameList(SshKex.allCases.map(\.rawValue) + (first ? ["ext-info-c"] : []))
         kexInit.nameList(hostKeyAlgorithms)
         kexInit.nameList(cipherAlgorithms)
         kexInit.nameList(cipherAlgorithms)
@@ -428,7 +473,7 @@ final class SshSession {
         let clientInit = kexInit.bytes
         try sendPacket(clientInit)
 
-        let serverInit = try nextMessage()
+        let serverInit = try receivedInit ?? nextMessage()
         guard serverInit.first == 20 else { throw SshError(.broken, "KEXINIT beklenirken \(serverInit.first ?? 0)") }
         var parse = SshReader(serverInit)
         _ = try parse.byte()
@@ -544,7 +589,7 @@ final class SshSession {
         try sendPacket([21])
         let newKeys = try nextMessage()
         guard newKeys.first == 21 else { throw SshError(.broken, "NEWKEYS beklenirken \(newKeys.first ?? 0)") }
-        sessionId = hash
+        if first { sessionId = hash }
 
         var sharedMpint = SshWriter()
         sharedMpint.mpint(shared)
@@ -789,6 +834,8 @@ final class SshSession {
             let chunk = max(512, min(remoteMaxPacket, 32_768) - 128)
             var offset = 0
             while offset < input.count, !closed {
+                // TV'den gelen ileti (pencere, anahtar yenileme isteği) yükleme bitene kadar bekletilmez.
+                while !closed, let message = try availableMessage() { try handle(message) }
                 while remoteWindow == 0, !closed { try next() }
                 if closed { break }
                 let count = min(input.count - offset, chunk, Int(remoteWindow))
