@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/nino/tanitim/v2/1-v2-ana-afis.jpg" width="880" alt="Nino Game Translator v2: Yeni Sürüm Geldi! PS5 ve Xbox oyunlarında anlık Türkçe altyazı"></p>
+<p align="center"><img src="docs/nino/tanitim/v3/ekran/nino-v3-yatay-1.jpg" width="880" alt="Nino V3: PS5 ve Xbox oyunları artık Türkçe"></p>
 
 <h1 align="center">Nino Game Translator</h1>
 
@@ -23,8 +23,8 @@ Tamamen ücretsiz · açık kaynak · reklamsız · abonelik yok · hesap yok</p
 </p>
 
 <p align="center">
-  <img src="docs/nino/ekranlar/ana-ps5.jpg" width="440" alt="Nino Mac ana ekranı: PS5">&nbsp;
-  <img src="docs/nino/ekranlar/ana-xbox.jpg" width="440" alt="Nino Mac ana ekranı: Xbox"><br>
+  <img src="docs/nino/v3/ekranlar/ana-ps5.jpg" width="440" alt="Nino Mac ana ekranı: PS5">&nbsp;
+  <img src="docs/nino/v3/ekranlar/ana-xbox.jpg" width="440" alt="Nino Mac ana ekranı: Xbox"><br>
   <sub>PS5 ya da Xbox: fişi prize takın, çeviri başlasın. Ana ekran seçtiğiniz konsola göre değişir.</sub>
 </p>
 
@@ -55,25 +55,27 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 - 🔤 **Altyazı yazı tipi:** Aksiyon (GTA tarzı, yeni varsayılan), Modern, Yuvarlak ya da Sade. TV'de, bilgisayarda, telefonda ve OBS'te aynı yazı tipi.
 - 📺 **TV uygulamasını telefondan kurun:** Android telefondaki Nino, Android TV, Samsung ve LG TV'ye uygulamayı bilgisayarsız kurar (Profil › Nino'yu TV'ye Kur).
 - 🎥 **Yayıncılar için (Windows):** Capture card doğrudan OBS'e bağlanır, Nino altyazıyı OBS projektöründen okur (Ayarlar › Görüntü kaynağı › OBS projektörü). Görüntü ve ses OBS'ten temiz gider, altyazı OBS'e tek gelir.
+- 🤖 **Nino'ya Sor:** Türk bayraklı şapkalı kurulum yardımcısı robot. Cihazlarınızı sorar, kurulumu adım adım anlatır, ekran görüntüsüne bakar, çözemediği sorunu ekibe kendisi bildirir. 12 dilde.
 - 🐞 **Sorun Bildir:** Ayarlar'dan açıklama ve ekran görüntüsü ile doğrudan bize yazın.
 - CouchSubs'ın son düzeltmeleri: Xbox bağlantısı, TV'de daha okunaklı altyazı, daha doğru altyazı okuma ve daha fazlası.
 
+<p align="center">
+  <img src="docs/nino/v3/v020/android-dil-menusu.jpg" width="200" alt="11 dil, bayraklı menü">&nbsp;
+  <img src="docs/nino/v3/v020/android-hintce.jpg" width="200" alt="Hintçe arayüz">&nbsp;
+  <img src="docs/nino/v3/v020/android-yazi-tipi.jpg" width="200" alt="Yazı tipi seçimi">&nbsp;
+  <img src="docs/nino/v3/v020/android-tv-kur.jpg" width="200" alt="Telefondan TV'ye kurulum">
+</p>
+<p align="center"><img src="docs/nino/v3/v020/tv-yazi-tipleri.jpg" width="700" alt="TV'de dört yazı tipi"></p>
+
+<p align="center">
+  <img src="docs/nino/tanitim/v3/ekran/nino-v3-1.jpg" width="170" alt="Nino V3">&nbsp;
+  <img src="docs/nino/tanitim/v3/ekran/nino-v3-2.jpg" width="170" alt="Altyazı TV'de">&nbsp;
+  <img src="docs/nino/tanitim/v3/ekran/nino-v3-3.jpg" width="170" alt="Nino'ya Sor">&nbsp;
+  <img src="docs/nino/tanitim/v3/ekran/nino-v3-4.jpg" width="170" alt="11 dilde">&nbsp;
+  <img src="docs/nino/tanitim/v3/ekran/nino-v3-5.jpg" width="170" alt="Her cihazda: PS5 ve Xbox">&nbsp;
+</p>
+
 > Önceki sürümün (0.1.9) yenilikleri:
-
-<p align="center"><img src="docs/nino/tanitim/v2/8-gta6-yatay.jpg" width="880" alt="GTA 6 artık Türkçe altyazılı: Nino Game Translator v2"></p>
-
-<p align="center">
-  <img src="docs/nino/tanitim/v2/2-ps5-mi-xbox-mu.jpg" width="440" alt="PS5 mi, Xbox mu? İkisinde de Türkçe altyazı">&nbsp;
-  <img src="docs/nino/tanitim/v2/3-tv-oyunun-ustunde.jpg" width="440" alt="Oyun TV'de, Türkçe altyazı oyunun üstünde">
-</p>
-<p align="center">
-  <img src="docs/nino/tanitim/v2/4-kurulum.jpg" width="440" alt="Baştan tasarlanan kurulum">&nbsp;
-  <img src="docs/nino/tanitim/v2/6-xbox-kurulum.jpg" width="440" alt="Xbox'a özel kurulum">
-</p>
-<p align="center">
-  <img src="docs/nino/tanitim/v2/5-telefon.jpg" width="300" alt="Bilgisayarınız yoksa telefonunuz yeter: iPhone ve Android">&nbsp;
-  <img src="docs/nino/tanitim/v2/7-gta6-dikey.jpg" width="300" alt="GTA 6 artık Türkçe altyazılı">
-</p>
 
 - **🎮 İlk ekranda konsol seçimi (Mac):** "Hangi konsolda oynuyorsunuz?" **PS5** seçilirse ikinci hesap ve eşleştirme adımları, **Xbox** seçilirse "Xbox'ınızı Bu Mac'e Getirin" sayfası gelir (xbox.com/play ya da Greenlight). Konsol sonradan **Ayarlar › Bağlantı**'dan değiştirilir.
 - **🟩 Xbox'a özel ana ekran:** Xbox seçilince salon sahnesinde Xbox durur; fiş ve priz aynı çalışır.
@@ -89,15 +91,15 @@ altyazıyı okur, çevirir ve TV'ye gönderir. TV'deki Nino çeviriyi İngilizce
 
 | | |
 |---|---|
-| <img src="docs/nino/ekranlar/ps5-karsilama.jpg" width="420" alt="PS5 karşılama"> | <img src="docs/nino/ekranlar/xbox-kurulum.jpg" width="420" alt="Xbox'ınızı Bu Mac'e Getirin"> |
+| <img src="docs/nino/v3/ekranlar/ps5-karsilama.jpg" width="420" alt="PS5 karşılama"> | <img src="docs/nino/v3/ekranlar/xbox-kurulum.jpg" width="420" alt="Xbox'ınızı Bu Mac'e Getirin"> |
 | PS5 karşılaması | Xbox: Xbox'ınızı Bu Mac'e Getirin |
-| <img src="docs/nino/ekranlar/ikinci-hesap.jpg" width="420" alt="Altyazı için 2. PSN hesabı"> | <img src="docs/nino/ekranlar/psn-giris.jpg" width="420" alt="İkinci hesabınızla giriş yapın"> |
+| <img src="docs/nino/v3/ekranlar/ikinci-hesap.jpg" width="420" alt="Altyazı için 2. PSN hesabı"> | <img src="docs/nino/v3/ekranlar/psn-giris.jpg" width="420" alt="İkinci hesabınızla giriş yapın"> |
 | Altyazı için 2. PSN hesabı | İkinci hesabınızla giriş |
-| <img src="docs/nino/ekranlar/ps5-baglama.jpg" width="420" alt="PS5'inizi bağlayın"> | <img src="docs/nino/ekranlar/tv-secimi.jpg" width="420" alt="TV'nizi bağlayın"> |
+| <img src="docs/nino/v3/ekranlar/ps5-baglama.jpg" width="420" alt="PS5'inizi bağlayın"> | <img src="docs/nino/v3/ekranlar/tv-secimi.jpg" width="420" alt="TV'nizi bağlayın"> |
 | PS5'inizi bağlayın (8 haneli kod) | TV'nizi bağlayın |
-| <img src="docs/nino/ekranlar/deneyelim.jpg" width="420" alt="Deneyelim"> | <img src="docs/nino/ekranlar/daha-iyi-ceviri.jpg" width="420" alt="Daha doğal çeviri"> |
+| <img src="docs/nino/v3/ekranlar/deneyelim.jpg" width="420" alt="Deneyelim"> | <img src="docs/nino/v3/ekranlar/daha-iyi-ceviri.jpg" width="420" alt="Daha doğal çeviri"> |
 | Deneyelim | Daha doğal çeviri (ücretsiz) |
-| <img src="docs/nino/ekranlar/ayarlar-baglanti.jpg" width="420" alt="Ayarlar › Bağlantı: PS5 ya da Xbox"> | <img src="docs/nino/ekranlar/ayarlar-sifirla.jpg" width="420" alt="Ayarlar › Sıfırla"> |
+| <img src="docs/nino/v3/ekranlar/ayarlar-baglanti.jpg" width="420" alt="Ayarlar › Bağlantı: PS5 ya da Xbox"> | <img src="docs/nino/v3/ekranlar/ayarlar-sifirla.jpg" width="420" alt="Ayarlar › Sıfırla"> |
 | Ayarlar › Bağlantı: konsol seçimi | Ayarlar › Sıfırla |
 
 </details>
@@ -186,11 +188,11 @@ PS5'i **Android TV ya da Google TV**'ye bağlı olanlar için, gerçek bir kurul
 
 Aşağıdaki örnekte ikinci hesabın adı **"Ceviri Altyazi"**dir. Siz istediğiniz adı verebilirsiniz.
 
-![PS5 kullanıcı seçme ekranı: Kullanıcı Ekle ve ikinci hesap](docs/nino/rehber/android-tv/2-ikinci-hesap.jpg)
+![PS5 kullanıcı seçme ekranı: Kullanıcı Ekle ve ikinci hesap](docs/nino/v3/rehber/android-tv/2-ikinci-hesap.jpg)
 
 > PS5 açıkken başka bir hesaba geçmek için: **PS düğmesi › profil resminiz › Kullanıcı Değiştir**.
 >
-> ![Kullanıcı Değiştir penceresi](docs/nino/rehber/android-tv/1-kullanici-degistir.jpg)
+> ![Kullanıcı Değiştir penceresi](docs/nino/v3/rehber/android-tv/1-kullanici-degistir.jpg)
 
 
 ### Adım 2 — İkinci hesapta Uzaktan Oynama'yı açın
@@ -203,7 +205,7 @@ Aşağıdaki örnekte ikinci hesabın adı **"Ceviri Altyazi"**dir. Siz istediğ
 | **Uzaktan Oynama Bağlantı Durumunu Gizle** (en alttaki) | **Açın.** Böylece oyun sırasında "Uzaktan Oynama bağlandı" bildirimi çıkmaz. |
 | **Cihazı Eşleştir** | Adım 3'te bilgisayardaki Nino isteyince seçeceksiniz. |
 
-![PS5 Ayarlar › Sistem › Uzaktan Oynama](docs/nino/rehber/android-tv/3-uzaktan-oynama.jpg)
+![PS5 Ayarlar › Sistem › Uzaktan Oynama](docs/nino/v3/rehber/android-tv/3-uzaktan-oynama.jpg)
 
 
 ### Adım 3 — Bilgisayarda Nino'yu kurun
@@ -223,27 +225,27 @@ Aşağıdaki örnekte ikinci hesabın adı **"Ceviri Altyazi"**dir. Siz istediğ
 Kurulumdan sonra Nino, TV'nin uygulamalar satırında görünür. Açtığınızda bilgisayardaki Nino'yu bekler ve PS5'in hangi
 HDMI girişinde olduğunu söyler.
 
-![TV'deki Nino uygulaması: Bilgisayardaki Nino bekleniyor](docs/nino/rehber/android-tv/6-nino-tv.jpg)
+![TV'deki Nino uygulaması: Bilgisayardaki Nino bekleniyor](docs/nino/v3/rehber/android-tv/6-nino-tv.jpg)
 
 
 ### Adım 5 — Oynayın
 
 1. PS5'te **kendi hesabınıza** dönün ve oyununuzu açın.
 
-   ![Kendi hesabınızla PS5 ana ekranı](docs/nino/rehber/android-tv/4-kendi-hesabin.jpg)
+   ![Kendi hesabınızla PS5 ana ekranı](docs/nino/v3/rehber/android-tv/4-kendi-hesabin.jpg)
 
 2. Bilgisayardaki Nino'da **fişi prize takın** (ya da çeviri düğmesine basın). Nino ikinci hesapla bağlanır; TV'deki
    Nino uygulaması kendiliğinden açılır.
 
-   ![Uzaktan Oynama bağlandı; TV'nin uygulamalar satırında Nino](docs/nino/rehber/android-tv/5-uzaktan-oynama-baglandi.jpg)
+   ![Uzaktan Oynama bağlandı; TV'nin uygulamalar satırında Nino](docs/nino/v3/rehber/android-tv/5-uzaktan-oynama-baglandi.jpg)
 
 3. TV kumandasının kaynak tuşuyla PS5'in HDMI girişine geçin. Türkçe altyazı, oyunun üstünde görünür.
 
-   ![Oyunun üstünde Türkçe altyazı](docs/nino/rehber/android-tv/7-oyunda-turkce-altyazi.jpg)
+   ![Oyunun üstünde Türkçe altyazı](docs/nino/v3/rehber/android-tv/7-oyunda-turkce-altyazi.jpg)
 
    Konuşanın adı da çevrilir ve altyazı oyunun kendi yerinde durur (Mafia: The Old Country):
 
-   ![Mafia: The Old Country'de konuşan adıyla Türkçe altyazı](docs/nino/rehber/android-tv/8-mafia-turkce-altyazi.jpg)
+   ![Mafia: The Old Country'de konuşan adıyla Türkçe altyazı](docs/nino/v3/rehber/android-tv/8-mafia-turkce-altyazi.jpg)
 
 Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 
@@ -262,29 +264,22 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 ## Telefon uygulaması
 
 <p align="center">
-  <img src="docs/nino/tanitim/tr1.jpg" width="190" alt="PS5 oyunlarına anında Türkçe altyazı">&nbsp;
-  <img src="docs/nino/tanitim/tr2.jpg" width="190" alt="Kaydırın, altyazılar aksın">&nbsp;
-  <img src="docs/nino/tanitim/tr3.jpg" width="190" alt="Hazır paketlerle beklemeden">&nbsp;
-  <img src="docs/nino/tanitim/tr4.jpg" width="190" alt="TV'de ya da telefonunuzda">
-</p>
-
-<p align="center">
-  <img src="docs/nino/v017/android-karsilama-1.jpg" width="150" alt="Karşılama">&nbsp;
-  <img src="docs/nino/v017/android-psn.jpg" width="150" alt="İkinci PSN hesabı">&nbsp;
-  <img src="docs/nino/v017/android-cikis.jpg" width="150" alt="Altyazılar nerede görünsün">&nbsp;
-  <img src="docs/nino/v017/android-ana-ekran.jpg" width="150" alt="Ana ekran">&nbsp;
-  <img src="docs/nino/v017/android-canli.jpg" width="150" alt="Canlı çeviri">
+  <img src="docs/nino/v3/v017/android-karsilama-1.jpg" width="150" alt="Karşılama">&nbsp;
+  <img src="docs/nino/v3/v017/android-psn.jpg" width="150" alt="İkinci PSN hesabı">&nbsp;
+  <img src="docs/nino/v3/v017/android-cikis.jpg" width="150" alt="Altyazılar nerede görünsün">&nbsp;
+  <img src="docs/nino/v3/v017/android-ana-ekran.jpg" width="150" alt="Ana ekran">&nbsp;
+  <img src="docs/nino/v3/v017/android-canli.jpg" width="150" alt="Canlı çeviri">
 </p>
 
 ## Xbox
 
 <p align="center">
-  <img src="docs/nino/tanitim/xbox-konsol.jpg" width="190" alt="Hangi konsolda oynuyorsunuz">&nbsp;
-  <img src="docs/nino/tanitim/xbox-giris.jpg" width="190" alt="Xbox'ınızı bağlayın">&nbsp;
-  <img src="docs/nino/tanitim/xbox-kaynak.jpg" width="190" alt="Görüntü kaynağı: PS5, Xbox, Capture Card">
+  <img src="docs/nino/v3/tanitim/xbox-konsol.jpg" width="190" alt="Hangi konsolda oynuyorsunuz">&nbsp;
+  <img src="docs/nino/v3/tanitim/xbox-giris.jpg" width="190" alt="Xbox'ınızı bağlayın">&nbsp;
+  <img src="docs/nino/v3/tanitim/xbox-kaynak.jpg" width="190" alt="Görüntü kaynağı: PS5, Xbox, Capture Card">
 </p>
 <p align="center">
-  <img src="docs/nino/tanitim/xbox-mac.jpg" width="560" alt="Mac: Xbox'ta oynuyorum">
+  <img src="docs/nino/v3/tanitim/xbox-mac.jpg" width="560" alt="Mac: Xbox'ta oynuyorum">
 </p>
 
 - **Android telefon:** Nino, Xbox uygulamasındaki "Uzaktan oynat" ile aynı ev yayınını Wi-Fi'dan **yalnız izler**: ses çalmaz, kolunuza ve hesabınıza dokunmaz. Microsoft girişi kodla yapılır, şifrenizi Nino görmez; oturum jetonu yalnız telefonda şifreli saklanır.
@@ -295,9 +290,7 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 ## العربية · Arapça
 
 <p align="center">
-  <img src="docs/nino/tanitim/ar1.jpg" width="200" alt="ترجمة عربية فورية لألعاب PS5">&nbsp;
-  <img src="docs/nino/tanitim/ar2.jpg" width="200" alt="اسحب لتبدأ الترجمة">&nbsp;
-  <img src="docs/nino/v017/android-arapca-canli.jpg" width="200" alt="الواجهة العربية">
+  <img src="docs/nino/v3/v017/android-arapca-canli.jpg" width="200" alt="الواجهة العربية">
 </p>
 
 <p dir="rtl" align="right"><b>نينو</b> يقرأ الترجمة الإنجليزية في ألعاب PS5 ويعرضها مترجمة إلى العربية فورًا فوق اللعبة على التلفاز، عبر تطبيق Mac أو Windows أو الهاتف. اختر العلم السعودي لتختار الترجمة العربية. مجاني بالكامل، مفتوح المصدر، بلا إعلانات ولا اشتراكات.</p>
@@ -322,6 +315,16 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 **Altyazı İngilizcenin tam üstüne gelmiyor.** Nino ilk birkaç altyazıda oyunun altyazı yerini öğrenir. Sorun sürerse Ayarlar › Altyazı'dan yerleşimi değiştirin.
 
 **Dublajda yanlış ses çıkıyor.** Oyunun ses ayarlarında konuşma sesini kısın ama tamamen kapatmayın; Nino kimin konuştuğunu o sesten anlar.
+
+**TV'ye uygulamayı nasıl kurarım?** En kolayı Android telefondaki Nino'da **Profil › Nino'yu TV'ye Kur** (Android TV, Samsung, LG). Bilgisayardaki Nino da kendisi kurar. Elle kurmak için TV'deki Downloader'ın **Ana Sayfa**'sına `https://is.gd/ninotvapk` yazın. Adım adım: [Kurulum Rehberi › TV](docs/KURULUM.md#5-tv-uygulamasını-kurma).
+
+**Samsung ya da LG akıllı monitörüm var, olur mu?** Samsung akıllı monitörler (M serisi, 2016 sonrası) Samsung TV gibi çalışır. Akıllı olmayan monitörde altyazıyı telefonda ya da bilgisayar ekranında gösterin.
+
+**Altyazının siyah kutusunu kaldırabilir miyim? Yazı tipini değiştirebilir miyim?** Evet: **Ayarlar › Altyazı görünümü**'nde arka planı %0 yapın ve **Yazı tipi**'nden Aksiyon (GTA tarzı), Modern, Yuvarlak ya da Sade'yi seçin.
+
+**OBS ile yayın yapıyorum, iki altyazı çıkıyor.** Windows'ta kartı doğrudan OBS'e bağlayın ve Nino'da görüntü kaynağı olarak OBS projektörünü seçin: [Kurulum Rehberi › Yayıncılar](docs/KURULUM.md#7-yayıncılar-için-obs-ile-windows).
+
+**Takıldım, kime sorarım?** Uygulamada Ayarlar'daki **Sorun Bildir**'den açıklama ve ekran görüntüsüyle bize yazın.
 
 ## Kaynak koddan derleme
 

@@ -643,4 +643,29 @@
     <string name="report_invalid">Bildirim kabul edilmedi. Açıklamanızı kontrol edip yeniden deneyin.</string>
     <string name="report_rate_limited">Bugün çok sayıda bildirim gönderdiniz. Lütfen yarın yeniden deneyin.</string>
     <string name="report_privacy">Açıklamanız, fotoğraflarınız ve (açıksa) uygulama günlüğü, sorunu düzeltebilmemiz için Nino\'nun sunucusuna gönderilir. Şifre yazmayın.</string>
+    <!-- Nino: Nino'ya Sor (kurulum yardımcısı). Nino'nun kendi cümleleri samimi ("sen") -->
+    <string name="assistant_title">Nino\'ya Sor</string>
+    <string name="assistant_row_note">Kurulumda takıldığınızda Nino\'ya sorun</string>
+    <string name="assistant_name">Nino</string>
+    <string name="assistant_subtitle">Kurulum yardımcısı</string>
+    <string name="assistant_greeting">Merhaba! Ben Nino 👋 Kurulumla ilgili her şeyi bana sorabilirsin. Önce şunu söyler misin: elinde hangi cihazlar var? (PS5 ya da Xbox, TV ya da monitör, telefon ya da bilgisayar) Hangisine kurmak istiyorsun?</string>
+    <string name="assistant_chip_1">PS5 + TV + telefon</string>
+    <string name="assistant_chip_2">PS5 + monitör + bilgisayar</string>
+    <string name="assistant_chip_3">Xbox + TV</string>
+    <string name="assistant_chip_4">TV uygulamasını nasıl kurarım?</string>
+    <string name="assistant_hint">Nino\'ya sor…</string>
+    <string name="assistant_attach">Ekran görüntüsü ekle</string>
+    <string name="assistant_send">Gönder</string>
+    <string name="assistant_new_chat">Yeni sohbet</string>
+    <string name="assistant_screenshot">Ekran görüntüsü</string>
+    <string name="assistant_typing">Nino yazıyor…</string>
+    <string name="assistant_report_sent">Bildirim ekibe gönderildi ✓</string>
+    <string name="assistant_not_sent">Gönderilemedi</string>
+    <string name="assistant_retry">Yeniden dene</string>
+    <string name="assistant_disabled">Neredeyse hazırım! O zamana kadar sorunu Sorun Bildir\'den gönder, ekip cevaplasın.</string>
+    <string name="assistant_rate_limited">Bugün çok soru sordun 🙂 Yarın devam edelim.</string>
+    <string name="assistant_busy">Şu an çok yoğunum, biraz sonra tekrar dene.</string>
+    <string name="assistant_network">Sunucuya ulaşamadım. İnternetini kontrol edip tekrar dene.</string>
+    <string name="assistant_too_large">Bu mesaj çok büyük oldu. Bir ekran görüntüsünü kaldırıp tekrar dene.</string>
+    <string name="assistant_invalid">Bu mesajı gönderemedim. Biraz değiştirip tekrar dene.</string>
 </resources>

@@ -907,6 +907,8 @@ public partial class SettingsWindow : Window
     private void OnAbout(object sender, RoutedEventArgs e) => AboutWindow.Open(this);
     private void OnReportProblem(object sender, RoutedEventArgs e) => ReportProblemWindow.Open(this, controller);
 
+    private void OnAskNino(object sender, RoutedEventArgs e) => AskNinoWindow.Open(controller);
+
     /// <summary>Nino: TV'den itibaren yeniden kur: PS5 hesabı ve eşleştirmesi kalır, yalnız TV bağlantısı yeniden kurulur.</summary>
     private void OnResetFromTv(object sender, RoutedEventArgs e)
     {

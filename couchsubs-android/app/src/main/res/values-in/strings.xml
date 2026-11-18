@@ -623,4 +623,29 @@
     <string name="report_invalid">Laporan tidak diterima. Periksa deskripsi Anda dan coba lagi.</string>
     <string name="report_rate_limited">Anda sudah mengirim banyak laporan hari ini. Silakan coba lagi besok.</string>
     <string name="report_privacy">Deskripsi, foto, dan (jika aktif) log aplikasi Anda dikirim ke server Nino agar kami bisa memperbaiki masalahnya. Jangan sertakan kata sandi.</string>
+    <!-- Nino: Nino'ya Sor (kurulum yardımcısı). Nino'nun kendi cümleleri samimi ("sen") -->
+    <string name="assistant_title">Tanya Nino</string>
+    <string name="assistant_row_note">Bingung saat penyiapan? Tanya Nino</string>
+    <string name="assistant_name">Nino</string>
+    <string name="assistant_subtitle">Asisten penyiapan</string>
+    <string name="assistant_greeting">Hai! Aku Nino 👋 Kamu bisa tanya apa saja soal penyiapan. Pertama, kasih tahu aku: perangkat apa saja yang kamu punya? (PS5 atau Xbox, TV atau monitor, ponsel atau komputer) Mau dipasang di mana?</string>
+    <string name="assistant_chip_1">PS5 + TV + ponsel</string>
+    <string name="assistant_chip_2">PS5 + monitor + komputer</string>
+    <string name="assistant_chip_3">Xbox + TV</string>
+    <string name="assistant_chip_4">Cara pasang aplikasi TV?</string>
+    <string name="assistant_hint">Tanya Nino…</string>
+    <string name="assistant_attach">Tambah tangkapan layar</string>
+    <string name="assistant_send">Kirim</string>
+    <string name="assistant_new_chat">Obrolan baru</string>
+    <string name="assistant_screenshot">Tangkapan layar</string>
+    <string name="assistant_typing">Nino sedang mengetik…</string>
+    <string name="assistant_report_sent">Laporan terkirim ke tim ✓</string>
+    <string name="assistant_not_sent">Gagal terkirim</string>
+    <string name="assistant_retry">Coba lagi</string>
+    <string name="assistant_disabled">Aku hampir siap! Sementara itu, kirim pertanyaanmu lewat “Laporkan Masalah”, nanti tim yang jawab.</string>
+    <string name="assistant_rate_limited">Hari ini kamu sudah banyak bertanya 🙂 Kita lanjut besok, ya.</string>
+    <string name="assistant_busy">Aku lagi sibuk banget, coba lagi sebentar lagi, ya.</string>
+    <string name="assistant_network">Aku tidak bisa terhubung ke server. Cek internetmu lalu coba lagi.</string>
+    <string name="assistant_too_large">Pesan itu jadi terlalu besar. Hapus satu tangkapan layar lalu coba lagi.</string>
+    <string name="assistant_invalid">Aku tidak bisa mengirim pesan itu. Ubah sedikit lalu coba lagi.</string>
 </resources>

@@ -623,4 +623,29 @@
     <string name="report_invalid">รายงานไม่ได้รับการยอมรับ ตรวจสอบคำอธิบายแล้วลองอีกครั้ง</string>
     <string name="report_rate_limited">วันนี้คุณส่งรายงานไปหลายครั้งแล้ว โปรดลองอีกครั้งพรุ่งนี้</string>
     <string name="report_privacy">คำอธิบาย รูปภาพ และบันทึกของแอป (หากเปิดไว้) จะถูกส่งไปยังเซิร์ฟเวอร์ของ Nino เพื่อให้เราแก้ปัญหาได้ อย่าใส่รหัสผ่าน</string>
+    <!-- Nino: Nino'ya Sor (kurulum yardımcısı). Nino'nun kendi cümleleri samimi ("sen") -->
+    <string name="assistant_title">ถาม Nino</string>
+    <string name="assistant_row_note">ติดปัญหาตอนตั้งค่า? ถาม Nino</string>
+    <string name="assistant_name">Nino</string>
+    <string name="assistant_subtitle">ผู้ช่วยตั้งค่า</string>
+    <string name="assistant_greeting">สวัสดี! เราคือ Nino 👋 ถามเราเรื่องการตั้งค่าได้ทุกอย่างเลย ก่อนอื่นบอกเราหน่อย: คุณมีอุปกรณ์อะไรบ้าง? (PS5 หรือ Xbox, TV หรือจอมอนิเตอร์, โทรศัพท์หรือคอมพิวเตอร์) อยากตั้งค่าบนเครื่องไหน?</string>
+    <string name="assistant_chip_1">PS5 + TV + โทรศัพท์</string>
+    <string name="assistant_chip_2">PS5 + จอมอนิเตอร์ + คอมพิวเตอร์</string>
+    <string name="assistant_chip_3">Xbox + TV</string>
+    <string name="assistant_chip_4">ติดตั้งแอป TV ยังไง?</string>
+    <string name="assistant_hint">ถาม Nino…</string>
+    <string name="assistant_attach">เพิ่มภาพหน้าจอ</string>
+    <string name="assistant_send">ส่ง</string>
+    <string name="assistant_new_chat">แชตใหม่</string>
+    <string name="assistant_screenshot">ภาพหน้าจอ</string>
+    <string name="assistant_typing">Nino กำลังพิมพ์…</string>
+    <string name="assistant_report_sent">ส่งรายงานถึงทีมแล้ว ✓</string>
+    <string name="assistant_not_sent">ส่งไม่สำเร็จ</string>
+    <string name="assistant_retry">ลองอีกครั้ง</string>
+    <string name="assistant_disabled">เราใกล้พร้อมแล้ว! ระหว่างนี้ส่งคำถามผ่าน “รายงานปัญหา” ได้เลย แล้วทีมจะตอบกลับ</string>
+    <string name="assistant_rate_limited">วันนี้ถามเยอะแล้วนะ 🙂 ไว้คุยกันต่อพรุ่งนี้</string>
+    <string name="assistant_busy">ตอนนี้เรายุ่งมาก ลองใหม่อีกสักครู่นะ</string>
+    <string name="assistant_network">เราติดต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่นะ</string>
+    <string name="assistant_too_large">ข้อความนี้ใหญ่เกินไป ลบภาพหน้าจอออกหนึ่งภาพแล้วลองใหม่นะ</string>
+    <string name="assistant_invalid">เราส่งข้อความนี้ไม่ได้ ลองแก้นิดหน่อยแล้วส่งใหม่นะ</string>
 </resources>

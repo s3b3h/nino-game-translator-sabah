@@ -91,4 +91,8 @@ public static class Glyphs
     public const string Package = "\uE7B8";
     /// <summary>Segoe Fluent Icons "History" (U+E81C); altyaz\u0131 ge\u00E7mi\u015Fi.</summary>
     public const string History = "\uE81C";
+    /// <summary>Nino'ya Sor: ekran görüntüsü ekle, gönder, yeni sohbet.</summary>
+    public const string Attach = "\uE723";
+    public const string Send = "\uE724";
+    public const string Add = "\uE710";
 }

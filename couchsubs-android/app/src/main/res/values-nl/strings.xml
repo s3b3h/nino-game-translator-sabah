@@ -623,4 +623,29 @@
     <string name="report_invalid">De melding is niet geaccepteerd. Controleer je beschrijving en probeer het opnieuw.</string>
     <string name="report_rate_limited">Je hebt vandaag veel meldingen gestuurd. Probeer het morgen opnieuw.</string>
     <string name="report_privacy">Je beschrijving, foto\'s en (indien aan) de app-log worden naar de server van Nino gestuurd, zodat we het probleem kunnen oplossen. Voeg geen wachtwoorden toe.</string>
+    <!-- Nino: Nino'ya Sor (kurulum yardımcısı). Nino'nun kendi cümleleri samimi ("sen") -->
+    <string name="assistant_title">Vraag het Nino</string>
+    <string name="assistant_row_note">Vast tijdens het instellen? Vraag het Nino</string>
+    <string name="assistant_name">Nino</string>
+    <string name="assistant_subtitle">Installatiehulp</string>
+    <string name="assistant_greeting">Hoi! Ik ben Nino 👋 Je kunt me alles vragen over het instellen. Vertel eerst even: welke apparaten heb je? (PS5 of Xbox, TV of monitor, telefoon of computer) Waarop wil je het instellen?</string>
+    <string name="assistant_chip_1">PS5 + TV + telefoon</string>
+    <string name="assistant_chip_2">PS5 + monitor + computer</string>
+    <string name="assistant_chip_3">Xbox + TV</string>
+    <string name="assistant_chip_4">Hoe installeer ik de TV-app?</string>
+    <string name="assistant_hint">Vraag het Nino…</string>
+    <string name="assistant_attach">Screenshot toevoegen</string>
+    <string name="assistant_send">Versturen</string>
+    <string name="assistant_new_chat">Nieuw gesprek</string>
+    <string name="assistant_screenshot">Screenshot</string>
+    <string name="assistant_typing">Nino typt…</string>
+    <string name="assistant_report_sent">Melding naar het team verstuurd ✓</string>
+    <string name="assistant_not_sent">Niet verstuurd</string>
+    <string name="assistant_retry">Opnieuw proberen</string>
+    <string name="assistant_disabled">Ik ben bijna klaar! Stuur je vraag tot die tijd via ‘Meld een probleem’, dan antwoordt het team.</string>
+    <string name="assistant_rate_limited">Je hebt vandaag al veel gevraagd 🙂 Morgen gaan we verder.</string>
+    <string name="assistant_busy">Ik heb het nu heel druk, probeer het zo nog eens.</string>
+    <string name="assistant_network">Ik kon de server niet bereiken. Controleer je internet en probeer het opnieuw.</string>
+    <string name="assistant_too_large">Dat bericht is te groot geworden. Haal een screenshot weg en probeer het opnieuw.</string>
+    <string name="assistant_invalid">Ik kon dat bericht niet versturen. Pas het wat aan en probeer het opnieuw.</string>
 </resources>

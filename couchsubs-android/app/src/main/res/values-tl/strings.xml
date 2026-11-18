@@ -623,4 +623,29 @@
     <string name="report_invalid">Hindi tinanggap ang ulat. Suriin ang iyong paglalarawan at subukan ulit.</string>
     <string name="report_rate_limited">Marami ka nang naipadalang ulat ngayong araw. Pakisubukan ulit bukas.</string>
     <string name="report_privacy">Ipinapadala sa server ng Nino ang iyong paglalarawan, mga larawan at (kung naka-on) ang app log para maayos namin ang problema. Huwag maglagay ng password.</string>
+    <!-- Nino: Nino'ya Sor (kurulum yardımcısı). Nino'nun kendi cümleleri samimi ("sen") -->
+    <string name="assistant_title">Tanungin si Nino</string>
+    <string name="assistant_row_note">Na-stuck sa setup? Tanungin si Nino</string>
+    <string name="assistant_name">Nino</string>
+    <string name="assistant_subtitle">Katulong sa setup</string>
+    <string name="assistant_greeting">Hi! Ako si Nino 👋 Puwede mo akong tanungin ng kahit ano tungkol sa setup. Una, sabihin mo muna: anong mga device ang meron ka? (PS5 o Xbox, TV o monitor, phone o computer) Saan mo gustong i-set up?</string>
+    <string name="assistant_chip_1">PS5 + TV + phone</string>
+    <string name="assistant_chip_2">PS5 + monitor + computer</string>
+    <string name="assistant_chip_3">Xbox + TV</string>
+    <string name="assistant_chip_4">Paano i-install ang TV app?</string>
+    <string name="assistant_hint">Tanungin si Nino…</string>
+    <string name="assistant_attach">Magdagdag ng screenshot</string>
+    <string name="assistant_send">Ipadala</string>
+    <string name="assistant_new_chat">Bagong chat</string>
+    <string name="assistant_screenshot">Screenshot</string>
+    <string name="assistant_typing">Nagta-type si Nino…</string>
+    <string name="assistant_report_sent">Naipadala ang ulat sa team ✓</string>
+    <string name="assistant_not_sent">Hindi naipadala</string>
+    <string name="assistant_retry">Subukang muli</string>
+    <string name="assistant_disabled">Malapit na akong maging handa! Habang wala pa, ipadala ang tanong mo gamit ang “Mag-ulat ng Problema” at sasagot ang team.</string>
+    <string name="assistant_rate_limited">Ang dami mo nang tanong ngayon 🙂 Ituloy natin bukas.</string>
+    <string name="assistant_busy">Sobrang busy ako ngayon, subukan ulit mamaya.</string>
+    <string name="assistant_network">Hindi ko maabot ang server. I-check ang internet mo at subukan ulit.</string>
+    <string name="assistant_too_large">Masyadong lumaki ang mensaheng iyan. Mag-alis ng isang screenshot at subukan ulit.</string>
+    <string name="assistant_invalid">Hindi ko maipadala ang mensaheng iyan. Baguhin nang kaunti at subukan ulit.</string>
 </resources>

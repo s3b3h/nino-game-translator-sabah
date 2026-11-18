@@ -98216,6 +98216,1355 @@
           }
         }
       }
+    },
+    "Ask Nino" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اسأل Nino"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino-কে জিজ্ঞেস করুন"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanungin si Nino"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino से पूछें"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanya Nino"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanya Nino"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag het Nino"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ถาม Nino"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino'ya Sor"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino سے پوچھیں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hỏi Nino"
+          }
+        }
+      }
+    },
+    "Setup helper" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مساعد الإعداد"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "সেটআপ সহায়ক"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Katulong sa setup"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सेटअप हेल्पर"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asisten penyiapan"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pembantu persediaan"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installatiehulp"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ผู้ช่วยตั้งค่า"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurulum yardımcısı"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سیٹ اپ مددگار"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trợ lý cài đặt"
+          }
+        }
+      }
+    },
+    "Hi! I'm Nino 👋 You can ask me anything about setting up. First, tell me: which devices do you have? (PS5 or Xbox, TV or monitor, phone or computer) Where do you want to set it up?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مرحبًا! أنا Nino 👋 يمكنك أن تسألني أي شيء عن الإعداد. أولًا، أخبرني: ما الأجهزة التي لديك؟ (PS5 أو Xbox، تلفاز أو شاشة، هاتف أو كمبيوتر) على أيّها تريد الإعداد؟"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "হাই! আমি Nino 👋 সেটআপ নিয়ে যেকোনো কিছু আমাকে জিজ্ঞেস করতে পারেন। আগে বলুন: আপনার কাছে কোন কোন ডিভাইস আছে? (PS5 বা Xbox, TV বা মনিটর, ফোন বা কম্পিউটার) কোনটায় সেট আপ করতে চান?"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi! Ako si Nino 👋 Puwede mo akong tanungin ng kahit ano tungkol sa setup. Una, sabihin mo muna: anong mga device ang meron ka? (PS5 o Xbox, TV o monitor, phone o computer) Saan mo gustong i-set up?"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नमस्ते! मैं Nino हूँ 👋 सेटअप के बारे में आप मुझसे कुछ भी पूछ सकते हैं। पहले बताइए: आपके पास कौन-से डिवाइस हैं? (PS5 या Xbox, TV या मॉनिटर, फ़ोन या कंप्यूटर) आप इसे किस पर सेट अप करना चाहते हैं?"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai! Aku Nino 👋 Kamu bisa tanya apa saja soal penyiapan. Pertama, kasih tahu aku: perangkat apa saja yang kamu punya? (PS5 atau Xbox, TV atau monitor, ponsel atau komputer) Mau dipasang di mana?"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai! Saya Nino 👋 Kamu boleh tanya apa saja tentang persediaan. Mula-mula, beritahu saya: peranti apa yang kamu ada? (PS5 atau Xbox, TV atau monitor, telefon atau komputer) Di mana kamu mahu pasang?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoi! Ik ben Nino 👋 Je kunt me alles vragen over het instellen. Vertel eerst even: welke apparaten heb je? (PS5 of Xbox, TV of monitor, telefoon of computer) Waarop wil je het instellen?"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "สวัสดี! เราคือ Nino 👋 ถามเราเรื่องการตั้งค่าได้ทุกอย่างเลย ก่อนอื่นบอกเราหน่อย: คุณมีอุปกรณ์อะไรบ้าง? (PS5 หรือ Xbox, TV หรือจอมอนิเตอร์, โทรศัพท์หรือคอมพิวเตอร์) อยากตั้งค่าบนเครื่องไหน?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Merhaba! Ben Nino 👋 Kurulumla ilgili her şeyi bana sorabilirsin. Önce şunu söyler misin: elinde hangi cihazlar var? (PS5 ya da Xbox, TV ya da monitör, telefon ya da bilgisayar) Hangisine kurmak istiyorsun?"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ہیلو! میں Nino ہوں 👋 سیٹ اپ کے بارے میں آپ مجھ سے کچھ بھی پوچھ سکتے ہیں۔ پہلے بتائیں: آپ کے پاس کون سے ڈیوائسز ہیں؟ (PS5 یا Xbox، TV یا مانیٹر، فون یا کمپیوٹر) آپ اسے کس پر سیٹ اپ کرنا چاہتے ہیں؟"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chào bạn! Mình là Nino 👋 Bạn cứ hỏi mình mọi thứ về việc cài đặt nhé. Trước tiên, cho mình biết: bạn có những thiết bị nào? (PS5 hay Xbox, TV hay màn hình, điện thoại hay máy tính) Bạn muốn cài trên thiết bị nào?"
+          }
+        }
+      }
+    },
+    "PS5 + TV + phone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + تلفاز + هاتف"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + ফোন"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + phone"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + फ़ोन"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + ponsel"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + telefon"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + telefoon"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + โทรศัพท์"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + telefon"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + فون"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + TV + điện thoại"
+          }
+        }
+      }
+    },
+    "PS5 + monitor + computer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + شاشة + كمبيوتر"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + মনিটর + কম্পিউটার"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + monitor + computer"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + मॉनिटर + कंप्यूटर"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + monitor + komputer"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + monitor + komputer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + monitor + computer"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + จอมอนิเตอร์ + คอมพิวเตอร์"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + monitör + bilgisayar"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + مانیٹر + کمپیوٹر"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 + màn hình + máy tính"
+          }
+        }
+      }
+    },
+    "Xbox + TV" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + تلفاز"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xbox + TV"
+          }
+        }
+      }
+    },
+    "How do I install the TV app?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "كيف أثبّت تطبيق التلفاز؟"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV অ্যাপ কীভাবে ইনস্টল করব?"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paano i-install ang TV app?"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV ऐप कैसे इंस्टॉल करूँ?"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cara pasang aplikasi TV?"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cara pasang apl TV?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoe installeer ik de TV-app?"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ติดตั้งแอป TV ยังไง?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV uygulamasını nasıl kurarım?"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV ایپ کیسے انسٹال کروں؟"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cài ứng dụng TV thế nào?"
+          }
+        }
+      }
+    },
+    "Ask Nino…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اسأل Nino…"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino-কে জিজ্ঞেস করুন…"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanungin si Nino…"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino से पूछें…"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanya Nino…"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanya Nino…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag het Nino…"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ถาม Nino…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino'ya sor…"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino سے پوچھیں…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hỏi Nino…"
+          }
+        }
+      }
+    },
+    "New chat" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "محادثة جديدة"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "নতুন চ্যাট"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bagong chat"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नई चैट"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obrolan baru"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sembang baharu"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw gesprek"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แชตใหม่"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni sohbet"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نئی چیٹ"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trò chuyện mới"
+          }
+        }
+      }
+    },
+    "Report sent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم إرسال البلاغ"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "রিপোর্ট পাঠানো হয়েছে"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naipadala ang ulat"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "रिपोर्ट भेज दी गई"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laporan terkirim"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laporan dihantar"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Melding verstuurd"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ส่งรายงานแล้ว"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirim gönderildi"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "رپورٹ بھیج دی گئی"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã gửi báo cáo"
+          }
+        }
+      }
+    },
+    "Not sent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لم تُرسَل"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "পাঠানো যায়নি"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hindi naipadala"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नहीं भेजा जा सका"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagal terkirim"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidak dihantar"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet verstuurd"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ส่งไม่สำเร็จ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gönderilemedi"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نہیں بھیجا جا سکا"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chưa gửi được"
+          }
+        }
+      }
+    },
+    "Nino is typing…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino يكتب…"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino লিখছে…"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nagta-type si Nino…"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino लिख रहा है…"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino sedang mengetik…"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino sedang menaip…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino typt…"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino กำลังพิมพ์…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino yazıyor…"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino لکھ رہا ہے…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino đang nhập…"
+          }
+        }
+      }
+    },
+    "Add a screenshot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أضف لقطة شاشة"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "স্ক্রিনশট যোগ করুন"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magdagdag ng screenshot"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्क्रीनशॉट जोड़ें"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tambah tangkapan layar"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tambah tangkapan skrin"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshot toevoegen"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เพิ่มภาพหน้าจอ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekran görüntüsü ekle"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اسکرین شاٹ شامل کریں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thêm ảnh chụp màn hình"
+          }
+        }
+      }
+    },
+    "I'm almost ready! Until then, send your question with Report a Problem and the team will answer." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أوشكتُ أن أكون جاهزًا! حتى ذلك الحين، أرسل سؤالك عبر «الإبلاغ عن مشكلة» وسيرد عليك الفريق."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "আমি প্রায় তৈরি! ততক্ষণ “সমস্যা জানান” দিয়ে আপনার প্রশ্ন পাঠান, টিম উত্তর দেবে।"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Malapit na akong maging handa! Habang wala pa, ipadala ang tanong mo gamit ang “Mag-ulat ng Problema” at sasagot ang team."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मैं लगभग तैयार हूँ! तब तक अपना सवाल “समस्या बताएँ” से भेजें, टीम जवाब देगी।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aku hampir siap! Sementara itu, kirim pertanyaanmu lewat “Laporkan Masalah”, nanti tim yang jawab."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saya hampir siap! Sementara itu, hantar soalan kamu melalui “Laporkan Masalah” dan pasukan kami akan menjawab."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik ben bijna klaar! Stuur je vraag tot die tijd via ‘Meld een probleem’, dan antwoordt het team."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เราใกล้พร้อมแล้ว! ระหว่างนี้ส่งคำถามผ่าน “รายงานปัญหา” ได้เลย แล้วทีมจะตอบกลับ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neredeyse hazırım! O zamana kadar sorunu Sorun Bildir'den gönder, ekip cevaplasın."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "میں تقریباً تیار ہوں! تب تک اپنا سوال “مسئلہ رپورٹ کریں” سے بھیجیں، ٹیم جواب دے گی۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mình sắp sẵn sàng rồi! Trong lúc chờ, bạn gửi câu hỏi qua “Báo cáo sự cố” nhé, đội ngũ sẽ trả lời."
+          }
+        }
+      }
+    },
+    "You've asked a lot today 🙂 Let's continue tomorrow." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لقد سألت كثيرًا اليوم 🙂 لنكمل غدًا."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "আজ অনেক কিছু জিজ্ঞেস করেছেন 🙂 কাল আবার কথা হবে।"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ang dami mo nang tanong ngayon 🙂 Ituloy natin bukas."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आज आपने बहुत कुछ पूछ लिया 🙂 कल फिर बात करते हैं।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hari ini kamu sudah banyak bertanya 🙂 Kita lanjut besok, ya."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Banyak soalan kamu hari ini 🙂 Kita sambung esok, ya."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt vandaag al veel gevraagd 🙂 Morgen gaan we verder."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "วันนี้ถามเยอะแล้วนะ 🙂 ไว้คุยกันต่อพรุ่งนี้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün çok soru sordun 🙂 Yarın devam edelim."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "آج آپ نے بہت کچھ پوچھ لیا 🙂 کل پھر بات کرتے ہیں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hôm nay bạn hỏi nhiều rồi 🙂 Mai mình nói tiếp nhé."
+          }
+        }
+      }
+    },
+    "I'm very busy right now, try again in a bit." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أنا مشغول جدًا الآن، حاول مرة أخرى بعد قليل."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "আমি এখন খুব ব্যস্ত, একটু পরে আবার চেষ্টা করুন।"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobrang busy ako ngayon, subukan ulit mamaya."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अभी मैं बहुत व्यस्त हूँ, थोड़ी देर बाद फिर कोशिश करें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aku lagi sibuk banget, coba lagi sebentar lagi, ya."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saya sangat sibuk sekarang, cuba lagi sekejap lagi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik heb het nu heel druk, probeer het zo nog eens."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ตอนนี้เรายุ่งมาก ลองใหม่อีกสักครู่นะ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu an çok yoğunum, biraz sonra tekrar dene."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "میں ابھی بہت مصروف ہوں، تھوڑی دیر بعد دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giờ mình đang rất bận, bạn thử lại sau một chút nhé."
+          }
+        }
+      }
+    },
+    "That's too big for me. Remove a photo and try again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هذا كبير جدًا بالنسبة لي. احذف صورة وحاول مرة أخرى."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "এটা আমার জন্য অনেক বড়। একটা ছবি সরিয়ে আবার চেষ্টা করুন।"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masyadong malaki iyan para sa akin. Mag-alis ng isang larawan at subukan ulit."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "यह मेरे लिए बहुत बड़ा है। एक फ़ोटो हटाकर फिर कोशिश करें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Itu terlalu besar buatku. Hapus satu foto lalu coba lagi."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Itu terlalu besar untuk saya. Buang satu foto dan cuba lagi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dat is te groot voor mij. Haal een foto weg en probeer het opnieuw."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "อันนี้ใหญ่เกินไปสำหรับเรา ลบรูปออกหนึ่งรูปแล้วลองใหม่นะ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu benim için çok büyük. Bir fotoğrafı kaldırıp tekrar dene."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "یہ میرے لیے بہت بڑا ہے۔ ایک تصویر ہٹا کر دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cái này lớn quá với mình. Bỏ bớt một ảnh rồi thử lại nhé."
+          }
+        }
+      }
+    },
+    "I couldn't read that message. Try writing it a little differently." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لم أستطع قراءة هذه الرسالة. جرّب كتابتها بطريقة مختلفة قليلًا."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "এই মেসেজটা পড়তে পারিনি। একটু অন্যভাবে লিখে দেখুন।"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hindi ko mabasa ang mensaheng iyan. Subukang isulat nang medyo iba."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मैं यह मैसेज पढ़ नहीं पाया। इसे थोड़ा अलग तरह से लिखकर देखें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aku tidak bisa membaca pesan itu. Coba tulis dengan cara yang sedikit berbeda."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saya tidak dapat membaca mesej itu. Cuba tulis dengan cara yang sedikit berbeza."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik kon dat bericht niet lezen. Probeer het iets anders te schrijven."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เราอ่านข้อความนี้ไม่ได้ ลองเขียนให้ต่างออกไปนิดหน่อยนะ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu mesajı okuyamadım. Biraz farklı yazmayı dener misin?"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "میں یہ پیغام پڑھ نہیں سکا۔ اسے تھوڑا مختلف انداز میں لکھ کر دیکھیں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mình không đọc được tin nhắn này. Bạn thử viết khác đi một chút nhé."
+          }
+        }
+      }
+    },
+    "I couldn't reach the server. Check your internet and try again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لم أتمكن من الوصول إلى الخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "সার্ভারে পৌঁছাতে পারিনি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hindi ko maabot ang server. I-check ang internet mo at subukan ulit."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मैं सर्वर तक नहीं पहुँच पाया। अपना इंटरनेट चेक करके फिर कोशिश करें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aku tidak bisa terhubung ke server. Cek internetmu lalu coba lagi."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saya tidak dapat menghubungi pelayan. Semak internet kamu dan cuba lagi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik kon de server niet bereiken. Controleer je internet en probeer het opnieuw."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เราติดต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่นะ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunucuya ulaşamadım. İnternetini kontrol edip tekrar dene."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "میں سرور تک نہیں پہنچ سکا۔ اپنا انٹرنیٹ چیک کر کے دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mình không kết nối được tới máy chủ. Kiểm tra internet rồi thử lại nhé."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

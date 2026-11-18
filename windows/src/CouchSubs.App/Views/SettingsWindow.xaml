@@ -660,7 +660,9 @@
                         <WrapPanel>
                             <Button Content="{t:T 'About Nino'}" Margin="0,0,12,0" Click="OnAbout" />
                             <!-- Nino: Sorun Bildir (açıklama, fotoğraf, günlük; ReportProblemWindow). -->
-                            <Button Content="{t:T 'Report a Problem'}" Click="OnReportProblem" />
+                            <Button Content="{t:T 'Report a Problem'}" Margin="0,0,12,0" Click="OnReportProblem" />
+                            <!-- Nino: Nino'ya Sor (kurulum yardımcısı sohbeti; AskNinoWindow). -->
+                            <Button Content="{t:T 'Ask Nino'}" Click="OnAskNino" />
                         </WrapPanel>
                     </c:Card>
                 </StackPanel>

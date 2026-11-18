@@ -89,6 +89,8 @@ struct ProfileScreen: View {
                 RowDivider()
                 Link(destination: AppConfig.helpURL) { ListRow(symbol: "questionmark.circle", title: "Help") }
                 RowDivider()
+                AskNinoRow()
+                RowDivider()
                 ReportProblemRow()
                 RowDivider()
                 NavigationLink(value: Route.about) { ListRow(symbol: "info.circle", title: "About", detail: AppIdentity.version) }
@@ -309,6 +311,8 @@ struct SettingsScreen: View {
                 NavigationLink(value: Route.ps5) {
                     ListRow(symbol: "gamecontroller", title: "PS5 and connection", detail: model.console?.name)
                 }
+                RowDivider()
+                AskNinoRow()
                 RowDivider()
                 ReportProblemRow()
                 RowDivider()

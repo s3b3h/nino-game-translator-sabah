@@ -35,6 +35,8 @@
     <Resource Include="Assets\CouchSubs.ico" />
     <!-- Nino: altyazı yazı tipleri (Barlow, Barlow Condensed, Nunito; OFL). Lisans metinleri uygulamanın yanına kopyalanır. -->
     <Resource Include="Fonts\*.ttf" />
+    <!-- Nino: "Nino'ya Sor" robotu (açık gözlü ve göz kırpan kare); doğrudan design/bot-png'den, kopyası tutulmaz. -->
+    <Resource Include="..\..\..\design\bot-png\nino-bot-256.png;..\..\..\design\bot-png\nino-bot-blink-256.png" Link="Assets\Bot\%(Filename)%(Extension)" />
     <Content Include="Fonts\OFL-*.txt" Link="Fonts\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 

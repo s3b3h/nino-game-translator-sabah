@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 /// Ayarların bölümleri; solda kenar çubuğunda listelenir, sağda seçili olan gösterilir.
 enum SettingsSection: CaseIterable, Identifiable {
-    case connection, ps5, interface, appearance, dubbing, translation, packs, language, area, obs, health, updates, report, about, reset
+    case connection, ps5, interface, appearance, dubbing, translation, packs, language, area, obs, health, updates, assistant, report, about, reset
 
     var id: Self { self }
 
@@ -24,6 +24,7 @@ enum SettingsSection: CaseIterable, Identifiable {
         case .health: "System health"
         case .updates: "Updates"
         case .ps5: "PS5 login passcode"
+        case .assistant: "Ask Nino"
         case .report: "Report a Problem"
         case .about: "About Nino"
         case .reset: "Reset"
@@ -44,6 +45,7 @@ enum SettingsSection: CaseIterable, Identifiable {
         case .health: "waveform.path.ecg"
         case .updates: "arrow.down.circle"
         case .ps5: "lock"
+        case .assistant: "bubble.left.and.text.bubble.right"
         case .report: "exclamationmark.bubble"
         case .about: "info.circle"
         case .reset: "arrow.counterclockwise"
@@ -67,6 +69,7 @@ extension SettingsSection {
         case .health: Color(red: 0.95, green: 0.30, blue: 0.45)
         case .ps5: Color(red: 0.30, green: 0.35, blue: 0.45)
         case .updates: Color(red: 0.12, green: 0.62, blue: 0.36)
+        case .assistant: Color(red: 0.0, green: 0.44, blue: 0.82)
         case .report: Color(red: 0.96, green: 0.62, blue: 0.12)
         case .about: Color(red: 0.45, green: 0.50, blue: 0.60)
         case .reset: Color(red: 0.90, green: 0.30, blue: 0.28)
@@ -131,6 +134,17 @@ struct SettingsView: View {
 /// iPhone ayarları gibi: cam gruplar içinde renkli simgeli satırlar, aralarında ince çizgi, sağda ok.
 private struct SettingsList: View {
     @Binding var section: SettingsSection?
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
+    /// Nino: "Nino'ya Sor" ayarların içinde değil, kendi sayfasında açılır: ayarlar kapanır, sohbet açılır.
+    private func openAssistant() {
+        dismiss()
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            model.showAssistant = true
+        }
+    }
 
     private let groups: [[SettingsSection]] = [
         // Nino: "Bağlantı": oyun görüntüsünün nereden geldiği (PS5, Remote Play penceresi, Capture Card) ve altyazının yeri.
@@ -138,7 +152,7 @@ private struct SettingsList: View {
         [.interface, .appearance, .translation, .language],
         [.packs, .dubbing, .area, .obs],
         // Nino: Sorun Bildir, Hakkında'nın hemen üstünde.
-        [.health, .updates, .report, .about],
+        [.health, .updates, .assistant, .report, .about],
         // Nino: sıfırlama ayrı ve en altta (Hakkında'nın içinde değil).
         [.reset],
     ]
@@ -149,6 +163,7 @@ private struct SettingsList: View {
                 VStack(spacing: 0) {
                     ForEach(Array(groups[g].enumerated()), id: \.element) { i, item in
                         SettingsListRow(item: item) {
+                            if item == .assistant { openAssistant(); return }
                             withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) { section = item }
                         }
                         if i < groups[g].count - 1 {
@@ -301,6 +316,11 @@ private struct SettingsPage: View {
             case .interface: InterfacePage()
             case .connection: SubtitleOutputCard(detailed: true)
             case .ps5: LoginPasscodeCard()
+            case .assistant:
+                Card {
+                    Button("Ask Nino") { model.showAssistant = true }
+                        .buttonStyle(CSButtonStyle(kind: .primary))
+                }
             case .report: ReportProblemCard(close: back)
             case .about:
                 AboutCard()

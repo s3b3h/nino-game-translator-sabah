@@ -6,5 +6,8 @@
         Width="{DynamicResource size.windowWidth}" Height="{DynamicResource size.windowHeight}"
         MinWidth="{DynamicResource size.windowWidth}" MinHeight="{DynamicResource size.windowHeight}"
         Background="{DynamicResource windowBackgroundBrush}" Foreground="{DynamicResource textPrimaryBrush}" WindowStartupLocation="CenterScreen">
-    <ContentControl x:Name="Host" />
+    <!-- Nino: sağ altta yüzen "Nino'ya Sor" düğmesi (ShellWindow.xaml.cs ekler; konumu ekrana göre). -->
+    <Grid x:Name="Root">
+        <ContentControl x:Name="Host" />
+    </Grid>
 </Window>

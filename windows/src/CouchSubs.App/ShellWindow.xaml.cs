@@ -3,8 +3,10 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Interop;
+using CouchSubs.App.Controls;
 using CouchSubs.App.Services;
 using CouchSubs.App.Views;
+using CouchSubs.Core;
 using CouchSubs.Shell;
 using Microsoft.Win32;
 
@@ -16,11 +18,18 @@ public partial class ShellWindow : Window
     private readonly AppController controller;
     private bool showingMain;
     private GlobalHotkeys? hotkeys;
+    private readonly AskNinoButton askNino = new(Localizer.Current["Ask Nino"])
+    {
+        HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom,
+    };
 
     public ShellWindow(AppController controller)
     {
         this.controller = controller;
         InitializeComponent();
+        // Nino: "Nino'ya Sor" hem ana ekranda hem kurulum sihirbazında (takılınan yer) görünür.
+        askNino.Click += (_, _) => AskNinoWindow.Open(controller);
+        Root.Children.Add(askNino);
         controller.PropertyChanged += OnChanged;
         // Bilgisayar uykudan uyanınca bağlantılar hemen yenilenir.
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
@@ -91,6 +100,9 @@ public partial class ShellWindow : Window
         if (!force && main == showingMain) return;
         showingMain = main;
         Host.Content = main ? new MainView(controller) : new OnboardingView(controller);
+        // Düğme alttaki düğmelerin üstünde durur: ana ekranda durum şeridinin (Çeviri ›), sihirbazda Devam düğmesinin üstünde,
+        // kartın kaydırma çubuğundan uzakta.
+        askNino.Margin = main ? new Thickness(0, 0, 36, 84) : new Thickness(0, 0, 44, 100);
     }
 
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)

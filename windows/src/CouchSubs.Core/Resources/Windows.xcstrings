@@ -2699,6 +2699,1355 @@
           }
         }
       }
+    },
+    "Ask Nino": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسأل Nino"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino-কে জিজ্ঞেস করুন"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanungin si Nino"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino से पूछें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanya Nino"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanya Nino"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vraag het Nino"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ถาม Nino"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino'ya Sor"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino سے پوچھیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hỏi Nino"
+          }
+        }
+      }
+    },
+    "Setup helper": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مساعد الإعداد"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সেটআপ সহায়ক"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Katulong sa setup"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सेटअप हेल्पर"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asisten penyiapan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pembantu persediaan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installatiehulp"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ผู้ช่วยตั้งค่า"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurulum yardımcısı"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سیٹ اپ مددگار"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trợ lý cài đặt"
+          }
+        }
+      }
+    },
+    "Hi! I'm Nino 👋 You can ask me anything about setting up. First, tell me: which devices do you have? (PS5 or Xbox, TV or monitor, phone or computer) Where do you want to set it up?": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مرحبًا! أنا Nino 👋 يمكنك أن تسألني عن أي شيء يخص الإعداد. أولًا، أخبرني: ما الأجهزة التي لديك؟ (PS5 أو Xbox، تلفاز أو شاشة، هاتف أو كمبيوتر) وعلى أيّها تريد الإعداد؟"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "হাই! আমি Nino 👋 সেটআপ নিয়ে যেকোনো কিছু আমাকে জিজ্ঞেস করতে পারেন। আগে বলুন: আপনার কাছে কোন কোন ডিভাইস আছে? (PS5 বা Xbox, TV বা মনিটর, ফোন বা কম্পিউটার) কোনটায় সেট আপ করতে চান?"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hi! Ako si Nino 👋 Puwede mo akong tanungin ng kahit ano tungkol sa setup. Una, sabihin mo muna: anong mga device ang meron ka? (PS5 o Xbox, TV o monitor, phone o computer) Saan mo gustong i-set up?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नमस्ते! मैं Nino हूँ 👋 सेटअप के बारे में आप मुझसे कुछ भी पूछ सकते हैं। पहले बताइए: आपके पास कौन-से डिवाइस हैं? (PS5 या Xbox, TV या मॉनिटर, फ़ोन या कंप्यूटर) आप इसे किस पर सेट अप करना चाहते हैं?"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hai! Aku Nino 👋 Kamu bisa tanya apa saja soal penyiapan. Pertama, kasih tahu aku: perangkat apa saja yang kamu punya? (PS5 atau Xbox, TV atau monitor, ponsel atau komputer) Mau dipasang di mana?"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hai! Saya Nino 👋 Kamu boleh tanya apa saja tentang persediaan. Mula-mula, beritahu saya: peranti apa yang kamu ada? (PS5 atau Xbox, TV atau monitor, telefon atau komputer) Di mana kamu mahu pasang?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoi! Ik ben Nino 👋 Je kunt me alles vragen over het instellen. Vertel eerst even: welke apparaten heb je? (PS5 of Xbox, TV of monitor, telefoon of computer) Waarop wil je het instellen?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สวัสดี! เราคือ Nino 👋 ถามเราเรื่องการตั้งค่าได้ทุกอย่างเลย ก่อนอื่นบอกเราหน่อย: คุณมีอุปกรณ์อะไรบ้าง? (PS5 หรือ Xbox, TV หรือจอมอนิเตอร์, โทรศัพท์หรือคอมพิวเตอร์) อยากตั้งค่าบนเครื่องไหน?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merhaba! Ben Nino 👋 Kurulumla ilgili her şeyi bana sorabilirsin. Önce şunu söyler misin: elinde hangi cihazlar var? (PS5 ya da Xbox, TV ya da monitör, telefon ya da bilgisayar) Hangisine kurmak istiyorsun?"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ہیلو! میں Nino ہوں 👋 سیٹ اپ کے بارے میں آپ مجھ سے کچھ بھی پوچھ سکتے ہیں۔ پہلے بتائیں: آپ کے پاس کون سے ڈیوائسز ہیں؟ (PS5 یا Xbox، TV یا مانیٹر، فون یا کمپیوٹر) آپ اسے کس پر سیٹ اپ کرنا چاہتے ہیں؟"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chào bạn! Mình là Nino 👋 Bạn cứ hỏi mình mọi thứ về việc cài đặt nhé. Trước tiên, cho mình biết: bạn có những thiết bị nào? (PS5 hay Xbox, TV hay màn hình, điện thoại hay máy tính) Bạn muốn cài trên thiết bị nào?"
+          }
+        }
+      }
+    },
+    "PS5 + TV + phone": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + تلفاز + هاتف"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + ফোন"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + phone"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + फ़ोन"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + ponsel"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + telefon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + telefoon"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + โทรศัพท์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + telefon"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + فون"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + TV + điện thoại"
+          }
+        }
+      }
+    },
+    "PS5 + monitor + computer": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + شاشة + كمبيوتر"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + মনিটর + কম্পিউটার"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + monitor + computer"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + मॉनिटर + कंप्यूटर"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + monitor + komputer"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + monitor + komputer"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + monitor + computer"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + จอมอนิเตอร์ + คอมพิวเตอร์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + monitör + bilgisayar"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + مانیٹر + کمپیوٹر"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PS5 + màn hình + máy tính"
+          }
+        }
+      }
+    },
+    "Xbox + TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + تلفاز"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xbox + TV"
+          }
+        }
+      }
+    },
+    "How do I install the TV app?": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كيف أثبّت تطبيق التلفاز؟"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV অ্যাপ কীভাবে ইনস্টল করব?"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paano i-install ang TV app?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV ऐप कैसे इंस्टॉल करूँ?"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cara pasang aplikasi TV?"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cara pasang apl TV?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoe installeer ik de TV-app?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ติดตั้งแอป TV ยังไง?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV uygulamasını nasıl kurarım?"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV ایپ کیسے انسٹال کروں؟"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài ứng dụng TV thế nào?"
+          }
+        }
+      }
+    },
+    "Ask Nino…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسأل Nino…"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino-কে জিজ্ঞেস করুন…"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanungin si Nino…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino से पूछें…"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanya Nino…"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanya Nino…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vraag het Nino…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ถาม Nino…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino'ya sor…"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino سے پوچھیں…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hỏi Nino…"
+          }
+        }
+      }
+    },
+    "New chat": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محادثة جديدة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "নতুন চ্যাট"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bagong chat"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नई चैट"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrolan baru"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sembang baharu"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw gesprek"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แชตใหม่"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni sohbet"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نئی چیٹ"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trò chuyện mới"
+          }
+        }
+      }
+    },
+    "I'm almost ready! Until then, send your question with Report a Problem and the team will answer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أوشكت أن أكون جاهزًا! حتى ذلك الحين، أرسل سؤالك عبر «الإبلاغ عن مشكلة» وسيجيبك الفريق."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আমি প্রায় তৈরি! ততক্ষণ “সমস্যা জানান” দিয়ে আপনার প্রশ্ন পাঠান, টিম উত্তর দেবে।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Malapit na akong maging handa! Habang wala pa, ipadala ang tanong mo gamit ang “Mag-ulat ng Problema” at sasagot ang team."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मैं लगभग तैयार हूँ! तब तक अपना सवाल “समस्या बताएँ” से भेजें, टीम जवाब देगी।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aku hampir siap! Sementara itu, kirim pertanyaanmu lewat “Laporkan Masalah”, nanti tim yang jawab."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saya hampir siap! Sementara itu, hantar soalan kamu melalui “Laporkan Masalah” dan pasukan kami akan menjawab."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik ben bijna klaar! Stuur je vraag tot die tijd via ‘Meld een probleem’, dan antwoordt het team."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เราใกล้พร้อมแล้ว! ระหว่างนี้ส่งคำถามผ่าน “รายงานปัญหา” ได้เลย แล้วทีมจะตอบกลับ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neredeyse hazırım! O zamana kadar sorunu Sorun Bildir'den gönder, ekip cevaplasın."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "میں تقریباً تیار ہوں! تب تک اپنا سوال “مسئلہ رپورٹ کریں” سے بھیجیں، ٹیم جواب دے گی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mình sắp sẵn sàng rồi! Trong lúc chờ, bạn gửi câu hỏi qua “Báo cáo sự cố” nhé, đội ngũ sẽ trả lời."
+          }
+        }
+      }
+    },
+    "You've asked a lot today 🙂 Let's continue tomorrow.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سألت كثيرًا اليوم 🙂 لنكمل غدًا."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আজ অনেক কিছু জিজ্ঞেস করেছেন 🙂 কাল আবার কথা হবে।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ang dami mo nang tanong ngayon 🙂 Ituloy natin bukas."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आज आपने बहुत कुछ पूछ लिया 🙂 कल फिर बात करते हैं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hari ini kamu sudah banyak bertanya 🙂 Kita lanjut besok, ya."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banyak soalan kamu hari ini 🙂 Kita sambung esok, ya."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je hebt vandaag al veel gevraagd 🙂 Morgen gaan we verder."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "วันนี้ถามเยอะแล้วนะ 🙂 ไว้คุยกันต่อพรุ่งนี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün çok soru sordun 🙂 Yarın devam edelim."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آج آپ نے بہت کچھ پوچھ لیا 🙂 کل پھر بات کرتے ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hôm nay bạn hỏi nhiều rồi 🙂 Mai mình nói tiếp nhé."
+          }
+        }
+      }
+    },
+    "I'm very busy right now, try again in a bit.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنا مشغول جدًا الآن، حاول مرة أخرى بعد قليل."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আমি এখন খুব ব্যস্ত, একটু পরে আবার চেষ্টা করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sobrang busy ako ngayon, subukan ulit mamaya."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अभी मैं बहुत व्यस्त हूँ, थोड़ी देर बाद फिर कोशिश करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aku lagi sibuk banget, coba lagi sebentar lagi, ya."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saya sangat sibuk sekarang, cuba lagi sekejap lagi."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik heb het nu heel druk, probeer het zo nog eens."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตอนนี้เรายุ่งมาก ลองใหม่อีกสักครู่นะ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şu an çok yoğunum, biraz sonra tekrar dene."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "میں ابھی بہت مصروف ہوں، تھوڑی دیر بعد دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giờ mình đang rất bận, bạn thử lại sau một chút nhé."
+          }
+        }
+      }
+    },
+    "I couldn't reach the server. Check your internet and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم أتمكن من الوصول إلى الخادم. تحقّق من اتصالك بالإنترنت وحاول مرة أخرى."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সার্ভারে পৌঁছাতে পারিনি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi ko maabot ang server. I-check ang internet mo at subukan ulit."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मैं सर्वर तक नहीं पहुँच पाया। अपना इंटरनेट चेक करके फिर कोशिश करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aku tidak bisa terhubung ke server. Cek internetmu lalu coba lagi."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saya tidak dapat menghubungi pelayan. Semak internet kamu dan cuba lagi."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik kon de server niet bereiken. Controleer je internet en probeer het opnieuw."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เราติดต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่นะ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucuya ulaşamadım. İnternetini kontrol edip tekrar dene."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "میں سرور تک نہیں پہنچ سکا۔ اپنا انٹرنیٹ چیک کر کے دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mình không kết nối được tới máy chủ. Kiểm tra internet rồi thử lại nhé."
+          }
+        }
+      }
+    },
+    "I couldn't read that message. Try writing it a bit shorter or with fewer screenshots.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم أتمكن من قراءة هذه الرسالة. جرّب كتابتها بشكل أقصر أو بلقطات شاشة أقل."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই মেসেজটা পড়তে পারিনি। একটু ছোট করে বা কম স্ক্রিনশট দিয়ে পাঠিয়ে দেখুন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi ko mabasa ang mensaheng iyan. Subukang paikliin ito o bawasan ang mga screenshot."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मैं यह मैसेज पढ़ नहीं पाया। इसे थोड़ा छोटा करके या कम स्क्रीनशॉट के साथ भेजकर देखें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aku tidak bisa membaca pesan itu. Coba tulis lebih singkat atau pakai lebih sedikit tangkapan layar."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saya tidak dapat membaca mesej itu. Cuba tulis lebih ringkas atau dengan kurang tangkapan skrin."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ik kon dat bericht niet lezen. Probeer het wat korter of met minder screenshots."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เราอ่านข้อความนี้ไม่ได้ ลองเขียนให้สั้นลงหรือใช้ภาพหน้าจอน้อยลงนะ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu mesajı okuyamadım. Biraz daha kısa ya da daha az ekran görüntüsüyle yazmayı dene."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "میں یہ پیغام پڑھ نہیں سکا۔ اسے تھوڑا مختصر کر کے یا کم اسکرین شاٹس کے ساتھ بھیج کر دیکھیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mình không đọc được tin nhắn này. Bạn thử viết ngắn hơn hoặc bớt ảnh chụp màn hình nhé."
+          }
+        }
+      }
+    },
+    "Report sent ✓": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم إرسال البلاغ ✓"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রিপোর্ট পাঠানো হয়েছে ✓"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naipadala ang ulat ✓"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रिपोर्ट भेज दी गई ✓"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan terkirim ✓"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laporan dihantar ✓"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melding verstuurd ✓"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ส่งรายงานแล้ว ✓"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim gönderildi ✓"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رپورٹ بھیج دی گئی ✓"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gửi báo cáo ✓"
+          }
+        }
+      }
+    },
+    "Nino is typing…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino يكتب…"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino লিখছে…"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagta-type si Nino…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino लिख रहा है…"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino sedang mengetik…"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino sedang menaip…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino typt…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino กำลังพิมพ์…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino yazıyor…"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino لکھ رہا ہے…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino đang nhập…"
+          }
+        }
+      }
+    },
+    "Attach screenshot": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرفاق لقطة شاشة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "স্ক্রিনশট সংযুক্ত করুন"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mag-attach ng screenshot"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्क्रीनशॉट अटैच करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lampirkan tangkapan layar"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lampirkan tangkapan skrin"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot bijvoegen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แนบภาพหน้าจอ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekran görüntüsü ekle"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسکرین شاٹ منسلک کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đính kèm ảnh chụp màn hình"
+          }
+        }
+      }
+    },
+    "Up to 3 screenshots per message. You can also drag them here or paste with Ctrl+V.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حتى 3 لقطات شاشة لكل رسالة. يمكنك أيضًا سحبها إلى هنا أو لصقها باستخدام Ctrl+V."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রতি মেসেজে সর্বোচ্চ 3টি স্ক্রিনশট। এখানে টেনে আনতে বা Ctrl+V দিয়ে পেস্ট করতেও পারেন।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hanggang 3 screenshot bawat mensahe. Puwede mo rin silang i-drag dito o i-paste gamit ang Ctrl+V."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हर मैसेज में ज़्यादा से ज़्यादा 3 स्क्रीनशॉट। आप उन्हें यहाँ खींचकर भी ला सकते हैं या Ctrl+V से पेस्ट कर सकते हैं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maksimal 3 tangkapan layar per pesan. Kamu juga bisa menyeretnya ke sini atau menempelkannya dengan Ctrl+V."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maksimum 3 tangkapan skrin bagi setiap mesej. Kamu juga boleh seret ke sini atau tampal dengan Ctrl+V."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximaal 3 screenshots per bericht. Je kunt ze ook hierheen slepen of plakken met Ctrl+V."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ส่งได้สูงสุด 3 ภาพหน้าจอต่อข้อความ ลากมาวางที่นี่หรือวางด้วย Ctrl+V ก็ได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesaj başına en çok 3 ekran görüntüsü. Buraya sürükleyebilir ya da Ctrl+V ile yapıştırabilirsiniz."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ہر پیغام میں زیادہ سے زیادہ 3 اسکرین شاٹس۔ آپ انہیں یہاں گھسیٹ کر بھی لا سکتے ہیں یا Ctrl+V سے پیسٹ کر سکتے ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tối đa 3 ảnh chụp màn hình mỗi tin nhắn. Bạn cũng có thể kéo ảnh vào đây hoặc dán bằng Ctrl+V."
+          }
+        }
+      }
+    },
+    "Nino's answers are written by AI and may be wrong. Your messages and screenshots go to Nino's server. Don't send passwords.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يكتب الذكاء الاصطناعي إجابات Nino وقد تكون خاطئة. تُرسل رسائلك ولقطات الشاشة إلى خادم Nino. لا ترسل كلمات المرور."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino-র উত্তর AI লেখে, তাই ভুল হতে পারে। আপনার মেসেজ আর স্ক্রিনশট Nino-র সার্ভারে যায়। পাসওয়ার্ড পাঠাবেন না।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ang mga sagot ni Nino ay isinulat ng AI at puwedeng mali. Ang mga mensahe at screenshot mo ay napupunta sa server ni Nino. Huwag magpadala ng password."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino के जवाब AI लिखता है, इसलिए वे गलत भी हो सकते हैं। आपके मैसेज और स्क्रीनशॉट Nino के सर्वर पर जाते हैं। पासवर्ड न भेजें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jawaban Nino ditulis oleh AI dan bisa saja salah. Pesan dan tangkapan layarmu dikirim ke server Nino. Jangan kirim kata sandi."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jawapan Nino ditulis oleh AI dan mungkin salah. Mesej dan tangkapan skrin kamu dihantar ke pelayan Nino. Jangan hantar kata laluan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De antwoorden van Nino worden door AI geschreven en kunnen fout zijn. Je berichten en screenshots gaan naar de server van Nino. Stuur geen wachtwoorden."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คำตอบของ Nino เขียนโดย AI และอาจผิดพลาดได้ ข้อความและภาพหน้าจอของคุณจะถูกส่งไปยังเซิร์ฟเวอร์ของ Nino อย่าส่งรหัสผ่าน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino'nun cevaplarını yapay zekâ yazar, hatalı olabilir. Mesajlarınız ve ekran görüntüleriniz Nino'nun sunucusuna gider. Parola göndermeyin."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino کے جواب AI لکھتا ہے، اس لیے یہ غلط بھی ہو سکتے ہیں۔ آپ کے پیغامات اور اسکرین شاٹس Nino کے سرور پر جاتے ہیں۔ پاس ورڈ نہ بھیجیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Câu trả lời của Nino do AI viết và có thể sai. Tin nhắn và ảnh chụp màn hình của bạn được gửi tới máy chủ của Nino. Đừng gửi mật khẩu."
+          }
+        }
+      }
     }
   }
 }

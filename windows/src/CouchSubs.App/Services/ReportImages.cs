@@ -49,9 +49,41 @@ internal static class ReportImages
         return result;
     }
 
-    /// <summary>Gönderilecek JPEG (en çok <see cref="ProblemReport.TargetImageBytes"/>); hiçbir denemede sığmazsa null.</summary>
-    public static byte[]? Jpeg(BitmapSource source) =>
-        ProblemReport.FitJpeg((maxSide, quality) => Encode(source, maxSide, quality));
+    /// <summary>Gönderilecek JPEG (en çok <paramref name="maxBytes"/>, varsayılan <see cref="ProblemReport.TargetImageBytes"/>); hiçbir denemede sığmazsa null.</summary>
+    public static byte[]? Jpeg(BitmapSource source, int maxBytes = ProblemReport.TargetImageBytes) =>
+        ProblemReport.FitJpeg((maxSide, quality) => Encode(source, maxSide, quality), maxBytes);
+
+    /// <summary>Açılabilecek görüntü dosyası mı (uzantıya göre). Sorun Bildir ve Nino'ya Sor aynı listeyi kullanır.</summary>
+    public static bool IsImageFile(string path) =>
+        Path.GetExtension(path).ToLowerInvariant() is ".png" or ".jpg" or ".jpeg" or ".heic" or ".heif" or ".webp" or ".bmp" or ".gif" or ".tif" or ".tiff";
+
+    /// <summary>Dosya seçicinin süzgeci.</summary>
+    public const string PickerPattern = "*.png;*.jpg;*.jpeg;*.heic;*.heif;*.webp;*.bmp;*.gif;*.tif;*.tiff";
+
+    private static bool ClipboardHasPicture()
+    {
+        try { return Clipboard.ContainsImage() || Clipboard.ContainsFileDropList(); }
+        catch (System.Runtime.InteropServices.COMException) { return false; }
+    }
+
+    /// <summary>
+    /// Ctrl+V fotoğraf olarak mı yapıştırılsın: panoda görüntü ya da dosya var ve (Excel, OneNote gibi hem metin hem görüntü
+    /// koyanlarda) imleç bir metin kutusunda değil.
+    /// </summary>
+    public static bool PastesPicture()
+    {
+        if (!ClipboardHasPicture()) return false;
+        try { return System.Windows.Input.Keyboard.FocusedElement is not System.Windows.Controls.TextBox || !Clipboard.ContainsText(); }
+        catch (System.Runtime.InteropServices.COMException) { return false; }
+    }
+
+    /// <summary>Panodaki görüntüler: dosya listesi varsa içindeki görüntü dosyaları, yoksa panodaki görüntünün kendisi.</summary>
+    public static IEnumerable<Func<BitmapSource?>> FromClipboardSources()
+    {
+        if (Clipboard.ContainsFileDropList())
+            return [.. Clipboard.GetFileDropList().Cast<string>().Where(IsImageFile).Select(path => (Func<BitmapSource?>)(() => Load(path)))];
+        return [FromClipboard];
+    }
 
     private static byte[] Encode(BitmapSource source, int maxSide, int quality)
     {

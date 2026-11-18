@@ -141,7 +141,7 @@ public sealed class ReportProblemWindow : Window
     }
 
     /// <summary>Kutu boşken soluk yer tutucu yazı (temadaki TextBox'ta yok).</summary>
-    private static Grid WithPlaceholder(TextBox box, string text, Thickness margin = default)
+    internal static Grid WithPlaceholder(TextBox box, string text, Thickness margin = default)
     {
         var placeholder = new TextBlock
         {
@@ -194,9 +194,6 @@ public sealed class ReportProblemWindow : Window
         if (picker.ShowDialog(this) == true) _ = AddAsync(picker.FileNames.Select(path => (Func<BitmapSource?>)(() => ReportImages.Load(path))));
     }
 
-    private static bool IsImageFile(string path) =>
-        Path.GetExtension(path).ToLowerInvariant() is ".png" or ".jpg" or ".jpeg" or ".heic" or ".heif" or ".webp" or ".bmp" or ".gif" or ".tif" or ".tiff";
-
     /// <summary>Görüntüleri sırayla açar (arayüz iş parçacığında), JPEG'e çevirir (arka planda) ve ekler; en çok 3.</summary>
     private async Task AddAsync(IEnumerable<Func<BitmapSource?>> sources)
     {
@@ -235,46 +232,21 @@ public sealed class ReportProblemWindow : Window
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
         e.Handled = true;
         if (sending) return;
-        _ = AddAsync(files.Where(IsImageFile).Select(path => (Func<BitmapSource?>)(() => ReportImages.Load(path))));
-    }
-
-    private static bool ClipboardHasPicture()
-    {
-        try { return Clipboard.ContainsImage() || Clipboard.ContainsFileDropList(); }
-        catch (COMException) { return false; }
-    }
-
-    /// <summary>
-    /// Fotoğraf olarak mı yapıştırılsın: panoda görüntü ya da dosya var ve (Excel, OneNote gibi hem metin hem görüntü
-    /// koyanlarda) imleç bir metin kutusunda değil.
-    /// </summary>
-    private static bool PastesPicture()
-    {
-        if (!ClipboardHasPicture()) return false;
-        try { return Keyboard.FocusedElement is not TextBox || !Clipboard.ContainsText(); }
-        catch (COMException) { return false; }
+        _ = AddAsync(files.Where(ReportImages.IsImageFile).Select(path => (Func<BitmapSource?>)(() => ReportImages.Load(path))));
     }
 
     private void OnCanPaste(object sender, CanExecuteRoutedEventArgs e)
     {
-        if (e.Command != ApplicationCommands.Paste || !PastesPicture()) return;
+        if (e.Command != ApplicationCommands.Paste || !ReportImages.PastesPicture()) return;
         e.CanExecute = !sending && photos.Count < ProblemReport.MaxImages;
         e.Handled = true;
     }
 
     private void OnPaste(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Command != ApplicationCommands.Paste || !PastesPicture()) return;
+        if (e.Command != ApplicationCommands.Paste || !ReportImages.PastesPicture()) return;
         e.Handled = true;
-        try
-        {
-            if (Clipboard.ContainsFileDropList())
-            {
-                var files = Clipboard.GetFileDropList().Cast<string>().Where(IsImageFile).ToList();
-                _ = AddAsync(files.Select(path => (Func<BitmapSource?>)(() => ReportImages.Load(path))));
-            }
-            else _ = AddAsync([ReportImages.FromClipboard]);
-        }
+        try { _ = AddAsync(ReportImages.FromClipboardSources()); }
         catch (COMException) { ShowError(T("This image could not be opened.")); }
     }
 

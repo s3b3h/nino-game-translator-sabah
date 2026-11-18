@@ -40,6 +40,11 @@ targets:
       # Tasarım değerleri: Windows sürümüyle ortak tek kaynak.
       - path: ../design/tokens.json
         buildPhase: resources
+      # Nino: "Nino'ya Sor" robotu (göz açık ve kırpma karesi); design/bot-png'den doğrudan pakete kopyalanır.
+      - path: ../design/bot-png/nino-bot-256.png
+        buildPhase: resources
+      - path: ../design/bot-png/nino-bot-blink-256.png
+        buildPhase: resources
       # Nino: altyazı yazı tipleri (OFL; TV sayfasıyla aynı dosyalar ve lisansları). Açılışta kaydedilir.
       - path: ../tv-webos/fonts
         type: folder
@@ -115,6 +120,11 @@ targets:
       - path: AppStore
         buildPhase: none
       - path: ../design/tokens.json
+        buildPhase: resources
+      # Nino: "Nino'ya Sor" robotu (göz açık ve kırpma karesi); design/bot-png'den doğrudan pakete kopyalanır.
+      - path: ../design/bot-png/nino-bot-256.png
+        buildPhase: resources
+      - path: ../design/bot-png/nino-bot-blink-256.png
         buildPhase: resources
       # TV uygulaması paketleri: TV kurulumu sandbox'ta da çalışıyor (ssh, ssh-keygen ve yardımcı uygulamanın
       # sandbox'ını miras alır; CouchSubsAppStoreTests/SandboxTests sınar).

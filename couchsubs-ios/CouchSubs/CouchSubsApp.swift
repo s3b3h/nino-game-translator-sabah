@@ -125,6 +125,17 @@ struct RootView: View {
                 home
             }
         }
+        // Nino: "Nino'ya Sor": sağ altta yüzen robot (karşılamada ve kurulumda alttaki büyük düğmenin üstünde; ana ekranda
+        // köşede). Alt sayfalarda ve kullanım turu sürerken gizli.
+        .overlay(alignment: .bottomTrailing) {
+            if showsAssistantButton {
+                AskNinoButton()
+                    .padding(.trailing, Mobile.Space.screen)
+                    // Kurulumda alttaki büyük düğmenin ve üstündeki ikinci satırın ("Neden ikinci hesap?") üstünde durur.
+                    .padding(.bottom, onHome ? Mobile.Space.gap : Mobile.Control.button + Mobile.Control.icon + Mobile.Space.screen + Mobile.Space.gap * 3)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
         .preferredColorScheme(.light)
         .tint(Mobile.Palette.accent)
         // Nino: arayüz dili çeviri dilini izler (Arapça → Arapça, sağdan sola), anında.
@@ -132,6 +143,13 @@ struct RootView: View {
         .environment(\.layoutDirection, UILanguage.direction(for: model.settings.targetLanguage))
         .onAppear { UILanguage.remember(target: model.settings.targetLanguage) }
         .onChange(of: model.settings.targetLanguage) { UILanguage.remember(target: $0) }
+    }
+
+    private var onHome: Bool { welcomeSeen && model.step == .done }
+
+    private var showsAssistantButton: Bool {
+        guard onHome else { return true }
+        return path.isEmpty && app.tourDone
     }
 
     private func finishWelcome() {

@@ -23,6 +23,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import com.couchsubs.mobile.Services
 import com.couchsubs.mobile.account.Telemetry
 import com.couchsubs.mobile.service.LiveState
@@ -50,6 +54,11 @@ object Routes {
     const val XBOX_CONSOLE = "xboxconsole"
     /** Nino: Sorun Bildir. */
     const val REPORT = "report"
+    /** Nino: "Nino'ya Sor" kurulum yardımcısı. */
+    const val ASSISTANT = "assistant"
+
+    /** Yüzen robot düğmesinin göründüğü ekranlar (ana ekran ve kurulum adımları, takılınan yerler). */
+    val ASSISTANT_BUTTON = setOf(MAIN, WELCOME, PLATFORM, PSN, PAIR, TARGET, XBOX_LOGIN, XBOX_CONSOLE, TV_INSTALL, SOURCE)
 
     /** Kurulumun eksik ilk adımı; hepsi tamamsa ana ekran. */
     fun next(): String {
@@ -171,15 +180,20 @@ class MainActivity : ComponentActivity() {
                             onPsn = { navigation.navigate(Routes.PSN) },
                             onInstallTv = { navigation.navigate(Routes.TV_INSTALL) },
                             onReport = { navigation.navigate(Routes.REPORT) },
+                            onAssistant = { navigation.navigate(Routes.ASSISTANT) },
                         )
                     }
                     composable(Routes.SETTINGS) {
                         SettingsScreen(onBack = { navigation.popBackStack() }, onPacks = { navigation.navigate(Routes.PACKS) },
                             onTarget = { navigation.navigate(Routes.TARGET) }, onPairing = { pairing(navigation) },
                             onHealth = { navigation.navigate(Routes.HEALTH) }, onSource = { navigation.navigate(Routes.SOURCE) },
-                            onTvInstall = { navigation.navigate(Routes.TV_INSTALL) }, onReport = { navigation.navigate(Routes.REPORT) })
+                            onTvInstall = { navigation.navigate(Routes.TV_INSTALL) }, onReport = { navigation.navigate(Routes.REPORT) },
+                            onAssistant = { navigation.navigate(Routes.ASSISTANT) })
                     }
                     composable(Routes.REPORT) { ReportProblemScreen(onBack = { navigation.popBackStack() }) }
+                    composable(Routes.ASSISTANT) {
+                        AskNinoScreen(onBack = { navigation.popBackStack() }, onReport = { navigation.navigate(Routes.REPORT) })
+                    }
                     composable(Routes.HISTORY) { HistoryScreen(onBack = { navigation.popBackStack() }) }
                     composable(Routes.TV_INSTALL) {
                         // Kurulum bitince "Ana ekrana geç": kurulumun 3. adımından gelindiyse kurulum biter (TvAppUpdate.installed).
@@ -197,6 +211,16 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     composable(Routes.HEALTH) { SystemHealthScreen(onBack = { navigation.popBackStack() }) }
+                }
+                // Nino: yüzen "Nino'ya Sor" düğmesi (ana ekran ve kurulum ekranları); altta birincil düğmenin üstünde durur.
+                val entry by navigation.currentBackStackEntryAsState()
+                val route = entry?.destination?.route
+                if (!showSplash && route in Routes.ASSISTANT_BUTTON) {
+                    AskNinoButton(androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
+                        .navigationBarsPadding()
+                        .padding(end = 20.dp, bottom = if (route == Routes.MAIN) 96.dp else 92.dp)) {
+                        navigation.navigate(Routes.ASSISTANT) { launchSingleTop = true }
+                    }
                 }
                 if (showSplash) NinoSplash { showSplash = false }
                 }

@@ -16,6 +16,10 @@ migrations_dir = "migrations"
 DAILY_LINE_BUDGET = "15000"
 # Bir kurulumun saatte gönderebileceği en çok parça.
 INSTALL_HOURLY_BATCHES = "60"
+# Nino yardımcısı: Claude Haiku 5.5. Anahtar sır olarak durur (wrangler secret put ANTHROPIC_API_KEY); yoksa yardımcı kapalıdır.
+ASSISTANT_PROVIDER = "anthropic"
+# Günlük en çok harcama (dolar). Aynı ilk sorular hazır cevaptan ücretsiz verilir.
+ASSISTANT_DAILY_USD = "2"
 
 # Eski parça kimliklerini (tekrar sayılmasın diye tutulur) her gün temizler.
 [triggers]

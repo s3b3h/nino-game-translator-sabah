@@ -635,4 +635,29 @@
     <string name="report_invalid">The report wasn\'t accepted. Check your description and try again.</string>
     <string name="report_rate_limited">You\'ve sent many reports today. Please try again tomorrow.</string>
     <string name="report_privacy">Your description, photos and (if on) the app log are sent to Nino\'s server so we can fix the problem. Don\'t include passwords.</string>
+    <!-- Nino: Nino'ya Sor (kurulum yardımcısı). Nino'nun kendi cümleleri samimi ("sen") -->
+    <string name="assistant_title">Ask Nino</string>
+    <string name="assistant_row_note">Stuck during setup? Ask Nino</string>
+    <string name="assistant_name">Nino</string>
+    <string name="assistant_subtitle">Setup helper</string>
+    <string name="assistant_greeting">Hi! I\'m Nino 👋 You can ask me anything about setting up. First, tell me: which devices do you have? (PS5 or Xbox, TV or monitor, phone or computer) Where do you want to set it up?</string>
+    <string name="assistant_chip_1">PS5 + TV + phone</string>
+    <string name="assistant_chip_2">PS5 + monitor + computer</string>
+    <string name="assistant_chip_3">Xbox + TV</string>
+    <string name="assistant_chip_4">How do I install the TV app?</string>
+    <string name="assistant_hint">Ask Nino…</string>
+    <string name="assistant_attach">Add a screenshot</string>
+    <string name="assistant_send">Send</string>
+    <string name="assistant_new_chat">New chat</string>
+    <string name="assistant_screenshot">Screenshot</string>
+    <string name="assistant_typing">Nino is typing…</string>
+    <string name="assistant_report_sent">Report sent to the team ✓</string>
+    <string name="assistant_not_sent">Not sent</string>
+    <string name="assistant_retry">Retry</string>
+    <string name="assistant_disabled">I\'m almost ready! Until then, send your question with Report a Problem and the team will answer.</string>
+    <string name="assistant_rate_limited">You\'ve asked a lot today 🙂 Let\'s continue tomorrow.</string>
+    <string name="assistant_busy">I\'m very busy right now, try again in a bit.</string>
+    <string name="assistant_network">I couldn\'t reach the server. Check your internet and try again.</string>
+    <string name="assistant_too_large">That message got too big. Remove a screenshot and try again.</string>
+    <string name="assistant_invalid">I couldn\'t send that message. Change it a little and try again.</string>
 </resources>

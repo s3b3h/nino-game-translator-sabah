@@ -59,6 +59,13 @@ targets:
         buildPhase: resources
       - path: ../design/tokens.json
         buildPhase: resources
+      # Nino: "Nino'ya Sor" robotu (göz açık ve kırpma karesi); design/bot-png'den doğrudan pakete kopyalanır.
+      - path: ../design/bot-png/nino-bot-256.png
+        buildPhase: resources
+      - path: ../design/bot-png/nino-bot-blink-256.png
+        buildPhase: resources
+      # Robot, "yazıyor" noktaları ve robotun metinleri (Mac'le ortak).
+      - path: ../mac/CouchSubs/UI/NinoBot.swift
       - path: Config
         buildPhase: none
     dependencies:

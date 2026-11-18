@@ -553,6 +553,8 @@ final class AppModel: ObservableObject {
     }
     @Published var showAbout = false
     @Published var showSettings = false
+    /// Nino: "Nino'ya Sor" sohbeti (yüzen robot düğmesi ve Ayarlar'daki satır açar).
+    @Published var showAssistant = false
 
     private let services: AppServices
     private let store: AppStore

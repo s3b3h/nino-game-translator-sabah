@@ -104,7 +104,17 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
+        // Nino: "Nino'ya Sor": sağ altta yüzen robot (ana ekranda alt şeridin, kurulumda Devam düğmesinin üstünde).
+        .overlay(alignment: .bottomTrailing) {
+            if !showSplash {
+                AskNinoButton()
+                    .padding(.trailing, Theme.space("xl"))
+                    .padding(.bottom, model.step == .done ? 60 : 96)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
         .sheet(isPresented: $model.showAbout) { AboutView().appSurface() }
+        .sheet(isPresented: $model.showAssistant) { AskNinoSheet().appSurface() }
         #if DEBUG
         // Tasarım denemesi için: open Nino.app --args -NinoPreviewStep 4  (7 = ana ekran)
         .onAppear {

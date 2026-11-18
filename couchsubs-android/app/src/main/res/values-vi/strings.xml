@@ -623,4 +623,29 @@
     <string name="report_invalid">Báo cáo không được chấp nhận. Hãy kiểm tra phần mô tả và thử lại.</string>
     <string name="report_rate_limited">Hôm nay bạn đã gửi nhiều báo cáo. Hãy thử lại vào ngày mai.</string>
     <string name="report_privacy">Mô tả, ảnh và (nếu bật) nhật ký ứng dụng sẽ được gửi đến máy chủ của Nino để chúng tôi sửa sự cố. Đừng ghi mật khẩu.</string>
+    <!-- Nino: Nino'ya Sor (kurulum yardımcısı). Nino'nun kendi cümleleri samimi ("sen") -->
+    <string name="assistant_title">Hỏi Nino</string>
+    <string name="assistant_row_note">Gặp khó khi cài đặt? Hỏi Nino</string>
+    <string name="assistant_name">Nino</string>
+    <string name="assistant_subtitle">Trợ lý cài đặt</string>
+    <string name="assistant_greeting">Chào bạn! Mình là Nino 👋 Bạn cứ hỏi mình mọi thứ về việc cài đặt nhé. Trước tiên, cho mình biết: bạn có những thiết bị nào? (PS5 hay Xbox, TV hay màn hình, điện thoại hay máy tính) Bạn muốn cài trên thiết bị nào?</string>
+    <string name="assistant_chip_1">PS5 + TV + điện thoại</string>
+    <string name="assistant_chip_2">PS5 + màn hình + máy tính</string>
+    <string name="assistant_chip_3">Xbox + TV</string>
+    <string name="assistant_chip_4">Cài ứng dụng TV thế nào?</string>
+    <string name="assistant_hint">Hỏi Nino…</string>
+    <string name="assistant_attach">Thêm ảnh chụp màn hình</string>
+    <string name="assistant_send">Gửi</string>
+    <string name="assistant_new_chat">Trò chuyện mới</string>
+    <string name="assistant_screenshot">Ảnh chụp màn hình</string>
+    <string name="assistant_typing">Nino đang nhập…</string>
+    <string name="assistant_report_sent">Đã gửi báo cáo cho nhóm ✓</string>
+    <string name="assistant_not_sent">Chưa gửi được</string>
+    <string name="assistant_retry">Thử lại</string>
+    <string name="assistant_disabled">Mình sắp sẵn sàng rồi! Trong lúc chờ, bạn gửi câu hỏi qua “Báo cáo sự cố” nhé, đội ngũ sẽ trả lời.</string>
+    <string name="assistant_rate_limited">Hôm nay bạn hỏi nhiều rồi 🙂 Mai mình nói tiếp nhé.</string>
+    <string name="assistant_busy">Giờ mình đang rất bận, bạn thử lại sau một chút nhé.</string>
+    <string name="assistant_network">Mình không kết nối được tới máy chủ. Kiểm tra internet rồi thử lại nhé.</string>
+    <string name="assistant_too_large">Tin nhắn này lớn quá. Bỏ bớt một ảnh chụp màn hình rồi thử lại nhé.</string>
+    <string name="assistant_invalid">Mình không gửi được tin nhắn này. Sửa lại một chút rồi thử lại nhé.</string>
 </resources>

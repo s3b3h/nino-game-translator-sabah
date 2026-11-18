@@ -75,7 +75,7 @@ import com.couchsubs.mobile.tv.TvDiscovery
  */
 @Composable
 fun ProfileScreen(onBack: () -> Unit, onSettings: () -> Unit, onPairing: () -> Unit, onTarget: () -> Unit, onPsn: () -> Unit, onInstallTv: () -> Unit = {},
-                  onReport: () -> Unit = {}) {
+                  onReport: () -> Unit = {}, onAssistant: () -> Unit = {}) {
     val context = LocalContext.current
     val settings = Services.settings
     var tvs by remember { mutableStateOf<List<FoundTv>?>(null) }
@@ -129,6 +129,7 @@ fun ProfileScreen(onBack: () -> Unit, onSettings: () -> Unit, onPairing: () -> U
             } },
             { RowItem(stringResource(R.string.profile_privacy), onClick = { open(context, context.getString(R.string.url_privacy)) }) },
             { RowItem(stringResource(R.string.profile_help), onClick = { open(context, context.getString(R.string.url_help)) }) },
+            { RowItem(stringResource(R.string.assistant_title), onClick = onAssistant) },
             { RowItem(stringResource(R.string.report_title), onClick = onReport) },
         ))
         Text(stringResource(R.string.profile_no_account), style = Tokens.Type.caption, color = Tokens.Color.secondary)
@@ -138,7 +139,8 @@ fun ProfileScreen(onBack: () -> Unit, onSettings: () -> Unit, onPairing: () -> U
 /** Ayarlar (tuval Telefon-Ayarlar): motor ve anahtar, altyazı görünümü, paketler, hedef, PS5, hakkında. */
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit, onPairing: () -> Unit, onHealth: () -> Unit = {},
-                   onSource: () -> Unit = {}, onTvInstall: () -> Unit = {}, onReport: () -> Unit = {}) {
+                   onSource: () -> Unit = {}, onTvInstall: () -> Unit = {}, onReport: () -> Unit = {},
+                   onAssistant: () -> Unit = {}) {
     val context = LocalContext.current
     val settings = Services.settings
     var engine by remember { mutableStateOf(settings.engine) }
@@ -390,7 +392,8 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
             if (settings.xbox) ({ RowItem(stringResource(R.string.settings_xbox_audio), stringResource(R.string.settings_xbox_audio_short)) {
                 Switch(xboxAudio, { xboxAudio = it; settings.xboxAudioOnDevice = it })
             } }) else null,
-            // Nino: Sorun Bildir, Hakkında'nın hemen üstünde.
+            // Nino: Nino'ya Sor ve Sorun Bildir, Hakkında'nın hemen üstünde.
+            { RowItem(stringResource(R.string.assistant_title), stringResource(R.string.assistant_row_note), onClick = onAssistant) },
             { RowItem(stringResource(R.string.report_title), stringResource(R.string.report_row_note), onClick = onReport) },
             { RowItem(stringResource(R.string.settings_about), BuildConfig.VERSION_NAME, onClick = { open(context, context.getString(R.string.url_source)) }) },
         ))

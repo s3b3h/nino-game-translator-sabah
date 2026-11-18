@@ -8,12 +8,16 @@
   "scripts": {
     "test": "node --test test/",
     "db:local": "wrangler d1 migrations apply nino-pool --local",
-    "dev": "wrangler dev --local"
+    "dev": "wrangler dev --local",
+    "knowledge": "node scripts/build-knowledge.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.162.0"
   },
   "allowScripts": {
     "workerd@1.20261113.1": true
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.10.0"
   }
 }

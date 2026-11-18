@@ -18,18 +18,20 @@ permissions:
   contents: write
 
 jobs:
+  # Nino: Windows paketine Nino'nun kendi imzalı TV APK'sı gömülür (windows.yml, GitHub Pages); CI'da derlenen APK
+  # başka anahtarla imzalanacağı için kullanılmaz (Mac'in ve telefonun kurduğu sürüm onu güncelleyemezdi).
   windows:
-    needs: android
     uses: ./.github/workflows/windows.yml
     with:
-      with-android: true
+      with-android: false
 
   android:
     uses: ./.github/workflows/tv-android.yml
     secrets: inherit
     # TV paketi TV_KEYSTORE_* sırlarıyla imzalanmalı; yoksa sürüm durur (geliştirme anahtarına düşmez).
     with:
-      require-signing: true
+      # Nino: TV sürüm anahtarı GitHub'da yok; TV APK'sı Mac'te imzalanıp sürüme elle eklenir.
+      require-signing: false
   mac:
     needs: android
     runs-on: macos-26

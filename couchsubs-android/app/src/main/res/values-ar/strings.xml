@@ -629,4 +629,29 @@
     <string name="xbox_beta_note">دعم Xbox تجريبي. إن واجهت مشكلة، أخبرنا وسنصلحها في أقرب وقت.</string>
     <string name="xbox_error_offline">تعذّر الاتصال بالإنترنت. تحقق من اتصالك وحاول مرة أخرى.</string>
     <string name="xbox_error_unexpected">أرسلت خدمة Xbox ردًا غير متوقع (%1$s).</string>
+    <!-- Nino: Nino'ya Sor (kurulum yardımcısı). Nino'nun kendi cümleleri samimi ("sen") -->
+    <string name="assistant_title">اسأل نينو</string>
+    <string name="assistant_row_note">هل واجهت مشكلة في الإعداد؟ اسأل نينو</string>
+    <string name="assistant_name">نينو</string>
+    <string name="assistant_subtitle">مساعد الإعداد</string>
+    <string name="assistant_greeting">مرحبًا! أنا نينو 👋 يمكنك أن تسألني عن أي شيء يخص الإعداد. أخبرني أولًا: ما الأجهزة التي لديك؟ (PS5 أو Xbox، تلفاز أو شاشة، هاتف أو كمبيوتر) وعلى أيّها تريد الإعداد؟</string>
+    <string name="assistant_chip_1">PS5 + تلفاز + هاتف</string>
+    <string name="assistant_chip_2">PS5 + شاشة + كمبيوتر</string>
+    <string name="assistant_chip_3">Xbox + تلفاز</string>
+    <string name="assistant_chip_4">كيف أثبّت تطبيق التلفاز؟</string>
+    <string name="assistant_hint">اسأل نينو…</string>
+    <string name="assistant_attach">إضافة لقطة شاشة</string>
+    <string name="assistant_send">إرسال</string>
+    <string name="assistant_new_chat">محادثة جديدة</string>
+    <string name="assistant_screenshot">لقطة شاشة</string>
+    <string name="assistant_typing">نينو يكتب…</string>
+    <string name="assistant_report_sent">تم إرسال البلاغ إلى الفريق ✓</string>
+    <string name="assistant_not_sent">لم يُرسل</string>
+    <string name="assistant_retry">إعادة المحاولة</string>
+    <string name="assistant_disabled">أنا جاهز تقريبًا! حتى ذلك الحين، أرسل سؤالك عبر «الإبلاغ عن مشكلة» وسيرد عليك الفريق.</string>
+    <string name="assistant_rate_limited">سألت كثيرًا اليوم 🙂 لنكمل غدًا.</string>
+    <string name="assistant_busy">أنا مشغول جدًا الآن، حاول مرة أخرى بعد قليل.</string>
+    <string name="assistant_network">لم أتمكن من الوصول إلى الخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.</string>
+    <string name="assistant_too_large">أصبحت هذه الرسالة كبيرة جدًا. احذف لقطة شاشة وحاول مرة أخرى.</string>
+    <string name="assistant_invalid">لم أتمكن من إرسال هذه الرسالة. غيّرها قليلًا وحاول مرة أخرى.</string>
 </resources>

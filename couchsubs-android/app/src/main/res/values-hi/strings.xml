@@ -623,4 +623,29 @@
     <string name="report_invalid">रिपोर्ट स्वीकार नहीं हुई। अपना विवरण जाँचें और फिर से कोशिश करें।</string>
     <string name="report_rate_limited">आपने आज बहुत सारी रिपोर्ट भेजी हैं। कृपया कल फिर से कोशिश करें।</string>
     <string name="report_privacy">आपका विवरण, फ़ोटो और (चालू हो तो) ऐप लॉग Nino के सर्वर पर भेजे जाते हैं ताकि हम समस्या ठीक कर सकें। पासवर्ड शामिल न करें।</string>
+    <!-- Nino: Nino'ya Sor (kurulum yardımcısı). Nino'nun kendi cümleleri samimi ("sen") -->
+    <string name="assistant_title">Nino से पूछें</string>
+    <string name="assistant_row_note">सेटअप में अटक गए? Nino से पूछें</string>
+    <string name="assistant_name">Nino</string>
+    <string name="assistant_subtitle">सेटअप हेल्पर</string>
+    <string name="assistant_greeting">नमस्ते! मैं Nino हूँ 👋 सेटअप के बारे में आप मुझसे कुछ भी पूछ सकते हैं। पहले बताइए: आपके पास कौन-से डिवाइस हैं? (PS5 या Xbox, TV या मॉनिटर, फ़ोन या कंप्यूटर) आप इसे किस पर सेट अप करना चाहते हैं?</string>
+    <string name="assistant_chip_1">PS5 + TV + फ़ोन</string>
+    <string name="assistant_chip_2">PS5 + मॉनिटर + कंप्यूटर</string>
+    <string name="assistant_chip_3">Xbox + TV</string>
+    <string name="assistant_chip_4">TV ऐप कैसे इंस्टॉल करूँ?</string>
+    <string name="assistant_hint">Nino से पूछें…</string>
+    <string name="assistant_attach">स्क्रीनशॉट जोड़ें</string>
+    <string name="assistant_send">भेजें</string>
+    <string name="assistant_new_chat">नई चैट</string>
+    <string name="assistant_screenshot">स्क्रीनशॉट</string>
+    <string name="assistant_typing">Nino लिख रहा है…</string>
+    <string name="assistant_report_sent">रिपोर्ट टीम को भेज दी गई ✓</string>
+    <string name="assistant_not_sent">नहीं भेजा जा सका</string>
+    <string name="assistant_retry">फिर से कोशिश करें</string>
+    <string name="assistant_disabled">मैं लगभग तैयार हूँ! तब तक अपना सवाल “समस्या बताएँ” से भेजें, टीम जवाब देगी।</string>
+    <string name="assistant_rate_limited">आज आपने बहुत कुछ पूछ लिया 🙂 कल फिर बात करते हैं।</string>
+    <string name="assistant_busy">अभी मैं बहुत व्यस्त हूँ, थोड़ी देर बाद फिर कोशिश करें।</string>
+    <string name="assistant_network">मैं सर्वर तक नहीं पहुँच पाया। अपना इंटरनेट चेक करके फिर कोशिश करें।</string>
+    <string name="assistant_too_large">यह मैसेज बहुत बड़ा हो गया। एक स्क्रीनशॉट हटाकर फिर कोशिश करें।</string>
+    <string name="assistant_invalid">मैं यह मैसेज भेज नहीं पाया। इसे थोड़ा बदलकर फिर कोशिश करें।</string>
 </resources>

@@ -7,6 +7,8 @@
 //   GET  /v1/sessions           oyunu bilinmeyen oturumlar (Authorization: Bearer EXPORT_TOKEN)
 //   POST /v1/reports            Nino: "Sorun Bildir" (uygulamalar; açıklama, günlük, en çok 3 fotoğraf)
 //   GET  /v1/reports[/id[/images/i]], POST /v1/reports/id/status   bildirimler (Authorization: Bearer EXPORT_TOKEN)
+//   POST /v1/assistant          Nino yardımcısı (kurulum sohbeti; model sunucu ayarıyla seçilir)
+//   GET  /v1/assistant          yardımcı açık mı ({ok, enabled})
 //   GET  /reports               bildirimleri okuma sayfası (veri içermez; anahtarla /v1/reports'tan çeker)
 // IP adresi hiçbir yere yazılmaz.
 
@@ -14,6 +16,7 @@ import { receiveBatch, listGames, exportLines, listUnknownSessions, prune } from
 import { LIMITS } from "./validate.js";
 import { REPORT_LIMITS, receiveReport, listReports, getReport, getReportImage, setReportStatus } from "./reports.js";
 import { REPORTS_PAGE } from "./reports-page.js";
+import { ASSISTANT_LIMITS, handleAssistant, assistantEnabled } from "./assistant.js";
 
 function json(status, body, headers = {}) {
   return new Response(JSON.stringify(body), {
@@ -45,7 +48,7 @@ async function readBody(request, max = LIMITS.maxBodyBytes) {
   }
 }
 
-export async function handle(request, env, now = Math.floor(Date.now() / 1000)) {
+export async function handle(request, env, now = Math.floor(Date.now() / 1000), ask) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "");
 
@@ -57,6 +60,17 @@ export async function handle(request, env, now = Math.floor(Date.now() / 1000)) 
     if (body.tooLarge) return json(413, { ok: false, error: "too_large" });
     if (body.bad) return json(400, { ok: false, error: "bad_json" });
     const result = await receiveBatch(env.DB, env, body.value, now);
+    const headers = result.retryAfter ? { "retry-after": String(result.retryAfter) } : {};
+    return json(result.status, result.body, headers);
+  }
+
+  if (path === "/v1/assistant") {
+    if (request.method === "GET") return json(200, { ok: true, enabled: assistantEnabled(env) });
+    if (request.method !== "POST") return json(405, { ok: false, error: "method" });
+    const body = await readBody(request, ASSISTANT_LIMITS.maxBodyBytes);
+    if (body.tooLarge) return json(413, { ok: false, error: "too_large" });
+    if (body.bad) return json(400, { ok: false, error: "bad_json" });
+    const result = await handleAssistant(env.DB, env, body.value, now, ask);
     const headers = result.retryAfter ? { "retry-after": String(result.retryAfter) } : {};
     return json(result.status, result.body, headers);
   }
