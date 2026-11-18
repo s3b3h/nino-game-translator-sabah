@@ -104,6 +104,19 @@ final class PoolFirstTests: XCTestCase {
         XCTAssertNil(failed)
     }
 
+    func testServerRecognisedGameMakesItPoolFirst() async {
+        let server = Server()
+        server.translate = #"{"ok":true,"game":"grand-theft-auto-vi","translations":[{"text":"Bin arabaya!","tier":1}]}"#
+        let pool = makePool(server)
+        XCTAssertFalse(pool.isPoolFirst(nil))
+        _ = await pool.translate("Get in the car!", game: "Call of Duty: Modern Warfare")
+        XCTAssertTrue(pool.isPoolFirst(nil))
+        XCTAssertTrue(pool.isPoolFirst("Call of Duty: Modern Warfare"))
+        server.translate = #"{"ok":true,"game":"red-dead-redemption-2","translations":[{"text":"Aç.","tier":1}]}"#
+        _ = await pool.translate("Open it now.", game: "Red Dead Redemption 2")
+        XCTAssertFalse(pool.isPoolFirst(nil))
+    }
+
     // MARK: Çevirmen
 
     final class Counting: TextTranslator, @unchecked Sendable {

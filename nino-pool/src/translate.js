@@ -313,8 +313,12 @@ export async function handleTranslate(db, env, body, now, live = askLive) {
     const known = new Map(results.map((r) => [r.key, r]));
     // Nino: oyun hâlâ bilinmiyorsa havuzdaki satırdan tanınır (satır daha önce bir oyunda görülüp çevrilmişse; kısa ve
     // her oyunda geçebilecek satırlar sayılmaz). Kuruluma yazılır, sonraki satırlar da o oyundan sayılır.
-    if (!game) {
-      const telling = results.find((r) => r.game && r.text && gameAllowed(env, r.game) && [...String(r.text)].length >= 25);
+    // Uygulama başka bir oyun sanıyorsa (ör. benzer satırlı paketten) ama satır havuz öncelikli bir oyunun (GTA 6) uzun bir
+    // satırıysa o oyun döner: uygulama cevaptaki oyuna bakıp çeviriyi yalnız havuzdan almaya geçer.
+    const firstGame = (id) => poolFirstGames(env).some((part) => String(id ?? "").toLowerCase().includes(part));
+    if (!game || !firstGame(game)) {
+      const telling = results.find((r) => r.game && r.text && gameAllowed(env, r.game) && [...String(r.text)].length >= 25
+        && (!game || firstGame(r.game)));
       if (telling) {
         game = telling.game;
         const installKey = await saltedDigest(body.install.toLowerCase(), env.INSTALL_SALT ?? "");

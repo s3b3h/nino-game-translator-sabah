@@ -102,6 +102,9 @@ class TranslationPool(
     private class Saved(val language: String, val texts: Map<String, String>, val cursors: Map<String, Cursor>)
 
     companion object {
+        /** Sunucunun tanıdığı oyun bu kadar süre geçerli sayılır (saniye). */
+        const val SERVER_GAME_SECONDS = 600.0
+
         /** Sunucudan en çok bu kadar çeviri tutulur (dil başına); fazlası diske yazılmaz. */
         const val MAX_STORED = 400_000
 
@@ -208,7 +211,17 @@ class TranslationPool(
      * Oyun havuz öncelikli mi ve sunucu kullanılabilir mi (sunucu açık, adres var). Ortak havuz ayarı kapalı olsa da
      * geçerlidir: kullanıcı kararıyla bu oyunlarda çeviri hep sunucudan gelir.
      */
-    fun isPoolFirst(rawGame: String?): Boolean = config.enabled && endpoint != null && poolFirst.contains(rawGame)
+    fun isPoolFirst(rawGame: String?): Boolean {
+        if (!(config.enabled && endpoint != null)) return false
+        if (poolFirst.contains(rawGame)) return true
+        // Uygulama oyunu bilmiyor ya da yanlış biliyor (ör. benzer satırlı başka oyunun paketi): sunucu satırlardan havuz
+        // öncelikli oyunu tanıdıysa o geçerli. Sunucu her cevapta oyunu yeniden söyler.
+        val (game, at) = synchronized(lock) { serverGame }
+        return clock() / 1000.0 - at <= SERVER_GAME_SECONDS && poolFirst.contains(game)
+    }
+
+    /** Sunucunun son çeviri cevabındaki oyun ve zamanı (saniye). */
+    private var serverGame: Pair<String, Double> = "" to Double.NEGATIVE_INFINITY
 
     /** Sunucunun ayarını en çok 10 dakikada bir sorar (bloklar). */
     fun refreshConfig(force: Boolean = false) {
@@ -360,7 +373,10 @@ class TranslationPool(
                 .put("context", JSONArray(context.takeLast(maxOf(0, config.contextLines))))
             val response = call(Request("POST", URL(base, "/v1/translate"), body.toString()))
             if (response != null && response.code == 200) {
-                val first = try { JSONObject(response.body).optJSONArray("translations")?.optJSONObject(0) } catch (error: Exception) { null }
+                val reply = try { JSONObject(response.body) } catch (error: Exception) { null }
+                val said = reply?.takeIf { it.has("game") && !it.isNull("game") }?.optString("game")
+                synchronized(lock) { serverGame = (NinoPool.gameId(said) ?: "") to clock() / 1000.0 }
+                val first = reply?.optJSONArray("translations")?.optJSONObject(0)
                 // Sunucu çeviremediyse "text": null (org.json'un optString'i bunu "null" yazısı yapar).
                 if (first != null && first.has("text") && !first.isNull("text")) result = first.optString("text").takeIf { it.isNotEmpty() }
             }

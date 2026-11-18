@@ -264,6 +264,24 @@ class TranslationPoolTest {
 
     // --- Havuz öncelikli oyunlar (poolFirst) ---
 
+    @Test fun serverRecognisedGameMakesItPoolFirst() {
+        val server = FakeServer()
+        server.translateReply = { """{"ok":true,"game":"grand-theft-auto-vi","translations":[{"text":"Bin arabaya!","tier":1}]}""" }
+        val pool = makePool(server)
+        assertFalse(pool.isPoolFirst(null))
+        pool.translate("Get in the car!", rawGame = "Call of Duty: Modern Warfare")
+        assertTrue(pool.isPoolFirst(null))
+        assertTrue(pool.isPoolFirst("Call of Duty: Modern Warfare"))
+        server.translateReply = { """{"ok":true,"game":"red-dead-redemption-2","translations":[{"text":"Aç.","tier":1}]}""" }
+        pool.translate("Open it now.", rawGame = "Red Dead Redemption 2")
+        assertFalse(pool.isPoolFirst(null))
+        server.translateReply = { """{"ok":true,"game":"grand-theft-auto-vi","translations":[{"text":"Yürü.","tier":1}]}""" }
+        pool.translate("Walk with me.")
+        assertTrue(pool.isPoolFirst(null))
+        now += ((TranslationPool.SERVER_GAME_SECONDS + 1) * 1000).toLong()
+        assertFalse(pool.isPoolFirst(null))
+    }
+
     @Test fun poolFirstDefaultsToGta6() {
         val pool = makePool(FakeServer())
         assertTrue(pool.isPoolFirst("Grand Theft Auto VI"))

@@ -227,3 +227,16 @@ test("oyun havuzdaki satırdan da tanınır", async () => {
   assert.equal(body.translations[0].text, "TR:Grab the duffel bag.");
   assert.equal(calls.length, 2);
 });
+
+test("havuz öncelikli oyunun satırı, uygulama başka oyun sansa da o oyunu döndürür", async () => {
+  const { post } = setup({ TRANSLATE_GAMES: "grand-theft-auto-vi" });
+  const line = "I still can't believe I shacked up with a car thief.";
+  let body = await (await post(req([line], { game: "grand-theft-auto-vi" }))).json();
+  assert.equal(body.game, "grand-theft-auto-vi");
+  body = await (await post(req([line], { game: "call-of-duty-modern-warfare-2019" }))).json();
+  assert.equal(body.game, "grand-theft-auto-vi");
+  assert.ok(body.translations[0].text);
+  // Bilinmeyen satır ve başka oyun: oyun değişmez.
+  body = await (await post(req(["A brand new line nobody has seen."], { game: "red-dead-redemption-2" }))).json();
+  assert.equal(body.game, "red-dead-redemption-2");
+});

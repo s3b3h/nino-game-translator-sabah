@@ -93,6 +93,16 @@ public actor TranslationPool {
         private var first = PoolFirst()
         private var serverOn = true
         private var reachable = false
+        /// Sunucunun son çeviri cevabındaki oyun ve zamanı.
+        private var serverGame = ""
+        private var serverGameAt = -Double.infinity
+
+        func noteServerGame(_ game: String?, at now: Double) {
+            lock.withLock {
+                serverGame = NinoPool.gameID(game) ?? ""
+                serverGameAt = now
+            }
+        }
 
         func update(first: PoolFirst? = nil, serverOn: Bool? = nil, reachable: Bool? = nil) {
             lock.withLock {
@@ -103,7 +113,14 @@ public actor TranslationPool {
         }
 
         var current: PoolFirst { lock.withLock { first } }
-        func active(_ game: String?) -> Bool { lock.withLock { serverOn && reachable && first.contains(game) } }
+        /// Uygulama oyunu bilmiyor ya da yanlış biliyorsa (ör. benzer satırlı başka oyunun paketi) sunucunun satırlardan
+        /// tanıdığı havuz öncelikli oyun `serverGameSeconds` boyunca geçerlidir; sunucu her cevapta oyunu yeniden söyler.
+        func active(_ game: String?, now: Double) -> Bool {
+            lock.withLock {
+                guard serverOn && reachable else { return false }
+                return first.contains(game) || (now - serverGameAt <= TranslationPool.serverGameSeconds && first.contains(serverGame))
+            }
+        }
     }
 
     struct Cursor: Codable, Equatable {
@@ -220,7 +237,10 @@ public actor TranslationPool {
 
     /// Oyun havuz öncelikli mi ve sunucu kullanılabilir mi. Ortak havuz ayarı kapalı olsa da geçerlidir: kullanıcı
     /// kararıyla bu oyunlarda çeviri hep sunucudan gelir.
-    public nonisolated func isPoolFirst(_ game: String?) -> Bool { poolFirstState.active(game) }
+    public nonisolated func isPoolFirst(_ game: String?) -> Bool { poolFirstState.active(game, now: clock().timeIntervalSince1970) }
+
+    /// Sunucunun tanıdığı oyun bu kadar süre geçerli sayılır (saniye).
+    static let serverGameSeconds: Double = 600
 
     /// Havuz şu an kullanılabilir mi (ayar açık, sunucu açık, adres var).
     public var isActive: Bool { isEnabled && config.enabled && endpoint != nil }
@@ -328,13 +348,17 @@ public actor TranslationPool {
         request.setValue("nino-pool/1 (\(platform); \(app))", forHTTPHeaderField: "User-Agent")
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         let send = self.send
+        let (state, clock) = (poolFirstState, self.clock)
         let task = Task<String?, Never> {
             guard let (data, response) = try? await send(request), (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
             struct Reply: Decodable {
                 struct Line: Decodable { var text: String? }
                 var translations: [Line]
+                var game: String?
             }
-            return (try? JSONDecoder().decode(Reply.self, from: data))?.translations.first?.text
+            let reply = try? JSONDecoder().decode(Reply.self, from: data)
+            state.noteServerGame(reply?.game, at: clock().timeIntervalSince1970)
+            return reply?.translations.first?.text
         }
         inFlight[flightKey] = task
         let result = await task.value

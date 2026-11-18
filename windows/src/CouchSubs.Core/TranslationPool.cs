@@ -116,6 +116,7 @@ public sealed class TranslationPool : IDisposable
     private sealed class TranslateReply
     {
         [JsonPropertyName("translations")] public List<Line>? Translations { get; set; }
+        [JsonPropertyName("game")] public string? Game { get; set; }
 
         public sealed class Line
         {
@@ -144,6 +145,11 @@ public sealed class TranslationPool : IDisposable
     private Uri? endpoint;
     private Config config = new();
     private PoolFirstConfig poolFirst = new();
+    /// <summary>Sunucunun son çeviri cevabındaki oyun (satırlardan ya da havuzdan tanıdığı) ve ne zaman geldiği.</summary>
+    private (string Game, double At) serverGame = ("", double.NegativeInfinity);
+
+    /// <summary>Sunucunun tanıdığı oyun bu kadar süre geçerli sayılır (saniye).</summary>
+    internal const double ServerGameSeconds = 600;
     private bool enabled;
     private string language;
     private Dictionary<string, Cursor> cursors = [];
@@ -194,7 +200,14 @@ public sealed class TranslationPool : IDisposable
     /// </summary>
     public bool IsPoolFirst(string? rawGame)
     {
-        lock (gate) return config.Enabled && endpoint is not null && poolFirst.Contains(rawGame);
+        lock (gate)
+        {
+            if (!(config.Enabled && endpoint is not null)) return false;
+            if (poolFirst.Contains(rawGame)) return true;
+            // Uygulama oyunu bilmiyor ya da yanlış biliyor (ör. benzer satırlı başka oyunun paketi): sunucu satırlardan
+            // havuz öncelikli oyunu tanıdıysa o geçerli. Sunucu her cevapta oyunu yeniden söyler.
+            return Now() - serverGame.At <= ServerGameSeconds && poolFirst.Contains(serverGame.Game);
+        }
     }
 
     public bool IsEnabled
@@ -488,7 +501,9 @@ public sealed class TranslationPool : IDisposable
             using var response = await http.SendAsync(request, timeout.Token).ConfigureAwait(false);
             if ((int)response.StatusCode != 200) return null;
             var body = await response.Content.ReadAsStringAsync(timeout.Token).ConfigureAwait(false);
-            return JsonSerializer.Deserialize<TranslateReply>(body, Json)?.Translations?.FirstOrDefault()?.Text;
+            var reply = JsonSerializer.Deserialize<TranslateReply>(body, Json);
+            lock (gate) serverGame = (NinoPool.GameId(reply?.Game) ?? "", Now());
+            return reply?.Translations?.FirstOrDefault()?.Text;
         }
         catch (Exception e) when (e is HttpRequestException or OperationCanceledException or IOException or JsonException
                                       or ObjectDisposedException or InvalidOperationException)

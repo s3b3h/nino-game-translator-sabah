@@ -359,6 +359,26 @@ public sealed class TranslationPoolTests : IDisposable
     }
 
     [Fact]
+    public async Task ServerRecognisedGameMakesItPoolFirst()
+    {
+        server.Translate = _ => (200, """{"ok":true,"game":"grand-theft-auto-vi","translations":[{"text":"Kapıyı tut.","tier":1}]}""");
+        var pool = Make();
+        Assert.False(pool.IsPoolFirst(null));
+        await pool.TranslateAsync("Hold the gate.", null, "Call of Duty: Modern Warfare");
+        Assert.True(pool.IsPoolFirst(null));
+        Assert.True(pool.IsPoolFirst("Call of Duty: Modern Warfare"));
+        // Sunucu başka oyun söyleyince ya da süre geçince biter.
+        server.Translate = _ => (200, """{"ok":true,"game":"red-dead-redemption-2","translations":[{"text":"Aç.","tier":1}]}""");
+        await pool.TranslateAsync("Open it now.", null, "Red Dead Redemption 2");
+        Assert.False(pool.IsPoolFirst(null));
+        server.Translate = _ => (200, """{"ok":true,"game":"grand-theft-auto-vi","translations":[{"text":"Yürü.","tier":1}]}""");
+        await pool.TranslateAsync("Walk with me.", null, null);
+        Assert.True(pool.IsPoolFirst(null));
+        now = now.AddSeconds(TranslationPool.ServerGameSeconds + 1);
+        Assert.False(pool.IsPoolFirst(null));
+    }
+
+    [Fact]
     public async Task TranslateFirstReturnsNullWhenBudgetIsSpent()
     {
         server.Translate = _ => (200, """{"ok":true,"limited":"daily_cap","translations":[{"text":null,"tier":0}]}""");
