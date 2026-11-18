@@ -168,3 +168,22 @@ final class PoolFirstTests: XCTestCase {
         XCTAssertEqual(context.add("Three."), ["One.", "Two."])
     }
 }
+
+/// Vision takılınca okuma kapısı sonsuza dek kilitli kalmasın: kapı yenilenince sonraki okuma yeni kapıdan girer.
+final class VisionWatchTests: XCTestCase {
+    func testStuckGateIsReplaced() {
+        let watch = VisionReader.Watch()
+        let stuck = watch.gate
+        stuck.lock()
+        XCTAssertFalse(stuck.lock(before: Date().addingTimeInterval(0.05)))
+        watch.replace(stuck)
+        let fresh = watch.gate
+        XCTAssertFalse(fresh === stuck)
+        XCTAssertTrue(fresh.lock(before: Date().addingTimeInterval(0.05)))
+        fresh.unlock()
+        // Eski kapıyı tutan sonradan bırakınca yeni kapı değişmez.
+        watch.replace(stuck)
+        XCTAssertTrue(watch.gate === fresh)
+        stuck.unlock()
+    }
+}

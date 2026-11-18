@@ -42,12 +42,55 @@ public struct VisionReader: TextReader {
         // Nino: altyazı okuması ile köşe okuması aynı anda Vision'a girince Vision kendi iş kuyruğunda kilitleniyor,
         // okuma hiç bitmiyordu (okuma hattı 15 sn'de bir yeniden kuruluyor, altyazı gelmiyordu). Okumalar sırayla yapılır;
         // bir okumanın kendi içindeki eşzamanlı denemeleri (firstLines) aynen kalır.
-        Self.gate.lock()
-        defer { Self.gate.unlock() }
+        //
+        // Vision bazen tek bir okumada sonsuza dek takılıyor (Apple'ın hatası); kapı kilidi de bırakılmadığı için bütün
+        // sonraki okumalar sıraya girip birikiyordu (22 iş parçacığı) ve altyazı ancak Nino yeniden açılınca dönüyordu.
+        // Artık kapı en çok `gateWait` beklenir; dolarsa takılan istek iptal edilir, yine açılmazsa kapı yenilenir (takılan
+        // iş parçacığı bırakılır) ve bu kare atlanır. Sonraki kare yeni kapıdan okunur.
+        let gate = Self.watch.gate
+        guard gate.lock(before: Date().addingTimeInterval(Self.gateWait)) else {
+            Self.watch.cancelRunning()
+            guard gate.lock(before: Date().addingTimeInterval(1)) else {
+                Self.watch.replace(gate)
+                throw VisionStuck()
+            }
+            defer { gate.unlock() }
+            return deep ? try Self.firstLines(of: image, using: recognize) : try recognize(image)
+        }
+        defer { gate.unlock() }
         return deep ? try Self.firstLines(of: image, using: recognize) : try recognize(image)
     }
 
-    private static let gate = NSLock()
+    /// Kapı en çok bu kadar beklenir (saniye); normal bir okuma 0,1-0,5 sn sürer.
+    static let gateWait: TimeInterval = 4
+
+    /// Vision'ın takıldığını bildirir; bu kare okunmaz.
+    public struct VisionStuck: Error, CustomStringConvertible {
+        public var description: String { "Vision okuması takıldı; istek iptal edildi" }
+    }
+
+    /// Okuma kapısı ve süren Vision istekleri (takılınca iptal için).
+    final class Watch: @unchecked Sendable {
+        private let lock = NSLock()
+        private var current = NSLock()
+        private var running: [ObjectIdentifier: VNRequest] = [:]
+
+        var gate: NSLock { lock.withLock { current } }
+
+        func replace(_ stuck: NSLock) {
+            lock.withLock { if current === stuck { current = NSLock() } }
+        }
+
+        func started(_ request: VNRequest) { lock.withLock { running[ObjectIdentifier(request)] = request } }
+        func finished(_ request: VNRequest) { lock.withLock { running[ObjectIdentifier(request)] = nil } }
+
+        func cancelRunning() {
+            let requests = lock.withLock { Array(running.values) }
+            requests.forEach { $0.cancel() }
+        }
+    }
+
+    static let watch = Watch()
 
     /// Satırsız eski biçim (testler için): bulunan yazı tek metin olarak döner.
     public static func firstReading(of image: CGImage, using recognize: @escaping @Sendable (CGImage) throws -> String) throws -> String {
@@ -104,6 +147,8 @@ public struct VisionReader: TextReader {
             request.recognitionLevel = .accurate
             request.recognitionLanguages = [language]
             request.usesLanguageCorrection = true
+            Self.watch.started(request)
+            defer { Self.watch.finished(request) }
             try VNImageRequestHandler(cgImage: image).perform([request])
             return (request.results ?? []).compactMap { observation -> RawLine? in
                 guard let candidate = observation.topCandidates(1).first, candidate.confidence >= 0.5 else { return nil }
