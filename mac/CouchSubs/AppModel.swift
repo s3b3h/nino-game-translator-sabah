@@ -1819,14 +1819,7 @@ final class AppModel: ObservableObject {
                     }
                     return try await translator.translate(piece)
                 })) ?? [])
-            // Nino: çeviri ipucunun üstüne değil hemen üstüne konur; oyunun ipucu ve tuş simgesi (□) altta görünür kalır.
-            let items = translated.map { item -> ScreenTranslation.Item in
-                var moved = item
-                let height = max(item.box.bottom - item.box.top, item.lineHeight)
-                let bottom = max(height, item.box.top - 0.006)
-                moved.box = TextBox(left: item.box.left, top: max(0, bottom - height), right: item.box.right, bottom: bottom)
-                return moved
-            }
+            let items = Self.placeAbove(translated)
             guard let self else { return }
             if !prompts.text.isEmpty {
                 SubtitleLog.write("ipucu: \"\(prompts.text.replacingOccurrences(of: "\n", with: " / "))\" → \(items.map(\.translation).joined(separator: " / "))")
@@ -1835,6 +1828,37 @@ final class AppModel: ObservableObject {
             sendOverlays()
             promptTask = nil
         }
+    }
+
+    /// Nino: tuş ipucunun ("TURBINE R3", "W-14 RIFLE") Türkçesi oyunun yazısının üstüne binmeden, hemen üstündeki boşluğa
+    /// konur. TV kutuyu yukarı ve aşağı `tvPad` kadar payla çizer; Türkçe uzun gelirse kutu aşağı doğru uzayıp oyunun
+    /// yazısını örtüyordu. Bu yüzden: arada pay bırakılır, kutu yana doğru genişletilir (Türkçe tek satıra sığsın; sağ
+    /// yarıdaki ipucunda sola, sol yarıdakinde sağa) ve iki çeviri üst üste gelirse alttaki yukarı itilmez, üstteki daha
+    /// yukarı kaydırılır.
+    nonisolated static func placeAbove(_ items: [ScreenTranslation.Item]) -> [ScreenTranslation.Item] {
+        let tvPad = 0.008, gap = 0.006
+        var placed: [ScreenTranslation.Item] = []
+        // Alttan yukarı: en alttaki ipucu yerini önce alır, üstündekiler gerekirse daha yukarı kayar.
+        for item in items.sorted(by: { $0.box.top > $1.box.top }) {
+            var moved = item
+            let height = max(item.box.bottom - item.box.top, item.lineHeight)
+            let width = item.box.right - item.box.left
+            // Türkçe genelde İngilizceden uzun: harf başına genişliğe göre gereken kadar (en çok %60 fazla) yer açılır.
+            let source = max(1, item.source.count), target = item.translation.count
+            let extra = min(width * 0.6, max(0, width * Double(target - source) / Double(source)))
+            let rightSide = (item.box.left + item.box.right) / 2 > 0.5
+            let left = rightSide ? max(0, item.box.left - extra) : item.box.left
+            let right = rightSide ? item.box.right : min(1, item.box.right + extra)
+            var bottom = item.box.top - 2 * tvPad - gap
+            for other in placed where other.box.left < right && left < other.box.right
+                && other.box.top - 2 * tvPad - gap < bottom && bottom - height < other.box.bottom + 2 * tvPad + gap {
+                bottom = other.box.top - 2 * tvPad - gap
+            }
+            bottom = max(height + tvPad, bottom)
+            moved.box = TextBox(left: left, top: max(0, bottom - height), right: right, bottom: bottom)
+            placed.append(moved)
+        }
+        return placed.sorted { $0.box.top < $1.box.top }
     }
 
     /// Köşe ve ipucu çevirilerini birlikte TV'ye gönderir (ekran çevirisi tek liste ister).
