@@ -194,38 +194,62 @@ public static class NinoAssistant
     /// <summary>Cevaptaki bir parça: düz yazı ya da tıklanabilir bağlantı.</summary>
     public sealed record Span(string Text, Uri? Link = null);
 
-    /// <summary>Cevaptaki bir satır bloğu: paragraf ya da "1." gibi numaralı madde (numara ayrı).</summary>
-    public sealed record Block(string? Number, IReadOnlyList<Span> Spans);
-
-    private static readonly Regex Url = new(@"https?://[^\s<>""')\]]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex NumberedItem = new(@"^\s*(\d{1,2})[.)]\s+(.*)$", RegexOptions.Compiled);
+    /// <summary>Cevaptaki bloğun türü: paragraf, numaralı adım ya da madde işaretli satır.</summary>
+    public enum BlockKind { Paragraph, Step, Bullet }
 
     /// <summary>
-    /// Nino'nun cevabını bloklara ayırır: boş satır paragrafları ayırır, "1." ile başlayan satır numaralı maddedir, paragraf
-    /// içindeki tek satır sonları korunur. Yalnız http/https bağlantıları tıklanabilir olur (sondaki nokta, virgül bağlantıya
-    /// girmez).
+    /// Cevaptaki bir blok: paragraf, numaralı adım (<paramref name="Number"/> yalnız rakamlar, ör. "1"; baloncukta mavi
+    /// yuvarlak rozette gösterilir) ya da madde.
+    /// </summary>
+    public sealed record Block(BlockKind Kind, string? Number, IReadOnlyList<Span> Spans)
+    {
+        public bool IsListItem => Kind != BlockKind.Paragraph;
+        public string Text => string.Concat(Spans.Select(span => span.Text));
+    }
+
+    private static readonly Regex Url = new(@"https?://[^\s<>""')\]]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex Step = new(@"^\s*([0-9]{1,2})[.)]\s+(\S.*)$", RegexOptions.Compiled);
+    private static readonly Regex Bullet = new(@"^\s*[-•*]\s+(\S.*)$", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Nino'nun cevabını bloklara ayırır (Mac/iPhone'da AssistantChat.blocks, Android'de NinoAssistant.blocks aynı
+    /// kurallarla): boş satır blokları ayırır; "1." ya da "1)" ile başlayan satır numaralı adım (en çok iki basamak,
+    /// "2024. yılında" adım sayılmaz), "-", "•" ya da "*" ile başlayan satır maddedir. Paragraf içindeki tek satır sonları
+    /// korunur; adımın hemen altındaki girintili satır o adımın devamıdır, girintisiz satır yeni paragraf başlatır. Satırlar
+    /// kırpılır. Yalnız http/https bağlantıları tıklanabilir olur (sondaki nokta, virgül bağlantıya girmez).
     /// </summary>
     public static IReadOnlyList<Block> Format(string reply)
     {
         var blocks = new List<Block>();
-        var paragraph = new List<string>();
+        (BlockKind Kind, string? Number, string Text)? current = null;
         void Flush()
         {
-            if (paragraph.Count == 0) return;
-            blocks.Add(new Block(null, Linkify(string.Join("\n", paragraph))));
-            paragraph.Clear();
+            if (current is { } open) blocks.Add(new Block(open.Kind, open.Number, Linkify(open.Text)));
+            current = null;
         }
-        foreach (var raw in reply.Replace("\r\n", "\n").Split('\n'))
+        foreach (var raw in reply.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
         {
-            var line = raw.TrimEnd();
-            if (line.Trim().Length == 0) { Flush(); continue; }
-            if (NumberedItem.Match(line) is { Success: true } item)
+            var line = raw.Trim();
+            if (line.Length == 0) { Flush(); continue; }
+            if (Step.Match(raw) is { Success: true } step)
             {
                 Flush();
-                blocks.Add(new Block(item.Groups[1].Value + ".", Linkify(item.Groups[2].Value.Trim())));
-                continue;
+                current = (BlockKind.Step, step.Groups[1].Value, step.Groups[2].Value.Trim());
             }
-            paragraph.Add(line.Trim());
+            else if (Bullet.Match(raw) is { Success: true } bullet)
+            {
+                Flush();
+                current = (BlockKind.Bullet, null, bullet.Groups[1].Value.Trim());
+            }
+            else if (current is { } open && (open.Kind == BlockKind.Paragraph || raw[0] is ' ' or '\t'))
+            {
+                current = (open.Kind, open.Number, open.Text + "\n" + line);
+            }
+            else
+            {
+                Flush();
+                current = (BlockKind.Paragraph, null, line);
+            }
         }
         Flush();
         return blocks;

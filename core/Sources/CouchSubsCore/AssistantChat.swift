@@ -222,6 +222,71 @@ public enum AssistantChat {
         }
     }
 
+    /// Robotun cevabındaki bir blok: paragraf, numaralı adım ya da madde işaretli satır.
+    public enum Block: Equatable, Sendable {
+        case paragraph(String)
+        /// `number`: yalnız rakamlar ("1"); balondaki yuvarlak rozette gösterilir.
+        case step(number: String, text: String)
+        case bullet(String)
+
+        public var text: String {
+            switch self {
+            case .paragraph(let text), .step(_, let text), .bullet(let text): text
+            }
+        }
+
+        public var isListItem: Bool {
+            if case .paragraph = self { return false }
+            return true
+        }
+    }
+
+    private static let stepPattern = try! NSRegularExpression(pattern: #"^\s*([0-9]{1,2})[.)]\s+(\S.*)$"#)
+    private static let bulletPattern = try! NSRegularExpression(pattern: #"^\s*[-•*]\s+(\S.*)$"#)
+
+    /// Robotun cevabını bloklara ayırır (Mac ve iPhone balonu aynı yerleşimi çizer; Android'de NinoAssistant.blocks,
+    /// Windows'ta NinoAssistant.Format aynı kurallarla). Boş satır blokları ayırır; "1." ya da "1)" ile başlayan satır
+    /// numaralı adım (en çok iki basamak, "2024. yılında" adım sayılmaz), "-", "•" ya da "*" ile başlayan satır maddedir.
+    /// Paragraf içindeki tek satır sonları korunur; bir adımın hemen altındaki girintili satır o adımın devamıdır,
+    /// girintisiz satır yeni paragraf başlatır. Satırlar kırpılır.
+    public static func blocks(_ text: String) -> [Block] {
+        var blocks: [Block] = []
+        var current: Block?
+        func flush() {
+            if let current { blocks.append(current) }
+            current = nil
+        }
+        func match(_ regex: NSRegularExpression, _ line: String) -> [String]? {
+            guard let result = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)) else { return nil }
+            return (1 ..< result.numberOfRanges).compactMap { Range(result.range(at: $0), in: line).map { String(line[$0]) } }
+        }
+        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
+        for raw in normalized.components(separatedBy: "\n") {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            if line.isEmpty { flush(); continue }
+            if let step = match(stepPattern, raw), step.count == 2 {
+                flush()
+                current = .step(number: step[0], text: step[1].trimmingCharacters(in: .whitespaces))
+            } else if let bullet = match(bulletPattern, raw), bullet.count == 1 {
+                flush()
+                current = .bullet(bullet[0].trimmingCharacters(in: .whitespaces))
+            } else if let open = current {
+                let indented = raw.first.map { $0 == " " || $0 == "\t" } ?? false
+                switch open {
+                case .paragraph(let body): current = .paragraph(body + "\n" + line)
+                case .step(let number, let body) where indented: current = .step(number: number, text: body + "\n" + line)
+                case .bullet(let body) where indented: current = .bullet(body + "\n" + line)
+                default: flush(); current = .paragraph(line)
+                }
+            } else {
+                flush()
+                current = .paragraph(line)
+            }
+        }
+        flush()
+        return blocks
+    }
+
     /// Bağlantıları tıklanabilir yapılmış metin (SwiftUI Text'te gösterilir; satırlar ve "1." listeleri olduğu gibi kalır).
     public static func attributed(_ text: String) -> AttributedString {
         var result = AttributedString(text)

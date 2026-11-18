@@ -64,6 +64,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -76,9 +77,11 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.couchsubs.mobile.BuildConfig
 import com.couchsubs.mobile.R
 import com.couchsubs.mobile.Services
@@ -225,12 +228,52 @@ fun AskNinoButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     ) { NinoBot(46.dp, bob = true) }
 }
 
-/** Nino'nun yanıtı: düz paragraflar ve tıklanabilir bağlantılar. */
+/** Metin ve tıklanabilir http(s) bağlantıları. */
 private fun linkified(text: String): AnnotatedString = buildAnnotatedString {
     append(text)
     val style = TextLinkStyles(SpanStyle(color = Tokens.Color.accentText, textDecoration = TextDecoration.Underline))
     NinoAssistant.links(text).forEach { range ->
         addLink(LinkAnnotation.Url(text.substring(range.first, range.last + 1), style), range.first, range.last + 1)
+    }
+}
+
+/**
+ * Nino'nun yanıtı: paragraflar, mavi yuvarlak rozetli numaralı adımlar ve noktalı maddeler. Kayan satırlar rozetin
+ * altına değil yazının hizasına gelir (asılı girinti); sağdan sola dillerde rozet kendiliğinden sağa geçer. Bloklara
+ * ayırma NinoAssistant.blocks'ta (Mac, iPhone ve Windows'la aynı kurallar).
+ */
+@Composable
+private fun NinoReply(text: String) {
+    val blocks = remember(text) { NinoAssistant.blocks(text) }
+    val style = Tokens.Type.body.copy(color = Tokens.Color.text)
+    val line = with(LocalDensity.current) { style.lineHeight.toDp() }
+    val cell = maxOf(line, 21.dp)
+    val textTop = (cell - line) / 2
+    Column {
+        blocks.forEachIndexed { i, block ->
+            val gap = if (i == 0) 0.dp else if (block.isListItem && blocks[i - 1].isListItem) 8.dp else 10.dp
+            when (block.kind) {
+                NinoAssistant.Block.Kind.PARAGRAPH -> Text(linkified(block.text), style = style, modifier = Modifier.padding(top = gap))
+                else -> Row(Modifier.padding(top = gap), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Rozet ilk satırın ortasında dursun: hücre en az bir satır boyu (büyük yazı boyutunda da), yazı ise
+                    // rozetten kısa satırlarda hücrenin ortasına gelecek kadar aşağıda.
+                    Box(Modifier.heightIn(min = cell).widthIn(min = 21.dp), contentAlignment = Alignment.Center) {
+                        if (block.kind == NinoAssistant.Block.Kind.STEP) {
+                            val number = block.number.orEmpty()
+                            Box(Modifier.heightIn(min = 21.dp).widthIn(min = 21.dp).background(Tokens.Color.accent, CircleShape)
+                                .padding(horizontal = if (number.length > 1) 4.dp else 0.dp),
+                                contentAlignment = Alignment.Center) {
+                                Text(number, color = Tokens.Color.onAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                    lineHeight = 12.sp, modifier = Modifier.semantics { contentDescription = "$number." })
+                            }
+                        } else {
+                            Box(Modifier.size(6.dp).background(Tokens.Color.accent, CircleShape))
+                        }
+                    }
+                    Text(linkified(block.text), style = style, modifier = Modifier.weight(1f, fill = false).padding(top = textTop))
+                }
+            }
+        }
     }
 }
 
@@ -320,7 +363,7 @@ fun AskNinoScreen(onBack: () -> Unit, onReport: () -> Unit) {
                     if (message.user) UserBubble(message, onRetry = { AssistantSession.retry(context, message) })
                     else if (message.notice != null) NoticeBubble(message.notice, onReport)
                     else NinoBubble {
-                        Text(linkified(message.text), style = Tokens.Type.body.copy(color = Tokens.Color.text))
+                        NinoReply(message.text)
                         message.report?.let {
                             Text(stringResource(R.string.assistant_report_sent), style = Tokens.Type.caption, color = Tokens.Color.success,
                                 modifier = Modifier.background(Tokens.Color.success.copy(alpha = 0.1f), RoundedCornerShape(50))

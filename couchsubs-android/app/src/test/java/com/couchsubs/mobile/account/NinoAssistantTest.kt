@@ -154,4 +154,56 @@ class NinoAssistantTest {
         assertEquals(listOf("https://nino.example/kurulum", "http://a.example/b?c=1"), found)
         assertTrue(NinoAssistant.links("bağlantı yok, ftp://x.example").isEmpty())
     }
+
+    private fun paragraph(text: String) = NinoAssistant.Block(NinoAssistant.Block.Kind.PARAGRAPH, text)
+    private fun step(number: String, text: String) = NinoAssistant.Block(NinoAssistant.Block.Kind.STEP, text, number)
+    private fun bullet(text: String) = NinoAssistant.Block(NinoAssistant.Block.Kind.BULLET, text)
+
+    @Test
+    fun blocksSplitParagraphsAndSpacedSteps() {
+        val reply = """
+            Kolay yol var, TV'ye iki farklı şekilde kurabilirsin.
+
+            1. Mac'inde Nino'yu aç ve ilk kurulumda TV seçimine gel.
+
+            2. TV'ni seç (Android TV / Google TV, Samsung ya da LG); Nino uygulamayı TV'ye kendisi kurar.
+
+            3. TV'de bir kez izin istenirse kumandayla onayla.
+
+            Hangi TV markasını kullanıyorsun?
+        """.trimIndent()
+        assertEquals(listOf(
+            paragraph("Kolay yol var, TV'ye iki farklı şekilde kurabilirsin."),
+            step("1", "Mac'inde Nino'yu aç ve ilk kurulumda TV seçimine gel."),
+            step("2", "TV'ni seç (Android TV / Google TV, Samsung ya da LG); Nino uygulamayı TV'ye kendisi kurar."),
+            step("3", "TV'de bir kez izin istenirse kumandayla onayla."),
+            paragraph("Hangi TV markasını kullanıyorsun?"),
+        ), NinoAssistant.blocks(reply))
+    }
+
+    @Test
+    fun blocksConsecutiveStepsInsideParagraph() {
+        val reply = "Şunu dene:\r\n1. Ayarlar'ı aç.\n2) https://nino.example/kurulum adresine git.\n   Sayfa açılmazsa bekle.\nOlmazsa yaz.\nBen buradayım.\n\n\n"
+        assertEquals(listOf(
+            paragraph("Şunu dene:"),
+            step("1", "Ayarlar'ı aç."),
+            step("2", "https://nino.example/kurulum adresine git.\nSayfa açılmazsa bekle."),
+            paragraph("Olmazsa yaz.\nBen buradayım."),
+        ), NinoAssistant.blocks(reply))
+    }
+
+    @Test
+    fun blocksBulletsAndNonSteps() {
+        val reply = "Gerekenler:\n- PS5\n• Remote Play için ikinci hesap\n* Aynı Wi-Fi\n\n2024. yılında çıkan oyunlar da olur.\n10. adım: 1.5 saniye bekle."
+        assertEquals(listOf(
+            paragraph("Gerekenler:"),
+            bullet("PS5"),
+            bullet("Remote Play için ikinci hesap"),
+            bullet("Aynı Wi-Fi"),
+            paragraph("2024. yılında çıkan oyunlar da olur."),
+            step("10", "adım: 1.5 saniye bekle."),
+        ), NinoAssistant.blocks(reply))
+        assertTrue(NinoAssistant.blocks("  \n\n").isEmpty())
+        assertEquals(listOf(paragraph("-yok\n1.yok")), NinoAssistant.blocks("-yok\n1.yok"))
+    }
 }

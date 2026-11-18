@@ -104,11 +104,12 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
-        // Nino: "Nino'ya Sor": sağ altta yüzen robot (ana ekranda alt şeridin, kurulumda Devam düğmesinin üstünde).
-        .overlay(alignment: .bottomTrailing) {
+        // Nino: "Nino'ya Sor": yüzen robot. Ana ekranda sol altta (sağ altta fiş ve kablo durur: PS5 ve Xbox sahnesi),
+        // kurulumda sağ altta Devam düğmesinin üstünde.
+        .overlay(alignment: model.step == .done ? .bottomLeading : .bottomTrailing) {
             if !showSplash {
                 AskNinoButton()
-                    .padding(.trailing, Theme.space("xl"))
+                    .padding(model.step == .done ? .leading : .trailing, Theme.space("xl"))
                     .padding(.bottom, model.step == .done ? 60 : 96)
                     .transition(.scale.combined(with: .opacity))
             }

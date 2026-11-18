@@ -127,13 +127,56 @@ enum AskNino {
     }
 }
 
-/// Mesaj metni: paragraflar ve "1." listeleri olduğu gibi, bağlantılar tıklanabilir.
+/// Robotun mesajı: paragraflar, mavi yuvarlak rozetli numaralı adımlar ve noktalı maddeler (asılı girinti: kayan
+/// satırlar rozetin altına değil yazının hizasına gelir), bağlantılar tıklanabilir. Bloklara ayırma CouchSubsCore'da
+/// (AssistantChat.blocks); sağdan sola dillerde rozet kendiliğinden sağa geçer. Mac ve iPhone aynı görünümü kullanır.
 struct NinoMessageText: View {
     let text: String
 
+    /// Rozetin çapı; maddenin noktası da aynı genişlikte durur ki yazılar aynı hizaya gelsin.
+    private static let badge: CGFloat = 21
+
     var body: some View {
+        let blocks = AssistantChat.blocks(text)
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(blocks.indices, id: \.self) { i in
+                block(blocks[i])
+                    .padding(.top, i == 0 ? 0 : blocks[i].isListItem && blocks[i - 1].isListItem ? 8 : 10)
+            }
+        }
+        .textSelection(.enabled)
+    }
+
+    @ViewBuilder private func block(_ block: AssistantChat.Block) -> some View {
+        switch block {
+        case .paragraph(let text):
+            paragraph(text)
+        case .step(let number, let text):
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: number)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, number.count > 1 ? 4 : 0)
+                    .frame(minWidth: Self.badge, minHeight: Self.badge)
+                    .background(Capsule().fill(Color.csAccent))
+                    .accessibilityLabel(Text(verbatim: "\(number)."))
+                paragraph(text)
+            }
+        case .bullet(let text):
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: "•")
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color.csAccent)
+                    .frame(width: Self.badge)
+                    .accessibilityHidden(true)
+                paragraph(text)
+            }
+        }
+    }
+
+    private func paragraph(_ text: String) -> some View {
         Text(AssistantChat.attributed(text))
-            .textSelection(.enabled)
             .fixedSize(horizontal: false, vertical: true)
     }
 }

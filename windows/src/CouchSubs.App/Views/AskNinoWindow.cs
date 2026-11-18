@@ -325,7 +325,15 @@ public sealed class AskNinoWindow : Window
         return bubble;
     }
 
-    /// <summary>Nino'nun metni: paragraflar, "1." numaralı maddeler (asılı girinti) ve tıklanabilir http(s) bağlantıları.</summary>
+    /// <summary>Adım rozetinin çapı; maddenin noktası da aynı genişlikte durur ki yazılar aynı hizaya gelsin.</summary>
+    private const double BadgeSize = 21;
+
+    /// <summary>
+    /// Nino'nun metni: paragraflar, mavi yuvarlak rozetli numaralı adımlar ve noktalı maddeler (asılı girinti: kayan
+    /// satırlar rozetin altına değil yazının hizasına gelir), tıklanabilir http(s) bağlantıları. Bloklara ayırma
+    /// NinoAssistant.Format'ta (Mac, iPhone ve Android'le aynı kurallar). Sağdan sola dillerde pencerenin FlowDirection'ı
+    /// miras kalır; Grid sütunları kendiliğinden aynalanır, rozet sağa geçer.
+    /// </summary>
     private static StackPanel Paragraphs(string text)
     {
         var panel = new StackPanel();
@@ -342,20 +350,62 @@ public sealed class AskNinoWindow : Window
                 link.RequestNavigate += (_, e) => { BrowserLauncher.Open(e.Uri); e.Handled = true; };
                 body.Inlines.Add(link);
             }
-            var gap = new Thickness(0, i == 0 ? 0 : block.Number is not null && blocks[i - 1].Number is not null ? 4 : 8, 0, 0);
-            if (block.Number is null)
+            var gap = new Thickness(0, i == 0 ? 0 : block.IsListItem && blocks[i - 1].IsListItem ? 8 : 10, 0, 0);
+            if (!block.IsListItem)
             {
                 body.Margin = gap;
                 panel.Children.Add(body);
                 continue;
             }
-            var number = new TextBlock { Text = block.Number, FontWeight = FontWeights.SemiBold, MinWidth = 22, Margin = new Thickness(0, 0, 4, 0) };
-            var item = new DockPanel { Margin = gap };
-            item.Children.Add(number);
+            // Satır yüksekliği ~19 px, rozet 21 px: ilk satırın ortası rozetin ortasına gelsin diye yazı biraz aşağıda.
+            body.Margin = new Thickness(0, 1, 0, 0);
+            Grid.SetColumn(body, 1);
+            var item = new Grid { Margin = gap };
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            // Yazı önce eklenir: ekran okuyucunun canlı bölgesi (Announce) rozetteki numara değil, ilk yazı olsun.
             item.Children.Add(body);
+            var marker = block.Kind == NinoAssistant.BlockKind.Step ? StepBadge(block.Number ?? "") : BulletDot();
+            Grid.SetColumn(marker, 0);
+            item.Children.Add(marker);
             panel.Children.Add(item);
         }
         return panel;
+    }
+
+    /// <summary>Numaralı adımın rozeti: vurgu mavisi daire, beyaz kalın numara.</summary>
+    private static Border StepBadge(string number)
+    {
+        var label = new TextBlock
+        {
+            Text = number,
+            FontSize = 11.5,
+            FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        label.SetResourceReference(TextBlock.ForegroundProperty, "onAccentBrush");
+        AutomationProperties.SetName(label, number + ".");
+        var badge = new Border
+        {
+            MinWidth = BadgeSize,
+            Height = BadgeSize,
+            CornerRadius = new CornerRadius(BadgeSize / 2),
+            Padding = new Thickness(number.Length > 1 ? 4 : 0, 0, number.Length > 1 ? 4 : 0, 0),
+            Margin = new Thickness(0, 0, 8, 0),
+            VerticalAlignment = VerticalAlignment.Top,
+            Child = label,
+        };
+        badge.SetResourceReference(Border.BackgroundProperty, "accentBrush");
+        return badge;
+    }
+
+    /// <summary>Maddenin noktası: rozet genişliğinde bir sütunda, ilk satırın ortasında küçük mavi daire.</summary>
+    private static Border BulletDot()
+    {
+        var dot = new Ellipse { Width = 6, Height = 6, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        dot.SetResourceReference(Shape.FillProperty, "accentBrush");
+        return new Border { Width = BadgeSize, Height = BadgeSize, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Top, Child = dot };
     }
 
     private WrapPanel SuggestionChips()

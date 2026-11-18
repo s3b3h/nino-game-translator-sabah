@@ -102,7 +102,9 @@ public partial class ShellWindow : Window
         Host.Content = main ? new MainView(controller) : new OnboardingView(controller);
         // Düğme alttaki düğmelerin üstünde durur: ana ekranda durum şeridinin (Çeviri ›), sihirbazda Devam düğmesinin üstünde,
         // kartın kaydırma çubuğundan uzakta.
-        askNino.Margin = main ? new Thickness(0, 0, 36, 84) : new Thickness(0, 0, 44, 100);
+        // Ana ekranda sağ altta fiş ve kablo durur (PS5 ve Xbox sahnesi); robot sol alta geçer.
+        askNino.HorizontalAlignment = main ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+        askNino.Margin = main ? new Thickness(36, 0, 0, 84) : new Thickness(0, 0, 44, 100);
     }
 
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)

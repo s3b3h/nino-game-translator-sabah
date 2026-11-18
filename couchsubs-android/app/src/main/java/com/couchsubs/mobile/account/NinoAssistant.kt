@@ -141,4 +141,55 @@ object NinoAssistant {
         while (end > match.range.first && text[end] in ".,;:!?)]}…'\"") end--
         (match.range.first..end).takeIf { end - match.range.first >= 8 }
     }.toList()
+
+    /** Nino'nun yanıtındaki bir blok: paragraf, numaralı adım ([number] yalnız rakamlar, ör. "1") ya da madde. */
+    data class Block(val kind: Kind, val text: String, val number: String? = null) {
+        enum class Kind { PARAGRAPH, STEP, BULLET }
+
+        val isListItem: Boolean get() = kind != Kind.PARAGRAPH
+    }
+
+    private val step = Regex("^\\s*([0-9]{1,2})[.)]\\s+(\\S.*)$")
+    private val bullet = Regex("^\\s*[-•*]\\s+(\\S.*)$")
+
+    /**
+     * Nino'nun yanıtını balonda çizilecek bloklara ayırır (Mac/iPhone'da AssistantChat.blocks, Windows'ta
+     * NinoAssistant.Format aynı kurallarla): boş satır blokları ayırır; "1." ya da "1)" ile başlayan satır numaralı adım
+     * (en çok iki basamak, "2024. yılında" adım sayılmaz), "-", "•" ya da "*" ile başlayan satır maddedir. Paragraf
+     * içindeki tek satır sonları korunur; adımın hemen altındaki girintili satır o adımın devamıdır, girintisiz satır yeni
+     * paragraf başlatır. Satırlar kırpılır.
+     */
+    fun blocks(text: String): List<Block> {
+        val blocks = mutableListOf<Block>()
+        var current: Block? = null
+        fun flush() {
+            current?.let { blocks.add(it) }
+            current = null
+        }
+        for (raw in text.replace("\r\n", "\n").replace('\r', '\n').split('\n')) {
+            val line = raw.trim()
+            if (line.isEmpty()) { flush(); continue }
+            val stepMatch = step.matchEntire(raw)
+            val bulletMatch = if (stepMatch == null) bullet.matchEntire(raw) else null
+            val open = current
+            when {
+                stepMatch != null -> {
+                    flush()
+                    current = Block(Block.Kind.STEP, stepMatch.groupValues[2].trim(), stepMatch.groupValues[1])
+                }
+                bulletMatch != null -> {
+                    flush()
+                    current = Block(Block.Kind.BULLET, bulletMatch.groupValues[1].trim())
+                }
+                open != null && (open.kind == Block.Kind.PARAGRAPH || raw.first() == ' ' || raw.first() == '\t') ->
+                    current = open.copy(text = open.text + "\n" + line)
+                else -> {
+                    flush()
+                    current = Block(Block.Kind.PARAGRAPH, line)
+                }
+            }
+        }
+        flush()
+        return blocks
+    }
 }

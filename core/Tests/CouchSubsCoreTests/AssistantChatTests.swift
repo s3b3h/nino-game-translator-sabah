@@ -241,4 +241,51 @@ final class AssistantChatTests: XCTestCase {
         }
         XCTAssertTrue(condition())
     }
+
+    // MARK: Cevabın blokları (balondaki adım rozetleri)
+
+    func testBlocksSplitParagraphsAndSpacedSteps() {
+        let reply = """
+        Kolay yol var, TV'ye iki farklı şekilde kurabilirsin.
+
+        1. Mac'inde Nino'yu aç ve ilk kurulumda TV seçimine gel.
+
+        2. TV'ni seç (Android TV / Google TV, Samsung ya da LG); Nino uygulamayı TV'ye kendisi kurar.
+
+        3. TV'de bir kez izin istenirse kumandayla onayla.
+
+        Hangi TV markasını kullanıyorsun?
+        """
+        XCTAssertEqual(AssistantChat.blocks(reply), [
+            .paragraph("Kolay yol var, TV'ye iki farklı şekilde kurabilirsin."),
+            .step(number: "1", text: "Mac'inde Nino'yu aç ve ilk kurulumda TV seçimine gel."),
+            .step(number: "2", text: "TV'ni seç (Android TV / Google TV, Samsung ya da LG); Nino uygulamayı TV'ye kendisi kurar."),
+            .step(number: "3", text: "TV'de bir kez izin istenirse kumandayla onayla."),
+            .paragraph("Hangi TV markasını kullanıyorsun?"),
+        ])
+    }
+
+    func testBlocksConsecutiveStepsInsideParagraph() {
+        let reply = "Şunu dene:\r\n1. Ayarlar'ı aç.\n2) https://nino.example/kurulum adresine git.\n   Sayfa açılmazsa bekle.\nOlmazsa yaz.\nBen buradayım.\n\n\n"
+        XCTAssertEqual(AssistantChat.blocks(reply), [
+            .paragraph("Şunu dene:"),
+            .step(number: "1", text: "Ayarlar'ı aç."),
+            .step(number: "2", text: "https://nino.example/kurulum adresine git.\nSayfa açılmazsa bekle."),
+            .paragraph("Olmazsa yaz.\nBen buradayım."),
+        ])
+    }
+
+    func testBlocksBulletsAndNonSteps() {
+        let reply = "Gerekenler:\n- PS5\n• Remote Play için ikinci hesap\n* Aynı Wi-Fi\n\n2024. yılında çıkan oyunlar da olur.\n10. adım: 1.5 saniye bekle."
+        XCTAssertEqual(AssistantChat.blocks(reply), [
+            .paragraph("Gerekenler:"),
+            .bullet("PS5"),
+            .bullet("Remote Play için ikinci hesap"),
+            .bullet("Aynı Wi-Fi"),
+            .paragraph("2024. yılında çıkan oyunlar da olur."),
+            .step(number: "10", text: "adım: 1.5 saniye bekle."),
+        ])
+        XCTAssertEqual(AssistantChat.blocks("  \n\n"), [])
+        XCTAssertEqual(AssistantChat.blocks("-yok\n1.yok"), [.paragraph("-yok\n1.yok")])
+    }
 }

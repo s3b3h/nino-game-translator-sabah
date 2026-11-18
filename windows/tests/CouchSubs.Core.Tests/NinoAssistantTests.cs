@@ -194,13 +194,72 @@ public class NinoAssistantTests
         var blocks = Format("Şunu dene:\n\n1. Ayarlar'ı aç.\n2) https://nino.example/kurulum adresine git.\n\nOlmazsa yaz.\nBen buradayım.");
         Assert.Equal(4, blocks.Count);
         Assert.Null(blocks[0].Number);
-        Assert.Equal("1.", blocks[1].Number);
+        Assert.Equal(BlockKind.Paragraph, blocks[0].Kind);
+        Assert.Equal("1", blocks[1].Number);
+        Assert.Equal(BlockKind.Step, blocks[1].Kind);
         Assert.Equal("Ayarlar'ı aç.", Assert.Single(blocks[1].Spans).Text);
-        Assert.Equal("2.", blocks[2].Number);
+        Assert.Equal("2", blocks[2].Number);
         var link = blocks[2].Spans[0];
         Assert.Equal(new Uri("https://nino.example/kurulum"), link.Link);
         Assert.Equal(" adresine git.", blocks[2].Spans[1].Text);
         Assert.Equal("Olmazsa yaz.\nBen buradayım.", Assert.Single(blocks[3].Spans).Text);
+    }
+
+    private static (BlockKind, string?, string)[] Shape(string reply) =>
+        Format(reply).Select(block => (block.Kind, block.Number, block.Text)).ToArray();
+
+    [Fact]
+    public void ReplyWithSpacedStepsBecomesParagraphStepsParagraph()
+    {
+        const string reply = """
+            Kolay yol var, TV'ye iki farklı şekilde kurabilirsin.
+
+            1. Mac'inde Nino'yu aç ve ilk kurulumda TV seçimine gel.
+
+            2. TV'ni seç (Android TV / Google TV, Samsung ya da LG); Nino uygulamayı TV'ye kendisi kurar.
+
+            3. TV'de bir kez izin istenirse kumandayla onayla.
+
+            Hangi TV markasını kullanıyorsun?
+            """;
+        Assert.Equal(new (BlockKind, string?, string)[]
+        {
+            (BlockKind.Paragraph, null, "Kolay yol var, TV'ye iki farklı şekilde kurabilirsin."),
+            (BlockKind.Step, "1", "Mac'inde Nino'yu aç ve ilk kurulumda TV seçimine gel."),
+            (BlockKind.Step, "2", "TV'ni seç (Android TV / Google TV, Samsung ya da LG); Nino uygulamayı TV'ye kendisi kurar."),
+            (BlockKind.Step, "3", "TV'de bir kez izin istenirse kumandayla onayla."),
+            (BlockKind.Paragraph, null, "Hangi TV markasını kullanıyorsun?"),
+        }, Shape(reply));
+    }
+
+    [Fact]
+    public void ConsecutiveStepsInsideParagraphAreSplit()
+    {
+        var reply = "Şunu dene:\r\n1. Ayarlar'ı aç.\n2) https://nino.example/kurulum adresine git.\n   Sayfa açılmazsa bekle.\nOlmazsa yaz.\nBen buradayım.\n\n\n";
+        Assert.Equal(new (BlockKind, string?, string)[]
+        {
+            (BlockKind.Paragraph, null, "Şunu dene:"),
+            (BlockKind.Step, "1", "Ayarlar'ı aç."),
+            (BlockKind.Step, "2", "https://nino.example/kurulum adresine git.\nSayfa açılmazsa bekle."),
+            (BlockKind.Paragraph, null, "Olmazsa yaz.\nBen buradayım."),
+        }, Shape(reply));
+    }
+
+    [Fact]
+    public void BulletsAreSplitAndYearsAreNotSteps()
+    {
+        var reply = "Gerekenler:\n- PS5\n• Remote Play için ikinci hesap\n* Aynı Wi-Fi\n\n2024. yılında çıkan oyunlar da olur.\n10. adım: 1.5 saniye bekle.";
+        Assert.Equal(new (BlockKind, string?, string)[]
+        {
+            (BlockKind.Paragraph, null, "Gerekenler:"),
+            (BlockKind.Bullet, null, "PS5"),
+            (BlockKind.Bullet, null, "Remote Play için ikinci hesap"),
+            (BlockKind.Bullet, null, "Aynı Wi-Fi"),
+            (BlockKind.Paragraph, null, "2024. yılında çıkan oyunlar da olur."),
+            (BlockKind.Step, "10", "adım: 1.5 saniye bekle."),
+        }, Shape(reply));
+        Assert.Empty(Format("  \n\n"));
+        Assert.Equal(new (BlockKind, string?, string)[] { (BlockKind.Paragraph, null, "-yok\n1.yok") }, Shape("-yok\n1.yok"));
     }
 
     [Fact]
