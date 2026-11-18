@@ -847,11 +847,17 @@ final class AppModel: ObservableObject {
         let active = settings.gamePacks && settings.sourceLanguage == "en" && settings.targetLanguage == "tr"
         // Nino: sunucunun çeviri havuzu bütün dillerde, kaynak İngilizceyken ve ortak havuz açıkken.
         let pooled = settings.sharePool && settings.sourceLanguage == "en"
-        pipeline.packLookup = active || pooled ? { text in
-            if active, let found = packs.match(text) { return found }
-            guard pooled, let translated = store.match(text) else { return nil }
+        let sense = gameChoice.sense
+        // Havuz öncelikli oyunda (GTA 6) başka oyunların paketlerine bakılmaz: çeviri yalnız havuzdan (Claude). Havuzdaki
+        // çeviri ortak havuz kapalıyken de kullanılır.
+        let poolFirst: @Sendable () -> Bool = { translations.isPoolFirst(packs.searchScope ?? sense.current?.name) }
+        let english = settings.sourceLanguage == "en"
+        pipeline.packLookup = !(active || pooled || english) ? nil : { text in
+            let first = poolFirst()
+            if active, !first, let found = packs.match(text) { return found }
+            guard pooled || first, let translated = store.match(text) else { return nil }
             return PackMatch(text: translated, spoken: [SpokenLine(english: text, turkish: translated)])
-        } : nil
+        }
         pipeline.packName = { packs.searchScope }
         // Ek alanlar yalnız pakette aranır; havuza gitmez (arayüz ve bildirim yazıları kişisel olabilir).
         regionPackLookup = active ? { packs.match($0) } : nil
@@ -860,9 +866,8 @@ final class AppModel: ObservableObject {
             pipeline.onPackMiss = nil
             return
         }
-        let sense = gameChoice.sense
         pipeline.onPackMiss = { [weak pipeline] text in
-            guard active || packs.match(text) == nil else { return }
+            guard active || poolFirst() || packs.match(text) == nil else { return }
             // Paketten tanınan oyun; yoksa PS5'in bildirdiği ya da kullanıcının seçtiği oyun (`GameChoice`).
             let game = packs.searchScope ?? sense.current?.name
             Task { await pool.offer(text, game: game) }

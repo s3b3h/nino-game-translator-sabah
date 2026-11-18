@@ -3,7 +3,7 @@
 Bu rehber, Nino'yu ilk kez kuracak herkes için. Teknik bilgi gerekmez. Adımları sırayla izleyin.
 Kurulum yaklaşık **5–10 dakika** sürer.
 
-> **Güncel sürüm: Nino V3.3.** Mac, Windows, Android telefon ve iPhone uygulamaları V3.3 (0.2.3), TV uygulaması V3.2 (0.9.31).
+> **Güncel sürüm: Nino V3.3.** Mac, Windows, Android telefon ve iPhone uygulamaları V3.3 (0.2.4), TV uygulaması V3.2 (0.9.31).
 > Telefonda ve bilgisayarda sürümü **Ayarlar › Hakkında**'da görürsünüz. TV'de: [TV uygulamam güncel mi?](#tv-uygulamam-güncel-mi)
 
 > 🌍 **11 dil:** 🇹🇷 Türkçe · 🇸🇦 العربية · 🇮🇳 हिन्दी · 🇮🇩 Bahasa Indonesia · 🇹🇭 ไทย · 🇻🇳 Tiếng Việt · 🇵🇰 اردو · 🇧🇩 বাংলা ·
@@ -61,7 +61,7 @@ Mac ve Windows'taki Nino yeni sürümleri kendiliğinden indirip kurar.
    **[Nino-Telefon.apk](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)**
 2. İnen dosyaya dokunun. Telefon izin isterse **"Bu kaynaktan yüklemeye izin ver"** seçeneğini açın ve **Yükle**'ye basın.
 3. Daha önce Nino kuruluysa yeni sürüm eskisinin üstüne kurulur. Ayarlarınız korunur.
-4. Sürümü görmek için: Nino'da **Ayarlar › Hakkında**. Güncel sürüm **V3.3** (0.2.3).
+4. Sürümü görmek için: Nino'da **Ayarlar › Hakkında**. Güncel sürüm **V3.3** (0.2.4).
 
 ### 3.2 İlk açılış
 1. **Karşılama:** Üç kısa sayfa Nino'yu tanıtır. Sağ üstteki bayraktan çeviri dilini seçin (11 dil; Türkçe en üstte).

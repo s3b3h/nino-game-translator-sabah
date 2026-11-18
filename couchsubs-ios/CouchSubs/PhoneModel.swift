@@ -833,9 +833,15 @@ final class PhoneModel: ObservableObject {
             guard let found = packs.match(text) else { return nil }
             return packs.searchScope.map(disabled.contains) == true ? nil : found
         }
-        pipeline.packLookup = packLookup == nil && !pooled ? nil : { text in
-            if let found = packLookup?(text) { return found }
-            guard pooled, let translated = store.match(text) else { return nil }
+        let sense = gameChoice.sense
+        // Havuz öncelikli oyunda (GTA 6) başka oyunların paketlerine bakılmaz: çeviri yalnız havuzdan (Claude). Havuzdaki
+        // çeviri ortak havuz kapalıyken de kullanılır.
+        let poolFirst: @Sendable () -> Bool = { translations.isPoolFirst(packs.searchScope ?? sense.current?.name) }
+        let english = settings.sourceLanguage == "en"
+        pipeline.packLookup = packLookup == nil && !pooled && !english ? nil : { text in
+            let first = poolFirst()
+            if !first, let found = packLookup?(text) { return found }
+            guard pooled || first, let translated = store.match(text) else { return nil }
             return PackMatch(text: translated, spoken: [SpokenLine(english: text, turkish: translated)])
         }
         // Ek alanlar yalnız pakette aranır; havuza gitmez (arayüz ve bildirim yazıları kişisel olabilir).
@@ -845,10 +851,9 @@ final class PhoneModel: ObservableObject {
             pipeline.onPackMiss = nil
             return
         }
-        let sense = gameChoice.sense
         pipeline.onPackMiss = { [weak pipeline] text in
             // Kapalı paketteki satır da havuza önerilmez (zaten çevrili).
-            guard (active && disabled.isEmpty) || packs.match(text) == nil else { return }
+            guard (active && disabled.isEmpty) || poolFirst() || packs.match(text) == nil else { return }
             let game = packs.searchScope ?? sense.current?.name
             Task { await pool.offer(text, game: game) }
             // Havuz öncelikli oyunda ortak havuz kapalı olsa da sorulur; çevirmen aynı isteği bekler (aynı satır iki kez

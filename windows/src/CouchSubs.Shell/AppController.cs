@@ -2138,12 +2138,16 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     private void ConnectPacks(SubtitlePipeline target)
     {
         var active = PacksActive;
-        var store = PoolTranslationsActive ? services.Translations?.Store : null;
+        // Havuzdaki çeviriler ortak havuz açıkken; havuz öncelikli oyunda (GTA 6) ayar kapalı olsa da.
+        var store = settings.SourceLanguage == "en" ? services.Translations?.Store : null;
         target.PackLookup = active || store is not null ? text =>
         {
-            if (active && services.FindInPacks(text) is { } found) return found;
+            var first = PoolFirstActive;
+            // Havuz öncelikli oyunda (GTA 6) başka oyunların paketlerine bakılmaz: çeviri yalnız havuzdan (Claude).
+            if (active && !first && services.FindInPacks(text) is { } found) return found;
+            var pooled = PoolTranslationsActive || first ? store : null;
             // Havuzdaki çeviri sunucuda yapıldı; Türkçe düzeltmeleri (motorun içinde) ona uygulanmaz.
-            return store?.Match(text) is { } translated ? new PackMatch(translated, [new SpokenLine(text, translated)]) : null;
+            return pooled?.Match(text) is { } translated ? new PackMatch(translated, [new SpokenLine(text, translated)]) : null;
         } : null;
     }
 
@@ -2192,7 +2196,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     private void OfferToPool(SubtitlePipeline target, string text)
     {
         if (settings.SourceLanguage != "en") return;
-        if (!PacksActive && services.FindInPacks(text) is not null) return;
+        if (!PacksActive && !PoolFirstActive && services.FindInPacks(text) is not null) return;
         services.Pool?.Offer(text, services.GamePacks?.SearchScope);
         // Havuz öncelikli oyunda ortak havuz kapalı olsa da sorulur; çevirmen aynı isteği bekler (aynı satır iki kez
         // sorulmaz), süresinde gelmeyen çeviri de gelince ekrandakinin yerine konur.

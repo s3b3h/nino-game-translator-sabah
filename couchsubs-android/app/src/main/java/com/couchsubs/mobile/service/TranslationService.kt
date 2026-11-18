@@ -389,8 +389,9 @@ class TranslationService : Service() {
             holdReadings = true
             // Oyun paketleri Türkçedir: yalnız Türkçe çeviride kullanılır.
             // Önce paket (yalnız Türkçe), sonra havuz (bütün diller; havuz kapalıysa boştur), en son motor.
+            // Havuz öncelikli oyunda (GTA 6) başka oyunların paketlerine bakılmaz: çeviri yalnız havuzdan (Claude).
             packLookup = { text ->
-                (if (turkish && packTitles != null && settings.packsEnabled) PackLookup.match(library, text) else null)
+                (if (turkish && packTitles != null && settings.packsEnabled && !poolFirstActive()) PackLookup.match(library, text) else null)
                     ?: translationPool.store.match(text)?.let { PackMatch(it, pooled = true) }
             }
             showSpeakerNames = { settings.showSpeakerNames }
