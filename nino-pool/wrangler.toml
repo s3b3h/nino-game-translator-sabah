@@ -33,7 +33,7 @@ TRANSLATE_SYNC_SECONDS = "180"
 # Havuz öncelikli oyunlar: uygulama bu oyunlarda satırı önce sunucuya sorar, kullanıcının kendi motorunu (Gemini,
 # DeepL, yapay zekâ) hiç kullanmaz; POOL_FIRST_DEADLINE_MS içinde cevap gelmezse yalnız ücretsiz yerel çeviriye düşer.
 POOL_FIRST_GAMES = "grand-theft-auto-vi,gta-vi,gta-6,gta6"
-POOL_FIRST_DEADLINE_MS = "1500"
+POOL_FIRST_DEADLINE_MS = "3000"
 
 # Günde bir: eski parça kimliklerini (tekrar sayılmasın diye tutulur) temizler. 30 dakikada bir: yeni çevirileri gözden geçirir.
 [triggers]
