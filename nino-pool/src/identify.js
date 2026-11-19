@@ -39,7 +39,7 @@ export async function askIdentify(env, image, mime) {
     model: IDENTIFY_MODEL,
     max_tokens: 200,
     thinking: { type: "between_tools" },
-    system: "You identify video games from a single screenshot of a PlayStation 5 or Xbox stream (gameplay, HUD, menus, map, loading or title screen). Answer with the exact official title as sold (e.g. \"Grand Theft Auto VI\", \"Mafia: The Old Country\"). If the picture is the console's home screen or a system menu, give the game only if its title is clearly shown as the selected or running game. If you are not sure, return null. confidence is 0-1.",
+    system: "You identify video games from a single screenshot of a PlayStation 5 or Xbox stream (gameplay, HUD, menus, map, loading or title screen). Answer with the exact official title as sold (e.g. \"Grand Theft Auto VI\", \"Mafia: The Old Country\"). If the picture is the console's home screen or a system menu, give the game only if its title is clearly shown as the selected or running game. Grand Theft Auto VI (2026, set in Leonida / Vice City, protagonists Jason and Lucia, pause menu with a pink \"VI\" logo and tabs JASON & LUCIA / MAP / BRIEF / PROGRESS) is a different game from Grand Theft Auto V (2013, Los Santos, Michael / Franklin / Trevor): a modern, photorealistic GTA scene in Florida-like swamps, beaches or Vice City is GTA VI, never GTA V. If you are not sure, return null. confidence is 0-1.",
     messages: [{
       role: "user",
       content: [
@@ -82,7 +82,15 @@ export async function handleIdentify(db, env, body, now, ask = askIdentify, addC
     console.error("tanıma hatası", String(error?.message ?? error).slice(0, 200));
   }
   if (answer.cost && addCost) await addCost(db, now, answer.cost);
-  const sure = answer.game && answer.confidence >= 0.7 ? answer.game : null;
+  let sure = answer.game && answer.confidence >= 0.7 ? answer.game : null;
+  // GTA VI ekranı modelce bazen "Grand Theft Auto V" sanılıyor. Bu kurulum son saatlerde GTA VI satırlarıyla görüldüyse
+  // (sunucu satırlardan tanıdı) GTA V cevabı GTA VI sayılır.
+  if (sure && gameId(sure) === "grand-theft-auto-v") {
+    const recent = await db.prepare("SELECT game, playing FROM installs WHERE install = ?").bind(install).first().catch(() => null);
+    if (recent?.game && /^(grand-theft-auto-vi|gta-vi|gta-6|gta6)$/.test(recent.game) && now - (recent.playing ?? 0) < 6 * 3600) {
+      sure = "Grand Theft Auto VI";
+    }
+  }
   const id = sure ? gameId(sure) : null;
   if (id) {
     // Bu kurulumun bundan sonraki satırları (oyun adı gelmese de) bu oyundan sayılır.

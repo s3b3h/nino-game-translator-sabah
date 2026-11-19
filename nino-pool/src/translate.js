@@ -94,6 +94,7 @@ export function instructions(lang, { review = false } = {}) {
     "- Keep sentence structure natural in the target language: e.g. \"the only one that's not a complete piece of shit\" is about the listener being the only decent one, not \"the only complete piece of shit\".",
     "- If a line is a UI prompt or objective (\"Go to\", \"Press\", \"Lose the cops\"), translate it as the game would show it.",
     "- The English comes from screen reading (OCR): fix obvious misreads (\"Youlre\" = \"You're\", \"Donlt\" = \"Don't\", \"Ihäd\" = \"I had\") and drop stray HUD fragments or single stray letters around the dialogue. A speaker label like \"Amy:\" stays as \"Amy:\". If the whole line is unreadable garbage, return it unchanged.",
+    "- A controller button icon in a prompt is often misread as a stray character (\"Press 7 to open the map\", \"Press [1] to open the map\", \"Press do to open the index\"): treat it as a button and leave it out (\"Haritayı açmak için tuşa bas\").",
     "- Output only translations. No quotes, notes, explanations or alternatives.",
     LANGUAGE_NOTES[lang] ? `- ${LANGUAGE_NOTES[lang]}` : "",
     review

@@ -174,6 +174,17 @@ final class PoolFirstTests: XCTestCase {
         XCTAssertTrue(free.translated.isEmpty)
     }
 
+    func testUnsureGameAsksPoolThenEngine() async throws {
+        let engine = Counting("gemini"), free = Counting("ücretsiz")
+        let hit = PoolFirstTranslator(engine: engine, free: free, poolFirst: { false }, ask: { _ in "havuz" }, probe: { true })
+        let first = try await hit.translate("Get in the car!")
+        XCTAssertEqual(first, "havuz")
+        let miss = PoolFirstTranslator(engine: engine, free: free, poolFirst: { false }, ask: { _ in nil }, probe: { true })
+        let second = try await miss.translate("Get in the car!")
+        XCTAssertEqual(second, "gemini")
+        XCTAssertTrue(free.translated.isEmpty)
+    }
+
     func testContextBeforeDoesNotAddTheLine() {
         let context = PoolContext()
         _ = context.add("One.")

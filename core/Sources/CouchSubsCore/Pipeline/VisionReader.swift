@@ -88,8 +88,12 @@ public struct VisionReader: TextReader {
         var gate: NSLock { lock.withLock { current } }
 
         func replace(_ stuck: NSLock) {
-            lock.withLock { if current === stuck { current = NSLock() } }
+            lock.withLock { if current === stuck { current = NSLock() }; wasStuck = true }
         }
+
+        /// Bir okuma takıldı ve kapı yenilendi (Nino: Mac bunu görünce kendini yeniden açar; aynı süreçte Vision düzelmiyor).
+        private var wasStuck = false
+        var stuck: Bool { lock.withLock { wasStuck } }
 
         func started(_ request: VNRequest) { lock.withLock { running[ObjectIdentifier(request)] = request } }
         func finished(_ request: VNRequest) { lock.withLock { running[ObjectIdentifier(request)] = nil } }
@@ -101,6 +105,9 @@ public struct VisionReader: TextReader {
     }
 
     static let watch = Watch()
+
+    /// Vision bu süreçte takıldı mı (bkz. `Watch.replace`).
+    public static var isStuck: Bool { watch.stuck }
 
     /// İsteği yalnız işlemcide çalıştırır (Neural Engine ve GPU kullanılmaz).
     static func runOnCPU(_ request: VNRequest) {
@@ -136,9 +143,12 @@ public struct VisionReader: TextReader {
             { try image.cropping(to: strip).flatMap { scaled($0, by: 2) }.map { try recognize($0).placed(in: stripArea) } },
             { try scaled(image, by: 2).map(recognize) },
         ]
+        // Nino: sırayla (eskiden aynı anda): aynı anda iki Vision isteği Neural Engine'i kilitleyebiliyor; boş karede
+        // bu yol çok sık çalışıyordu ve takılmalar en çok buradan geliyordu.
         let results = Results(count: fallbacks.count)
-        DispatchQueue.concurrentPerform(iterations: fallbacks.count) { index in
+        for index in fallbacks.indices {
             results.set(index, Result { try fallbacks[index]() ?? .empty })
+            if case .success(let reading)? = results.all[index], !reading.lines.isEmpty { break }
         }
         for result in results.all {
             if let reading = try result?.get(), !reading.lines.isEmpty { return reading }

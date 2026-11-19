@@ -631,6 +631,7 @@
       el.className = item.paragraphs === true ? 'item paragraphs' : 'item';
       // Nino: kutusuz sade yazı (oyunun görev yazısının altındaki Türkçesi): pay yok, sola yaslı, yalnız gölge.
       if (item.plain === true) el.className += ' plain';
+      if (item.italic === true) el.className += ' italic';
       setRich(el, item.text);
       // Nino: oyunun süslü İngilizce harfleri OCR kutusundan taşar; örtü solda ve dikeyde daha geniş,
       // sağda (düğme simgesine doğru) dar tutulur ki simge örtülmesin.

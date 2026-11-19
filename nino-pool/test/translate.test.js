@@ -247,3 +247,19 @@ test("GTA 6'ya özgü ad geçen satır, uygulama başka oyun sansa da GTA 6 say�
   assert.equal(body.game, "grand-theft-auto-vi");
   assert.ok(body.translations[0].text);
 });
+
+test("GTA VI oynayan kurulumda ekran GTA V sanılırsa GTA VI sayılır", async () => {
+  const { env } = setup({ TRANSLATE_GAMES: "grand-theft-auto-vi" });
+  const install = randomUUID();
+  const fake = async (_e, _l, lines) => ({ texts: lines.map((l) => "TR:" + l), cost: 1 });
+  await handle(new Request("http://pool/v1/translate", { method: "POST",
+    body: JSON.stringify(req(["Lucia, get in the car."], { game: "", install })) }), env, NOW, undefined, fake);
+  const wrong = async () => ({ game: "Grand Theft Auto V", confidence: 0.9, cost: 1 });
+  const body = await (await handle(new Request("http://pool/v1/identify", { method: "POST", body: JSON.stringify({ v: 1, install, image: "/9j/AAAA" }) }),
+    env, NOW + 60, undefined, undefined, wrong)).json();
+  assert.equal(body.id, "grand-theft-auto-vi");
+  // Başka kurulumda gerçek GTA V olduğu gibi kalır.
+  const other = await (await handle(new Request("http://pool/v1/identify", { method: "POST", body: JSON.stringify({ v: 1, install: randomUUID(), image: "/9j/AAAA" }) }),
+    env, NOW + 60, undefined, undefined, wrong)).json();
+  assert.equal(other.id, "grand-theft-auto-v");
+});

@@ -124,6 +124,13 @@ public final class SubtitlePipeline {
     public var onPair: ((String, String) -> Void)?
     /// Nino: okuma alanındaki kumanda ipuçları (karedeki yerleriyle); altyazı yerine ayrıca, simgesi korunarak çevrilir.
     public var onPrompts: ((Reading) -> Void)?
+    /// Nino: telefona gelen mesaj kartı (bkz. `MessageCard`); verilmişse kart altyazı olarak çevrilmez, buna gönderilir.
+    public var onMessage: ((Reading) -> Void)?
+    /// Son görülen mesaj kartının metni ve zamanı.
+    private var lastCard: (body: String, at: Int)?
+    private var lastCall: (name: String, at: Int)?
+    /// Nino: true döndüğü sürece (oyunun menü, harita, dükkân ekranı) okunan yazı altyazı sayılmaz.
+    public var isMenuScreen: (@Sendable () -> Bool)?
     /// Nino: ekranda bu çizginin (0–1, üstten) altında başlayan satırlar altyazı sayılmaz. Oyunlar öğretici ve menü
     /// yazılarını en alta koyar; en alttaki blok seçildiği için üstündeki gerçek altyazı okunmuyordu.
     public var hudTop: Double?
@@ -261,7 +268,43 @@ public final class SubtitlePipeline {
             })
         }
         visible = withoutStaleLines(visible, at: captured)
-        let reading = visible.withoutButtonPrompts().withoutOcrNoise().withoutClippedLines().joiningRows().subtitleBlock(in: place)
+        var reading = visible.withoutButtonPrompts().withoutOcrNoise().withoutItemLabels().withoutClippedLines().joiningRows().subtitleBlock(in: place)
+        // Nino: mesaj kartında gönderenin adı tek sözcük olabilir ("Brian"); eşya etiketi süzgeci onu siliyor, kart
+        // altyazı sanılıp siyah kutuda çıkıyordu. Kart, süzgeçten önceki okumada aranır.
+        if onMessage != nil {
+            let unfiltered = visible.withoutButtonPrompts().withoutOcrNoise().withoutClippedLines().joiningRows().subtitleBlock(in: place)
+            if MessageCard.isCard(unfiltered) || MessageCard.call(unfiltered) != nil { reading = unfiltered }
+        }
+        if isMenuScreen?() == true { reading = .empty }
+        // Nino: küçük harfle başlayan blok altyazı değildir: telefon uygulaması açıklaması ("encrypted radio … picks up
+        // police communications frequencies") ya da solu kesik menü açıklaması ("lable semi-automatic handguns").
+        // Altyazı büyük harfle ya da "…" ile başlar.
+        if let first = reading.lines.first?.text.trimmingCharacters(in: .whitespaces).first, first.isLetter, first.isLowercase,
+           onMessage != nil {
+            reading = .empty
+        }
+        if onMessage != nil, MessageCard.isList(reading) {
+            // Telefonun mesaj listesi çevrilmez (önizlemeler birleşip telefonun üstünü kaplıyordu).
+            reading = .empty
+        }
+        if let onMessage, let call = MessageCard.call(reading) {
+            // Telefon araması kartı altyazı değildir; durumu kartın üstünde eğik yazıyla gösterilir (konuşurken süre: hiçbir şey).
+            onMessage(reading.placed(in: place))
+            lastCall = (call.name, captured)
+            reading = .empty
+        } else if let call = lastCall, captured - call.at < 6000,
+                  TextMatch.normalize(reading.text) == TextMatch.normalize(call.name) {
+            // Kartın yalnız adı okunduysa ("Paradise Taxi") o da altyazı değildir.
+            reading = .empty
+        } else if let onMessage, MessageCard.isCard(reading) {
+            onMessage(reading.placed(in: place))
+            lastCard = (MessageCard.parts(reading).body, captured)
+            reading = .empty
+        } else if let card = lastCard, captured - card.at < 6000, MessageCard.repeats(reading.text, of: card.body) {
+            // Mesaj kartı ekrandayken bazı karelerde gönderenin adı okunamıyor; kalan metin altyazı sanılıp siyah kutuda
+            // ikinci kez çıkıyordu. Kartın metnine benzeyen okuma altyazı değildir.
+            reading = .empty
+        }
         onPrompts?(Reading(lines: visible.withoutOcrNoise().lines.filter { ButtonPrompts.isPrompt($0.text) }).placed(in: place))
         currentRead = ReadInfo(capturedAt: captured, ocrMs: lastReadMs, confidence: reading.confidence)
         let box = reading.box?.placed(in: place).centeredOnScreen()

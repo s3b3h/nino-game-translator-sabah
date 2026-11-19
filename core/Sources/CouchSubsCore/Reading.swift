@@ -85,6 +85,36 @@ public struct Reading: Equatable, Sendable {
         Reading(lines: lines.filter { !ButtonPrompts.isPrompt($0.text) })
     }
 
+    /// Nino: oyunun eşya, kıyafet ve araç etiketleri altyazı değildir ("TRAP SANDALS", "WORTHAM / COMBAT RIFLE", "MILK"),
+    /// tuş şeritleri de ("ADD TO TRUNK (1/5) □ WEAR ✕ EXIT ○"). Ayıklananlar: "(1/5)" gibi sayaç taşıyan satırlar, iki ya da
+    /// daha çok tuş simgesi olan satırlar ve noktalama içermeyen, küçük harfi olmayan 1-4 sözcüklük kısa satırlar.
+    /// Bağıran altyazı ("GET DOWN!") noktalamasıyla, konuşan adlı satır ("ENZO: ...") küçük harfleriyle kalır.
+    public func withoutItemLabels() -> Reading {
+        Reading(lines: lines.filter { !Self.isItemLabel($0.text) })
+    }
+
+    public static func isItemLabel(_ raw: String) -> Bool {
+        let text = raw.trimmingCharacters(in: .whitespaces)
+        if text.range(of: #"\(\d+\s*/\s*\d+\)"#, options: .regularExpression) != nil { return true }
+        let tokens = text.split(whereSeparator: \.isWhitespace).map(String.init)
+        if tokens.filter(ButtonPrompts.isIcon).count >= 2 { return true }
+        let words = tokens.filter { $0.contains(where: \.isLetter) }
+        // Boya kutusu, ürün etiketi, reklam ("LOW ODOR, ZERO VOC", "MAKE IT A RIMM JOB!", "[POXY, ZINC, PHOSPHA?"): küçük
+        // harfsiz, en çok 6 sözcük; noktalama olsa da etikettir. Yalnız 1-2 sözcüklük bağırış ("GET DOWN!", "WHAT?") kalır.
+        if (1...6).contains(words.count), !text.contains(where: \.isLowercase), text.contains(where: \.isLetter),
+           !(words.count <= 2 && (text.hasSuffix("!") || text.hasSuffix("?"))) { return true }
+        guard (1...4).contains(words.count) else { return false }
+        // Tek sözcüklük, noktalamasız yazı uygulama ya da ekran adıdır ("WhatUp", "Contacts"); tek sözcüklük altyazı
+        // noktalamalıdır ("Okay.", "Lucia?").
+        if words.count == 1, tokens.count == 1, text.allSatisfy({ $0.isLetter || $0 == "'" }) { return true }
+        // Plaka, tabela, kısa okuma çöpü ("ASS MAN.", "\"ASS\" MAN", "NYWL, SSY."): küçük harfsiz, en çok 3 sözcük; noktalama
+        // olsa da etikettir. Bağıran altyazı ("GET DOWN!", "WHAT?") ünlem ya da soruyla biter, kalır.
+        if words.count <= 3, !text.contains(where: \.isLowercase), !text.hasSuffix("!"), !text.hasSuffix("?") { return true }
+        // Kesme işareti ("GONE FISHIN'", "JASON'S") etikette de olur; cümle noktalaması değildir.
+        if text.contains(where: { ".,!?:;…\"".contains($0) }) { return false }
+        return !text.contains(where: \.isLowercase)
+    }
+
     /// Yazı tanımanın uydurduğu sözcük çöpleri ("ou$3e", "waters2aljd") ayıklanmış hali; çevirmen bunları olduğu
     /// gibi taşıyıp TV'de anlamsız harfler gösteriyordu.
     /// Nino: okunan alanın hem sol hem sağ kenarına değen satır kesiktir, altyazı değildir: oyunların açılıştaki yasal uyarısı
@@ -277,6 +307,8 @@ public enum ButtonPrompts {
         if verbs.contains(first.lowercased()), tokens.count >= 2, tokens.count <= 10 {
             let second = tokens[1]
             if isButton(second) || lookalikes.contains(second) { return true }
+            // Nino: simge okunamayınca düşer ("Hold  to see nearby places"); "Hold to …" yine tuş ipucudur.
+            if second.lowercased() == "to", tokens.count >= 4 { return true }
         }
         // Nino: "Double tap and hold ✕ to ride alongside Dutch": fiil ile başlayıp ortasında bir düğme simgesi olan,
         // cümle gibi bitmeyen kısa satır.

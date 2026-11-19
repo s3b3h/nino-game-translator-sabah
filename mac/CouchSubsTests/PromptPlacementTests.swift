@@ -70,3 +70,47 @@ final class PromptSplitTests: XCTestCase {
         XCTAssertEqual(AppModel.splitAtIcons(item).count, 1)
     }
 }
+
+final class CornerWrapTests: XCTestCase {
+    func testLongTipWrapsToTheBoxWidth() {
+        let text = "Yatak odasında uyuyarak dinlenebilir ve zamanı ilerletebilirsin. Ayrıca gizli para zulana da erişebilirsin."
+        let lines = AppModel.wrap(text, width: 0.3, line: 0.03)
+        XCTAssertGreaterThan(lines.count, 1)
+        XCTAssertEqual(lines.joined(separator: " "), text)
+        XCTAssertTrue(lines.allSatisfy { $0.count <= 40 })
+    }
+}
+
+final class PromptAvoidTests: XCTestCase {
+    func testPromptBelowWhenSubtitleIsAbove() {
+        let prompt = ScreenTranslation.Item(source: "Press ✕ to talk", translation: "Konuşmak için tuşa bas",
+                                            box: TextBox(left: 0.35, top: 0.80, right: 0.65, bottom: 0.84), lineHeight: 0.04)
+        let subtitle = TextBox(left: 0.2, top: 0.70, right: 0.9, bottom: 0.78)
+        let placed = AppModel.placeAbove([prompt], avoiding: [subtitle])[0]
+        XCTAssertGreaterThan(placed.box.top, prompt.box.bottom)
+        let free = AppModel.placeAbove([prompt])[0]
+        XCTAssertLessThan(free.box.bottom, prompt.box.top)
+    }
+}
+
+final class NavigationWordTests: XCTestCase {
+    func testPlainNavigationIsNotTranslated() {
+        XCTAssertTrue(AppModel.isNavigationWord("BACK ○"))
+        XCTAssertTrue(AppModel.isNavigationWord("SELECT"))
+        XCTAssertTrue(AppModel.isNavigationWord("PHOTO STUDIO"))
+        XCTAssertTrue(AppModel.isNavigationWord("THREATEN □"))
+        XCTAssertTrue(AppModel.isNavigationWord("CLERK L2"))
+        XCTAssertTrue(AppModel.isNavigationWord("L1 BASEBALL BAT"))
+        XCTAssertTrue(AppModel.isNavigationWord("△ USE"))
+        XCTAssertFalse(AppModel.isNavigationWord("Hold L1 to open the equipment menu"))
+        XCTAssertFalse(AppModel.isNavigationWord("Press ✕ to talk"))
+    }
+}
+
+final class PromptKeyTests: XCTestCase {
+    func testRingAroundTheIconDoesNotChangeThePrompt() {
+        XCTAssertEqual(AppModel.promptKey("Hold L1 to open your loadout"), AppModel.promptKey("Hold ◯ L1 to open your loadout"))
+        XCTAssertEqual(AppModel.promptKey("Hold □ to open your loadout"), AppModel.promptKey("Hold to open your loadout"))
+        XCTAssertEqual(AppModel.promptKey("Hold L1 to open your loadout"), AppModel.promptKey("Hold to open your loadout"))
+    }
+}

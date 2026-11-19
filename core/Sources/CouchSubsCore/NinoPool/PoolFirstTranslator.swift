@@ -12,6 +12,7 @@ public final class PoolFirstTranslator: TextTranslator, @unchecked Sendable {
     private let free: TextTranslator
     private let poolFirst: () -> Bool
     private let ask: (String) async -> String?
+    private let probe: () -> Bool
     private let lock = NSLock()
     private var last = ""
 
@@ -22,7 +23,11 @@ public final class PoolFirstTranslator: TextTranslator, @unchecked Sendable {
     ///   - free: ücretsiz yerel çevirmen (havuz cevap vermezse).
     ///   - poolFirst: şu an oynanan oyun havuz öncelikli mi.
     ///   - ask: satırı sunucuya sorar, süresinde gelmezse nil (`TranslationPool.translateFirst`).
-    public init(engine: TextTranslator, free: TextTranslator, poolFirst: @escaping () -> Bool, ask: @escaping (String) async -> String?) {
+    ///   - probe: oyun henüz kesin bilinmiyor: satır önce havuza da sorulur (sunucu satırdan GTA 6'yı tanıyabilir);
+    ///     cevap gelmezse kullanıcının motoru çevirir.
+    public init(engine: TextTranslator, free: TextTranslator, poolFirst: @escaping () -> Bool, ask: @escaping (String) async -> String?,
+                probe: @escaping () -> Bool = { false }) {
+        self.probe = probe
         self.engine = engine
         self.free = free
         self.poolFirst = poolFirst
@@ -36,6 +41,10 @@ public final class PoolFirstTranslator: TextTranslator, @unchecked Sendable {
 
     public func translate(_ text: String) async throws -> String {
         guard poolFirst() else {
+            if probe(), let pooled = await ask(text), !pooled.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                note("havuz")
+                return pooled
+            }
             note("motor")
             return try await engine.translate(text)
         }

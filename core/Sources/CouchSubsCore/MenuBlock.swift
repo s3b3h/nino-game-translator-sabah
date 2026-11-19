@@ -57,6 +57,27 @@ public enum MenuBlock {
         return result
     }
 
+    /// Harita, duraklatma ve oyun içi menü ekranı mı: ekranda bu sekme/menü sözcüklerinden en az ikisi tek başına
+    /// satır olarak duruyorsa ("MAP", "BRIEF", "PROGRESS", "SETTINGS"…). Bu ekranlarda tuş ipuçları çevrilmez.
+    public static func isMenuScreen(_ reading: Reading) -> Bool {
+        let words: Set<String> = ["map", "brief", "progress", "settings", "stats", "gallery", "online", "inventory", "store",
+                                  "help", "photo studio", "game", "journal", "options", "wardrobe", "outfits", "missions",
+                                  // Eşya inceleme ekranı (defter, not, fotoğraf): el yazısı altyazı sanılmasın.
+                                  "show text", "hide text", "flip", "put back", "rotate", "inspect", "examine", "read"]
+        // Dükkân ve araç tamiri ekranı: aracın özellik çubukları ("SPEED", "ACCELERATION", "ASPHALT HANDLING", "RATING").
+        let shop: Set<String> = ["speed", "acceleration", "handling", "rating", "upgrade", "performance", "respray", "purchase",
+                                 "owned", "braking", "armor", "armour"]
+        var found = Set<String>()
+        for line in reading.lines {
+            let text = clean(line.text).lowercased()
+            if words.contains(text) { found.insert(text) }
+            for word in text.split(whereSeparator: { !$0.isLetter }).map(String.init) where shop.contains(word) { found.insert(word) }
+            // Sekme şeridi tek satır okunabilir: "JASON & LUCIA MAP BRIEF PROGRESS".
+            for word in text.split(separator: " ").map(String.init) where ["map", "brief", "progress"].contains(word) { found.insert(word) }
+        }
+        return found.count >= 2
+    }
+
     /// Kısa (1-4 sözcük), harfli, bir satırlık yazı.
     static func isMenuLine(_ line: TextLine) -> Bool {
         guard let box = line.box, box.bottom - box.top < 0.07 else { return false }

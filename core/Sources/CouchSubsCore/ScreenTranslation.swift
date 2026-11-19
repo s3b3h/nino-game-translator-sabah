@@ -24,6 +24,8 @@ public enum ScreenTranslation {
         public var lineHeight: Double
         /// Nino: kutusuz, oyunun kendi yazısı gibi gölgeli sade yazı (sol üstteki görevin altına konan çeviri).
         public var plain = false
+        /// Nino: eğik yazı (telefon araması: "Paradise Taxi aranıyor…").
+        public var italic = false
 
         public init(source: String, translation: String, box: TextBox, lineHeight: Double) {
             self.source = source

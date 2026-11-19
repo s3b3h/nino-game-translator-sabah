@@ -307,6 +307,7 @@ public final class SubtitleServer: @unchecked Sendable {
             var json: [String: Any] = ["box": Self.json(item.box), "line": round(item.lineHeight), "text": item.translation]
             if item.paragraphs { json["paragraphs"] = true }
             if item.plain { json["plain"] = true }
+            if item.italic { json["italic"] = true }
             return json
         }
         var payload: [String: Any] = ["duration": durationMs, "items": list]

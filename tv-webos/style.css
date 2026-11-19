@@ -76,6 +76,8 @@ html, body {
 #screen .item.plain { background: rgba(0, 0, 0, 0.38); box-shadow: 0 0 10px 6px rgba(0, 0, 0, 0.38); padding: 2px 8px;
   border-radius: 8px; text-align: left; font-weight: 600; line-height: 1.3; text-shadow: 0 0 3px #000, 0 2px 3px #000;
   overflow: visible; width: auto !important; max-width: 46%; }
+/* Nino: telefon araması ("Paradise Taxi aranıyor…"): eğik, ince. */
+#screen .item.italic { font-style: italic; font-weight: 500; }
 
 /* Ek alanlar (görev, telefon, bildirim): çeviri İngilizce yazının yerinde küçük bir kutuda; altyazının ve "ekranı
    çevir"in altında kalır. */

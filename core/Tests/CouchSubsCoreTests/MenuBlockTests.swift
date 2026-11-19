@@ -72,3 +72,110 @@ final class MenuBlockTests: XCTestCase {
         XCTAssertLessThan(rb[0].right, 0.76)
     }
 }
+
+final class ItemLabelTests: XCTestCase {
+    func testGameLabelsAreNotSubtitles() {
+        for label in ["TRAP SANDALS", "BLACK", "WORTHAM", "COMBAT RIFLE", "A LOOT", "MILK", "RV PARK",
+                      "ADD TO TRUNK (1/5) □ WEAR ✕ EXIT ○", "STRAIGHT JEANS", "GONE FISHIN'", "COLLECTION", "JASON'S '70 GANADO", "ASS MAN.", "\"ASS\" MAN", "NYWL, SSY."] {
+            XCTAssertTrue(Reading.isItemLabel(label), label)
+        }
+        for line in ["GET DOWN!", "WHAT?", "NO WAY!", "ENZO: Get in the car.", "I'm Jason.", "Lucia.", "Okay, how do I look?",
+                     "Yeah, well, maybe change the plates", "Thanks for the tip."] {
+            XCTAssertFalse(Reading.isItemLabel(line), line)
+        }
+    }
+}
+
+final class MessageCardTests: XCTestCase {
+    private func line(_ text: String, top: Double) -> TextLine {
+        TextLine(text, box: TextBox(left: 0.4, top: top, right: 0.8, bottom: top + 0.04))
+    }
+
+    func testPhoneMessageIsACard() {
+        let card = Reading(lines: [line("Donnie", top: 0.70), line("You did good looking out for Brian earlier.", top: 0.76),
+                                   line("We're all in this together, remember that!", top: 0.81)])
+        XCTAssertTrue(MessageCard.isCard(card))
+        XCTAssertEqual(MessageCard.parts(card).name, "Donnie")
+        XCTAssertFalse(MessageCard.isCard(Reading(lines: [line("ENZO: Get in.", top: 0.7), line("Now, before they see us.", top: 0.76)])))
+        XCTAssertFalse(MessageCard.isCard(Reading(lines: [line("Okay.", top: 0.7), line("Let's go have some fun.", top: 0.76)])))
+        XCTAssertFalse(MessageCard.isCard(Reading(lines: [line("Lucia", top: 0.7)])))
+        XCTAssertTrue(MessageCard.isCard(Reading(lines: [line("Chuck's Gun Shop", top: 0.70),
+            line("Hey Jason. You okay? Saw those assholes", top: 0.76), line("coming at you outside the shop and...", top: 0.81)])))
+    }
+}
+
+final class MenuScreenTests: XCTestCase {
+    func testMapAndPauseScreensAreRecognised() {
+        XCTAssertTrue(MenuBlock.isMenuScreen(Reading(lines: [TextLine("JASON & LUCIA MAP BRIEF PROGRESS")])))
+        XCTAssertTrue(MenuBlock.isMenuScreen(Reading(lines: [TextLine("ii Map"), TextLine("Game"), TextLine("Store")])))
+        XCTAssertFalse(MenuBlock.isMenuScreen(Reading(lines: [TextLine("Let's check the map."), TextLine("Game on.")])))
+        XCTAssertTrue(MenuBlock.isMenuScreen(Reading(lines: [TextLine("SPEED"), TextLine("ACCELERATION"), TextLine("ASPHALT HANDLING")])))
+        XCTAssertFalse(MenuBlock.isMenuScreen(Reading(lines: [TextLine("Slow down, you're going too fast.")])))
+        XCTAssertTrue(MenuBlock.isMenuScreen(Reading(lines: [TextLine("SHOW TEXT △"), TextLine("FLIP □"), TextLine("PUT BACK ○")])))
+    }
+}
+
+final class MessageRepeatTests: XCTestCase {
+    func testPartOfTheCardIsNotASubtitle() {
+        let body = "Hey Jason. You okay? Saw those assholes coming at you outside the shop and"
+        XCTAssertTrue(MessageCard.repeats("Hey Jason. You okay? Saw those assholes", of: body))
+        XCTAssertFalse(MessageCard.repeats("Get in the car, we're leaving now.", of: body))
+    }
+}
+
+final class PhoneListTests: XCTestCase {
+    func testInboxIsNeitherCardNorSubtitle() {
+        let list = Reading(lines: ["Joey", "Hey this is Joey from ...", "Lucia (Yolanda phon", "Outside living better t...",
+                                   "Shirley", "Oh that's nice hon. ar..."].enumerated().map { index, text in
+            TextLine(text, box: TextBox(left: 0.4, top: 0.3 + Double(index) * 0.05, right: 0.7, bottom: 0.34 + Double(index) * 0.05))
+        })
+        XCTAssertTrue(MessageCard.isList(list))
+        XCTAssertFalse(MessageCard.isCard(list))
+        XCTAssertTrue(Reading.isItemLabel("WhatUp"))
+        XCTAssertTrue(Reading.isItemLabel("Contacts"))
+        XCTAssertFalse(Reading.isItemLabel("Okay."))
+    }
+}
+
+final class BillboardTests: XCTestCase {
+    func testBillboardIsNotAMessage() {
+        let sign = Reading(lines: [TextLine("TREADBounD", box: TextBox(left: 0.1, top: 0.3, right: 0.4, bottom: 0.36)),
+                                   TextLine("Take nature before it takes you", box: TextBox(left: 0.1, top: 0.38, right: 0.4, bottom: 0.44))])
+        XCTAssertFalse(MessageCard.isCard(sign))
+    }
+}
+
+final class PhoneCallTests: XCTestCase {
+    private func card(_ status: String) -> Reading {
+        Reading(lines: [TextLine("Paradise Taxi", box: TextBox(left: 0.1, top: 0.8, right: 0.3, bottom: 0.83)),
+                        TextLine(status, box: TextBox(left: 0.1, top: 0.84, right: 0.2, bottom: 0.87))])
+    }
+
+    func testCallCard() {
+        XCTAssertEqual(MessageCard.call(card("Calling..."))?.status, "aranıyor…")
+        XCTAssertEqual(MessageCard.call(card("00:05"))?.status, "")
+        XCTAssertNil(MessageCard.call(card("We need to talk about the money.")))
+        XCTAssertNil(MessageCard.call(Reading(lines: [TextLine("Get in the car.", box: TextBox(left: 0.3, top: 0.8, right: 0.6, bottom: 0.83)),
+                                                       TextLine("Calling...", box: TextBox(left: 0.3, top: 0.84, right: 0.5, bottom: 0.87))])))
+    }
+}
+
+final class SingleNameCardTests: XCTestCase {
+    func testSingleWordSenderIsCard() {
+        let card = Reading(lines: [TextLine("Brian", box: TextBox(left: 0.5, top: 0.55, right: 0.6, bottom: 0.59)),
+                                   TextLine("One more thing, left your", box: TextBox(left: 0.5, top: 0.62, right: 0.9, bottom: 0.66)),
+                                   TextLine("pay for those packages and", box: TextBox(left: 0.5, top: 0.67, right: 0.9, bottom: 0.71))])
+        XCTAssertTrue(MessageCard.isCard(card))
+    }
+}
+
+final class PaintCanTests: XCTestCase {
+    func testProductLabelsAreItemLabels() {
+        for text in ["LOW ODOR, ZERO VOC", "MAKE IT A RIMM JOB!", "IGHT CRAY BAS!", "[POXY, ZINC, PHOSPHA?"] {
+            XCTAssertTrue(Reading.isItemLabel(text), text)
+        }
+        for text in ["GET DOWN!", "WHAT?", "We'll find him, man. Don't worry about it.", "Okay."] {
+            XCTAssertFalse(Reading.isItemLabel(text), text)
+        }
+    }
+}

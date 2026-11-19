@@ -46,6 +46,8 @@ struct CouchSubsApp: App {
                 .task {
                     overlay.attach(model)
                     stream.attach(model)
+                    // Yazı okuması takılıp kendini yeniden açtıysa çeviri kaldığı yerden sürer.
+                    await model.resumeIfRelaunched()
                 }
                 .appSurface()
                 .frame(minWidth: Theme.size("windowWidth"), idealWidth: Theme.size("windowWidth"), maxWidth: Theme.size("windowWidth") * 1.25,

@@ -38,6 +38,8 @@ public final class GameSense: @unchecked Sendable {
     private var seen: RunningGame?
 
     public var current: RunningGame? { lock.withLock { console ?? chosen ?? pack ?? seen } }
+    /// Oyun kesin biliniyor mu (PS5 bildirdi, kullanıcı seçti ya da ekrandan tanındı); paketten tahmin kesin sayılmaz.
+    public var isSure: Bool { lock.withLock { console != nil || chosen != nil || seen != nil } }
 
     public var source: Source? {
         lock.withLock { console != nil ? .console : chosen != nil ? .user : pack != nil ? .pack : seen != nil ? .screen : nil }
