@@ -24,6 +24,13 @@ Güncel sürüm: <b>Nino V3.3</b></p>
 </p>
 
 <p align="center">
+  <img src="docs/nino/v3/gta6/gta6-1.jpg" width="290" alt="GTA 6: TV'de Türkçe altyazı">&nbsp;
+  <img src="docs/nino/v3/gta6/gta6-2.jpg" width="290" alt="GTA 6: telefon konuşması Türkçe">&nbsp;
+  <img src="docs/nino/v3/gta6/gta6-3.jpg" width="290" alt="GTA 6: oyun içi Türkçe altyazı"><br>
+  <sub>Kullanıcılarımızın TV'sinden, GTA 6: altyazılar oyunun üstünde Türkçe.</sub>
+</p>
+
+<p align="center">
   <img src="docs/nino/v3/ekranlar/ana-ps5.jpg" width="440" alt="Nino Mac ana ekranı: PS5">&nbsp;
   <img src="docs/nino/v3/ekranlar/ana-xbox.jpg" width="440" alt="Nino Mac ana ekranı: Xbox"><br>
   <sub>PS5 ya da Xbox: fişi prize takın, çeviri başlasın. Ana ekran seçtiğiniz konsola göre değişir.</sub>
