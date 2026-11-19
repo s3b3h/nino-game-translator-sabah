@@ -14,8 +14,13 @@ class SubtitleLayout(private val file: File?) {
     companion object {
         const val MINIMUM_SAMPLES = 8
         const val MAXIMUM_SAMPLES = 60
-        /** Öğrenene kadar kullanılan sınır: ekranın en alt şeridi. */
-        const val FALLBACK_HUD_TOP = 0.885
+        /**
+         * Öğrenene kadar kullanılan sınır: ekranın en alt şeridi. GTA 6 ve RDR2'de tek satırlık altyazı 0.879–0.884'te
+         * başlar, görev yazısı ≈0.93'te; eski 0.885 sınırı altyazıya binde bir pay bırakıyordu.
+         */
+        const val FALLBACK_HUD_TOP = 0.895
+        /** Bundan yukarıda biten kutu örnek sayılmaz (ayarlar menüsündeki açıklamalar altyazının yerini unutturuyordu). */
+        const val LOWEST_USEFUL_BOTTOM = 0.80
 
         fun quantile(sorted: List<Double>, q: Double): Double {
             if (sorted.isEmpty()) return 0.0
@@ -45,7 +50,7 @@ class SubtitleLayout(private val file: File?) {
 
     @Synchronized
     fun record(box: TextBox, game: String) {
-        if (box.bottom <= box.top || box.top < 0 || box.bottom > 1) return
+        if (box.bottom <= box.top || box.top < 0 || box.bottom > 1 || box.bottom < LOWEST_USEFUL_BOTTOM) return
         val list = samples.getOrPut(game) { mutableListOf() }
         list.add(box.top to box.bottom)
         while (list.size > MAXIMUM_SAMPLES) list.removeAt(0)
@@ -60,13 +65,16 @@ class SubtitleLayout(private val file: File?) {
         return quantile(list.map { it.first }.sorted(), 0.1) to quantile(list.map { it.second }.sorted(), 0.9)
     }
 
-    /** Bu çizginin altında başlayan satır altyazı sayılmaz; altyazısı en dipte duran oyunda null. */
+    /**
+     * Bu çizginin altında başlayan satır altyazı sayılmaz; altyazısı en dipte duran oyunda null. Öğrenilen çizgi sınırı
+     * yalnız aşağı indirir, öğrenmeden önceki sınırın üstüne çıkarmaz (yanlış öğrenilen yer altyazıyı kaçırıyordu).
+     */
     fun hudTop(game: String): Double? {
         val band = band(game) ?: return FALLBACK_HUD_TOP
         // Şeridin altına bir satır yüksekliği pay (iki satırlık altyazının ikinci satırı kesilmesin).
         val heights = synchronized(this) { samples[game].orEmpty().map { it.second - it.first }.sorted() }
         val line = band.second + maxOf(0.012, quantile(heights, 0.5))
-        return if (line >= 0.97) null else maxOf(line, band.first + 0.03)
+        return if (line >= 0.97) null else maxOf(line, band.first + 0.03, FALLBACK_HUD_TOP)
     }
 
     private fun save() {

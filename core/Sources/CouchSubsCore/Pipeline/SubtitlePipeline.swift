@@ -131,9 +131,16 @@ public final class SubtitlePipeline {
     private var lastCall: (name: String, at: Int)?
     /// Nino: true döndüğü sürece (oyunun menü, harita, dükkân ekranı) okunan yazı altyazı sayılmaz.
     public var isMenuScreen: (@Sendable () -> Bool)?
+    /// Nino: true döndüğü sürece karede oyunun telefonu aranır (GTA 6); telefonun ekranındaki yazılar altyazı sayılmaz
+    /// (uygulama onları telefonun yanında, yarı saydam gösterir; bkz. `PhonePanel`).
+    public var phonePanels: (@Sendable () -> Bool)?
     /// Nino: ekranda bu çizginin (0–1, üstten) altında başlayan satırlar altyazı sayılmaz. Oyunlar öğretici ve menü
     /// yazılarını en alta koyar; en alttaki blok seçildiği için üstündeki gerçek altyazı okunmuyordu.
     public var hudTop: Double?
+    /// Nino: bloğun alt kenarı bu çizginin (0–1, üstten) üstünde kalıyorsa blok altyazının yerinde değildir (tabela, pano).
+    /// Böyle bir blok yalnız pakette/havuzda biliniyorsa gösterilir; bilinmiyorsa cihazın çevirisine gönderilmez.
+    /// Eskiden çiçekçideki kara tahta gibi dünya yazıları bozuk okunup ekranın ortasında siyah kutuda çıkıyordu.
+    public var subtitleFloor: Double?
     /// Günlüğe yazılan son dev yazılar; ekranda duran tabela her karede (her okuma farkında) yeniden yazılmasın.
     private var recentOversized: [String] = []
 
@@ -235,9 +242,10 @@ public final class SubtitlePipeline {
         let startedSession = session
         // Yazı tanıma uzun sürebilir; arayüz takılmasın diye ana iş parçacığının dışında yapılır.
         let reader = self.reader
-        let (area, signature) = await Task.detached(priority: .userInitiated) {
+        let wantsPhone = phonePanels?() == true
+        let (area, signature, phone) = await Task.detached(priority: .userInitiated) {
             let area = RegionCropper.crop(frame, to: region)
-            return (area, RegionCropper.signature(of: area))
+            return (area, RegionCropper.signature(of: area), wantsPhone ? PhonePanel.find(in: frame)?.box : nil)
         }.value
         guard session == startedSession else { return }
         switch scheduler.plan(signature: signature) {
@@ -263,6 +271,15 @@ public final class SubtitlePipeline {
         let place = TextBox(left: region.left, top: region.top, right: region.right, bottom: region.bottom)
         // Nino: harfsiz satırlar (mermi sayısı "91 / 200", saat) altyazı değildir.
         var visible = Reading(lines: lastReading.lines.filter { $0.text.filter(\.isLetter).count >= 2 })
+        if let phone {
+            // Nino: telefon açık; ekranındaki yazılar (mesajlar, kişi listesi) altyazı değildir.
+            visible = Reading(lines: visible.lines.filter { line in
+                guard let box = line.box else { return true }
+                let x = place.left + (box.left + box.right) / 2 * (place.right - place.left)
+                let y = place.top + (box.top + box.bottom) / 2 * (place.bottom - place.top)
+                return !(x > phone.left - 0.02 && x < phone.right + 0.02 && y > phone.top - 0.02 && y < phone.bottom + 0.02)
+            })
+        }
         if let hudTop {
             // Nino: konuşan adıyla başlayan satır ("ENZO: …") her zaman altyazıdır; öğrenilen çizgi yanlış kalsa da
             // (Mafia'da altyazı çizginin altındaydı, görev kutusuna düşüyordu) altyazı olarak okunur. Hemen altındaki
@@ -520,8 +537,23 @@ public final class SubtitlePipeline {
         let request = Request(number: lastRequested, source: source, box: box, session: session, read: read ?? currentRead)
         lineOnScreen = request.number
         lastSent = (source, Rereads.score(source), now())
+        let offPlace = subtitleFloor.flatMap { floor in box.map { $0.bottom < floor } } ?? false
         if let packed = packMatch(request) {
+            // Altyazının yerinde olmayan bir iki sözcük ("Chest.", "Off 1 4") pakette rastgele bir repliğe benzeyebilir:
+            // haritanın ortasında "Göğüs." çıkıyordu. Yerinde olmayan yazı ancak cümleyse (en az üç sözcük) gösterilir.
+            if offPlace, source.split(separator: " ").filter({ $0.contains(where: \.isLetter) }).count < 3 {
+                log(request, "\(SubtitleLog.excerpt(source)) altyazının yerinde değil ve çok kısa: gösterilmedi")
+                lineOnScreen = nil
+                return
+            }
             showPacked(request, packed)
+            return
+        }
+        if offPlace {
+            // Temiz okunmuş yazı yine de havuza önerilir (bir dahaki sefere bilinir); bozuk okuma önerilmez.
+            if !Rereads.looksMisread(source) { onPackMiss?(source) }
+            log(request, "\(SubtitleLog.excerpt(source)) altyazının yerinde değil, pakette de yok: gösterilmedi")
+            lineOnScreen = nil
             return
         }
         onPackMiss?(source)

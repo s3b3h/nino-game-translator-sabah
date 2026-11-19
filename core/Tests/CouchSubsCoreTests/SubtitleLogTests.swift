@@ -36,7 +36,7 @@ final class SubtitleLogTests: XCTestCase {
     }
 
     func testDefaultFileIsNextToRemotePlayLog() {
-        XCTAssertTrue(SubtitleLog.defaultFile.path.hasSuffix("Library/Logs/CouchSubs/altyazi.log"))
+        XCTAssertTrue(SubtitleLog.defaultFile.path.hasSuffix("Library/Logs/Nino/altyazi.log"))
     }
 
     func testExcerptIsQuotedSingleLineAndShort() {

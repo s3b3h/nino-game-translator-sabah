@@ -37,6 +37,31 @@ class SubtitleLayoutTest {
     }
 
     @Test
+    fun menuTextDoesNotTeachTheSubtitlePlace() {
+        val layout = SubtitleLayout(null)
+        repeat(40) { i -> layout.record(box(0.62 + (i % 5) * 0.02, 0.69 + (i % 5) * 0.02), "genel") }
+        assertNull(layout.band("genel"))
+        assertEquals(SubtitleLayout.FALLBACK_HUD_TOP, layout.hudTop("genel")!!, 0.0)
+    }
+
+    @Test
+    fun learnedLineNeverRisesAboveFallback() {
+        val layout = SubtitleLayout(null)
+        repeat(20) { layout.record(box(0.78, 0.822), "g") }
+        assertTrue(layout.hudTop("g")!! >= SubtitleLayout.FALLBACK_HUD_TOP)
+    }
+
+    @Test
+    fun menuTextDoesNotPushRealSamplesOut() {
+        val layout = SubtitleLayout(null)
+        repeat(20) { layout.record(box(0.881, 0.916), "g") }
+        val learned = layout.hudTop("g")!!
+        repeat(200) { layout.record(box(0.63, 0.69), "g") }
+        assertEquals(learned, layout.hudTop("g")!!, 0.0)
+        assertTrue(learned > 0.94)
+    }
+
+    @Test
     fun savesAndLoads() {
         val file = File.createTempFile("layout", ".json")
         val layout = SubtitleLayout(file)

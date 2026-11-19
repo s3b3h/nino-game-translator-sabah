@@ -54,8 +54,12 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   ya da TV'den) alın; yayın yapıyorsanız OBS yolunu kullanın.
 - TV'ye kurulumda en kolayı telefondaki ya da bilgisayardaki Nino'dur; TV'de geliştirici modu (USB hata ayıklama)
   açıkken uygulamayı kendisi kurar ve günceller.
-- Güncel sürüm: bütün uygulamalar aynı adı ve numarayı taşır: Nino V3.5 (3.5.0): Mac, Windows, Android telefon,
-  iPhone, Android TV / Google TV ve Samsung TV. Daha küçük bir numara görünüyorsa güncellemesini söyle. Tek istisna LG: LG TV uygulaması 0.9.18'dir ve
+- Güncel sürüm: bütün uygulamalar aynı adı taşır: Nino V3.5. Mac, Windows, Android telefon ve iPhone uygulamaları
+  3.5.2'dir (3.5.1 ya da 3.5.0 görünüyorsa güncellemesini söyle; 3.5.2 düzeltmeleri: oyunun ayarlar menüsüne girdikten
+  sonra altyazıların çoğunun kaçması düzeldi; Mac'te GTA 6'da telefondaki sohbetin Türkçesi telefonun yanında, haritada
+  seçili görevin açıklaması kartın altında yarı saydam çıkar; tabela yazıları altyazı sanılmaz). "Altyazıları okumuyor,
+  çoğunu kaçırıyor" diyen kullanıcıya önce 3.5.2'ye güncellemesini söyle. Android TV /
+  Google TV ve Samsung TV uygulamaları 3.5.0'dır, bu doğrudur. Tek istisna LG: LG TV uygulaması 0.9.18'dir ve
   bu NORMALDİR, kullanıcıya "eski, yeniden kur" deme. TV'deki sürüm, telefondaki ya da bilgisayardaki Nino'nun TV
   kurulum ekranında yazar. Android TV ya da Samsung'da 3.5.0'dan küçük bir sayı görünüyorsa telefondaki ya da
   bilgisayardaki Nino'da "TV'ye kur"a yeniden basılır. Geliştirici modu (USB hata ayıklama) açık kalırsa güncellemeyi
