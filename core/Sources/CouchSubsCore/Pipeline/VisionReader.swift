@@ -321,6 +321,9 @@ public struct VisionReader: TextReader {
                 guard let r = row.box else { return false }
                 let rh = r.bottom - r.top
                 let gap = (box.left - r.right) * aspect
+                // Nino: boyu iki kattan fazla farklı parçalar aynı yazı değildir (altyazının yanına düşen dev tabela harfi,
+                // gösterge); birleşirlerse satır "dev" ölçülür ve altyazı tabela sanılıp atılırdı.
+                guard min(rh, height) >= max(rh, height) * 0.5 else { return false }
                 return abs((r.top + r.bottom) / 2 - center) < max(rh, height) * 0.45 && gap > -0.01 && gap < max(rh, height) * 4
             }) {
                 let r = rows[i].box!

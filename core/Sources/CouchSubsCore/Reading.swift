@@ -140,11 +140,26 @@ public struct Reading: Equatable, Sendable {
     public static let maxSubtitleBlockHeight = 0.26
     public static let maxSubtitleLines = 5
 
+    /// Cümle gibi görünen satır bu kadar yüksekse de atılır (karenin %13'ü): altyazı hiçbir oyunda bu kadar büyük değildir.
+    public static let maxSentenceLineHeight = 0.13
+
+    /// Etiket gibi satır: en çok 4 sözcük ve cümle noktalaması yok ("OHM BOY", "Boat Charters", "YARD SALE").
+    /// Altyazı satırı ya uzundur ya da noktalamalıdır ("What?", "We made it!").
+    public static func isLabelLike(_ raw: String) -> Bool {
+        let words = raw.split(whereSeparator: \.isWhitespace).filter { $0.contains(where: \.isLetter) }
+        return words.count <= 4 && !raw.contains(where: { ".,!?…".contains($0) })
+    }
+
+    /// Dev satırlar atılır, ama temkinli: `limit`ten yüksek satır yalnız etiket gibiyse (tabela, pano) atılır. Cümle gibi
+    /// satır, yanındaki gösterge ya da tabela harfiyle aynı sıraya düşüp yüksek ölçülmüş gerçek altyazı olabilir
+    /// ("What happened? 0006", V3.4'te böyle satırlar atılıyordu); o ancak `maxSentenceLineHeight`i aşarsa atılır.
     public func withoutOversizedLines(in area: TextBox, limit: Double = Reading.maxSubtitleLineHeight) -> Reading {
         let scale = area.bottom - area.top
         return Reading(lines: lines.filter { line in
             guard let box = line.box else { return true }
-            return (box.bottom - box.top) * scale <= limit
+            let height = (box.bottom - box.top) * scale
+            if height > max(limit, Self.maxSentenceLineHeight) { return false }
+            return !(height > limit && Self.isLabelLike(line.text))
         })
     }
 

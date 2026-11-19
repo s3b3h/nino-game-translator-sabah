@@ -153,4 +153,19 @@ public class SubtitleBlockTests
         ]);
         Assert.True(reading.IsOversizedBlock(LowerHalf));
     }
+
+    [Fact]
+    public void TallSentenceIsKeptBecauseItMayBeASubtitleMergedWithJunk()
+    {
+        // Gerçek olay (V3.4): altyazı yanındaki göstergeyle aynı sıraya düşüp karenin %9'u ölçüldü ve atıldı.
+        var merged = new TextLine("What happened? 00060000", new TextBox(0.2, 0.60, 0.8, 0.80));
+        Assert.Equal([merged], new Reading([merged]).WithoutOversizedLines(LowerHalf).Lines);
+        // Aynı yükseklikte etiket gibi satır (en çok 4 sözcük, noktalama yok) tabeladır.
+        var sign = new TextLine("Boat Charters", new TextBox(0.2, 0.60, 0.8, 0.80));
+        Assert.Empty(new Reading([sign]).WithoutOversizedLines(LowerHalf).Lines);
+        Assert.True(Reading.IsLabelLike("OHM BOY"));
+        Assert.True(Reading.IsLabelLike("BOAT CHARTERS TO LON"));
+        Assert.False(Reading.IsLabelLike("We made it!"));
+        Assert.False(Reading.IsLabelLike("You made it through half a scuba tour"));
+    }
 }

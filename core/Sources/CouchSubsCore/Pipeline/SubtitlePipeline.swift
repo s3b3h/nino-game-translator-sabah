@@ -134,8 +134,17 @@ public final class SubtitlePipeline {
     /// Nino: ekranda bu çizginin (0–1, üstten) altında başlayan satırlar altyazı sayılmaz. Oyunlar öğretici ve menü
     /// yazılarını en alta koyar; en alttaki blok seçildiği için üstündeki gerçek altyazı okunmuyordu.
     public var hudTop: Double?
-    /// Günlüğe en son yazılan dev yazı; ekranda duran tabela her karede yeniden yazılmasın.
-    private var lastOversized = ""
+    /// Günlüğe yazılan son dev yazılar; ekranda duran tabela her karede (her okuma farkında) yeniden yazılmasın.
+    private var recentOversized: [String] = []
+
+    /// Bu dev yazı günlüğe yeni mi yazılacak (son 32 farklı yazı hatırlanır).
+    private func noteOversized(_ text: String) -> Bool {
+        let key = TextMatch.normalize(text)
+        guard !recentOversized.contains(key) else { return false }
+        recentOversized.append(key)
+        if recentOversized.count > 32 { recentOversized.removeFirst() }
+        return true
+    }
     /// Nino: hedef dil (ör. "tr"). Satır zaten bu dildeyse (PS5'in Türkçe menüsü) çevirmene hiç gitmez.
     public var targetLanguage: String?
     /// Nino: okunan satır zaten hedef dildeydi (PS5'in kendi Türkçe ekranı). Köşe okuyucusu bunu görünce bir süre durur.
@@ -274,8 +283,7 @@ public final class SubtitlePipeline {
         let sized = visible.withoutOversizedLines(in: place)
         if sized.lines.count != visible.lines.count {
             let dropped = visible.lines.filter { line in !sized.lines.contains(line) }.map(\.text).joined(separator: " / ")
-            if dropped != lastOversized {
-                lastOversized = dropped
+            if noteOversized(dropped) {
                 log("dev yazı: \(SubtitleLog.excerpt(dropped)) altyazı için fazla büyük, atlandı")
             }
             visible = sized
@@ -318,8 +326,7 @@ public final class SubtitlePipeline {
             reading = .empty
         }
         if reading.isOversizedBlock(in: place) {
-            if reading.text != lastOversized {
-                lastOversized = reading.text
+            if noteOversized(reading.text) {
                 log("dev blok: \(SubtitleLog.excerpt(reading.text)) altyazı için fazla yer kaplıyor (\(reading.lines.count) satır), atlandı")
             }
             reading = .empty

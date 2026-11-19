@@ -94,6 +94,28 @@ final class SubtitleBlockTests: XCTestCase {
         XCTAssertEqual(reading.lines, [subtitle])
     }
 
+    func testTallSentenceIsKeptBecauseItMayBeASubtitleMergedWithJunk() {
+        // Gerçek olay (V3.4): altyazı yanındaki göstergeyle aynı sıraya düşüp karenin %9'u ölçüldü ve atıldı.
+        let merged = TextLine("What happened? 00060000", box: TextBox(left: 0.2, top: 0.60, right: 0.8, bottom: 0.80))
+        let spoken = TextLine("We made it! RE", box: TextBox(left: 0.2, top: 0.30, right: 0.8, bottom: 0.50))
+        XCTAssertEqual(Reading(lines: [spoken, merged]).withoutOversizedLines(in: lowerHalf).lines, [spoken, merged])
+        // Aynı yükseklikte etiket gibi satır (en çok 4 sözcük, noktalama yok) tabeladır.
+        let sign = TextLine("Boat Charters", box: TextBox(left: 0.2, top: 0.60, right: 0.8, bottom: 0.80))
+        XCTAssertTrue(Reading(lines: [sign]).withoutOversizedLines(in: lowerHalf).lines.isEmpty)
+        // Cümle de olsa karenin %13'ünden yüksekse altyazı değildir.
+        let huge = TextLine("Welcome to the Leonida Keys, friend.", box: TextBox(left: 0.1, top: 0.1, right: 0.9, bottom: 0.45))
+        XCTAssertTrue(Reading(lines: [huge]).withoutOversizedLines(in: lowerHalf).lines.isEmpty)
+    }
+
+    func testLabelLikeLines() {
+        for text in ["OHM BOY", "Boat Charters", "YARD SALE", "RESIDENTIAL ELECTRICIAN", "BOAT CHARTERS TO LON"] {
+            XCTAssertTrue(Reading.isLabelLike(text), text)
+        }
+        for text in ["What?", "We made it!", "Yeah, say less", "You made it through half a scuba tour"] {
+            XCTAssertFalse(Reading.isLabelLike(text), text)
+        }
+    }
+
     func testLineHeightIsMeasuredAgainstTheWholeFrame() {
         // Aynı satır dar bir alanda alanın yarısını kaplar ama karede %5'tir: atılmaz.
         let narrow = TextBox(left: 0.2, top: 0.85, right: 0.8, bottom: 0.95)

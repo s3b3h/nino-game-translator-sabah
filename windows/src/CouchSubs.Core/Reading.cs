@@ -111,10 +111,34 @@ public sealed class Reading
     /// (<paramref name="area"/>: okunan alanın karedeki yeri), dar seçilmiş alanda normal satır büyük görünmesin. Yeri
     /// bilinmeyen satıra dokunulmaz (Mac: Reading.withoutOversizedLines).
     /// </summary>
+    /// <remarks>
+    /// Temkinlidir (V3.4.1): <paramref name="limit"/>ten yüksek satır yalnız etiket gibiyse (tabela, pano) atılır. Cümle
+    /// gibi satır, yanındaki gösterge ya da tabela harfiyle aynı sıraya düşüp yüksek ölçülmüş gerçek altyazı olabilir
+    /// ("What happened? 0006"); o ancak <see cref="MaxSentenceLineHeight"/>i aşarsa atılır.
+    /// </remarks>
     public Reading WithoutOversizedLines(TextBox area, double limit = MaxSubtitleLineHeight)
     {
         var scale = area.Bottom - area.Top;
-        return new(Lines.Where(line => line.Box is not { } box || (box.Bottom - box.Top) * scale <= limit));
+        return new(Lines.Where(line =>
+        {
+            if (line.Box is not { } box) return true;
+            var height = (box.Bottom - box.Top) * scale;
+            if (height > Math.Max(limit, MaxSentenceLineHeight)) return false;
+            return !(height > limit && IsLabelLike(line.Text));
+        }));
+    }
+
+    /// <summary>Cümle gibi görünen satır bu kadar yüksekse de atılır (karenin %13'ü).</summary>
+    public const double MaxSentenceLineHeight = 0.13;
+
+    /// <summary>
+    /// Etiket gibi satır: en çok 4 sözcük ve cümle noktalaması yok ("OHM BOY", "Boat Charters", "YARD SALE"). Altyazı
+    /// satırı ya uzundur ya da noktalamalıdır ("What?", "We made it!"). Mac: Reading.isLabelLike.
+    /// </summary>
+    public static bool IsLabelLike(string raw)
+    {
+        var words = raw.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Count(word => word.Any(char.IsLetter));
+        return words <= 4 && raw.IndexOfAny(['.', ',', '!', '?', '…']) < 0;
     }
 
     /// <summary>Blok bir altyazı için fazla mı yüksek ya da fazla mı satırlı (bkz. <see cref="MaxSubtitleBlockHeight"/>).</summary>

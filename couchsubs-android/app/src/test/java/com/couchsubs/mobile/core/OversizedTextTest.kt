@@ -44,6 +44,20 @@ class OversizedTextTest {
         assertTrue(Reading(listOf(line)).withoutOversizedLines(full).lines.isEmpty())
     }
 
+    @Test fun tallSentenceIsKeptBecauseItMayBeASubtitleMergedWithJunk() {
+        // Gerçek olay (V3.4): altyazı yanındaki göstergeyle aynı sıraya düşüp karenin %9'u ölçüldü ve atıldı.
+        val area = TextBox(0.06, 0.56, 0.98, 1.0)
+        val merged = TextLine("What happened? 00060000", TextBox(0.2, 0.60, 0.8, 0.80))
+        assertEquals(listOf(merged), Reading(listOf(merged)).withoutOversizedLines(area).lines)
+        // Aynı yükseklikte etiket gibi satır (en çok 4 sözcük, noktalama yok) tabeladır.
+        val sign = TextLine("Boat Charters", TextBox(0.2, 0.60, 0.8, 0.80))
+        assertTrue(Reading(listOf(sign)).withoutOversizedLines(area).lines.isEmpty())
+        assertTrue(Reading.isLabelLike("OHM BOY"))
+        assertTrue(Reading.isLabelLike("BOAT CHARTERS TO LON"))
+        assertFalse(Reading.isLabelLike("We made it!"))
+        assertFalse(Reading.isLabelLike("You made it through half a scuba tour"))
+    }
+
     @Test fun linesWithoutBoxesAreNeverDropped() {
         val reading = Reading(listOf(TextLine("No position known.")))
         assertEquals(reading.lines, reading.withoutOversizedLines(lowerHalf).lines)

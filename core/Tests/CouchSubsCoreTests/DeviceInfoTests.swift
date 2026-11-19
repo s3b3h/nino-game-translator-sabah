@@ -35,4 +35,15 @@ final class DeviceInfoTests: XCTestCase {
         XCTAssertNil(without.device)
         XCTAssertFalse(String(decoding: try ProblemReport.encode(without), as: UTF8.self).contains("device"))
     }
+
+    func testAddressesAreRemoved() {
+        let rows = DeviceInfo.rows(app: "3.4.1 (20)", tv: "Samsung Tizen · kurulum hatası (sdb 192.168.1.42:26101 Connection reset by peer)",
+                                   model: "Mac16,1", system: "macOS 27.0")
+        let summary = DeviceInfo.summary(rows)
+        XCTAssertFalse(summary.contains("192.168"))
+        XCTAssertTrue(summary.contains("sdb (adres) Connection reset by peer"))
+        // Sürüm numarası adres değildir.
+        XCTAssertTrue(summary.contains("3.4.1 (20)"))
+        XCTAssertTrue(summary.contains("macOS 27.0"))
+    }
 }

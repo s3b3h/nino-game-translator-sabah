@@ -70,8 +70,10 @@ public enum DeviceInfo {
     }
 
     /// Satır sonları ve ayırıcı çizgi değerin içinde kalmaz (özet tek satırdır).
+    /// IP adresleri de (kurulum hatasının metninde TV'nin ev ağındaki adresi geçebilir) silinir.
     static func clean(_ value: String) -> String {
         value.components(separatedBy: .newlines).joined(separator: " ").replacingOccurrences(of: "|", with: "/")
+            .replacingOccurrences(of: #"\b\d{1,3}(\.\d{1,3}){3}(:\d{1,5})?\b"#, with: "(adres)", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
     }
 

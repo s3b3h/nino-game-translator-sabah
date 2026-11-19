@@ -57,6 +57,17 @@ class Reading(lines: List<TextLine>) {
          */
         const val MAX_SUBTITLE_BLOCK_HEIGHT = 0.26
         const val MAX_SUBTITLE_LINES = 5
+        /** Cümle gibi görünen satır bu kadar yüksekse de atılır (karenin %13'ü). */
+        const val MAX_SENTENCE_LINE_HEIGHT = 0.13
+
+        /**
+         * Etiket gibi satır: en çok 4 sözcük ve cümle noktalaması yok ("OHM BOY", "Boat Charters", "YARD SALE"). Altyazı
+         * satırı ya uzundur ya da noktalamalıdır ("What?", "We made it!"). Mac: Reading.isLabelLike.
+         */
+        fun isLabelLike(raw: String): Boolean {
+            val words = raw.split(Regex("\\s+")).count { word -> word.any { it.isLetter() } }
+            return words <= 4 && raw.none { it in ".,!?…" }
+        }
 
         fun fromText(text: String) = Reading(text.replace("\r\n", "\n").split('\n').map { TextLine(it.trim()) })
 
@@ -86,10 +97,15 @@ class Reading(lines: List<TextLine>) {
      * (Mac: Reading.withoutOversizedLines, Windows: Reading.WithoutOversizedLines).
      */
     fun withoutOversizedLines(area: TextBox, limit: Double = MAX_SUBTITLE_LINE_HEIGHT): Reading {
+        // Temkinli (V3.4.1): [limit]ten yüksek satır yalnız etiket gibiyse (tabela, pano) atılır. Cümle gibi satır,
+        // yanındaki gösterge ya da tabela harfiyle aynı sıraya düşüp yüksek ölçülmüş gerçek altyazı olabilir
+        // ("What happened? 0006"); o ancak MAX_SENTENCE_LINE_HEIGHT'i aşarsa atılır.
         val scale = area.bottom - area.top
         return Reading(lines.filter { line ->
             val box = line.box ?: return@filter true
-            (box.bottom - box.top) * scale <= limit
+            val height = (box.bottom - box.top) * scale
+            if (height > maxOf(limit, MAX_SENTENCE_LINE_HEIGHT)) return@filter false
+            !(height > limit && isLabelLike(line.text))
         })
     }
 

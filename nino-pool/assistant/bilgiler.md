@@ -54,8 +54,9 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   ya da TV'den) alın; yayın yapıyorsanız OBS yolunu kullanın.
 - TV'ye kurulumda en kolayı telefondaki ya da bilgisayardaki Nino'dur; TV'de geliştirici modu (USB hata ayıklama)
   açıkken uygulamayı kendisi kurar ve günceller.
-- Güncel sürüm: bütün uygulamalar aynı adı ve aynı numarayı taşır: Nino V3.4 (3.4.0). Mac, Windows, Android telefon,
-  Android TV / Google TV ve Samsung TV uygulamalarının hepsi 3.4.0'dır. Tek istisna LG: LG TV uygulaması 0.9.18'dir ve
+- Güncel sürüm: bütün uygulamalar aynı adı taşır: Nino V3.4. Mac, Windows, Android telefon ve iPhone uygulamaları
+  3.4.1'dir (3.4.0'ın küçük düzeltmesi; 3.4.0 görünüyorsa güncellemesini söyle). Android TV / Google TV ve Samsung TV
+  uygulamaları 3.4.0'dır, bu doğrudur. Tek istisna LG: LG TV uygulaması 0.9.18'dir ve
   bu NORMALDİR, kullanıcıya "eski, yeniden kur" deme. TV'deki sürüm, telefondaki ya da bilgisayardaki Nino'nun TV
   kurulum ekranında yazar. Android TV ya da Samsung'da 3.4.0'dan küçük bir sayı görünüyorsa telefondaki ya da
   bilgisayardaki Nino'da "TV'ye kur"a yeniden basılır. Geliştirici modu (USB hata ayıklama) açık kalırsa güncellemeyi
