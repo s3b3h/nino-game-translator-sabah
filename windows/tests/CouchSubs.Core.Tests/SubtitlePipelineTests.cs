@@ -164,6 +164,20 @@ public class SubtitlePipelineTests
     }
 
     [Fact]
+    public async Task NavigationHintsAreNeitherTranslatedNorShown()
+    {
+        // Nino: yol tarifi satırları ("Turn Right 405 ft 432 ft") altyazı değildir.
+        var sender = new FakeSender();
+        var translator = new FakeTranslator();
+        var pipeline = new SubtitlePipeline(
+            new FakeReader("Turn Right 405 ft 432 ft", "Turn Right 405 ft 432 ft", "Where are we going?\nKeep Left O ft 2 ft",
+                "Where are we going?\nKeep Left O ft 2 ft"), translator, sender);
+        await Run(pipeline, 4);
+        Assert.Equal(["TR: Where are we going?"], sender.Sent);
+        Assert.DoesNotContain(translator.Requested, text => text.Contains("ft", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task SubtitleBoxIsSentInFrameCoordinates()
     {
         var sender = new FakeSender();

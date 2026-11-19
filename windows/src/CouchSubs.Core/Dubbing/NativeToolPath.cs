@@ -7,7 +7,7 @@ namespace CouchSubs.Core.Dubbing;
 /// <summary>
 /// pocket-tts içindeki sentencepiece (C++) Windows'ta dosya yolunu ANSI kod sayfasıyla açar: "C:\Users\Şafak\..." gibi
 /// ASCII dışı harfli yolda sözlüğü bulamaz. Yol önce 8.3 kısa adıyla ASCII'ye çevrilir; sürücüde kısa adlar kapalıysa
-/// sözlük ASCII bir klasöre (%ProgramData%, sonra C:\Users\Public) kopyalanır. macOS yolları UTF-8 açtığı için orada gerekmez.
+/// sözlük ASCII bir klasöre (%ProgramData%\Nino, sonra C:\Users\Public\Nino) kopyalanır. macOS yolları UTF-8 açtığı için orada gerekmez.
 /// </summary>
 public static partial class NativeToolPath
 {
@@ -32,7 +32,7 @@ public static partial class NativeToolPath
         foreach (var root in fallbackRoots)
         {
             if (string.IsNullOrEmpty(root) || !IsAscii(root)) continue;
-            var target = Path.Combine(root, "CouchSubs", "models", "tts-tr", DubbingModel.Revision, "tokenizer.model");
+            var target = Path.Combine(root, DataFolder.Name, "models", "tts-tr", DubbingModel.Revision, "tokenizer.model");
             try
             {
                 copy(file, target);

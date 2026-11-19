@@ -124,6 +124,8 @@ public class AdbConnectionTests
         var text = Encoding.ASCII.GetString(tv.ReceivedPublicKey!).TrimEnd('\0');
         var blob = Convert.FromBase64String(text.Split(' ')[0]);
         Assert.Equal(AdbConnection.EncodePublicKey(key), blob);
+        // Nino: TV'nin izinli cihazlar listesine yazılan ad.
+        Assert.Equal("nino@Nino", text.Split(' ')[1]);
     }
 
     [Fact]

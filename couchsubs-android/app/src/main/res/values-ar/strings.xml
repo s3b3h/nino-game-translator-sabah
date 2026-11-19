@@ -210,7 +210,8 @@
     <string name="nino_slide_to_unplug">اسحب للخلف للإيقاف</string>
     <string name="nino_plug_to_start">صِل القابس لتشغيل الترجمة إلى %1$s</string>
     <string name="nino_pair_first">أقرِن جهاز PS5 أولًا</string>
-    <string name="nino_no_signal">لا توجد إشارة</string>
+    <string name="nino_plug_drag_hint">اسحب القابس إلى المقبس للتشغيل</string>
+    <string name="nino_total_downloads">إجمالي التنزيلات</string>
     <string name="nino_live">مباشر</string>
     <string name="nino_connecting_ps5">جارٍ الاتصال بجهاز PS5…</string>
     <string name="nino_waiting_next">في انتظار الترجمة التالية…</string>
@@ -446,7 +447,7 @@
     <string name="tvapp_update_body">إصدار Nino على TV ‏%1$s هو %2$s، وعلى هذا الهاتف %3$s. يستغرق التحديث دقيقة تقريبًا؛ أبقِ TV قيد التشغيل وعلى شبكة Wi-Fi نفسها.</string>
     <string name="tvapp_update_button">تحديث تطبيق TV</string>
     <string name="app_update_title">إصدار جديد جاهز: %1$s</string>
-    <string name="app_update_body">نزّل أحدث إصدار من Nino وثبّته.</string>
+    <string name="app_update_body">صدر إصدار جديد من Nino. اضغط الزر في الأسفل، ثم افتح الملف الذي تم تنزيله وثبّته. لا حاجة إلى حذف الإصدار القديم؛ يُثبَّت الجديد فوقه وتبقى إعداداتك كما هي. إذا لم يكتمل التثبيت، احذف الإصدار القديم ثم ثبّته من جديد.</string>
     <string name="app_update_button">تحديث</string>
     <string name="tvapp_update_short">يتوفر تحديث: %1$s</string>
     <string name="tvinstall_title">تثبيت تطبيق TV</string>

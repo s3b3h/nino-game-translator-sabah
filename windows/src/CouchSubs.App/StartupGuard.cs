@@ -2,6 +2,7 @@
 
 using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
@@ -10,14 +11,71 @@ namespace CouchSubs.App;
 
 /// <summary>
 /// Açılış hatalarını sessizce kapanmak yerine gösterir. Bu sınıf yalnız .NET'in kendi türlerini kullanır: uygulamanın
-/// başka bir DLL'i eksik olsa da yüklenip çalışabilmeli.
+/// başka bir DLL'i eksik olsa da yüklenip çalışabilmeli. Tek ayrıcalık veri klasörünün hazırlanmasıdır
+/// (<see cref="PrepareDataFolder"/>): Core'a dokunan iki yöntem ayrı tutulur ve DLL yoksa hata yakalanır.
 /// </summary>
 internal static class StartupGuard
 {
     static bool Turkish => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "tr";
 
-    internal static string LogPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", "hata.log");
+    internal static string LogPath => Path.Combine(preparedFolder ?? FolderWithoutCore(), "hata.log");
+
+    static string? preparedFolder;
+
+    /// <summary>Nino'nun sorun bildirme sayfası. İleti kutusunda bağlantı tıklanamaz; adres açıkça yazılır.</summary>
+    internal const string IssuesUrl = "https://github.com/yunusdemirbag/nino-game-translator/issues";
+
+    /// <summary>Hata iletilerinin son satırı: günlüğün yeri ve sorunun nereye bildirileceği.</summary>
+    static string ReportHint => Turkish
+        ? $"Ayrıntılar {LogPath} dosyasında. Sorunu bu dosyayla birlikte Nino'nun GitHub sayfasından bildirebilirsiniz:\n{IssuesUrl}"
+        : $"Details are in {LogPath}. Please report it with that file on Nino's GitHub page:\n{IssuesUrl}";
+
+    /// <summary>
+    /// Veri klasörünü hazırlar: eski %LOCALAPPDATA%\CouchSubs klasörü varsa %LOCALAPPDATA%\Nino'ya taşınır; asıl CouchSubs
+    /// da o klasörü kullanıyorsa taşınmaz, verisi kopyalanır (kural ve taşıma CouchSubs.Core.DataFolder'da). Program.Main'de, veriye dokunan her şeyden ve ilk günlük satırından önce
+    /// çağrılır. Core DLL'i yüklenemiyorsa hata vermez; o durumda günlük <see cref="FolderWithoutCore"/> klasörüne yazılır.
+    /// </summary>
+    internal static void PrepareDataFolder()
+    {
+        try
+        {
+            preparedFolder = PrepareInCore();
+            LogMoveError();
+        }
+        catch (Exception error)
+        {
+            // Eksik ya da bozuk DLL: nedeni App.OnStartup gösterir. Burada hata çıkarsa o ileti hiç görünmezdi.
+            Log("Veri klasörü hazırlanamadı", error);
+        }
+    }
+
+    // Core'un türlerine dokunan kod ayrı yöntemlerde durur: DLL eksikse hata bu yöntemler derlenirken çıkar ve yukarıda yakalanır.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static string PrepareInCore() => CouchSubs.Core.DataFolder.Prepare();
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static void LogMoveError()
+    {
+        if (CouchSubs.Core.DataFolder.MoveError is { } error)
+            Log($"Veri klasörü {CouchSubs.Core.DataFolder.Name} adına taşınamadı; bu açılışta eski klasör kullanılıyor: {preparedFolder}", error);
+        // Destek için: modellerin neden yeniden indirildiği günlükten anlaşılsın.
+        if (CouchSubs.Core.DataFolder.Copied)
+            Log($"Eski veri klasörünü ({CouchSubs.Core.DataFolder.LegacyName}) başka bir uygulama da kullandığı için taşınmadı; " +
+                $"veriler {preparedFolder} klasörüne kopyalandı. Modeller kopyalanmaz, gerektiğinde yeniden indirilir.", null);
+    }
+
+    /// <summary>
+    /// Core olmadan günlüğün klasörü; hiçbir şey taşımaz: yeni klasör varsa o, yoksa eskisi varsa eskisi (yalnız eskisi
+    /// varken yenisi oluşturulmaz; yoksa sonraki açılış boş yeni klasörü seçerdi). Adlar derleme zamanı sabitidir,
+    /// çalışırken Core DLL'ine gerek duymaz.
+    /// </summary>
+    static string FolderWithoutCore()
+    {
+        var root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var current = Path.Combine(root, CouchSubs.Core.DataFolder.Name);
+        var legacy = Path.Combine(root, CouchSubs.Core.DataFolder.LegacyName);
+        return !Directory.Exists(current) && Directory.Exists(legacy) ? legacy : current;
+    }
 
     /// <summary>
     /// deps.json'da listelenen ama klasörde olmayan DLL'ler. Antivirüs bir dosyayı karantinaya alınca .NET açılışta
@@ -63,9 +121,7 @@ internal static class StartupGuard
             ? "Nino beklenmeyen bir hatayla karşılaştı:\n\n"
             : "Nino ran into an unexpected error:\n\n") +
         $"{error.GetType().Name}: {error.Message}\n\n" +
-        (Turkish
-            ? $"Ayrıntılar {LogPath} dosyasında. Sorunu bu dosyayla birlikte GitHub'daki Issues sayfasından bildirebilirsiniz."
-            : $"Details are in {LogPath}. Please report it on the GitHub Issues page with that file.");
+        ReportHint;
 
     /// <summary>Hatayı kaydeder, gösterir ve uygulamayı kapatır. Ekran görüntüsü kipinde pencere yerine errors.txt yazılır.</summary>
     public static void Fail(Application app, string message, Exception? error, string? renderFolder)
@@ -91,9 +147,7 @@ internal static class StartupGuard
             : "The subtitle window on this computer's screen could not be shown. Translation continues, but subtitles won't " +
               "appear in that window until you reopen Nino.\n\n") +
         $"{error.GetType().Name}: {error.Message}\n\n" +
-        (Turkish
-            ? $"Ayrıntılar {LogPath} dosyasında. Sorunu bu dosyayla birlikte GitHub'daki Issues sayfasından bildirebilirsiniz."
-            : $"Details are in {LogPath}. Please report it on the GitHub Issues page with that file.");
+        ReportHint;
 
     /// <summary>Arka plandaki bir hata uygulamayı kapatıyor; hiç değilse nedeni görünsün.</summary>
     static string ClosingMessage(Exception? error) =>
@@ -101,9 +155,7 @@ internal static class StartupGuard
             ? "Nino bir hata yüzünden kapanmak zorunda kaldı:\n\n"
             : "Nino has to close because of an error:\n\n") +
         (error is null ? "" : $"{error.GetType().Name}: {error.Message}\n\n") +
-        (Turkish
-            ? $"Ayrıntılar {LogPath} dosyasında. Sorunu bu dosyayla birlikte GitHub'daki Issues sayfasından bildirebilirsiniz."
-            : $"Details are in {LogPath}. Please report it on the GitHub Issues page with that file.");
+        ReportHint;
 
     /// <summary>
     /// Açılıştan sonraki yakalanmamış hataları da sessiz kalmadan gösterir. Uygulama kapanmaz: kullanıcı yaptığı işi
@@ -184,7 +236,7 @@ internal static class StartupGuard
         }
     }
 
-    /// <summary>%LOCALAPPDATA%\CouchSubs\hata.log dosyasına yazar; yazılamazsa sessizce geçer.</summary>
+    /// <summary>Veri klasöründeki (%LOCALAPPDATA%\Nino) hata.log dosyasına yazar; yazılamazsa sessizce geçer.</summary>
     internal static void Log(string message, Exception? error)
     {
         try

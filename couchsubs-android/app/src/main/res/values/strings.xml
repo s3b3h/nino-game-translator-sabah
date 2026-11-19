@@ -302,7 +302,7 @@
     <string name="tvapp_update_body">%1$s TV\'deki Nino %2$s, bu telefondaki %3$s. Güncelleme bir dakika kadar sürer; TV açık ve aynı Wi-Fi\'da kalsın.</string>
     <string name="tvapp_update_button">TV uygulamasını güncelle</string>
     <string name="app_update_title">Yeni sürüm hazır: %1$s</string>
-    <string name="app_update_body">Nino\'nun yeni sürümünü indirip kurabilirsin.</string>
+    <string name="app_update_body">Nino\'nun yeni sürümü çıktı. Aşağıdaki düğmeye bas, inen dosyayı açıp kur. Eski sürümü silmene gerek yok; yenisi üstüne kurulur, ayarların kalır. Kurulmazsa eski sürümü silip yeniden kur.</string>
     <string name="app_update_button">Güncelle</string>
     <string name="tvapp_update_short">Güncelleme var: %1$s</string>
     <string name="tvinstall_title">TV uygulamasını kurun</string>
@@ -459,7 +459,8 @@
     <string name="nino_slide_to_unplug">Durdurmak için geri kaydırın</string>
     <string name="nino_plug_to_start">Fişi prize takın, %1$s altyazı açılsın</string>
     <string name="nino_pair_first">Önce PS5\'inizi eşleyin</string>
-    <string name="nino_no_signal">SİNYAL YOK</string>
+    <string name="nino_plug_drag_hint">ÇALIŞTIRMAK İÇİN FİŞİ PRİZE SÜRÜKLEYİNİZ</string>
+    <string name="nino_total_downloads">TOPLAM İNDİRME</string>
     <string name="nino_live">CANLI</string>
     <string name="nino_connecting_ps5">PS5\'e bağlanılıyor…</string>
     <string name="nino_waiting_next">Sıradaki altyazı bekleniyor…</string>

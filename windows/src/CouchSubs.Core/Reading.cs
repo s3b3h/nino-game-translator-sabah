@@ -81,6 +81,36 @@ public sealed class Reading
     public Reading WithoutButtonPrompts() => new(Lines.Where(line => !ButtonPrompts.IsPrompt(line.Text)));
 
     /// <summary>
+    /// Nino: oyunun yol tarifi satırları ("Turn Right 405 ft 432 ft", "Keep Left 0 ft 2 ft", "U-Turn Left 5 ft") altyazı
+    /// değildir: çevrilmez, ekranda da gösterilmez (kullanıcı isteği, 19 Kasım 2026). Her mesafe ayrı bir satır olduğu
+    /// için eskiden her biri ayrıca çeviriye de gidiyordu (Mac: Reading.withoutNavigationHints).
+    /// </summary>
+    public Reading WithoutNavigationHints() => new(Lines.Where(line => !IsNavigationHint(line.Text)));
+
+    // Yön: satırın başında, önünde yalnız boşluk ve noktalama olabilir. Kültürden bağımsız: Türkçe Windows'ta "RIGHT"
+    // ile "right" (I/ı) yine eşleşsin.
+    private static readonly System.Text.RegularExpressions.Regex NavigationMove = new(
+        @"^[\s\-–—'""‘’.,·•]*(u-?\s?turn|turn|keep)\s+(left|right)\b",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant
+        | System.Text.RegularExpressions.RegexOptions.Compiled);
+    // Mesafe: sayı (okuma hatasıyla "O"/"o" = 0) + birim.
+    private static readonly System.Text.RegularExpressions.Regex NavigationDistance = new(
+        @"(\d+(?:[.,]\d+)?|[Oo])\s*(ft|mi|yd|km|m)\b",
+        System.Text.RegularExpressions.RegexOptions.CultureInvariant | System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>Yalnız yön + mesafelerden oluşan satır. Arkasında söz olan cümle ("Turn right at the lights, okay?") altyazıdır.</summary>
+    public static bool IsNavigationHint(string raw)
+    {
+        var text = raw.Trim();
+        var move = NavigationMove.Match(text);
+        if (!move.Success) return false;
+        var rest = text[move.Length..];
+        if (!NavigationDistance.IsMatch(rest)) return false;
+        // Mesafeler çıkınca geriye yalnız okuma kırıntısı (noktalama, tek tük harf) kalmalı.
+        return NavigationDistance.Replace(rest, " ").Count(char.IsLetterOrDigit) <= 2;
+    }
+
+    /// <summary>
     /// Yazı tanımanın uydurduğu sözcük çöpleri ("ou$3e", "waters2aljd") ayıklanmış hali; çevirmen bunları olduğu
     /// gibi taşıyıp TV'de anlamsız harfler gösteriyordu.
     /// </summary>

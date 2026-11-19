@@ -12,8 +12,75 @@ public interface IUpdater
     Uri DownloadPage { get; }
     /// <summary>Daha yeni sürüm varsa numarası, yoksa null.</summary>
     Task<string?> CheckAsync();
-    /// <summary>İndirir, kurar ve uygulamayı yeniden başlatır.</summary>
-    Task InstallAsync(IProgress<double> progress);
+    /// <summary>
+    /// İndirir, kurar ve uygulamayı yeniden başlatır. İndirme bitip kurulum başlamadan hemen önce
+    /// <paramref name="beforeApply"/> çağrılır (kurulum uygulamayı kapattığı için sonrasında kod çalışmaz); hata
+    /// fırlatırsa kurulum başlatılmaz.
+    /// </summary>
+    Task InstallAsync(IProgress<double> progress, Action? beforeApply = null);
+}
+
+/// <summary>
+/// Kendiliğinden kurulumun sürüm başına deneme sayısı (auto-update-tried.txt). Kurulum uygulamayı yeniden başlatır;
+/// yeniden açılan uygulama hâlâ eski sürümse (kurulum olmadıysa) aynı sürüm yine bulunur. Sayaç bunu sınırlar: sürüm
+/// başına en çok <see cref="MaxAttempts"/> kez kendiliğinden kurulur, sonra yalnız "Güncelle" düğmesi kalır.
+/// Deneme, indirme bitip kurulum gerçekten başlarken yazılır; yarıda kalan indirme hakkı tüketmez.
+/// </summary>
+public sealed class AutoUpdateLog(string? file)
+{
+    public const int MaxAttempts = 2;
+    private readonly object gate = new();
+    /// <summary>Dosya yoksa (testler) ya da yazılamıyorsa bu süreçteki sayım.</summary>
+    private (string Version, int Count) memory = ("", 0);
+
+    /// <summary>Bu sürümün kurulumu kaç kez başlatıldı. Eski biçimde (yalnız sürüm yazan) dosya bir deneme sayılır.</summary>
+    public int Attempts(string version)
+    {
+        lock (gate)
+        {
+            var remembered = memory.Version == version ? memory.Count : 0;
+            return Math.Max(remembered, Read(version));
+        }
+    }
+
+    public bool Exhausted(string version) => Attempts(version) >= MaxAttempts;
+
+    /// <summary>Bir denemeyi kaydeder; diske yazılamadıysa false (sayım bu süreçte yine tutulur).</summary>
+    public bool Record(string version)
+    {
+        lock (gate)
+        {
+            var count = Math.Max(memory.Version == version ? memory.Count : 0, Read(version)) + 1;
+            memory = (version, count);
+            if (file is null) return true;
+            try
+            {
+                if (Path.GetDirectoryName(file) is { Length: > 0 } directory) Directory.CreateDirectory(directory);
+                File.WriteAllText(file, $"{version}\n{count}\n");
+                return true;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+    }
+
+    private int Read(string version)
+    {
+        if (file is null) return 0;
+        try
+        {
+            if (!File.Exists(file)) return 0;
+            var lines = File.ReadAllText(file).Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (lines.Length == 0 || lines[0] != version) return 0;
+            return lines.Length > 1 && int.TryParse(lines[1], out var count) && count > 0 ? count : 1;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return 0;
+        }
+    }
 }
 
 /// <summary>Sürüm numaraları: "0.1.0-beta.10" (anlamsal sürüm, ön sürüm parçaları sayıysa sayı olarak karşılaştırılır).</summary>

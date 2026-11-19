@@ -24,7 +24,7 @@ import { LIMITS } from "./validate.js";
 import { REPORT_LIMITS, receiveReport, listReports, getReport, getReportImage, setReportStatus } from "./reports.js";
 import { REPORTS_PAGE } from "./reports-page.js";
 import { ASSISTANT_LIMITS, handleAssistant, assistantEnabled } from "./assistant.js";
-import { touchInstall, handlePing, handleTv, collectStats, samplePlayers } from "./stats.js";
+import { touchInstall, handlePing, handleTv, collectStats, samplePlayers, storedDownloadTotal, refreshDownloads } from "./stats.js";
 import { ADMIN_PAGE } from "./admin-page.js";
 import { IDENTIFY_LIMITS, handleIdentify } from "./identify.js";
 import { TRANSLATE_LIMITS, LANGUAGES, handleTranslate, listTranslations, reviewTranslations, remoteConfig, addCost, askLiveModel, askReview } from "./translate.js";
@@ -102,7 +102,9 @@ export async function handle(request, env, now = Math.floor(Date.now() / 1000), 
   }
 
   if (path === "/v1/config" && request.method === "GET") {
-    return json(200, remoteConfig(env), { "cache-control": "public, max-age=300" });
+    // Nino: toplam indirme (ana ekrandaki sayaç); saklanan son değer, yoksa alan hiç gönderilmez.
+    const downloads = await storedDownloadTotal(env.DB);
+    return json(200, { ...remoteConfig(env), ...(downloads ? { downloads } : {}) }, { "cache-control": "public, max-age=300" });
   }
 
   if (path === "/v1/identify" && request.method === "POST") {
@@ -256,6 +258,8 @@ export default {
     const now = Math.floor(Date.now() / 1000);
     // Panel geçmişi: kimse oynamıyorken de o saat 0 olarak yazılsın (yarım saatte bir).
     await samplePlayers(env.DB, now, { force: true });
+    // Uygulamalardaki "Toplam indirme" sayacı güncel kalsın (kimse paneli açmasa da).
+    if (env.STATS_GITHUB !== "0") await refreshDownloads(env.DB, now).catch(() => null);
     // Gözden geçirme 30 dakikada bir (wrangler.toml), bakım günde bir.
     if (event?.cron === "17 3 * * *") await prune(env.DB, now);
     else console.log("gözden geçirme", JSON.stringify(await reviewTranslations(env.DB, env, now)));

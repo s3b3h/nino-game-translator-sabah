@@ -10,9 +10,21 @@ namespace CouchSubs.Core.LgTv;
 /// <summary>Samsung uzaktan kumanda WebSocket'inin iletileri. Samsung bunu belgelemez; alanlar topluluk kaynaklarından.</summary>
 public static class SamsungMessages
 {
-    public static Uri Url(string host, string? token)
+    /// <summary>TV'nin izin sorusunda ve cihaz listesinde görünen ad (yeni eşleşmeler).</summary>
+    public const string ClientName = "Nino";
+    /// <summary>Önceki sürümlerin gönderdiği ad. TV izni (ve jetonu) bu adla vermiş olabilir; var olan eşleşmede değişmez.</summary>
+    public const string PreviousClientName = "CouchSubs";
+
+    /// <summary>
+    /// Bu kurulumun TV'ye göndereceği ad. Bir kez "Nino" ile eşleşildiyse (<paramref name="remembered"/>) hep o; yoksa
+    /// var olan eşleşmede eski ad (ad değişirse TV yeniden izin isteyebilir), yeni eşleşmede "Nino".
+    /// </summary>
+    public static string ClientNameFor(string? remembered, bool hasPairing) =>
+        !string.IsNullOrEmpty(remembered) ? remembered : hasPairing ? PreviousClientName : ClientName;
+
+    public static Uri Url(string host, string? token, string clientName = PreviousClientName)
     {
-        var name = Convert.ToBase64String(Encoding.UTF8.GetBytes("CouchSubs"));
+        var name = Convert.ToBase64String(Encoding.UTF8.GetBytes(clientName));
         var text = $"wss://{host}:8002/api/v2/channels/samsung.remote.control?name={name}";
         if (!string.IsNullOrEmpty(token)) text += $"&token={token}";
         return new Uri(text);
@@ -138,7 +150,8 @@ public sealed class SamsungClient(Uri url, TimeSpan? approvalTimeout = null) : I
 
     private ClientWebSocket? socket;
 
-    public SamsungClient(LgTv tv, string? token) : this(SamsungMessages.Url(tv.Host, token)) { }
+    public SamsungClient(LgTv tv, string? token, string clientName = SamsungMessages.PreviousClientName)
+        : this(SamsungMessages.Url(tv.Host, token, clientName)) { }
 
     /// <summary>Bağlanır ve jetonu döner. Kullanıcı TV'de onay verene kadar bekler.</summary>
     public async Task<string> ConnectAsync(CancellationToken cancellationToken = default)

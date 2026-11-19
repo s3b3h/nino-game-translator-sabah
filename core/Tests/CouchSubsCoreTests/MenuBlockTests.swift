@@ -115,6 +115,43 @@ final class MenuScreenTests: XCTestCase {
     }
 }
 
+final class ShortMessageCardTests: XCTestCase {
+    private func line(_ text: String, left: Double, top: Double) -> TextLine {
+        TextLine(text, box: TextBox(left: left, top: top, right: left + 0.2, bottom: top + 0.04))
+    }
+
+    /// Kısa mesaj ("On my way") sağdaki kartta duruyorsa karttır; eskiden altyazı sanılıp siyah kutuyla üstü kapanıyordu.
+    func testShortMessageOnTheRightIsACard() {
+        XCTAssertTrue(MessageCard.isCard(Reading(lines: [line("Cal", left: 0.72, top: 0.80), line("On my way", left: 0.72, top: 0.85)])))
+        XCTAssertTrue(MessageCard.isCard(Reading(lines: [line("Donnie", left: 0.70, top: 0.80), line("Ok", left: 0.70, top: 0.85)])))
+        // Ortadaki iki satırlık altyazı kart değildir.
+        XCTAssertFalse(MessageCard.isCard(Reading(lines: [line("Jason", left: 0.40, top: 0.80), line("Yeah", left: 0.40, top: 0.85)])))
+        // Gövdesi yalnız rakam ya da simge olan okuma kart değildir.
+        XCTAssertFalse(MessageCard.isCard(Reading(lines: [line("Cal", left: 0.72, top: 0.80), line("12:45", left: 0.72, top: 0.85)])))
+    }
+
+    func testShortCardBodyReadWithoutItsNameIsNotASubtitle() {
+        XCTAssertTrue(MessageCard.repeats("On my way", of: "On my way"))
+        XCTAssertTrue(MessageCard.repeats("my way", of: "On my way"))
+        XCTAssertFalse(MessageCard.repeats("Get in the car", of: "On my way"))
+    }
+}
+
+final class NavigationHintTests: XCTestCase {
+    func testTurnByTurnLinesAreNotSubtitles() {
+        for hint in ["Turn Right 405 ft 432 ft", "Keep Left O ft 2 ft", "U-Turn Left 5 ft 24 ft", "Turn Left 366 ft—",
+                     "-turn Right 67 ft 82 ft", "Turn Right i 100 ft 103 ft", "Keep Right 3.9 km"] {
+            XCTAssertTrue(Reading.isNavigationHint(hint), hint)
+        }
+        for subtitle in ["Turn right at the lights, okay?", "Turn Right", "Keep left and you'll be fine, 20 ft or so",
+                         "Keep it down!", "I said turn left, 50 ft back there you idiot."] {
+            XCTAssertFalse(Reading.isNavigationHint(subtitle), subtitle)
+        }
+        let reading = Reading(lines: [TextLine("Turn Right 405 ft"), TextLine("Where the hell are we going?")])
+        XCTAssertEqual(reading.withoutNavigationHints().lines.map(\.text), ["Where the hell are we going?"])
+    }
+}
+
 final class MessageRepeatTests: XCTestCase {
     func testPartOfTheCardIsNotASubtitle() {
         let body = "Hey Jason. You okay? Saw those assholes coming at you outside the shop and"

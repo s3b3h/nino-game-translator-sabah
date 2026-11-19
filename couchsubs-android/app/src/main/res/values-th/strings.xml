@@ -287,7 +287,7 @@
     <string name="tvapp_update_body">Nino บน TV %1$s เป็นเวอร์ชัน %2$s ส่วนโทรศัพท์เครื่องนี้มี %3$s การอัปเดตใช้เวลาประมาณหนึ่งนาที เปิด TV ไว้และให้อยู่ใน Wi-Fi เดียวกัน</string>
     <string name="tvapp_update_button">อัปเดตแอป TV</string>
     <string name="app_update_title">เวอร์ชันใหม่พร้อมแล้ว: %1$s</string>
-    <string name="app_update_body">ดาวน์โหลดและติดตั้ง Nino เวอร์ชันล่าสุด</string>
+    <string name="app_update_body">Nino มีเวอร์ชันใหม่แล้ว แตะปุ่มด้านล่าง จากนั้นเปิดไฟล์ที่ดาวน์โหลดมาแล้วติดตั้ง ไม่ต้องลบเวอร์ชันเก่า เวอร์ชันใหม่จะติดตั้งทับและการตั้งค่าของคุณยังอยู่ หากติดตั้งไม่ได้ ให้ถอนการติดตั้งเวอร์ชันเก่าแล้วติดตั้งใหม่</string>
     <string name="app_update_button">อัปเดต</string>
     <string name="tvapp_update_short">มีอัปเดต: %1$s</string>
     <string name="tvinstall_title">ติดตั้งแอป TV</string>
@@ -443,7 +443,8 @@
     <string name="nino_slide_to_unplug">เลื่อนกลับเพื่อหยุด</string>
     <string name="nino_plug_to_start">เสียบปลั๊กเพื่อเปิดคำบรรยาย %1$s</string>
     <string name="nino_pair_first">จับคู่ PS5 ของคุณก่อน</string>
-    <string name="nino_no_signal">ไม่มีสัญญาณ</string>
+    <string name="nino_plug_drag_hint">ลากปลั๊กไปที่เต้ารับเพื่อเริ่ม</string>
+    <string name="nino_total_downloads">ดาวน์โหลดทั้งหมด</string>
     <string name="nino_live">สด</string>
     <string name="nino_connecting_ps5">กำลังเชื่อมต่อกับ PS5…</string>
     <string name="nino_waiting_next">กำลังรอคำบรรยายถัดไป…</string>

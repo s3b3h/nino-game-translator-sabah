@@ -9,7 +9,7 @@ using CouchSubs.Translation;
 namespace CouchSubs.App.Services;
 
 /// <summary>
-/// Pocket TTS Turkish (wite-tech, CC-BY-4.0) ilk kullanımda %LOCALAPPDATA%\CouchSubs\models\tts-tr\&lt;sürüm&gt;
+/// Pocket TTS Turkish (wite-tech, CC-BY-4.0) ilk kullanımda %LOCALAPPDATA%\Nino\models\tts-tr\&lt;sürüm&gt;
 /// altına indirilir; ses motoru uygulamayla gelen tts\pocket-tts.exe (Kyutai, MIT).
 /// </summary>
 internal sealed class PocketDubbingModel : IDubbingModel

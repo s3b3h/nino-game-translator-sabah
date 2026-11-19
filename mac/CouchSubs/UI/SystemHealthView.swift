@@ -103,6 +103,25 @@ private struct HealthRow: View {
     }
 }
 
+/// Nino: "Mac'in yerel ağ izni kapalı olabilir" uyarısı ve Sistem Ayarları'nın ilgili sayfasını açan düğme. Yalnız güçlü
+/// işarette görünür (bkz. `LocalNetworkAccess`).
+struct LocalNetworkWarning: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.space("s")) {
+            Label {
+                Text(verbatim: AppModel.localNetworkWarning)
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+            }
+            .font(.csCallout.weight(.semibold))
+            .foregroundStyle(Color.csWarning)
+            Button("Open System Settings") { NSWorkspace.shared.open(AppModel.localNetworkSettingsURL) }
+                .buttonStyle(.secondary)
+        }
+    }
+}
+
 private struct HealthChecksCard: View {
     @EnvironmentObject private var model: AppModel
     let snapshot: HealthSnapshot
@@ -124,6 +143,8 @@ private struct HealthChecksCard: View {
             Divider()
             HealthRow(symbol: "gamecontroller", title: "PS5 connection", level: HealthReport.connection(snapshot),
                       value: connectionText, advice: connectionAdvice)
+            // Nino: Yerel Ağ izni kapalı görünüyorsa asıl neden odur; satırın altında ne yapılacağı ve düğmesi.
+            if model.localNetworkBlocked { LocalNetworkWarning() }
             Divider()
             HealthRow(symbol: "play.rectangle", title: "PS5 picture", level: stream, value: streamText,
                       advice: String(localized: "When the picture freezes, Nino cannot read the subtitles. Connect both the PS5 and this Mac to the modem with a cable."))

@@ -166,9 +166,9 @@ object SamsungLogin {
         }
 
         private fun respond(output: java.io.OutputStream, status: Int, signedIn: Boolean) {
-            val page = if (signedIn) "<!doctype html><meta charset=utf-8><meta name=viewport content=\"width=device-width\"><title>CouchSubs</title>" +
+            val page = if (signedIn) "<!doctype html><meta charset=utf-8><meta name=viewport content=\"width=device-width\"><title>Nino</title>" +
                 "<body style=\"font-family:system-ui;padding:2em\"><h2>Giriş tamam / Signed in</h2>" +
-                "<p>CouchSubs'a dönebilirsiniz.<br>You can return to CouchSubs.</p>"
+                "<p>Nino'ya dönebilirsiniz.<br>You can return to Nino.</p>"
             else "Not found"
             val reason = when (status) { 200 -> "OK"; 400 -> "Bad Request"; else -> "Not Found" }
             val body = page.toByteArray(Charsets.UTF_8)

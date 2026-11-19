@@ -51,6 +51,7 @@ import com.couchsubs.mobile.R
 import com.couchsubs.mobile.Services
 import com.couchsubs.mobile.core.SubtitleBackgroundShape
 import com.couchsubs.mobile.core.SubtitlePlacement
+import com.couchsubs.mobile.core.SubtitleStyle
 import com.couchsubs.mobile.core.SubtitleTextColor
 import com.couchsubs.mobile.core.TvDisplayMode
 import com.couchsubs.mobile.remoteplay.LoginPasscode
@@ -321,12 +322,18 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
                 }
             }
             // TV'deki kutu: %100 tamamen opak olur ve oyundaki İngilizce yazıyı kapatır; bant ekranın iki kenarına uzanır.
+            // Nino: örtme kipinde TV'ye %60 altı gitmez (SubtitleStyle.effectiveBackground). Kaydırıcı o kipte %60'tan başlar
+            // ve TV'ye gideni gösterir; eskiden %0-55 seçilebiliyor, yazan yüzde yerine kutu simsiyah (%100) oluyordu.
+            // Yuvarlama: adım değeri 54,99… gelirse toInt bir alt yüzdeye (eşiğin altına) düşürürdü.
+            val backgroundFloor = if (placement == SubtitlePlacement.COVER) SubtitleStyle.COVER_MIN_BACKGROUND else 0
+            val shownBackground = SubtitleStyle.effectiveBackground(placement, Math.round(background))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TileLabel(stringResource(R.string.settings_background))
                 Spacer(Modifier.weight(1f))
-                Text("%${background.toInt()}", style = Tokens.Type.headline, color = Tokens.Color.text)
+                Text("%$shownBackground", style = Tokens.Type.headline, color = Tokens.Color.text)
             }
-            Slider(background, { background = it; settings.tvBackground = it.toInt() }, valueRange = 0f..100f, steps = 19,
+            Slider(shownBackground.toFloat(), { background = it; settings.tvBackground = Math.round(it) },
+                valueRange = backgroundFloor.toFloat()..100f, steps = (100 - backgroundFloor) / 5 - 1,
                 colors = SliderDefaults.colors(thumbColor = Tokens.Color.text, activeTrackColor = Tokens.Color.accent,
                     inactiveTrackColor = Tokens.Color.borderStrong, activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent))
             TileLabel(stringResource(R.string.settings_background_area))

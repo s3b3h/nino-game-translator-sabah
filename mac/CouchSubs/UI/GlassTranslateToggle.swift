@@ -322,10 +322,11 @@ struct MainBottomBar: View {
                     }
                 }
                 Spacer(minLength: 12)
-                // Nino: "Tema" kısayolu kaldırıldı (Ayarlar › Altyazı görünümü'nde duruyor). GTA 6'da çeviri Nino'nun
-                // havuzundan geldiği için burada o yazar; başka bir oyun tanınınca seçili motor görünür.
+                // Nino: "Tema" kısayolu kaldırıldı (Ayarlar › Altyazı görünümü'nde duruyor). Burada o an GERÇEKTEN kullanılan
+                // çeviri yazar: GTA 6 tanınınca (ve havuz o dilde çeviriyorsa) Nino'nun havuzu, başka oyunda ya da oyun
+                // henüz tanınmamışken kullanıcının seçtiği motor. Oyun değişince kendiliğinden güncellenir.
                 link(title: "Translation",
-                     value: Text(verbatim: model.ninoPoolActive ? String(localized: "Nino · GTA 6 active")
+                     value: Text(verbatim: model.liveGamePoolFirst && model.ninoPoolActive ? String(localized: "Nino · GTA 6 active")
                                  : model.settings.translationEngine == .free ? String(localized: "Free") : model.settings.translationEngine.displayName)) { open(.translation) }
             }
             .padding(.horizontal, Theme.space("xl"))

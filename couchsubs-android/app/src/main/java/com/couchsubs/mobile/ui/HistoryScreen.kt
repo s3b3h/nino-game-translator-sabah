@@ -83,5 +83,5 @@ private fun HistoryRow(entry: SubtitleHistory.Entry) {
 }
 
 private fun copy(context: Context, text: String) {
-    context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("CouchSubs", text))
+    context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Nino", text))
 }

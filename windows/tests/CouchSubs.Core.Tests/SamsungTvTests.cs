@@ -16,6 +16,24 @@ public class SamsungTvTests
         Assert.Equal("wss://192.168.1.20:8002/api/v2/channels/samsung.remote.control?name=Q291Y2hTdWJz",
             SamsungMessages.Url("192.168.1.20", null).ToString());
         Assert.EndsWith("&token=123", SamsungMessages.Url("192.168.1.20", "123").ToString());
+        // Nino: yeni eşleşmede TV'ye "Nino" adı gider (base64).
+        Assert.Equal("wss://192.168.1.20:8002/api/v2/channels/samsung.remote.control?name=Tmlubw==",
+            SamsungMessages.Url("192.168.1.20", null, SamsungMessages.ClientName).ToString());
+        Assert.Equal("wss://192.168.1.20:8002/api/v2/channels/samsung.remote.control?name=Tmlubw==&token=123",
+            SamsungMessages.Url("192.168.1.20", "123", SamsungMessages.ClientName).ToString());
+    }
+
+    [Fact]
+    public void ClientNameIsNinoForNewPairingsAndUnchangedForExistingOnes()
+    {
+        // Yeni eşleşme: Nino.
+        Assert.Equal("Nino", SamsungMessages.ClientNameFor(remembered: null, hasPairing: false));
+        // Önceki sürümle eşleşmiş TV: ad değişmez (TV yeniden izin sormasın).
+        Assert.Equal("CouchSubs", SamsungMessages.ClientNameFor(remembered: null, hasPairing: true));
+        Assert.Equal("CouchSubs", SamsungMessages.ClientNameFor(remembered: "", hasPairing: true));
+        // Bir kez Nino ile eşleşildiyse sonraki bağlantılarda da Nino.
+        Assert.Equal("Nino", SamsungMessages.ClientNameFor(remembered: "Nino", hasPairing: true));
+        Assert.Equal("Nino", SamsungMessages.ClientNameFor(remembered: "Nino", hasPairing: false));
     }
 
     [Fact]

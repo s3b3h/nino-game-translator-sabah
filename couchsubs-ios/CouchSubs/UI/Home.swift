@@ -93,6 +93,8 @@ struct SubtitleScreen: View {
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @State private var savedBrightness: CGFloat?
+    /// Alttaki altyazı yığınının (alt boşluğuyla) yüksekliği; köşe çevirileri bunun üstünde kalır.
+    @State private var subtitleHeight: CGFloat = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -122,6 +124,10 @@ struct SubtitleScreen: View {
             }
             .padding(.horizontal, Mobile.isPad ? Mobile.Space.screen * 3 : Mobile.Space.screen)
             .padding(.bottom, Mobile.Space.screen * (Mobile.isPad ? 4 : 2))
+            .background(GeometryReader { proxy in
+                Color.clear.preference(key: SubtitleHeightKey.self, value: model.phoneLines.isEmpty ? 0 : proxy.size.height)
+            })
+            .onPreferenceChange(SubtitleHeightKey.self) { subtitleHeight = $0 }
             // Ek alanların (görev, telefon, bildirim) çevirisi oyundaki yerinde küçük kutuda (TV'deki gibi).
             GeometryReader { proxy in
                 ForEach(model.phoneRegions) { region in
@@ -156,10 +162,34 @@ struct SubtitleScreen: View {
                 }
             }
             .allowsHitTesting(false)
+            // Nino: kendiliğinden çevrilen köşe yazıları ve telefon mesajı, oyundaki yerlerinde. Kullanıcı "Ekranı çevir"e
+            // bastıysa onun sonuçları önceliklidir; onlar kalkınca bunlar geri gelir.
+            if model.screenState == .idle && model.screenItems.isEmpty {
+                HintLayer(items: model.hintItems, bottomInset: subtitleHeight)
+            }
             Text("The screen stays on · brightness is lowered automatically")
                 .font(Mobile.TypeScale.caption)
                 .foregroundStyle(Color.white.opacity(0.5))
                 .padding(.bottom, Mobile.Space.inline)
+        }
+        .overlay {
+            // Bağlanılamıyorsa nedeni ekranın ortasında (eskiden yalnız "Bağlanıyor…" yazıyordu).
+            if let problem = model.connectionProblemText {
+                VStack(spacing: Mobile.Space.inline) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(Color.orange)
+                    Text(verbatim: problem)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: 520)
+                .padding(Mobile.Space.screen)
+                .accessibilityElement(children: .combine)
+                .allowsHitTesting(false)
+            }
         }
         .overlay(alignment: .topLeading) {
             // Nino: siyah zeminde okunsun diye açık renk (koyu lacivert yazı görünmüyordu).
@@ -192,7 +222,10 @@ struct SubtitleScreen: View {
 
     private var statusText: String {
         if model.isDemo { return UILanguage.text("demo.status", locale) }
-        guard model.sessionState == .streaming else { return model.ps5StatusText }
+        // Neden uzunsa tek satırlık etikete sığmaz; ekranın ortasında yazar (bkz. gövdedeki uyarı). Etiket kısa kalır.
+        guard model.sessionState == .streaming else {
+            return model.connectionProblemText == nil ? model.ps5StatusText : String(localized: "Connecting…")
+        }
         return model.packsActive ? String(localized: "PS5 connected · ready translation") : String(localized: "PS5 connected")
     }
 
@@ -214,6 +247,75 @@ struct SubtitleScreen: View {
         } else if let savedBrightness {
             screen.brightness = savedBrightness
         }
+    }
+}
+
+/// Nino: kendiliğinden çevrilen köşe yazıları (sol üstteki ipucu kutusu, görev kartı) ve telefon mesajı/araması. Her
+/// çeviri oyundaki yazının yerinde durur (kutular kare koordinatındadır: sol üstteki ipucu sol üstte, sağ alttaki mesaj
+/// sağ altta) ve yarı saydamdır: simsiyah kutu yok, yalnız gölgeli sade yazı. Yazı oyundan kalkınca çeviri de kalkar.
+struct HintLayer: View {
+    let items: [ScreenTranslation.Item]
+    /// Alttaki altyazının kapladığı yükseklik: alt yarıdaki çeviri (mesaj) altyazının üstüne binmez, gerekirse yukarı kayar.
+    var bottomInset: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { proxy in
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                HintItemText(item: item, size: proxy.size, bottomInset: bottomInset)
+                    .transition(.opacity)
+            }
+        }
+        // Kutular karenin koordinatındadır; Arapça arayüzde aynalanmaz (içindeki Arapça yazı yine sağdan sola dizilir).
+        .fixedLeftToRight()
+        .animation(.easeOut(duration: 0.25), value: items)
+        .animation(.easeOut(duration: 0.25), value: bottomInset)
+        .allowsHitTesting(false)
+    }
+}
+
+/// Altyazı yığınının yüksekliği (bkz. `SubtitleScreen.subtitleHeight`).
+private struct SubtitleHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+private struct HintItemText: View {
+    let item: ScreenTranslation.Item
+    let size: CGSize
+    var bottomInset: CGFloat = 0
+
+    var body: some View {
+        let box = item.box
+        let left = size.width * box.left
+        // Ekranın alt yarısındaki çeviri (mesaj: kartın üstünde) alt kenarından tutturulur ve yukarı doğru uzar; üst
+        // yarıdaki (ipucu: kutunun altında) üst kenarından tutturulur ve aşağı doğru uzar. Telefonda yazı okunacak
+        // kadar büyük olduğundan kutusundan uzun olabilir; böylece oyundaki yazının üstüne ya da ekranın dışına taşmaz.
+        let lower = (box.top + box.bottom) / 2 > 0.5
+        Text(verbatim: TargetLanguage.displayText(item.translation))
+            .font(.system(size: fontSize, weight: .medium))
+            .italic(item.italic)
+            .foregroundStyle(Color.white.opacity(item.plain ? 0.82 : 0.92))
+            .lineSpacing(2)
+            .multilineTextAlignment(.leading)
+            .shadow(color: .black.opacity(0.7), radius: 2, y: 1)
+            .padding(item.plain ? 0 : 8)
+            // Kutulu çeviri (görev şeridi) de simsiyah değil: zemin belli belirsiz, yarı saydam.
+            .background(Color.white.opacity(item.plain ? 0 : 0.10), in: RoundedRectangle(cornerRadius: 8))
+            .subtitleDirection(item.translation)
+            // Satırlar oyundaki kutunun genişliğine göre bölünmüş gelir; ekrana sığmıyorsa burada yeniden sarılır.
+            .frame(maxWidth: max(120, size.width - left - 8), alignment: .leading)
+            .fixedSize(horizontal: true, vertical: true)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: lower ? .bottomLeading : .topLeading)
+            .padding(.leading, left)
+            .padding(lower ? .bottom : .top,
+                     lower ? max(size.height * (1 - box.bottom), bottomInset > 0 ? bottomInset + 6 : 0) : size.height * box.top)
+            .accessibilityLabel(Text(verbatim: item.translation))
+    }
+
+    /// Oyundaki yazının boyuna göre; telefonda okunacak kadar büyük (oyunun kendisi ekranda yok), iPad'de daha büyük.
+    private var fontSize: CGFloat {
+        let fromGame = size.height * item.lineHeight
+        return Mobile.isPad ? min(30, max(20, fromGame)) : min(20, max(15, fromGame))
     }
 }
 

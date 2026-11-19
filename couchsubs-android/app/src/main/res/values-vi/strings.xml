@@ -287,7 +287,7 @@
     <string name="tvapp_update_body">Nino trên TV %1$s là bản %2$s, điện thoại này có bản %3$s. Cập nhật mất khoảng một phút; hãy giữ TV bật và cùng mạng Wi-Fi.</string>
     <string name="tvapp_update_button">Cập nhật ứng dụng TV</string>
     <string name="app_update_title">Đã có phiên bản mới: %1$s</string>
-    <string name="app_update_body">Tải về và cài đặt Nino bản mới nhất.</string>
+    <string name="app_update_body">Đã có phiên bản Nino mới. Chạm vào nút bên dưới, sau đó mở tệp đã tải về và cài đặt. Bạn không cần gỡ bản cũ; bản mới sẽ cài đè lên và giữ nguyên cài đặt của bạn. Nếu không cài được, hãy gỡ bản cũ rồi cài lại.</string>
     <string name="app_update_button">Cập nhật</string>
     <string name="tvapp_update_short">Có bản cập nhật: %1$s</string>
     <string name="tvinstall_title">Cài ứng dụng TV</string>
@@ -443,7 +443,8 @@
     <string name="nino_slide_to_unplug">Trượt ngược lại để dừng</string>
     <string name="nino_plug_to_start">Cắm vào để bật phụ đề %1$s</string>
     <string name="nino_pair_first">Hãy ghép nối PS5 trước</string>
-    <string name="nino_no_signal">KHÔNG CÓ TÍN HIỆU</string>
+    <string name="nino_plug_drag_hint">KÉO PHÍCH CẮM VÀO Ổ ĐIỆN ĐỂ BẮT ĐẦU</string>
+    <string name="nino_total_downloads">TỔNG LƯỢT TẢI</string>
     <string name="nino_live">TRỰC TIẾP</string>
     <string name="nino_connecting_ps5">Đang kết nối với PS5…</string>
     <string name="nino_waiting_next">Đang chờ phụ đề tiếp theo…</string>

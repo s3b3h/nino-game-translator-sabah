@@ -232,7 +232,7 @@ public sealed partial class SamsungTvInstaller(string host, string profilesDirec
         {
             var listing = await device.ShellCommandAsync("0 vd_applist", cancellationToken);
             var found = InstalledVersion(listing);
-            Log.Write($"vd_applist: {(found is null ? "CouchSubs yok" : $"CouchSubs {found}")} ({listing.Length} karakter)");
+            Log.Write($"vd_applist: {(found is null ? "Nino yok" : $"Nino {found}")} ({listing.Length} karakter)");
             return found;
         }
         catch (Exception error) when (error is not OperationCanceledException)

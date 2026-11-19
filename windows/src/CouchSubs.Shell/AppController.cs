@@ -1748,12 +1748,12 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         StopDubber();
         if (isRunning) sleep.End();
         IsRunning = false;
-        // Nino: çeviri sürerken bulunan güncelleme şimdi kurulur (uygulama yeniden açılır).
-        if (autoInstallPending && UpdateVersion is { } pendingVersion && !AutoInstallTried(pendingVersion))
+        // Nino: çeviri sürerken bulunan güncelleme şimdi kurulur (uygulama yeniden açılır). Uygulama kapanırken
+        // başlatılmaz: indirme kapanan uygulamada yarıda kalırdı; bekleyen güncelleme sonraki açılışta kurulur.
+        if (autoInstallPending && !closing && UpdateVersion is { } pendingVersion && CanAutoInstall(pendingVersion))
         {
             autoInstallPending = false;
-            RememberAutoInstall(pendingVersion);
-            post(() => _ = InstallUpdateAsync());
+            post(() => _ = InstallUpdateAsync(automatic: true));
         }
         SessionState = SessionState.Disconnected(DisconnectKind.Stopped);
         WindowStatus = GameWindowStatus.Stopped;
@@ -1883,6 +1883,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
 
     public void Dispose()
     {
+        // Kapanışta Stop() bekleyen güncellemenin kurulumunu başlatmasın (bkz. Stop).
+        closing = true;
         services.Translation.EngineFailure -= OnEngineFailure;
         services.Translation.GpuFallback -= OnGpuFallback;
         if (services.Xbox is { } xbox) xbox.TokenUpdated -= OnXboxTokenUpdated;
@@ -1909,7 +1911,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     }
 
     /// <summary>Oynanan oyunun adı (bilinmiyorsa null): ana ekrandaki "Oynanan oyun: X · Değiştir".</summary>
-    public string? PlayedGame { get => playedGame; private set => Set(ref playedGame, value, [nameof(LiveGamePoolFirst)]); }
+    public string? PlayedGame { get => playedGame; private set => Set(ref playedGame, value, [nameof(LiveGamePoolFirst), nameof(TranslationSourceText)]); }
 
     /// <summary>
     /// Nino: "Cihaz bilgileri" satırları (Sistem sağlığı'ndaki kart; Sorun Bildir ve Nino'ya Sor bildirimlerine özeti
@@ -1930,6 +1932,32 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// (Mac'teki liveGamePoolFirst). Oyun tanınmadıysa false: yalnız paketten ya da sunucudan tahmin edilen oyun saymaz.
     /// </summary>
     public bool LiveGamePoolFirst => gameSense.Current?.Name is not null && services.Translations?.IsPoolFirst(PoolFirstGame()) == true;
+
+    /// <summary>
+    /// Nino: alt şeritteki çeviri kaynağı yazısı; o an GERÇEKTEN kullanılan çeviriyi söyler (Mac'teki alt şeritle aynı
+    /// kural). GTA 6 tanınınca (ve havuz o dilde çeviriyorsa) "Nino · GTA 6 Aktif"; oyun tanınmadan önce ya da başka
+    /// oyunda kullanıcının seçtiği motor (Ücretsiz, Gemini…). Oyun değişince kendiliğinden güncellenir.
+    /// </summary>
+    public string TranslationSourceText => LiveGamePoolFirst ? text["Nino · GTA 6 active"]
+        : settings.Engine == TranslationEngine.Free ? text["Free"] : settings.Engine.DisplayName();
+
+    /// <summary>
+    /// Nino: toplam indirme sayısı (ana ekrandaki TV'nin sağ üstü); son bilinen sayı, hiç alınamadıysa null (gösterge
+    /// görünmez). Bkz. <see cref="DownloadCounter"/>.
+    /// </summary>
+    public int? DownloadTotal => services.Translations?.Downloads.Total;
+
+    /// <summary>
+    /// Toplam indirmeyi yeniler: sunucunun ayarını sorar (çeviri havuzunun zaten sorduğu <c>/v1/config</c>; en çok 10
+    /// dakikada bir, ayrı istek yok). Alınamazsa eldeki sayı kalır. Ana ekran açılışta ve aralıklarla çağırır.
+    /// </summary>
+    public async Task RefreshDownloadsAsync()
+    {
+        if (services.Translations is not { } translations) return;
+        var before = translations.Downloads.Total;
+        await translations.RefreshConfigAsync();
+        if (translations.Downloads.Total != before) Changed(nameof(DownloadTotal));
+    }
 
     /// <summary>"Hangi oyunu oynuyorsunuz?" kartı açık.</summary>
     public bool AskingGame { get => askingGame; private set => Set(ref askingGame, value); }
@@ -2832,24 +2860,17 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// <summary>Kurulum dosyasıyla kurulduysa tek tıkla güncellenir; değilse sürüm sayfası açılır.</summary>
     public bool CanUpdateItself => services.Updater?.CanUpdateItself == true;
 
-    private static string AutoInstallFile => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", "auto-update-tried.txt");
+    /// <summary>Sürüm başına kendiliğinden kurulum denemeleri (yeniden başlatma döngüsüne girmesin).</summary>
+    private AutoUpdateLog AutoUpdates => autoUpdates ??= new AutoUpdateLog(services.AutoUpdateFile);
+    private AutoUpdateLog? autoUpdates;
+    /// <summary>Bu açılışta yarıda kalan kendiliğinden indirmeler; üç saatlik denetim sonsuza dek yeniden denemesin.</summary>
+    private int autoDownloadFailures;
+    private const int MaxAutoDownloadFailures = 3;
+    /// <summary>Uygulama kapanıyor (<see cref="Dispose"/>): yeni kurulum başlatılmaz.</summary>
+    private bool closing;
 
-    private static bool AutoInstallTried(string version)
-    {
-        try { return File.Exists(AutoInstallFile) && File.ReadAllText(AutoInstallFile).Trim() == version; }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { return false; }
-    }
-
-    private static void RememberAutoInstall(string version)
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(AutoInstallFile)!);
-            File.WriteAllText(AutoInstallFile, version);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
-    }
+    private bool CanAutoInstall(string version) =>
+        !AutoUpdates.Exhausted(version) && autoDownloadFailures < MaxAutoDownloadFailures;
 
     /// <summary>Nino: yeni sürüm sorulmadan kurulur; çeviri sürüyorsa oyun bölünmesin diye çeviri durunca.</summary>
     private bool autoInstallPending;
@@ -2861,15 +2882,13 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         if (services.Updater is not { } updater) return;
         try { UpdateVersion = await updater.CheckAsync(); }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException or InvalidOperationException) { }
-        // Her sürüm yalnız bir kez kendiliğinden kurulmaya çalışılır; olmazsa (kurulum açılmadıysa) düğme kalır, döngüye girmez.
-        if (UpdateVersion is { } version && updater.CanUpdateItself && !AutoInstallTried(version))
+        // Deneme, kurulum gerçekten başlarken sayılır (InstallUpdateAsync): yarıda kalan indirme sonraki açılışta ya da üç
+        // saat sonra yeniden denenir. Kurulum başladığı hâlde sürüm değişmediyse sürüm başına AutoUpdateLog.MaxAttempts
+        // denemeden sonra yalnız düğme kalır, döngüye girmez.
+        if (!closing && UpdateVersion is { } version && updater.CanUpdateItself && CanAutoInstall(version))
         {
             if (IsRunning) autoInstallPending = true;
-            else
-            {
-                RememberAutoInstall(version);
-                await InstallUpdateAsync();
-            }
+            else await InstallUpdateAsync(automatic: true);
         }
         if (!updateLoopStarted)
         {
@@ -2885,26 +2904,41 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         }
     }
 
-    public async Task InstallUpdateAsync()
+    /// <summary>"Güncelle" düğmesi.</summary>
+    public Task InstallUpdateAsync() => InstallUpdateAsync(automatic: false);
+
+    private async Task InstallUpdateAsync(bool automatic)
     {
-        if (services.Updater is not { } updater || updating) return;
+        if (services.Updater is not { } updater || updating || (automatic && closing)) return;
         if (!updater.CanUpdateItself)
         {
             OpenInBrowser(updater.DownloadPage);
             return;
         }
+        // Aşağıdaki Stop() bekleyen kendiliğinden kurulumu ikinci kez sıraya almasın.
+        autoInstallPending = false;
         Updating = true;
         UpdateError = null;
+        var version = UpdateVersion;
+        var applying = false;
         try
         {
             // Çeviri sürüyorsa önce durur; uygulama güncellenip yeniden açılır.
             Stop();
-            await updater.InstallAsync(new ImmediateProgress(value => post(() => UpdateProgress = value)));
+            await updater.InstallAsync(new ImmediateProgress(value => post(() => UpdateProgress = value)), () =>
+            {
+                // İndirme bitti, kurulum başlıyor: deneme şimdi sayılır. Sayaç yazılamıyorsa kendiliğinden kurulmaz
+                // (kurulum sürümü değiştirmezse her açılışta yeniden başlar ve bunu durduracak kayıt olmazdı).
+                applying = true;
+                if (version is not null && !AutoUpdates.Record(version) && automatic)
+                    throw new IOException("Güncelleme denemesi kaydedilemedi; kurulum kendiliğinden başlatılmadı.");
+            });
         }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException or InvalidOperationException
                                           or UnauthorizedAccessException)
         {
             UpdateError = error.Message;
+            if (automatic && !applying) autoDownloadFailures++;
         }
         finally
         {

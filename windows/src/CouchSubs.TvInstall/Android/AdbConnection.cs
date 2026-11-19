@@ -105,7 +105,9 @@ public sealed class AdbConnection : IAsyncDisposable
                     break;
                 case Auth when packet.Arg0 == AuthToken:
                     // İmza tanınmadı: TV bu anahtarı ilk kez görüyor. Açık anahtarı gönderince TV kullanıcıya sorar.
-                    var publicKey = Convert.ToBase64String(EncodePublicKey(key)) + " couchsubs@CouchSubs\0";
+                    // Nino: sondaki ad TV'nin izinli cihazlar listesine yazılır. Yalnız TV anahtarı tanımadığında (yeni
+                    // izin) gönderilir; daha önce izin verilmiş TV imzayı tanır ve buraya gelinmez, eşleşmesi değişmez.
+                    var publicKey = Convert.ToBase64String(EncodePublicKey(key)) + " " + KeyName + "\0";
                     await WriteAsync(Auth, AuthPublicKey, 0, Encoding.ASCII.GetBytes(publicKey), cancellationToken);
                     waitingForApproval = true;
                     deadline.CancelAfter(approvalTimeout);
@@ -116,6 +118,9 @@ public sealed class AdbConnection : IAsyncDisposable
             }
         }
     }
+
+    /// <summary>Açık anahtarın sonuna eklenen "kullanıcı@makine" adı (adb'nin adbkey.pub biçimi).</summary>
+    internal const string KeyName = "nino@Nino";
 
     /// <summary>
     /// adb, TV'nin gönderdiği 20 baytlık jetonu SHA-1 özeti yerine geçen değer olarak imzalar (RSA_sign NID_sha1):

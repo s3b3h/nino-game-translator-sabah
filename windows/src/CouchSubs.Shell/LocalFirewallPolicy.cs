@@ -28,10 +28,16 @@ public static class LocalFirewallPolicy
     public const int Tcp = 6;
     public const int Udp = 17;
     public const int AnyProtocol = 256;
-    public const string Group = "CouchSubs.LocalNetwork";
+    public const string Group = "Nino.LocalNetwork";
     public const string LegacyName = "CouchSubs";
-    public const string TcpName = "CouchSubs - Local TCP";
-    public const string UdpName = "CouchSubs - Local UDP";
+    public const string TcpName = "Nino - Local TCP";
+    public const string UdpName = "Nino - Local UDP";
+    // Nino: önceki sürümlerin yazdığı adlar. Aynı işi görürler, o yüzden yalnız adı değiştirmek için yönetici izni
+    // sorulmaz (HasRules ada bakmaz); izin başka bir nedenle zaten alındığında (Apply) yeni adlara çevrilirler. Asıl
+    // CouchSubs da kendi exe'si için bu adları kullanır; onun kurallarına dokunulmaz.
+    public const string PreviousGroup = "CouchSubs.LocalNetwork";
+    public const string PreviousTcpName = "CouchSubs - Local TCP";
+    public const string PreviousUdpName = "CouchSubs - Local UDP";
 
     public static IReadOnlyList<FirewallRule> Required(string exe) =>
     [
@@ -59,8 +65,17 @@ public static class LocalFirewallPolicy
         && Any(r.LocalPorts) && Any(r.RemotePorts) && r.ServiceName.Length == 0 && r.Grouping.Length == 0
         && AllInterfaces(r.InterfaceTypes) && !r.InterfaceRestricted && !r.EdgeTraversal;
 
-    private static bool IsManaged(FirewallRule r, string exe) => (SameName(r.Name, TcpName) || SameName(r.Name, UdpName))
+    private static bool HasManagedName(FirewallRule r) => SameName(r.Name, TcpName) || SameName(r.Name, UdpName);
+
+    private static bool IsCurrentManaged(FirewallRule r, string exe) => HasManagedName(r)
         && SameName(r.Grouping, Group) && SameProgram(r.Program, exe) && r.Direction == Inbound && r.Action == Allow;
+
+    /// <summary>Bu exe için önceki sürümün eski adlarla ("CouchSubs - Local TCP/UDP") yazdığı kural.</summary>
+    private static bool IsPreviousManaged(FirewallRule r, string exe) =>
+        (SameName(r.Name, PreviousTcpName) || SameName(r.Name, PreviousUdpName))
+        && SameName(r.Grouping, PreviousGroup) && SameProgram(r.Program, exe) && r.Direction == Inbound && r.Action == Allow;
+
+    private static bool IsManaged(FirewallRule r, string exe) => IsCurrentManaged(r, exe) || IsPreviousManaged(r, exe);
 
     /// <summary>İzin Özel ağ içindir; Ortak/Etki alanı profillerinin açık olması aranmaz.</summary>
     public static bool HasRules(IReadOnlyList<FirewallRule> rules, string exe, bool privateFirewallEnabled = true) =>
@@ -92,12 +107,15 @@ public static class LocalFirewallPolicy
     public static bool Apply(IFirewallRuleStore store, string exe)
     {
         var before = store.Read();
-        if (before.Any(r => (SameName(r.Name, TcpName) || SameName(r.Name, UdpName)) && !IsManaged(r, exe))) return false;
+        if (before.Any(r => HasManagedName(r) && !IsCurrentManaged(r, exe))) return false;
         var groups = before.GroupBy(r => r.Name, StringComparer.OrdinalIgnoreCase).ToList();
         if (groups.Any(g => g.Any(r => IsLegacy(r, exe)) && !g.All(r => SameProgram(r.Program, exe)))) return false;
         // Silinecek ad grupları: içinde eski geniş kural ya da bu exe'nin yerel engeli olan, tamamı bu exe'ye ait gruplar.
-        var obsolete = groups.Where(g => g.All(r => SameProgram(r.Program, exe) && !IsManaged(r, exe))
-            && g.Any(r => IsLegacy(r, exe) || IsOwnBlock(r, exe))).SelectMany(g => g).ToList();
+        // Önceki sürümün eski adlı kuralları da (yalnız o adın tamamı bu exe'ninse) yenileri yazıldıktan sonra silinir:
+        // yönetici izni zaten alınmışken yeniden adlandırma. Aynı adı asıl CouchSubs da kullanıyorsa o ad silinmez.
+        var obsolete = groups.Where(g => (g.All(r => SameProgram(r.Program, exe) && !IsManaged(r, exe))
+                && g.Any(r => IsLegacy(r, exe) || IsOwnBlock(r, exe)))
+            || g.All(r => IsPreviousManaged(r, exe))).SelectMany(g => g).ToList();
         var intended = before.Where(r => !IsManaged(r, exe) && !obsolete.Contains(r)).Concat(Required(exe)).ToList();
         if (!CoversLocalTraffic(intended, exe)) return false;
         foreach (var rule in Required(exe)) store.Put(rule);

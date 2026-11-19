@@ -33,6 +33,34 @@ class SubtitleServerTest {
             Json.write(SubtitleServer.boxJson(TextBox(-0.2, 0.5, 0.12345678, 1.7))))
     }
 
+    /**
+     * "Arka plan koyuluğu" (hata bildirimi, Android 3.4.1: "%50 altı çalışmıyor, %55'te simsiyah oluyor"): örtme kipinde
+     * %60 altı TV'ye 100 gider (Mac/iPhone ve Windows ile aynı kural); kaydırıcı aynı işlevi kullanır, o kipte %60'tan başlar.
+     */
+    @Test
+    fun coverPlacementNeverSendsATransparentBox() {
+        assertEquals(60, SubtitleStyle.COVER_MIN_BACKGROUND)
+        // Örtme kipi: eşiğin altı tamamen opak; eşik ve üstü olduğu gibi.
+        for (value in listOf(0, 30, 50, 55, 59)) assertEquals(100, SubtitleStyle.effectiveBackground(SubtitlePlacement.COVER, value))
+        for (value in listOf(60, 65, 72, 100)) assertEquals(value, SubtitleStyle.effectiveBackground(SubtitlePlacement.COVER, value))
+        // Öbür yerleşimlerde (İngilizce yazı da görünür) kaydırıcının bütün aralığı geçerli.
+        for (placement in listOf(SubtitlePlacement.ABOVE, SubtitlePlacement.BELOW, SubtitlePlacement.FIXED))
+            for (value in listOf(0, 30, 55, 60, 100)) assertEquals(value, SubtitleStyle.effectiveBackground(placement, value))
+        // Aralık dışı değer sınıra çekilir.
+        assertEquals(100, SubtitleStyle.effectiveBackground(SubtitlePlacement.ABOVE, 140))
+        assertEquals(0, SubtitleStyle.effectiveBackground(SubtitlePlacement.BELOW, -5))
+        // TV'ye giden ileti: yüzde 0-100 tam sayı olarak gider (TV 100'e böler); 55 örtmede 100, üstünde 55.
+        val cover = SubtitleStyle(placement = SubtitlePlacement.COVER, background = SubtitleStyle.effectiveBackground(SubtitlePlacement.COVER, 55))
+        assertTrue(SubtitleServer.styleFrame(cover).contains("\"background\":100,"))
+        val above = SubtitleStyle(placement = SubtitlePlacement.ABOVE, background = SubtitleStyle.effectiveBackground(SubtitlePlacement.ABOVE, 55))
+        assertTrue(SubtitleServer.styleFrame(above).contains("\"background\":55,"))
+        // Kaydırıcının örtme kipindeki durakları: %60'tan %100'e 5'er (aradaki 7 durak), hepsi olduğu gibi gider.
+        val floor = SubtitleStyle.COVER_MIN_BACKGROUND
+        val stops = (0..(100 - floor) / 5).map { floor + it * 5 }
+        assertEquals(listOf(60, 65, 70, 75, 80, 85, 90, 95, 100), stops)
+        assertTrue(stops.all { SubtitleStyle.effectiveBackground(SubtitlePlacement.COVER, it) == it })
+    }
+
     @Test
     fun clearAndStyleFrames() {
         assertEquals("event: clear\ndata: {}\n\n", SubtitleServer.clearFrame())

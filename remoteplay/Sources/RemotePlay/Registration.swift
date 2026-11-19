@@ -43,6 +43,12 @@ public enum Registration {
             RemotePlayLog.write("PS5 kaydı başarısız (\(host)): \(error)")
             throw error
         }
+        // 0.0.0.0, boş ya da yayın adresi PS5'in adresi olamaz; böyle bir adresle kayıt hiçbir zaman saklanmaz.
+        guard ConsoleAddress.isUsable(host) else {
+            let error = RegistrationError(.badAddress, detail: "unusable address \"\(host)\"")
+            RemotePlayLog.write("PS5 kaydı başarısız (\(host)): \(error)")
+            throw error
+        }
         var attempt = 1
         while true {
             do {

@@ -22,6 +22,10 @@ public static class Program
         VelopackApp.Build()
             .OnBeforeUninstallFastCallback(_ => Services.WindowsFirewall.RemoveRuleQuietly())
             .Run();
+        // Veri klasörü (%LOCALAPPDATA%\Nino; eski CouchSubs klasörü buraya taşınır) ayarlar, anahtarlar ve günlükler
+        // açılmadan önce belirlenir. Yukarıdaki izin yardımcısı (başka hesapla çalışabilir) ve Velopack kancaları
+        // buraya gelmeden çıkar; onlar veriye dokunmaz ve klasörü taşımaz.
+        StartupGuard.PrepareDataFolder();
         var app = new App();
         app.InitializeComponent();
         app.Run();

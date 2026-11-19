@@ -148,7 +148,7 @@ class SamsungInstaller(
                 launch(device)
                 return Result(onTv, false)
             }
-            log.write(if (onTv == null) "TV'de CouchSubs görünmüyor; kuruluyor." else "TV'de $onTv var, ${version ?: "yeni sürüm"} kuruluyor.")
+            log.write(if (onTv == null) "TV'de Nino görünmüyor; kuruluyor." else "TV'de $onTv var, ${version ?: "yeni sürüm"} kuruluyor.")
 
             val duid = readDuid(device)
             log.write("DUID: $duid")
@@ -196,7 +196,7 @@ class SamsungInstaller(
     private fun readInstalledVersion(device: SdbConnection): String? = try {
         val listing = device.shell("0 vd_applist")
         SamsungDiagnostics.installedVersion(listing).also {
-            log.write("vd_applist: ${if (it == null) "CouchSubs yok" else "CouchSubs $it"} (${listing.length} karakter)")
+            log.write("vd_applist: ${if (it == null) "Nino yok" else "Nino $it"} (${listing.length} karakter)")
         }
     } catch (error: IOException) {
         log.write("vd_applist okunamadı: ${error.message}")

@@ -20,8 +20,8 @@ android {
         targetSdk 35
         // Masaüstü uygulamaları beklenen TV sürümünü buradan alır (scripts/bundle-android-apk.sh, APK adı).
         // Nino: CouchSubs 0.9.22 (versionCode 25) birleştirildi; iki taraftan büyük olan alındı (Nino'da 22 / 0.9.19 idi).
-        versionCode 37
-        versionName '3.4.0'
+        versionCode 38
+        versionName '3.5.0'
     }
     buildFeatures { buildConfig true }
     signingConfigs {

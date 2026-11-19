@@ -12,6 +12,6 @@ enum Distribution {
     static let isAppStore = false
     #endif
 
-    /// GitHub sürümlerinin sayfası (DMG buradan indirilir).
-    static let githubReleasesURL = URL(string: "https://github.com/yorulmazsinan/couchsubs/releases/latest")!
+    /// GitHub sürümlerinin sayfası (DMG buradan indirilir). Nino'nun deposu; eskiden CouchSubs'ın sürüm sayfasına gidiyordu.
+    static let githubReleasesURL = URL(string: "https://github.com/yunusdemirbag/nino-game-translator/releases/latest")!
 }

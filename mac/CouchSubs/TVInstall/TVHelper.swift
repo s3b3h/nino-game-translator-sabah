@@ -13,17 +13,14 @@ enum TVInstallEvent: Equatable, Sendable {
     case progress(String)
 }
 
-/// TV kurulum günlüğü: ~/Library/Logs/CouchSubs/tvinstall.log (Windows'ta %LOCALAPPDATA%\Nino\tvinstall.log).
+/// TV kurulum günlüğü: ~/Library/Logs/Nino/tvinstall.log (Windows'ta %LOCALAPPDATA%\Nino\tvinstall.log).
 /// Samsung kurulumunun her adımını yardımcı yazar; yardımcı açılamaz ya da sonuç vermeden kapanırsa uygulama da buraya
 /// yazar. Kurulum olmazsa kullanıcı bu dosyayı gönderir.
 enum TVInstallLog {
     /// Kullanıcıya hata iletisinde gösterilen yol (sandbox'ta kapsayıcının içindeki yol).
     static var displayPath: String { RemotePlayLog.userPath(file) }
 
-    static var file: URL {
-        FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Logs/CouchSubs/tvinstall.log")
-    }
+    static var file: URL { AppFolder.logs.appendingPathComponent("tvinstall.log") }
 
     private static let lock = NSLock()
 
@@ -56,10 +53,7 @@ enum TVHelper {
     static var executable: URL? { Bundle.main.url(forAuxiliaryExecutable: "couchsubs-tv-helper") }
 
     /// Yardımcının kalıcı dosyaları (ADB anahtarı, Samsung sertifikaları).
-    static var dataDirectory: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent(AppIdentity.name, isDirectory: true)
-    }
+    static var dataDirectory: URL { AppFolder.support }
 
     /// Komutun sonucu: `done` olayında sürüm, `found` olayında bulunan TV adresleri.
     struct Result: Equatable, Sendable {

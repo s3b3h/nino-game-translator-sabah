@@ -2,6 +2,8 @@
 package com.couchsubs.mobile.service
 
 import com.couchsubs.mobile.core.ShownPair
+import com.couchsubs.mobile.remoteplay.DisconnectKind
+import com.couchsubs.mobile.remoteplay.SessionState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -29,6 +31,12 @@ data class LiveStatus(
     /** Son satırı veren oyun paketinin başlığı (ör. "GTA V"); paket kullanılmadıysa null. */
     val packInUse: String? = null,
     val error: String? = null,
+    /**
+     * Nino: konsola neden bağlanılamadığının son metni ("PS5 başka bir Remote Play oturumunda…" gibi; bkz. [nextProblem]).
+     * Oturum "koptu → bağlanılıyor → koptu" diye döner; [phase] her turda değişir, bu alan yeniden bağlanırken de kalır ki
+     * ana ekrandaki neden bir görünüp bir kaybolmasın. Görüntü gelince, durdurulunca ve yeni başlatmada null olur.
+     */
+    val problem: String? = null,
     val framesReceived: Long = 0,
     /** Okumanın başladığı an (duvar saati, ms); süre göstergesi için. */
     val startedAt: Long = 0,
@@ -57,6 +65,29 @@ data class LiveStatus(
      * (`replaces`) öncekinin yerine geçer, üste yığılmaz (TV ve iPhone ile aynı). Temizlenince ekran boşalır.
      */
     enum class ScreenState { IDLE, WORKING, SHOWN }
+
+    companion object {
+        /** Yakalama kartının sorunları: [error] ile ana ekranda uyarı kartı olarak görünür, [problem]e ayrıca yazılmaz. */
+        val CARD_PROBLEMS = setOf(DisconnectKind.NO_CAPTURE_CARD, DisconnectKind.NO_CAMERA_PERMISSION, DisconnectKind.BLACK_PICTURE)
+
+        /**
+         * [problem] kuralı: önceki neden + oturumun yeni durumu → yeni neden. [text]: yeni durumun ekrandaki anlatımı.
+         * Kopunca neden yazılır; yeniden bağlanırken korunur; görüntü gelince silinir. Yazılmayanlar (önceki kalır):
+         * kullanıcının durdurması (STOPPED) ve nedeni bilinmeyen genel kopma (OTHER: metni yalnız "yeniden
+         * bağlanılıyor"dur). Xbox oturumu nedeni OTHER + ayrıntıyla, kullanıcının dilinde verir; o yazılır ([xbox]).
+         * Yakalama kartı sorunları [error] kartında göründüğü için burada tutulmaz (aynı metin iki kez çıkmasın).
+         */
+        fun nextProblem(previous: String?, state: SessionState, text: String, xbox: Boolean = false): String? = when (state) {
+            SessionState.Connecting -> previous
+            SessionState.Streaming -> null
+            is SessionState.Disconnected -> when {
+                state.kind == DisconnectKind.STOPPED -> previous
+                state.kind in CARD_PROBLEMS -> null
+                state.kind == DisconnectKind.OTHER -> if (xbox && state.detail != null) text else previous
+                else -> text
+            }
+        }
+    }
 
     /**
      * Nino: Ayarlar'daki "GTA 6" kartı (Mac: ninoPoolActive). GTA 6 (havuz öncelikli oyun) için Nino'nun kendi çevirisi

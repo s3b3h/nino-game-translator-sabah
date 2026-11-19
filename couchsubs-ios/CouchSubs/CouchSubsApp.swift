@@ -24,7 +24,8 @@ struct CouchSubsApp: App {
                                       user: PackStore.filesDirectory(in: PackStore.defaultDirectory),
                                       imported: PackStore.importedDirectory)
         let model = testing ? PhoneModel(store: EphemeralStore(), packs: library)
-            : Self.demoStore().map { PhoneModel(store: $0, packs: library) } ?? PhoneModel(packs: library)
+            : Self.testFrameModel(packs: library)
+            ?? Self.demoStore().map { PhoneModel(store: $0, packs: library) } ?? PhoneModel(packs: library)
         // Çeviri sürerken ekran kararmaz: iOS kilitlenen ya da arka plana geçen uygulamayı askıya alır.
         model.keepScreenAwake = { ScreenAwake.set($0, for: .translation) }
         // PS5 bağlantısı koptuğunda yerel bildirim (Profil'deki tercih; testlerde kapalı).
@@ -32,8 +33,8 @@ struct CouchSubsApp: App {
             model.requestNotificationPermission = { ConnectionAlert.requestPermission() }
             model.onConnectionLost = { ConnectionAlert.post() }
         }
-        // Çevrilen son satırlar ("Geçmiş"); testlerde dosyaya dokunulmaz.
-        if !testing { model.loadHistory() }
+        // Çevrilen son satırlar ("Geçmiş"); testlerde ve deneme karesinde dosyaya dokunulmaz (uydurma satırlar yazılmasın).
+        if !testing, !Self.testFrames { model.loadHistory() }
 
         let analytics = NoAnalytics()
         let store = testing ? nil : AppConfig.packsBaseURL.map { PackStore(baseURL: $0, directory: PackStore.defaultDirectory) }
@@ -60,6 +61,34 @@ struct CouchSubsApp: App {
         store.save("demo", for: StoreKey.tvKey)
         store.save(true, for: StoreKey.setupComplete)
         return store
+        #else
+        return nil
+        #endif
+    }
+
+    /// Hata ayıklama: deneme karesi istendi mi (COUCHSUBS_TEST_FRAME); gerçek sürümde hep false.
+    private static var testFrames: Bool {
+        #if DEBUG
+        return PhoneModel.debugTestFramePaths != nil
+        #else
+        return false
+        #endif
+    }
+
+    /// Hata ayıklama: COUCHSUBS_TEST_FRAME=<png> ile PS5'siz deneme karesi (bkz. `PhoneModel.debugStartTestFrames`).
+    /// Kurulum bitmiş gibi açılır (TV yok, altyazı telefonda); Anahtarlığa, kayıtlı ayarlara ve geçmişe dokunmaz
+    /// (yalnız arayüz dili, her açılıştaki gibi, çeviri diline göre hatırlanır).
+    private static func testFrameModel(packs: GamePackLibrary) -> PhoneModel? {
+        #if DEBUG
+        guard testFrames else { return nil }
+        let store = EphemeralStore()
+        store.save(Data([1, 2, 3]), for: StoreKey.accountId)
+        store.save(RegisteredConsole(host: "192.168.1.103", name: "PS5-002", registKey: Data(), morning: Data()), for: StoreKey.console)
+        store.save(true, for: StoreKey.setupComplete)
+        let suite = "nino-test-frame"
+        let defaults = UserDefaults(suiteName: suite) ?? .standard
+        defaults.removePersistentDomain(forName: suite)
+        return PhoneModel(store: store, defaults: defaults, packs: packs)
         #else
         return nil
         #endif
@@ -118,7 +147,7 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if !welcomeSeen {
+            if showsWelcome {
                 WelcomeFlow(onFinish: finishWelcome)
             } else if model.step != .done {
                 setup
@@ -147,6 +176,14 @@ struct RootView: View {
     }
 
     private var onHome: Bool { welcomeSeen && model.step == .done }
+
+    /// Karşılama ilk açılışta bir kez gösterilir. Hata ayıklama: deneme karesi (COUCHSUBS_TEST_FRAME) onu atlar.
+    private var showsWelcome: Bool {
+        #if DEBUG
+        if PhoneModel.debugTestFramePaths != nil { return false }
+        #endif
+        return !welcomeSeen
+    }
 
     private var showsAssistantButton: Bool {
         guard onHome else { return true }

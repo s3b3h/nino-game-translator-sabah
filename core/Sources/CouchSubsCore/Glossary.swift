@@ -257,11 +257,9 @@ public final class GlossaryStore: @unchecked Sendable {
         self.clock = clock
     }
 
-    /// ~/Library/Application Support/CouchSubs/Glossary
+    /// ~/Library/Application Support/Nino/Glossary (bkz. `AppFolder`)
     public static var userDirectory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("CouchSubs", isDirectory: true)
-            .appendingPathComponent("Glossary", isDirectory: true)
+        AppFolder.support.appendingPathComponent("Glossary", isDirectory: true)
     }
 
     /// Yalnız uygulamayla gelen sözlük (testler).

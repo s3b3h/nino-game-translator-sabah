@@ -171,7 +171,13 @@ public sealed class TranslationPool : IDisposable
     private readonly Dictionary<string, Task<string?>> inFlight = [];
     private bool dirty;
 
-    /// <param name="directory">Çevirilerin klasörü (%LOCALAPPDATA%\CouchSubs\pool-translations).</param>
+    /// <summary>
+    /// Nino: toplam indirme sayısı (ana ekrandaki TV'nin sağ üstü). Sunucunun ayar cevabıyla (<c>downloads</c>) gelir;
+    /// son bilinen sayı bu klasörde saklanır ve sunucuya ulaşılamazsa o gösterilir.
+    /// </summary>
+    public DownloadCounter Downloads { get; }
+
+    /// <param name="directory">Çevirilerin klasörü (%LOCALAPPDATA%\Nino\pool-translations).</param>
     /// <param name="endpoint">Sunucu (<see cref="NinoPool.ConfiguredEndpoint"/>); null ise hiçbir şey sorulmaz.</param>
     /// <param name="install">Kuruluma özgü rastgele kimlik (sunucuda yalnız tuzlanmış özetiyle, kaba hız sınırı için);
     /// verilmezse klasördeki <c>install</c> dosyasından okunur ya da üretilir.</param>
@@ -184,6 +190,7 @@ public sealed class TranslationPool : IDisposable
         try { Directory.CreateDirectory(directory); }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         this.install = install ?? InstallId(directory);
+        Downloads = new DownloadCounter(Path.Combine(directory, DownloadCounter.FileName));
         this.app = app;
         this.platform = platform;
         this.clock = clock ?? (() => DateTimeOffset.UtcNow);
@@ -315,6 +322,9 @@ public sealed class TranslationPool : IDisposable
             target = endpoint;
         }
         if (await GetAsync(new Uri(target, "v1/config"), token).ConfigureAwait(false) is not { } body) return;
+        // Nino: toplam indirme aynı cevapta gelir; çeviri ayarı okunamasa da (eski ya da bozuk bölüm) sayı alınır. Alan
+        // yoksa son bilinen sayı kalır.
+        Downloads.Record(body);
         ConfigReply? reply;
         try { reply = JsonSerializer.Deserialize<ConfigReply>(body, Json); }
         catch (JsonException) { return; }

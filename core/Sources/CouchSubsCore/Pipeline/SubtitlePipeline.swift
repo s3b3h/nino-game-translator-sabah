@@ -288,11 +288,11 @@ public final class SubtitlePipeline {
             }
             visible = sized
         }
-        var reading = visible.withoutButtonPrompts().withoutOcrNoise().withoutItemLabels().withoutClippedLines().joiningRows().subtitleBlock(in: place)
+        var reading = visible.withoutButtonPrompts().withoutNavigationHints().withoutOcrNoise().withoutItemLabels().withoutClippedLines().joiningRows().subtitleBlock(in: place)
         // Nino: mesaj kartında gönderenin adı tek sözcük olabilir ("Brian"); eşya etiketi süzgeci onu siliyor, kart
         // altyazı sanılıp siyah kutuda çıkıyordu. Kart, süzgeçten önceki okumada aranır.
         if onMessage != nil {
-            let unfiltered = visible.withoutButtonPrompts().withoutOcrNoise().withoutClippedLines().joiningRows().subtitleBlock(in: place)
+            let unfiltered = visible.withoutButtonPrompts().withoutNavigationHints().withoutOcrNoise().withoutClippedLines().joiningRows().subtitleBlock(in: place)
             if MessageCard.isCard(unfiltered) || MessageCard.call(unfiltered) != nil { reading = unfiltered }
         }
         if isMenuScreen?() == true { reading = .empty }

@@ -168,6 +168,45 @@ final class PhoneModelTests: XCTestCase {
         model.stop()
     }
 
+    /// Bağlanılamama nedeni yeniden denenirken de ekranda kalır (eskiden ana ekran hep "Bağlanıyor…" yazıyordu),
+    /// görüntü gelince silinir, durdurulduktan sonra geç gelen bir durumla geri gelmez.
+    func testConnectionProblemStaysWhileRetryingAndClearsWhenStreaming() async throws {
+        let model = makeModel()
+        try await model.completePSNLogin(redirect: URL(string: "https://example.com")!)
+        try await model.register(host: "192.168.1.20", pin: "12345678")
+        model.settings.output = .computer
+        await model.start()
+        XCTAssertNil(model.connectionProblemText)
+        services.stream.onState?(.disconnected(.remotePlayDisabled))
+        for _ in 0..<100 where model.lastFailure == nil { try await Task.sleep(nanoseconds: 10_000_000) }
+        let text = try XCTUnwrap(model.connectionProblemText)
+        XCTAssertFalse(text.isEmpty)
+        services.stream.onState?(.connecting)
+        for _ in 0..<100 where model.sessionState != .connecting { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(model.connectionProblemText, text)
+        services.stream.onState?(.streaming)
+        for _ in 0..<100 where model.sessionState != .streaming { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertNil(model.connectionProblemText)
+        let stream = services.stream
+        model.stop()
+        stream.onState?(.disconnected(.inUse))
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertNil(model.lastFailure)
+        XCTAssertNil(model.connectionProblemText)
+    }
+
+    func testFailureRuleKeepsTheLastRealReason() {
+        typealias M = PhoneModel
+        XCTAssertEqual(M.failure(after: .disconnected(.rejected(0x80108bff)), previous: nil, xbox: false), .rejected(0x80108bff))
+        XCTAssertEqual(M.failure(after: .connecting, previous: .inUse, xbox: false), .inUse)
+        XCTAssertNil(M.failure(after: .streaming, previous: .inUse, xbox: false))
+        // PS5'te ayrıntısız "yeniden bağlanılıyor" ve durdurma, bilinen nedeni silmez.
+        XCTAssertEqual(M.failure(after: .disconnected(.other("x")), previous: .consoleAsleep, xbox: false), .consoleAsleep)
+        XCTAssertEqual(M.failure(after: .disconnected(.stopped), previous: .consoleAsleep, xbox: false), .consoleAsleep)
+        // Xbox nedeni kendi dilinde verir; o gösterilir.
+        XCTAssertEqual(M.failure(after: .disconnected(.other("Xbox kapalı")), previous: nil, xbox: true), .other("Xbox kapalı"))
+    }
+
     func testPhoneScreenShowsSubtitlesOnlyWhenChosen() {
         let model = makeModel()
         model.clock = { 100 }

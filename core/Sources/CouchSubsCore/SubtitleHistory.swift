@@ -72,10 +72,9 @@ public struct SubtitleHistory: Equatable, Sendable {
 
     // MARK: - Dosya
 
-    /// ~/Library/Application Support/CouchSubs/history.json (iPhone'da uygulamanın kendi klasörü).
+    /// ~/Library/Application Support/Nino/history.json (bkz. `AppFolder`; iPhone'da uygulamanın kendi klasörü).
     public static var defaultFile: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(AppIdentity.name, isDirectory: true).appendingPathComponent("history.json")
+        AppFolder.support.appendingPathComponent("history.json")
     }
 
     private struct Stored: Codable {

@@ -287,7 +287,7 @@
     <string name="tvapp_update_body">Nino di TV %1$s versi %2$s, ponsel ini punya %3$s. Pembaruan butuh sekitar satu menit; biarkan TV menyala dan di Wi-Fi yang sama.</string>
     <string name="tvapp_update_button">Perbarui aplikasi TV</string>
     <string name="app_update_title">Versi baru siap: %1$s</string>
-    <string name="app_update_body">Unduh dan pasang Nino versi terbaru.</string>
+    <string name="app_update_body">Versi baru Nino sudah tersedia. Ketuk tombol di bawah, lalu buka file yang diunduh dan pasang. Versi lama tidak perlu dihapus; versi baru dipasang di atasnya dan pengaturan Anda tetap tersimpan. Jika gagal dipasang, hapus versi lama lalu pasang lagi.</string>
     <string name="app_update_button">Perbarui</string>
     <string name="tvapp_update_short">Pembaruan tersedia: %1$s</string>
     <string name="tvinstall_title">Pasang aplikasi TV</string>
@@ -443,7 +443,8 @@
     <string name="nino_slide_to_unplug">Geser kembali untuk berhenti</string>
     <string name="nino_plug_to_start">Colokkan untuk menyalakan subtitle %1$s</string>
     <string name="nino_pair_first">Sambungkan PS5 Anda terlebih dulu</string>
-    <string name="nino_no_signal">TIDAK ADA SINYAL</string>
+    <string name="nino_plug_drag_hint">SERET STEKER KE STOPKONTAK UNTUK MEMULAI</string>
+    <string name="nino_total_downloads">TOTAL UNDUHAN</string>
     <string name="nino_live">LANGSUNG</string>
     <string name="nino_connecting_ps5">Menghubungkan ke PS5…</string>
     <string name="nino_waiting_next">Menunggu subtitle berikutnya…</string>

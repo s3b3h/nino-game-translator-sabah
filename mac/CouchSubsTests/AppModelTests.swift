@@ -158,6 +158,7 @@ final class FakeStream: StreamControlling {
     var onFrame: ((CGImage) -> Void)?
     var onState: ((SessionState) -> Void)?
     var onConsoleMoved: ((RegisteredConsole) -> Void)?
+    var onLocalNetworkBlocked: ((Bool) -> Void)?
     var started = false
     func start() { started = true }
     func stop() { started = false }

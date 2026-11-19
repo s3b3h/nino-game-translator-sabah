@@ -105,6 +105,14 @@ html, body {
   text-shadow: 0 1px 2px #000;
   word-wrap: break-word;
 }
+/* Kısa yazının (telefonun kısa mesaj bildirimi) çevirisi: asıl yazının üstünde, yarı saydam; arkası seçilsin diye
+   gölge güçlü. backdrop-filter'ı tanımayan eski TV tarayıcılarında yalnız yarı saydam zemin kalır. */
+#regions .region.beside {
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  text-shadow: 0 1px 3px #000, 0 0 6px rgba(0, 0, 0, 0.9);
+}
 
 /* Hızlı konuşmada önceki satır kısa süre yeni satırın üstünde, daha küçük ve soluk durur; sonra solarak kalkar.
    Aradaki boşluk iki kutunun üst üste binmiş gibi görünmesini önler. Solma yalnız bu satırdadır; #subtitle'ın

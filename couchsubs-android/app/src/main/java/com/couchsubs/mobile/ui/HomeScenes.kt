@@ -5,8 +5,14 @@ package com.couchsubs.mobile.ui
 
 import com.couchsubs.mobile.Services
 import androidx.compose.ui.res.stringResource
+import com.couchsubs.mobile.core.DownloadCounter
 import com.couchsubs.mobile.core.TargetLanguage
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -44,6 +50,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,6 +73,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -77,7 +87,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -85,7 +94,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.couchsubs.mobile.R
 import com.couchsubs.mobile.service.LiveStatus
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
@@ -128,11 +140,12 @@ private val SunsetStops = arrayOf(
 private fun LiveStatus.liveText(): String = TargetLanguage.displayText(current.ifEmpty { recent.firstOrNull()?.translation.orEmpty() })
 
 /**
- * Salon (Mac'teki birinci arayüz). Saydam salon görseli sabit durur; üstüne TV ekranının içi, sehpanın ucundan
- * prize giden kablo ve fiş çizilir. Fiş prize takılınca (dokunarak ya da sürükleyerek) çeviri başlar, TV'de Nino'nun
- * açılış animasyonu oynar, ardından altyazılar akar; mavi LED'ler yalnız fiş takılıyken yanar. Koordinatlar görselin
- * piksel ölçüsündedir (1672×941). Not: konsolun biçimi Sony'nin tasarımına benzer; Play'e göndermeden önce
- * markasız bir çizimle değiştirilmeli (bkz. CLAUDE.md, Marka).
+ * Salon (Mac'teki birinci arayüz). Saydam salon görseli sabit durur (konsola göre PS5'li ya da Xbox'lı salon;
+ * [RoomLayout]); üstüne TV ekranının içi, konsoldan prize giden kablo ve fiş çizilir. Fiş prize takılınca (dokunarak,
+ * sürükleyerek ya da alttaki rayla) çeviri başlar, TV'de Nino'nun açılış animasyonu oynar, ardından altyazılar akar; mavi
+ * LED'ler yalnız fiş takılıyken yanar. Fiş takılı değilken priz yanıp söner, TV'de ne yapılacağı ve toplam indirme
+ * yazar. Koordinatlar görselin piksel ölçüsündedir (1672×941). Not: konsolun biçimi Sony'nin tasarımına benzer;
+ * Play'e göndermeden önce markasız bir çizimle değiştirilmeli (bkz. CLAUDE.md, Marka).
  */
 @Composable
 fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Modifier, onStart: () -> Unit, onStop: () -> Unit, onLocked: () -> Unit) {
@@ -149,15 +162,30 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
     // döner; renk değişimi yumuşak canlanır (Mac'teki gibi 1,2 sn).
     val gtaLeds by animateFloatAsState(if (plugged && status.poolFirstGame) 1f else 0f, tween(if (reduced) 0 else 1200), label = "gtaLeds")
     fun toggle() = if (plugged) onStop() else if (paired) onStart() else onLocked()
+    val layout = if (Services.settings.xbox) RoomLayout.XBOX else RoomLayout.PS5
+    val socket = layout.socket
+    val hanging = layout.hanging
+    // Toplam indirme: ana ekran açıkken açılışta ve sonra aralıklarla yenilenir (alınamazsa son bilinen sayı kalır).
+    // Çeviri sürerken havuz aynı cevabı zaten okuyup sayaca verir; o zaman buradan ayrıca sorulmaz.
+    val downloads by Services.downloads.total.collectAsState()
+    LaunchedEffect(Unit) {
+        while (true) {
+            withContext(Dispatchers.IO) { Services.downloads.refresh() }
+            delay(DownloadCounter.INTERVAL_MS)
+        }
+    }
+    // Priz ışığı: fiş takılınca 0,5 sn'de söner.
+    val socketGlow by animateFloatAsState(if (plugged) 0f else 1f, tween(if (reduced) 0 else 500), label = "socketGlow")
 
     BoxWithConstraints(modifier.fillMaxWidth()) {
         // Sağda fiş için pay bırakılır (fiş görselin sağ kenarına yakın sarkar).
         val canvasWidth = CANVAS_W + 40f
         val sceneWidthPx = with(density) { maxWidth.toPx() }
         val scale = sceneWidthPx / canvasWidth
-        val heightDp = with(density) { (CANVAS_H * scale).toDp() } + 8.dp
+        // Sarkan fiş görselin altına taşıyorsa (Xbox'lı salon) alttaki yazının üstüne binmesin.
+        val heightDp = with(density) { (maxOf(CANVAS_H, hanging.y + 48f) * scale).toDp() } + 8.dp
         fun dp(value: Float) = with(density) { (value * scale).toDp() }
-        val base = if (plugged) SOCKET else HANGING
+        val base = if (plugged) socket else hanging
         // Nino: sehpanın önündeki ray. Telefonda küçük fişi prize sürüklemek zor; rayda kaydırdıkça fiş prize doğru
         // yükselir, sona varınca takılır (geri kaydırınca çıkar).
         val railX = RAIL_START * scale
@@ -170,9 +198,12 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
         val railPos = (railBase + slide.value).coerceIn(0f, railTravel)
         val railProgress = railPos / railTravel
         val sliding = slide.value != 0f
-        val plugAt = if (sliding) Offset(HANGING.x + (SOCKET.x - HANGING.x) * railProgress, HANGING.y + (SOCKET.y - HANGING.y) * railProgress)
-            else Offset(base.x + drag.value.x / scale, base.y + drag.value.y / scale)
+        fun onRail(progress: Float) = Offset(hanging.x + (socket.x - hanging.x) * progress, hanging.y + (socket.y - hanging.y) * progress)
+        val plugAt = if (sliding) onRail(railProgress) else Offset(base.x + drag.value.x / scale, base.y + drag.value.y / scale)
         val dragging = drag.value != Offset.Zero || sliding
+        // Fişin yönü: prize yaklaştıkça uçları prize döner (rayla giderken de). Ray sona dayanınca fiş tam prizin üstündedir
+        // ve oradan yön çıkmaz (kural 0 verir, fiş bir an aşağı dönerdi): yön, rayın sonuna az kala olan yerden alınır.
+        val plugTurn = LivingRoomGeometry.plugTurn(if (sliding) onRail(railProgress.coerceAtMost(0.99f)) else plugAt, socket, hanging)
 
         val unplugText = stringResource(R.string.nino_unplug_to_stop)
         val plugText = stringResource(R.string.nino_plug_to_start, targetLanguageName())
@@ -183,42 +214,45 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
         }) {
             // LED'ler: görselin arkasında, saydam kenarlarından taşar (bulanıklık yerine katmanlı ışık; Android 8'de de çalışır).
             // Her zamanki renk mavidir; GTA 6'da soldan sağa pembe, lila, açık mavi.
-            Canvas(Modifier.fillMaxSize().alpha(leds)) { drawLeds(scale, gtaLeds) }
-            Image(painterResource(R.drawable.living_room), contentDescription = null,
+            Canvas(Modifier.fillMaxSize().alpha(leds)) { drawLeds(layout, scale, gtaLeds) }
+            // Priz ışığı da görselin arkasında: priz görselin parçasıdır, ışık kenarlarından taşar.
+            if (socketGlow > 0f) SocketGlow(dp(SOCKET_GLOW_BOX), scale, socketGlow, reduced,
+                Modifier.offset(dp(socket.x - SOCKET_GLOW_BOX / 2), dp(socket.y - SOCKET_GLOW_BOX / 2)).align(Alignment.TopStart))
+            Image(painterResource(layout.image), contentDescription = null, contentScale = ContentScale.FillBounds,
                 modifier = Modifier.offset(0.dp, 0.dp).requiredSize(dp(CANVAS_W), dp(CANVAS_H)).align(Alignment.TopStart))
             // TV ekranı: altta siyah zemin (geçişlerde görseldeki ekran görünmesin), içerik 588 noktalık TV'ye göre çizilip büyütülür.
-            Box(Modifier.offset(dp(SCREEN_X), dp(SCREEN_Y)).requiredSize(dp(SCREEN_W), dp(SCREEN_H)).align(Alignment.TopStart)
+            val screen = layout.screen
+            Box(Modifier.offset(dp(screen.left), dp(screen.top)).requiredSize(dp(screen.width), dp(screen.height)).align(Alignment.TopStart)
                 .background(Color.Black).clipToBounds(), contentAlignment = Alignment.Center) {
                 val virtualW = 588f
-                val virtualH = virtualW * SCREEN_H / SCREEN_W
-                val factor = with(density) { (SCREEN_W * scale) / virtualW.dp.toPx() }
+                val virtualH = virtualW * screen.height / screen.width
+                val factor = with(density) { (screen.width * scale) / virtualW.dp.toPx() }
                 Box(Modifier.requiredSize(virtualW.dp, virtualH.dp).graphicsLayer { scaleX = factor; scaleY = factor }) {
                     when {
-                        !plugged -> Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-                            val noSignal = stringResource(R.string.nino_no_signal)
-                            Text(noSignal, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Monospace,
-                                letterSpacing = if (TargetLanguage.containsArabic(noSignal)) 0.sp else 3.sp, color = Color.White.copy(alpha = 0.28f))
-                        }
+                        // Nino: "SİNYAL YOK" yerine ne yapılacağı; sağ üstte toplam indirme.
+                        !plugged -> TvStandbyScreen(downloads)
                         !splashDone -> TvSplash(onFinish = { splashDone = true })
-                        // Nino: oyun havuz öncelikliyse (GTA 6) TV'de gün batımı fonu (Mac'teki gibi).
-                        else -> LiveTvScreen(status, sunset = status.poolFirstGame)
+                        // Nino: oyun havuz öncelikliyse (GTA 6) TV'de gün batımı fonu (Mac'teki gibi). Toplam indirme, fiş
+                        // takılı değilkenki yerinde (sağ üst) kalır.
+                        else -> LiveTvScreen(status, sunset = status.poolFirstGame, downloads = downloads)
                     }
                 }
             }
-            // Kablo: sehpanın ucundan fişe; çıkıkken aşağı sarkar, takılıyken prize kıvrılır.
+            // Kablo: konsoldan fişe. Görseldeki kablonun (PS5) üstünden başlar, fişin arkasına fişin ekseni boyunca girer;
+            // çıkıkken sarkar, takılıyken alttan prize kıvrılır.
             Canvas(Modifier.fillMaxSize()) {
                 val s = scale
+                val inSocket = plugged && !dragging
+                val cable = LivingRoomGeometry.cable(layout, plugAt, plugTurn, inSocket)
                 val path = Path()
-                path.moveTo(CABLE_START.x * s, CABLE_START.y * s)
-                if (plugged && !dragging) {
-                    val end = Offset(plugAt.x, plugAt.y + 30)
-                    path.cubicTo(1620 * s, 720 * s, (end.x + 10) * s, (end.y + 170) * s, end.x * s, end.y * s)
-                } else {
-                    val end = Offset(plugAt.x, plugAt.y - 30)
-                    path.cubicTo(1585 * s, 745 * s, (end.x - 8) * s, (end.y - 70) * s, end.x * s, end.y * s)
-                }
-                drawPath(path, Color(0xFF101010), style = Stroke(width = maxOf(10 * s, 2.dp.toPx()), cap = StrokeCap.Round))
-                drawPlug(plugAt, s, plugged && !dragging, dragging)
+                path.moveTo(cable.lead.first().x * s, cable.lead.first().y * s)
+                cable.lead.drop(1).forEach { path.lineTo(it.x * s, it.y * s) }
+                path.cubicTo(cable.control1.x * s, cable.control1.y * s, cable.control2.x * s, cable.control2.y * s, cable.end.x * s, cable.end.y * s)
+                drawPath(path, Color(0xFF0F0F0F), style = Stroke(width = LivingRoomGeometry.CABLE_WIDTH * s, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                // Xbox görselinde kablo yok: kablo konsolun arkasındaki girişten küçük bir fiş başıyla çıkar.
+                if (layout.cableLead.isEmpty()) drawRoundRect(Color(0xFF141414), Offset((layout.cableStart.x - 7) * s, (layout.cableStart.y - 6) * s),
+                    Size(14 * s, 12 * s), CornerRadius(3 * s))
+                drawPlug(plugAt, s, inSocket, dragging, plugTurn)
             }
             // Dokunma alanları en az 48 dp (fiş görselde küçük kalsa da kolay yakalansın); sahnenin dışına taşmaz.
             val touch = 56.dp
@@ -230,14 +264,14 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
                 (point.y * scale - touchPx / 2).coerceIn(0f, heightPx - touchPx).roundToInt(),
             )
             // Prize dokunmak da fişi takar/çıkarır.
-            Box(Modifier.offset { clampedOffset(SOCKET) }.size(touch).clickable(
+            Box(Modifier.offset { clampedOffset(socket) }.size(touch).clickable(
                 interactionSource = remember { MutableInteractionSource() }, indication = null) { toggle() })
             Box(Modifier.offset { clampedOffset(plugAt) }.size(touch)
                 .pointerInput(plugged, paired) {
                     detectDragGestures(
                         onDragEnd = {
                             val end = Offset(base.x + drag.value.x / scale, base.y + drag.value.y / scale)
-                            val near = hypot(end.x - SOCKET.x, end.y - SOCKET.y) < 160
+                            val near = hypot(end.x - socket.x, end.y - socket.y) < 160
                             scope.launch { drag.animateTo(Offset.Zero, spring(dampingRatio = 0.75f)) }
                             if (near != plugged) toggle()
                         },
@@ -251,7 +285,7 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
             // Ray: sehpanın ön yüzünde buzlu oluk; her yerinden kaydırılabilir, dokunmak da fişi takar/çıkarır.
             val railTouch = maxOf(railKnob, 56.dp)
             val railTouchPx = with(density) { railTouch.toPx() }
-            val railY = RAIL_Y * scale
+            val railY = layout.railY * scale
             val railHeightPx = with(density) { railHeight.toPx() }
             val railWidthDp = with(density) { railWidthPx.toDp() }
             Box(Modifier.offset { IntOffset(railX.roundToInt(), (railY - railHeightPx / 2).roundToInt()) }
@@ -325,9 +359,10 @@ private fun TvSplash(onFinish: () -> Unit) {
  * [sunset]: havuz öncelikli oyunda (GTA 6) koyu zemin yerine Nino'nun kendi gün batımı fonu ([SunsetStops]); yalnız ana
  * ekrandaki iki sahne verir (salondaki TV ve cam düğmeli arayüzün sahnesi). Yazılar ve CANLI rozeti aynen önde kalır.
  * Yan çevrilince açılan tam ekran altyazı (PhoneSubtitleActivity) bunu kullanmaz, düz siyah kalır.
+ * [downloads]: toplam indirme göstergesi (sağ üst); yalnız salondaki TV verir.
  */
 @Composable
-fun LiveTvScreen(status: LiveStatus, modifier: Modifier = Modifier, sunset: Boolean = false) {
+fun LiveTvScreen(status: LiveStatus, modifier: Modifier = Modifier, sunset: Boolean = false, downloads: Int? = null) {
     val text = status.liveText()
     val backdrop = if (sunset) Modifier.background(Brush.verticalGradient(*SunsetStops)).background(Color.Black.copy(alpha = 0.28f))
         else Modifier.background(Brush.linearGradient(listOf(Color(0xFF171F3D), Color(0xFF26172E))))
@@ -339,6 +374,7 @@ fun LiveTvScreen(status: LiveStatus, modifier: Modifier = Modifier, sunset: Bool
             Text(liveLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold,
                 letterSpacing = if (TargetLanguage.containsArabic(liveLabel)) 0.sp else 1.2.sp, color = Color.White)
         }
+        if (downloads != null) DownloadHud(downloads, Modifier.align(Alignment.TopEnd))
         Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)) {
             when {
                 // PS5 görüntüsü gelmiyorsa altyazı yerine bağlantının durumu yazılır.
@@ -357,13 +393,13 @@ fun LiveTvScreen(status: LiveStatus, modifier: Modifier = Modifier, sunset: Bool
  * soldan sağa pembe, lila, açık mavi (Mac'teki `leds` ile aynı renkler). Arası, renk değişirken yumuşak geçiştir. Boyutlar ve
  * katmanlar iki durumda da aynıdır.
  */
-private fun DrawScope.drawLeds(s: Float, gta: Float = 0f) {
+private fun DrawScope.drawLeds(layout: RoomLayout, s: Float, gta: Float = 0f) {
     // Bir ışığın boyası: [base] mavi ya da [colors] geçişi, [left]'ten [width] boyunca (görsel pikseli).
     fun paint(base: Color, colors: List<Color>, alpha: Float, left: Float, width: Float): Brush =
         if (gta <= 0f) SolidColor(base.copy(alpha = base.alpha * alpha))
         else Brush.horizontalGradient(colors.map { lerp(base, it, gta).copy(alpha = base.alpha * alpha) }, startX = left * s, endX = (left + width) * s)
     // TV'nin arkasından duvara vuran ışık: içten dışa soluklaşan katmanlar.
-    val tvX = 139f; val tvY = 27f; val tvW = 1171f; val tvH = 621f
+    val tvX = layout.tvFrame.left; val tvY = layout.tvFrame.top; val tvW = layout.tvFrame.width; val tvH = layout.tvFrame.height
     for (i in 6 downTo 0) {
         val grow = 10f + i * 12f
         drawRoundRect(paint(LedBlue, GtaLedWide, 0.06f + 0.05f * (6 - i) / 6f, tvX - grow, tvW + 2 * grow), Offset((tvX - grow) * s, (tvY - grow) * s),
@@ -371,7 +407,7 @@ private fun DrawScope.drawLeds(s: Float, gta: Float = 0f) {
     }
     drawRoundRect(paint(LedLight, GtaLedTight, 0.55f, tvX - 5, tvW + 10), Offset((tvX - 5) * s, (tvY - 5) * s), Size((tvW + 10) * s, (tvH + 10) * s), CornerRadius(12 * s))
     // Sehpanın altındaki şerit.
-    val standX = 49f; val standW = 1502f; val standBottom = 873f
+    val standX = layout.standFrame.left; val standW = layout.standFrame.width; val standBottom = layout.standFrame.bottom
     for (i in 5 downTo 0) {
         val h = 10f + i * 8f
         drawRoundRect(paint(LedBlue, GtaLedWide, 0.08f + 0.06f * (5 - i) / 5f, standX + 30 - i * 4, standW - 60 + i * 8), Offset((standX + 30 - i * 4) * s, (standBottom - h / 2) * s),
@@ -380,8 +416,52 @@ private fun DrawScope.drawLeds(s: Float, gta: Float = 0f) {
     drawRoundRect(paint(LedLight, GtaLedTight, 1f, standX + 45, standW - 90), Offset((standX + 45) * s, (standBottom - 4) * s), Size((standW - 90) * s, 6 * s), CornerRadius(3 * s))
 }
 
-/** Fiş: çıkıkken siyah gövde ve iki metal uç aşağı bakar; takılıyken prizin önünde yuvarlak siyah kapak. */
-private fun DrawScope.drawPlug(at: Offset, s: Float, inSocket: Boolean, lifted: Boolean) {
+/**
+ * Priz ışığı: fiş takılı değilken prizin kenarlarından taşan, yanıp sönen ışık; fişin nereye takılacağı anlaşılsın (Mac:
+ * socketGlow). İki katman: geniş, bulanık açık mavi kare (kenar + 26, bulanıklık 18, opaklık 0,3 ↔ 0,95) ve dar, parlak
+ * kare (kenar + 8, bulanıklık 5, opaklık 0,45 ↔ 1); 0,95 sn'de gidip gelen yumuşak nabız. [fade]: fiş takılınca söner.
+ * Sistemde animasyonlar kapalıysa ([steady]) yanıp sönmez, sabit (parlak) yanar. Nabız yalnız katmanların saydamlığını
+ * değiştirir: sahne yeniden kurulmaz, ışık yeniden çizilmez.
+ */
+@Composable
+private fun SocketGlow(box: androidx.compose.ui.unit.Dp, s: Float, fade: Float, steady: Boolean, modifier: Modifier = Modifier) {
+    val pulse = if (steady) null else rememberInfiniteTransition(label = "socketGlow")
+        .animateFloat(0f, 1f, infiniteRepeatable(tween(950, easing = EaseInOut), RepeatMode.Reverse), label = "socketPulse")
+    val side = LivingRoomGeometry.SOCKET_SIZE
+    Box(modifier.requiredSize(box)) {
+        Canvas(Modifier.fillMaxSize().graphicsLayer { alpha = fade * (0.3f + 0.65f * (pulse?.value ?: 1f)) }) {
+            drawSoftSquare(Color(0xFF4DA8FF), (side + 26) * s, 16 * s, 18 * s)
+        }
+        Canvas(Modifier.fillMaxSize().graphicsLayer { alpha = fade * (0.45f + 0.55f * (pulse?.value ?: 1f)) }) {
+            drawSoftSquare(Color(0xFF9ED6FF), (side + 8) * s, 12 * s, 5 * s)
+        }
+    }
+}
+
+/** Priz ışığının çizildiği kutunun kenarı (sahne pikseli): en geniş katman (kenar + 26, iki yana 2 × 18 bulanıklık) sığar. */
+private const val SOCKET_GLOW_BOX = 200f
+
+/**
+ * Kenarları bulanık kare (ortada). Bulanıklık yerine iç içe katmanlar (Android 8'de de çalışır): katmanların üst üste
+ * binen saydamlığı, [blur] sapmalı Gauss bulanıklığının kenar eğrisini izler (kenarın 2 × [blur] dışından içine).
+ */
+private fun DrawScope.drawSoftSquare(color: Color, side: Float, corner: Float, blur: Float) {
+    SoftEdgeAlphas.forEachIndexed { index, alpha ->
+        val grow = blur * (2f - 0.5f * index)
+        val edge = side + 2 * grow
+        if (edge > 0f) drawRoundRect(color.copy(alpha = alpha), Offset(center.x - edge / 2, center.y - edge / 2), Size(edge, edge),
+            CornerRadius((corner + grow).coerceAtLeast(1f)))
+    }
+}
+
+/** Dıştan içe dokuz katmanın saydamlığı: üst üste binince Φ(−1,75), Φ(−1,25) … Φ(1,75), 1 (Gauss kenarı). */
+private val SoftEdgeAlphas = floatArrayOf(0.040f, 0.069f, 0.135f, 0.225f, 0.331f, 0.434f, 0.533f, 0.623f, 1f)
+
+/**
+ * Fiş: çıkıkken siyah gövde ve iki metal uç; uçlar [turn] yönüne bakar (radyan; 0 = aşağı, saat yönü artı; bkz.
+ * [LivingRoomGeometry.plugTurn]). Takılıyken prizin önünde yuvarlak siyah kapak.
+ */
+private fun DrawScope.drawPlug(at: Offset, s: Float, inSocket: Boolean, lifted: Boolean, turn: Float) {
     val c = Offset(at.x * s, at.y * s)
     if (inSocket) {
         val r = 29 * s
@@ -392,28 +472,23 @@ private fun DrawScope.drawPlug(at: Offset, s: Float, inSocket: Boolean, lifted: 
     }
     val k = if (lifted) 1.08f else 1f
     val top = c.y - 44 * s * k
-    drawRoundRect(Color(0xFF0F0F0F), Offset(c.x - 8 * s * k, top), Size(16 * s * k, 14 * s * k), CornerRadius(6 * s))
-    drawRoundRect(Brush.horizontalGradient(listOf(Color(0xFF383838), Color(0xFF0A0A0A)), c.x - 18 * s, c.x + 18 * s),
-        Offset(c.x - 18 * s * k, top + 14 * s * k), Size(36 * s * k, 50 * s * k), CornerRadius(9 * s))
-    val prong = Brush.horizontalGradient(listOf(Color(0xFFEBEBEB), Color(0xFF999999)))
-    listOf(-10f, 10f).forEach { dx ->
-        drawRoundRect(prong, Offset(c.x + (dx - 3) * s * k, top + 64 * s * k), Size(6 * s * k, 24 * s * k), CornerRadius(3 * s))
+    // Fiş kendi ortası çevresinde döner (gövde ortanın 44 yukarısından 44 aşağısına uzanır).
+    rotate(Math.toDegrees(turn.toDouble()).toFloat(), c) {
+        drawRoundRect(Color(0xFF0F0F0F), Offset(c.x - 8 * s * k, top), Size(16 * s * k, 14 * s * k), CornerRadius(6 * s))
+        drawRoundRect(Brush.horizontalGradient(listOf(Color(0xFF383838), Color(0xFF0A0A0A)), c.x - 18 * s, c.x + 18 * s),
+            Offset(c.x - 18 * s * k, top + 14 * s * k), Size(36 * s * k, 50 * s * k), CornerRadius(9 * s))
+        val prong = Brush.horizontalGradient(listOf(Color(0xFFEBEBEB), Color(0xFF999999)))
+        listOf(-10f, 10f).forEach { dx ->
+            drawRoundRect(prong, Offset(c.x + (dx - 3) * s * k, top + 64 * s * k), Size(6 * s * k, 24 * s * k), CornerRadius(3 * s))
+        }
     }
 }
 
-private const val CANVAS_W = 1672f
-private const val CANVAS_H = 941f
-private const val SCREEN_X = 149f
-private const val SCREEN_Y = 40f
-private const val SCREEN_W = 1151f
-private const val SCREEN_H = 595f
-private val SOCKET = Offset(1564f, 378f)
-private val CABLE_START = Offset(1550f, 734f)
-private val HANGING = Offset(1600f, 885f)
-/** Sehpanın ön yüzündeki kaydırma rayı (görsel pikseli). */
+private const val CANVAS_W = RoomLayout.CANVAS_W
+private const val CANVAS_H = RoomLayout.CANVAS_H
+/** Sehpanın ön yüzündeki kaydırma rayı (görsel pikseli); yüksekliği sahneye göre [RoomLayout.railY]. */
 private const val RAIL_START = 230f
 private const val RAIL_END = 1300f
-private const val RAIL_Y = 792f
 private const val RAIL_H = 64f
 
 /**
@@ -539,7 +614,7 @@ internal fun DrawScope.drawCrescentStar(background: Color) {
 /** Arayüz seçimindeki küçük önizleme kartları için: Salon görselinin küçük hali. */
 @Composable
 fun LivingRoomThumbnail(modifier: Modifier = Modifier) {
-    Image(painterResource(R.drawable.living_room), contentDescription = null, modifier = modifier)
+    Image(painterResource((if (Services.settings.xbox) RoomLayout.XBOX else RoomLayout.PS5).image), contentDescription = null, modifier = modifier)
 }
 
 /** Cam düğmenin küçük, etkileşimsiz önizlemesi (açık hali). */

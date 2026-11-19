@@ -8,6 +8,10 @@ final class ChiakiLogger {
     let pointer: UnsafeMutablePointer<ChiakiLog>
     /// Her satır için çağrılır (libchiaki'nin iş parçacığında); `isError` hata düzeyindeki satırlarda doğrudur.
     var onMessage: ((_ text: String, _ isError: Bool) -> Void)?
+    /// Nino: `true` dönen satırlar günlüğe yazılmaz (yalnız `onMessage`'a gider). Bütün ağı tarayan aramada her boş adres
+    /// için bir "Discovery failed to send" satırı çıkıyor (tarama başına yüzlerce); 1 MB'lik günlüğü dolduruyor ve asıl
+    /// satırları siliyordu. Arama bunları sayıp tek satırlık özet yazar.
+    var isQuiet: ((_ text: String) -> Bool)?
 
     init() {
         pointer = .allocate(capacity: 1)
@@ -17,9 +21,12 @@ final class ChiakiLogger {
             let text = String(cString: message)
             let isError = level == CHIAKI_LOG_ERROR
             let name = isError ? "error" : level == CHIAKI_LOG_WARNING ? "warning" : "info"
-            print("[chiaki] \(text)")
-            RemotePlayLog.write("[chiaki \(name)] \(text)")
-            if let user { Unmanaged<ChiakiLogger>.fromOpaque(user).takeUnretainedValue().onMessage?(text, isError) }
+            let owner = user.map { Unmanaged<ChiakiLogger>.fromOpaque($0).takeUnretainedValue() }
+            if owner?.isQuiet?(text) != true {
+                print("[chiaki] \(text)")
+                RemotePlayLog.write("[chiaki \(name)] \(text)")
+            }
+            owner?.onMessage?(text, isError)
         }, nil)
         // Günlük yapısı bu nesneyle birlikte yaşar; geri çağrıya sahibini sahiplenmeden ver.
         pointer.pointee.user = Unmanaged.passUnretained(self).toOpaque()

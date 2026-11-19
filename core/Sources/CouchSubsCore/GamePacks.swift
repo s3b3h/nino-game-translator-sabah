@@ -179,11 +179,9 @@ public final class GamePackLibrary: @unchecked Sendable {
     /// Uygulamayla gelen paketler (core/Sources/CouchSubsCore/Resources/packs).
     public static var bundledDirectory: URL? { Bundle.module.url(forResource: "packs", withExtension: nil) }
 
-    /// ~/Library/Application Support/CouchSubs/packs: denemeciler yeni paketi buraya bırakır.
+    /// ~/Library/Application Support/Nino/packs (bkz. `AppFolder`): denemeciler yeni paketi buraya bırakır.
     public static var userDirectory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("CouchSubs", isDirectory: true)
-            .appendingPathComponent("packs", isDirectory: true)
+        AppFolder.support.appendingPathComponent("packs", isDirectory: true)
     }
 
     /// Bulanık arama için paket başına anahtarlar ve imzalar (yükleme sırasıyla).

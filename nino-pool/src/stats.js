@@ -193,6 +193,26 @@ async function githubDownloads(db, now, fetcher = fetch) {
   return null;
 }
 
+/**
+ * Uygulamalara gösterilen toplam indirme (GET /v1/config → downloads): yalnız saklanan son değer okunur, GitHub'a
+ * gidilmez (uygulama isteği GitHub sınırına takılıp beklemesin). Değeri zamanlanmış iş yarım saatte bir yeniler
+ * (bkz. `refreshDownloads`). Hiç alınamadıysa null: uygulama kendi son bildiğini gösterir.
+ */
+export async function storedDownloadTotal(db) {
+  try {
+    const row = await db.prepare("SELECT value FROM stats_cache WHERE key = 'downloads'").first();
+    const total = Number(JSON.parse(row?.value ?? "null")?.total);
+    return Number.isFinite(total) && total > 0 ? Math.floor(total) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Zamanlanmış iş: indirme sayısını GitHub'dan yeniler ve saklar (alınamazsa eski değer kalır). */
+export async function refreshDownloads(db, now, fetcher = fetch) {
+  return githubDownloads(db, now, fetcher);
+}
+
 async function fetchGithubDownloads(fetcher) {
   try {
     const response = await fetcher("https://api.github.com/repos/yunusdemirbag/nino-game-translator/releases?per_page=100", {

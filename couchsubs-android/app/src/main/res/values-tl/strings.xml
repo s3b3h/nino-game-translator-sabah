@@ -287,7 +287,7 @@
     <string name="tvapp_update_body">%2$s ang Nino sa %1$s TV, %3$s naman ang nasa phone na ito. Mga isang minuto ang pag-update; panatilihing naka-on ang TV at nasa parehong Wi-Fi.</string>
     <string name="tvapp_update_button">I-update ang TV app</string>
     <string name="app_update_title">Handa na ang bagong bersyon: %1$s</string>
-    <string name="app_update_body">I-download at i-install ang pinakabagong Nino.</string>
+    <string name="app_update_body">May bagong bersyon na ang Nino. I-tap ang button sa ibaba, pagkatapos buksan ang na-download na file at i-install. Hindi mo kailangang alisin ang lumang bersyon; ipapatong ang bago at mananatili ang iyong mga setting. Kung ayaw ma-install, i-uninstall ang lumang bersyon at i-install muli.</string>
     <string name="app_update_button">I-update</string>
     <string name="tvapp_update_short">May update: %1$s</string>
     <string name="tvinstall_title">I-install ang TV app</string>
@@ -443,7 +443,8 @@
     <string name="nino_slide_to_unplug">I-slide pabalik para ihinto</string>
     <string name="nino_plug_to_start">Isaksak para i-on ang %1$s na subtitle</string>
     <string name="nino_pair_first">Ipares muna ang iyong PS5</string>
-    <string name="nino_no_signal">WALANG SIGNAL</string>
+    <string name="nino_plug_drag_hint">I-DRAG ANG PLUG SA SAKSAKAN PARA MAGSIMULA</string>
+    <string name="nino_total_downloads">KABUUANG DOWNLOAD</string>
     <string name="nino_live">LIVE</string>
     <string name="nino_connecting_ps5">Kumokonekta sa PS5…</string>
     <string name="nino_waiting_next">Hinihintay ang susunod na subtitle…</string>

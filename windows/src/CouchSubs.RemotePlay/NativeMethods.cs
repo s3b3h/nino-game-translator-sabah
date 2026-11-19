@@ -3,6 +3,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using CouchSubs.Core;
 
 namespace CouchSubs.RemotePlay;
 
@@ -81,7 +82,7 @@ internal static unsafe partial class NativeMethods
         {
             if (initialized) return;
             var result = cs_init();
-            if (result != 0) throw new InvalidOperationException($"couchsubs_native could not be initialized ({result})");
+            if (result != 0) throw new InvalidOperationException($"Nino's native library could not be initialized ({result})");
             initialized = true;
         }
     }
@@ -122,11 +123,10 @@ internal static unsafe partial class NativeMethods
 public static class RemotePlayLog
 {
     /// <summary>Günlüğün yazıldığı dosya (uygulamadaki RemotePlayDiagnostics yazar).</summary>
-    public static string FilePath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", "remoteplay.log");
+    public static string FilePath => DataFolder.In("remoteplay.log");
 
     /// <summary>Kullanıcıya hata iletisinde gösterilen yol (Dosya Gezgini'nin adres çubuğuna yazılabilir).</summary>
-    public const string DisplayPath = @"%LOCALAPPDATA%\CouchSubs\remoteplay.log";
+    public static string DisplayPath => DataFolder.Display("remoteplay.log");
 
     /// <summary>Yerel kütüphanenin iş parçacığında çağrılır; hızlı dönmeli.</summary>
     public static event Action<string>? MessageLogged;
@@ -134,7 +134,7 @@ public static class RemotePlayLog
     /// <summary>Uygulamanın kendi satırı (eşleştirme sonucu, arama sonucu).</summary>
     public static void Note(string message)
     {
-        try { MessageLogged?.Invoke($"[couchsubs] {message}"); }
+        try { MessageLogged?.Invoke($"[nino] {message}"); }
         catch { /* günlük dinleyicisinin hatası çağıranı düşürmemeli */ }
     }
 

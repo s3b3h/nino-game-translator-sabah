@@ -276,10 +276,10 @@ test("çöp satırlar Claude'a gitmez, İngilizcesi havuza yazılır", async () 
 test("ekran okumasının bozduğu kopya havuzdaki çeviriyi alır, Claude'a sorulmaz", async () => {
   const { post, calls } = setup();
   await post(req(["Looks like I'm gonna need to come back when I have a little more cash."]));
-  const res = await (await post(req(["Looks Iike lI'm gonna need to come back when I have a little more cash.", "Turn Right 417 ft"]))).json();
+  const res = await (await post(req(["Looks Iike lI'm gonna need to come back when I have a little more cash.", "Where did you park the truck?"]))).json();
   assert.equal(res.translations[0].text, "TR:Looks like I'm gonna need to come back when I have a little more cash.");
   assert.equal(calls.length, 2);
-  assert.deepEqual(calls[1].lines, ["Turn Right 417 ft"]);
+  assert.deepEqual(calls[1].lines, ["Where did you park the truck?"]);
   // Sayısı ya da olumsuzluğu farklı olan eşleşmez.
   await post(req(["I really want to go back to the boat tonight."]));
   await post(req(["I really don't want to go back to the boat tonight."]));
@@ -337,4 +337,59 @@ test("gözden geçirme toplu işlemle: gönderilir, bekleyen yeniden gönderilme
   const rows = env.DB.raw.prepare("SELECT source, text, tier FROM translations ORDER BY source").all().map((r) => [r.source, r.text, r.tier]);
   assert.deepEqual(rows, [["Relax.", "Sakin ol be.", 2], ["Where's the money?", "TR:Where's the money?", 2]]);
   assert.equal(env.DB.raw.prepare("SELECT COUNT(*) n FROM review_pending").get().n, 0);
+});
+
+test("yol tarifi kuralla çevrilir: model çağrılmaz, havuza yazılmaz", async () => {
+  const { env, post, calls } = setup();
+  const res = await post(req(["Turn Right 405 ft 432 ft", "Keep Left O ft 2 ft", "U-Turn Left 5 ft 24 ft", "Turn Left 366 ft—", "Turn right at the lights, okay?"]));
+  const body = await res.json();
+  assert.deepEqual(body.translations.slice(0, 4).map((t) => t.text),
+    ["Sağa dön 405 ft 432 ft", "Solda kal 0 ft 2 ft", "Sola U dönüşü 5 ft 24 ft", "Sola dön 366 ft"]);
+  // Arkasında söz olan cümle altyazıdır: modele gider.
+  assert.deepEqual(calls.map((c) => c.lines), [["Turn right at the lights, okay?"]]);
+  const { results } = await env.DB.prepare("SELECT source FROM translations").all();
+  assert.deepEqual(results.map((r) => r.source), ["Turn right at the lights, okay?"]);
+});
+
+test("yol tarifi kuralı: yalnız yön ve mesafe", async () => {
+  const { navTranslation } = await import("../src/nav.js");
+  assert.equal(navTranslation("Keep Right 304 ft 303 ft", "tr"), "Sağda kal 304 ft 303 ft");
+  assert.equal(navTranslation("-turn Right 67 ft 82 ft", "tr"), "Sağa dön 67 ft 82 ft");
+  assert.equal(navTranslation("Turn Right i 100 ft 103 ft", "tr"), "Sağa dön 100 ft 103 ft");
+  assert.equal(navTranslation("Turn Right 3.9 km", "tr"), "Sağa dön 3.9 km");
+  assert.equal(navTranslation("Turn Right", "tr"), null);
+  assert.equal(navTranslation("Keep left and you'll be fine, 20 ft or so", "tr"), null);
+  assert.equal(navTranslation("Turn Right 405 ft", "ar"), null);
+});
+
+test("hazır çeviri tohumu: modelden önce bakılır, günlük sınır dolsa da cevaplar, havuza İngilizcesiyle yazılır", async () => {
+  const { env, post, get, calls } = setup({ TRANSLATE_DAILY_USD: "0" });
+  const key = await lineKey("You made it through half a scuba tour.");
+  await env.DB.prepare("INSERT INTO seeds (lang, key, text) VALUES ('tr', ?, 'Tüplü dalış turunun yarısını tamamladın.')").bind(key).run();
+  let res = await post(req(["You made it through half a scuba tour.", "Never seen before."]));
+  let body = await res.json();
+  assert.deepEqual(body.translations, [{ text: "Tüplü dalış turunun yarısını tamamladın.", tier: 1 }, { text: null, tier: 0 }]);
+  assert.equal(body.limited, "daily_cap");
+  assert.equal(calls.length, 0);
+  const row = await env.DB.prepare("SELECT source, text, tier FROM translations WHERE key = ?").bind(key).first();
+  assert.deepEqual(row, { source: "You made it through half a scuba tour.", text: "Tüplü dalış turunun yarısını tamamladın.", tier: 1 });
+  // Kullanılan tohum toplu indirmeye de girer; kullanılmayanlar girmez.
+  res = await get("lang=tr&game=gta-vi&since=0");
+  body = await res.json();
+  assert.equal(body.items.length, 1);
+  // Başka dilde tohum kullanılmaz.
+  res = await post(req(["You made it through half a scuba tour."], { lang: "ar" }));
+  body = await res.json();
+  assert.equal(body.translations[0].text, null);
+});
+
+test("uzaktan ayar: saklanan toplam indirme verilir; yoksa alan gönderilmez", async () => {
+  const { env } = setup();
+  let body = await (await handle(new Request("http://pool/v1/config"), env, NOW)).json();
+  assert.equal("downloads" in body, false);
+  await env.DB.prepare("INSERT INTO stats_cache (key, value, at) VALUES ('downloads', ?, ?)")
+    .bind(JSON.stringify({ mac: 10, windows: 20, android: 30, tv: 5, total: 65, latest: "v3.4.1" }), NOW).run();
+  body = await (await handle(new Request("http://pool/v1/config"), env, NOW)).json();
+  assert.equal(body.downloads, 65);
+  assert.equal(body.ok, true);
 });

@@ -319,6 +319,11 @@ private struct MainWarnings: View {
             }
         }
 
+        // Nino: Yerel Ağ izni kapalı görünüyor (güncellemeden sonra macOS izni kesebiliyor); PS5 de TV de bulunamaz.
+        if model.isRunning, model.localNetworkBlocked {
+            Card { LocalNetworkWarning() }
+        }
+
         // Çevrimiçi motor çeviremiyor: satırlar bu arada ücretsiz çeviriyle geliyor.
         if model.isRunning, let issue = model.onlineIssue {
             Card {

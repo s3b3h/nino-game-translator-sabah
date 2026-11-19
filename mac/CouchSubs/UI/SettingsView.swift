@@ -1129,7 +1129,9 @@ struct TranslationCard: View {
             EngineChoice(title: String(localized: "Free"), caption: "Nothing to set up. Translated on this Mac.",
                          recommended: false, selected: engine == .free) { model.settings.translationEngine = .free }
             EngineChoice(title: TranslationEngine.gemini.displayName, caption: "More natural translation. Needs a free Google key.",
-                         recommended: true, selected: engine == .gemini) { model.settings.translationEngine = .gemini }
+                         // Nino: "Önerilen" etiketi kaldırıldı (kullanıcı isteği, 19 Kasım 2026): etiketi görenler anahtar
+                         // gerektiren Gemini'ye geçiyordu; varsayılan (ücretsiz ve Nino'nun havuzu) çoğu kişiye yeter.
+                         recommended: false, selected: engine == .gemini) { model.settings.translationEngine = .gemini }
             if engine == .gemini {
                 AIKeySection(provider: .gemini).id(AIProvider.gemini)
                 HintText(text: FreeGemini.privacy)
@@ -1303,14 +1305,7 @@ private struct EngineTile: View {
                 HStack(spacing: Theme.space("s")) {
                     Text(verbatim: name).font(.csHeadline).foregroundStyle(Color.csText)
                     Spacer(minLength: 0)
-                    if option == .gemini {
-                        Text("Recommended")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(Capsule().fill(LinearGradient(colors: [Color.csAccentHi, Color(red: 0.0, green: 0.19, blue: 0.52)],
-                                                                      startPoint: .top, endPoint: .bottom)))
-                    }
+                    // Nino: Gemini'nin "Önerilen" etiketi kaldırıldı (bkz. yukarıdaki not).
                 }
                 Text(caption).font(.csCaption).foregroundStyle(Color.csSecondary).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)

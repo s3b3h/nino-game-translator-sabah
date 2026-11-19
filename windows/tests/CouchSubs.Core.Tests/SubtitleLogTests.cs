@@ -75,7 +75,7 @@ public class SubtitleLogTests
         Assert.Null(tracker.Note("[chiaki warning] Video FEC failure, already waiting for requested IDR"));
         clock.Now += 8000;
         Assert.Equal("görüntü gelmedi, IDR karesi gelmeyecek: PS5 oturumu yeniden kuruluyor (8000 ms boşluk)",
-            tracker.Note("[couchsubs] PS5'ten 8 sn'dir görüntü gelmiyor (bağlantı açık); oturum yeniden kuruluyor"));
+            tracker.Note("[nino] PS5'ten 8 sn'dir görüntü gelmiyor (bağlantı açık); oturum yeniden kuruluyor"));
         // Yeni oturumun ilk duraklaması yeniden yazılır.
         Assert.Equal("görüntü durdu: FEC hatası, IDR karesi bekleniyor", tracker.Note("[chiaki info] FEC failed, waiting for IDR frame"));
     }

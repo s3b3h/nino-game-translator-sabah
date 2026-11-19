@@ -287,7 +287,7 @@
     <string name="tvapp_update_body">Nino op de %1$s-TV is %2$s, deze telefoon heeft %3$s. Bijwerken duurt ongeveer een minuut; houd de TV aan en op hetzelfde wifinetwerk.</string>
     <string name="tvapp_update_button">TV-app bijwerken</string>
     <string name="app_update_title">Nieuwe versie klaar: %1$s</string>
-    <string name="app_update_body">Download en installeer de nieuwste Nino.</string>
+    <string name="app_update_body">Er is een nieuwe versie van Nino. Tik op de knop hieronder, open het gedownloade bestand en installeer het. Je hoeft de oude versie niet te verwijderen; de nieuwe wordt eroverheen geïnstalleerd en je instellingen blijven bewaard. Lukt de installatie niet, verwijder dan de oude versie en installeer opnieuw.</string>
     <string name="app_update_button">Bijwerken</string>
     <string name="tvapp_update_short">Update beschikbaar: %1$s</string>
     <string name="tvinstall_title">TV-app installeren</string>
@@ -443,7 +443,8 @@
     <string name="nino_slide_to_unplug">Schuif terug om te stoppen</string>
     <string name="nino_plug_to_start">Sluit aan om ondertitels in het %1$s aan te zetten</string>
     <string name="nino_pair_first">Koppel eerst je PS5</string>
-    <string name="nino_no_signal">GEEN SIGNAAL</string>
+    <string name="nino_plug_drag_hint">SLEEP DE STEKKER NAAR HET STOPCONTACT OM TE STARTEN</string>
+    <string name="nino_total_downloads">TOTAAL DOWNLOADS</string>
     <string name="nino_live">LIVE</string>
     <string name="nino_connecting_ps5">Verbinden met de PS5…</string>
     <string name="nino_waiting_next">Wachten op de volgende ondertitel…</string>

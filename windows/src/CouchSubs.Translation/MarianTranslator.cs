@@ -49,7 +49,7 @@ public sealed class MarianTranslator : ITextTranslator, IDisposable
     public event Action<Exception>? EngineFailed;
 
     /// <param name="cache">Kalıcı önbellek; verilmezse yalnız bellekte tutulur.</param>
-    /// <param name="glossary">Terim sözlüğü; verilmezse genel sözlük ve %LOCALAPPDATA%\CouchSubs\glossary\*.json.</param>
+    /// <param name="glossary">Terim sözlüğü; verilmezse genel sözlük ve %LOCALAPPDATA%\Nino\glossary\*.json.</param>
     /// <param name="target">Nino: hedef dil ("tr", "ar", "hi"…); modelin dizini de bu dile ait olmalı (<see cref="ModelStore.FilesFor"/>).
     /// Dizinde CTranslate2 modeli (model.bin) varsa o, yoksa ONNX modeli (Türkçe dışındaki ücretsiz diller) çalışır.</param>
     public MarianTranslator(string modelDirectory, int maxOutputTokens = 128, int beams = 4,

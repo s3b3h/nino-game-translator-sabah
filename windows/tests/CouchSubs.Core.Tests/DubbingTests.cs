@@ -173,7 +173,7 @@ public class NativeToolPathTests
         string? from = null, to = null;
         var result = NativeToolPath.Tokenizer(Tokenizer, path => path, [@"C:\ProgramData"],
             (source, target) => (from, to) = (source, target));
-        var expected = Path.Combine(@"C:\ProgramData", "CouchSubs", "models", "tts-tr", DubbingModel.Revision, "tokenizer.model");
+        var expected = Path.Combine(@"C:\ProgramData", "Nino", "models", "tts-tr", DubbingModel.Revision, "tokenizer.model");
         Assert.Equal(expected, result);
         Assert.Equal(Tokenizer, from);
         Assert.Equal(expected, to);

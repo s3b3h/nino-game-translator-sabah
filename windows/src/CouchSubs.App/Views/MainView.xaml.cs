@@ -54,8 +54,10 @@ public partial class MainView : UserControl
         }
         if (e.PropertyName is nameof(AppController.Ps5StatusText) or nameof(AppController.Ps5Tone) or nameof(AppController.TvStatusText)
             or nameof(AppController.TvTone) or nameof(AppController.IsRunning) or nameof(AppController.SessionState)
-            or nameof(AppController.ConsoleTitle))
+            or nameof(AppController.ConsoleTitle) or nameof(AppController.TranslationSourceText))
             ShowStrip();
+        // Nino: salon sahnesi konsola göre değişir (PS5'li ya da Xbox'lı görsel).
+        if (e.PropertyName is nameof(AppController.IsXbox)) ShowHome();
         if (e.PropertyName is nameof(AppController.IsRunning) or nameof(AppController.PlayedGame) or nameof(AppController.AskingGame))
             ShowGame();
         if (e.PropertyName is nameof(AppController.UpdateVersion) or nameof(AppController.Updating)
@@ -76,23 +78,29 @@ public partial class MainView : UserControl
         UpdateErrorText.Visibility = controller.UpdateError is null ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    private HomeStyle? shownHome;
+    private (HomeStyle style, bool xbox)? shownHome;
 
-    /// <summary>Ayarlardaki arayüz: Salon ya da Cam düğme (değişince yeniden kurulur).</summary>
+    /// <summary>
+    /// Ayarlardaki arayüz: Salon ya da Cam düğme (değişince yeniden kurulur). Salon sahnesi konsol değişince de yeniden
+    /// kurulur (Xbox'lı salonun görseli ve ölçüleri ayrıdır).
+    /// </summary>
     private void ShowHome()
     {
         var style = controller.Settings.HomeStyle;
-        if (shownHome == style) return;
-        shownHome = style;
+        var wanted = (style, xbox: style == HomeStyle.LivingRoom && Home.XboxScene(controller));
+        if (shownHome == wanted) return;
+        shownHome = wanted;
         HomeHost.Content = style == HomeStyle.LivingRoom ? new LivingRoomScene(controller) : new GlassToggleView(controller);
     }
 
-    /// <summary>Alt şerit: PS5 ve TV (renkli nokta ve kısa durum), sağda seçili çeviri motoru.</summary>
+    /// <summary>
+    /// Alt şerit: PS5 ve TV (renkli nokta ve kısa durum), sağda o an kullanılan çeviri (GTA 6 tanınınca Nino'nun havuzu,
+    /// yoksa seçili motor; <see cref="AppController.TranslationSourceText"/>).
+    /// </summary>
     private void ShowStrip()
     {
         var text = Localizer.Current;
-        var settings = controller.Settings;
-        EngineValue.Text = settings.Engine == TranslationEngine.Free ? text["Free"] : settings.Engine.DisplayName();
+        EngineValue.Text = controller.TranslationSourceText;
         // Çeviri kapalıyken eşleşmiş PS5 için kısa yazı (uzun durum yazısı şeride sığmıyordu).
         Ps5Label.Text = controller.UsesGameWindow ? text["Game window"] : controller.UsesCaptureCard ? text["Capture card"] : controller.ConsoleTitle;
         var pairedPs5 = controller.Settings.VideoSource == VideoSource.Ps5 && !controller.IsXbox && controller.Settings.FrameSource == FrameSource.Ps5;

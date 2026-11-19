@@ -97,9 +97,14 @@ class SecretStore(context: Context) {
 }
 
 /** Uygulama ayarları; gizli olanlar [SecretStore]'da. */
-class AppSettings(private val appContext: Context) {
+class AppSettings(private val appContext: Context) : com.couchsubs.mobile.core.DownloadCounter.Store {
     private val prefs: SharedPreferences = appContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
     val secrets = SecretStore(appContext)
+
+    /** Nino: son bilinen toplam indirme sayısı (ana ekrandaki TV'de; internet yokken bu gösterilir). Hiç alınmadıysa 0. */
+    override var downloadTotal: Int
+        get() = prefs.getInt("ninoDownloadTotal", 0)
+        set(value) = prefs.edit().putInt("ninoDownloadTotal", value).apply()
 
     var onboarded: Boolean
         get() = prefs.getBoolean("onboarded", false)
@@ -280,7 +285,7 @@ class AppSettings(private val appContext: Context) {
         get() = SubtitleStyle(fontSize = scaledFontSize(tvFontSize, subtitleScale), placement = tvPlacement,
             bottomPercent = tvBottomPercent,
             // Nino: örtme kipinde saydam kutu İngilizce yazıyı gizleyemez (iki yazı karışır); bu kipte kutu hep koyu.
-            background = if (tvPlacement == SubtitlePlacement.COVER && tvBackground < 60) 100 else tvBackground, backgroundShape = tvBackgroundShape, textColor = textColor, stackPrevious = stackPrevious,
+            background = SubtitleStyle.effectiveBackground(tvPlacement, tvBackground), backgroundShape = tvBackgroundShape, textColor = textColor, stackPrevious = stackPrevious,
             displayMode = tvDisplayMode, font = subtitleFont)
 
     /** Altyazının arandığı bölge (Ayarlar › Altyazı alanı; iPhone ile aynı hazır seçimler ve Özel). */

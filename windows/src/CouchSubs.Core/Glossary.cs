@@ -288,9 +288,8 @@ public sealed class GlossaryStore
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
     }
 
-    /// <summary>%LOCALAPPDATA%\CouchSubs\glossary</summary>
-    public static string UserDirectory { get; } =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", "glossary");
+    /// <summary>%LOCALAPPDATA%\Nino\glossary</summary>
+    public static string UserDirectory { get; } = DataFolder.In("glossary");
 
     /// <summary>Yalnız uygulamayla gelen sözlük (testler).</summary>
     public static GlossaryStore BuiltInOnly() => new(null);

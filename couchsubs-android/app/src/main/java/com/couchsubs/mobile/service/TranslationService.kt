@@ -354,6 +354,8 @@ class TranslationService : Service() {
         val translationPool = TranslationPool(File(filesDir, "translation-pool"), NinoPool.configuredEndpoint(File(filesDir, "pool")),
             app = BuildConfig.VERSION_NAME, language = target, enabled = settings.sharePool && realGame)
         translations = translationPool
+        // Nino: havuzun okuduğu sunucu ayarındaki toplam indirme sayısı ana ekrandaki sayaca verilir (ayrı istek yok).
+        translationPool.onConfigReply = { Services.downloads.accept(it) }
         // Havuza giden satırın oyunu: PS5'in bildirdiği / seçilen oyun (PlayedGame), yoksa son eşleşen paket.
         var playedGame: String? = null
         // Paketler burada açılır (ilk altyazı beklemesin); kapalıysa hiç açılmaz. Bellek yetmezse paketsiz sürülür:
@@ -541,6 +543,8 @@ class TranslationService : Service() {
             val phase = describe(state)
             LiveState.update {
                 it.copy(phase = phase, streaming = state == SessionState.Streaming,
+                    // Nino: bağlanamama nedeni yeniden bağlanırken de ana ekranda kalır (bkz. LiveStatus.nextProblem).
+                    problem = LiveStatus.nextProblem(it.problem, state, phase, xbox),
                     error = if (cardProblem) phase else if (it.error in cardMessages) null else it.error)
             }
         }
@@ -866,7 +870,7 @@ class TranslationService : Service() {
         if (state is SessionState.Disconnected && state.kind == DisconnectKind.OTHER && xbox && state.detail != null) state.detail
         else describePs(state)
 
-    private val CARD_PROBLEMS = setOf(DisconnectKind.NO_CAPTURE_CARD, DisconnectKind.NO_CAMERA_PERMISSION, DisconnectKind.BLACK_PICTURE)
+    private val CARD_PROBLEMS = LiveStatus.CARD_PROBLEMS
     private val cardMessages by lazy {
         setOf(getString(R.string.capture_not_found), getString(R.string.capture_no_permission), getString(R.string.capture_black))
     }
@@ -985,7 +989,7 @@ class TranslationService : Service() {
         lineHandler.removeCallbacksAndMessages(lineExpiry)
         // Nino: yakalama kartı uyarısı oturumla birlikte kalkar (kaynak değişince eski uyarı kalmasın).
         LiveState.update { it.copy(running = false, phase = "", current = "", previous = "", regions = emptyList(), screen = emptyList(),
-            screenState = LiveStatus.ScreenState.IDLE, streaming = false, poolFirstGame = false,
+            screenState = LiveStatus.ScreenState.IDLE, streaming = false, poolFirstGame = false, problem = null,
             error = if (it.error in cardMessages) null else it.error) }
         super.onDestroy()
     }

@@ -60,6 +60,20 @@ class Reading(lines: List<TextLine>) {
         /** Cümle gibi görünen satır bu kadar yüksekse de atılır (karenin %13'ü). */
         const val MAX_SENTENCE_LINE_HEIGHT = 0.13
 
+        private val NAV_MOVE = Regex("""^[\s\-–—'"‘’.,·•]*(u-?\s?turn|turn|keep)\s+(left|right)\b""", RegexOption.IGNORE_CASE)
+        /** Mesafe: sayı (okuma hatasıyla "O"/"o" = 0) + birim. */
+        private val NAV_DISTANCE = Regex("""(\d+(?:[.,]\d+)?|[Oo])\s*(ft|mi|yd|km|m)\b""")
+
+        /** Yalnız yön + mesafelerden oluşan satır. Arkasında söz olan cümle ("Turn right at the lights, okay?") altyazıdır. */
+        fun isNavigationHint(raw: String): Boolean {
+            val text = raw.trim()
+            val move = NAV_MOVE.find(text) ?: return false
+            val rest = text.substring(move.range.last + 1)
+            if (!NAV_DISTANCE.containsMatchIn(rest)) return false
+            // Mesafeler çıkınca geriye yalnız okuma kırıntısı (noktalama, tek tük harf) kalmalı.
+            return NAV_DISTANCE.replace(rest, " ").count { it.isLetterOrDigit() } <= 2
+        }
+
         /**
          * Etiket gibi satır: en çok 4 sözcük ve cümle noktalaması yok ("OHM BOY", "Boat Charters", "YARD SALE"). Altyazı
          * satırı ya uzundur ya da noktalamalıdır ("What?", "We made it!"). Mac: Reading.isLabelLike.
@@ -90,6 +104,13 @@ class Reading(lines: List<TextLine>) {
 
     /** Oyunun düğme ipuçları ("R2 Swing", "△ Pick up") çıkarılmış hali; bunlar altyazı değildir. */
     fun withoutButtonPrompts() = Reading(lines.filter { !ButtonPrompts.isPrompt(it.text) })
+
+    /**
+     * Nino: oyunun yol tarifi satırları ("Turn Right 405 ft 432 ft", "Keep Left 0 ft 2 ft", "U-Turn Left 5 ft") altyazı
+     * değildir: çevrilmez, ekranda da gösterilmez (kullanıcı isteği, 19 Kasım 2026). iPhone/Mac'teki
+     * Reading.withoutNavigationHints ile aynı kural.
+     */
+    fun withoutNavigationHints() = Reading(lines.filter { !isNavigationHint(it.text) })
 
     /**
      * Dev satırlar (tabela, reklam panosu) çıkarılmış hali. Ölçü karenin tamamına göredir ([area]: okunan alanın karedeki

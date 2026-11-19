@@ -81,9 +81,8 @@ public sealed class SubtitleHistory
 
     // --- Dosya ---
 
-    /// <summary>%LOCALAPPDATA%\CouchSubs\history.json.</summary>
-    public static string DefaultFile { get; } =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", "history.json");
+    /// <summary>%LOCALAPPDATA%\Nino\history.json.</summary>
+    public static string DefaultFile { get; } = DataFolder.In("history.json");
 
     private static readonly JsonSerializerOptions Json = new()
     {

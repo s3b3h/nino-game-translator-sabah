@@ -120,7 +120,7 @@ object AppUpdate {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             fun publish() {
                 val latest = prefs.getString(KEY_LATEST, null)
-                state.value = AppVersions.versionToShow(latest, BuildConfig.VERSION_NAME, prefs.getString(KEY_DISMISSED, null))
+                state.value = AppVersions.versionToShow(latest, BuildConfig.VERSION_NAME, hiddenThisRun)
                 newerState.value = AppVersions.newerVersion(latest, BuildConfig.VERSION_NAME)
             }
             publish()
@@ -142,11 +142,20 @@ object AppUpdate {
     /** Uygulamayı Play mi güncelliyor (Play'den kurulan kopya): kart ve Ayarlar satırı gösterilmez. */
     fun managedByPlay(context: Context): Boolean = installedFromPlay(context)
 
-    /** Karttaki ✕: bu sürüm bir daha gösterilmez (daha yenisi çıkınca kart yine gelir). */
+    /**
+     * Karttaki ✕: kart yalnız uygulama kapanana kadar gizlenir; bir sonraki açılışta yeniden görünür. Eskiden bu sürüm
+     * için kalıcı olarak gizleniyordu: ✕'e basan kullanıcı eski sürümde kalıyor, yeni sürümden haberi olmuyordu
+     * (19 Kasım 2026: kullanıcıların çoğu eski sürümde).
+     */
     fun dismiss(context: Context, version: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_DISMISSED, version).apply()
+        hiddenThisRun = version
+        // Eski sürümlerden kalan kalıcı gizleme kaydı temizlenir.
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEY_DISMISSED).apply()
         state.value = null
     }
+
+    /** Bu çalışmada ✕ ile gizlenen sürüm (kalıcı değil). */
+    @Volatile private var hiddenThisRun: String? = null
 
     private fun fetch(): Pair<Int, String>? {
         val connection = (URL(LATEST_URL).openConnection() as? HttpURLConnection) ?: return null

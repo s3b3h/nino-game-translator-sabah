@@ -64,7 +64,8 @@ final class PhoneModel: ObservableObject {
                 || settings.onlineEngine != oldValue.onlineEngine || settings.geminiModel != oldValue.geminiModel
                 || settings.openAIModel != oldValue.openAIModel || settings.claudeModel != oldValue.claudeModel
             if translationChanged { Task { await refreshTranslatorStatus() } }
-            if isRunning, translationChanged || settings.fastSubtitleDetection != oldValue.fastSubtitleDetection {
+            if isRunning, translationChanged || settings.fastSubtitleDetection != oldValue.fastSubtitleDetection
+                || settings.translateCorners != oldValue.translateCorners {
                 makePipeline()
             }
         }
@@ -79,6 +80,10 @@ final class PhoneModel: ObservableObject {
     @Published private(set) var demoLine: DemoSamples.Line?
     private var demoTask: Task<Void, Never>?
     @Published private(set) var sessionState: SessionState = .disconnected(.stopped)
+    /// Çeviri sürerken PS5'e (ya da Xbox'a) en son neden bağlanılamadığı. Oturum "koptu → bağlanıyor → koptu" diye
+    /// döndüğü için neden, yeniden denenirken de ekranda kalır; görüntü gelince ve durdurulunca silinir. Eskiden ana
+    /// ekran her durumda yalnız "Bağlanıyor…" yazıyordu, kullanıcı nedenini göremiyordu.
+    @Published private(set) var lastFailure: DisconnectReason?
     @Published private(set) var tvClients = 0
     @Published private(set) var lastSource = ""
     @Published private(set) var lastTranslation = ""
@@ -124,6 +129,9 @@ final class PhoneModel: ObservableObject {
     @Published private(set) var screenItems: [ScreenTranslation.Item] = []
     /// "Ekranı çevir" düğmesinin durumu: çeviri sürüyor ya da sonuçlar ekranda.
     @Published private(set) var screenState: ScreenState = .idle
+    /// Nino: kendiliğinden çevrilen köşe yazıları ve telefon mesajı (sol üstteki ipucu kutusu, mesaj/arama kartı);
+    /// telefon ekranında yazının kendi yerinde, yarı saydam görünür (bkz. `ScreenHints`). Altyazı TV'deyken boştur.
+    @Published private(set) var hintItems: [ScreenTranslation.Item] = []
 
     enum ScreenState: Equatable { case idle, working, shown }
 
@@ -168,6 +176,9 @@ final class PhoneModel: ObservableObject {
     private var pipeline: SubtitlePipeline?
     /// Ek alanları (görev, telefon, bildirim) okuyup çeviren; çeviri sürerken ve ek alan varken var (Mac ile aynı).
     private var regionWatcher: RegionWatcher?
+    /// Nino: köşe yazılarını ve telefon mesajlarını kendiliğinden tanıyıp çeviren (Mac'teki "köşe çevirisi" ile aynı
+    /// mantık, CouchSubsCore'da); çeviri sürerken ve `settings.translateCorners` açıkken var.
+    private var hints: ScreenHints?
     /// Hatta aynı anda tek kare girer. Durdurma ve yeni hat kapıyı sıfırlar; takılan okuma hattı yeniden kurdurur (Mac ile aynı).
     private var frameGate = FrameGate()
     private var savedKeys: Set<TranslationEngine> = []
@@ -302,7 +313,8 @@ final class PhoneModel: ObservableObject {
         let doneAny = (done || xboxReady && store.load(Bool.self, for: StoreKey.setupComplete) == true)
         step = doneAny ? .done : skipped ? .output : .welcome
         disabledPacks = Set(defaults.stringArray(forKey: Self.disabledPacksKey) ?? [])
-        let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        // Deneme karesi (hata ayıklama, COUCHSUBS_TEST_FRAME): testlerdeki gibi havuza, sunucuya ve PS5'e dokunulmaz.
+        let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil || Self.testFramesRequested
         if !testing {
             RemotePlayLog.enable()
             RemotePlayLog.write("Nino iOS \(AppIdentity.version)")
@@ -536,6 +548,7 @@ final class PhoneModel: ObservableObject {
             let capturedAt = SubtitleStabilizer.uptimeMs()
             Task { @MainActor in await self?.handle(frame, capturedAt: capturedAt) }
         }
+        lastFailure = nil
         session.start()
         self.session = session
         startKeeper()
@@ -613,10 +626,17 @@ final class PhoneModel: ObservableObject {
         pipeline = nil
         regionWatcher?.reset()
         regionWatcher = nil
+        hints?.reset()
+        hints = nil
+        #if DEBUG
+        debugFrameTask?.cancel()
+        debugFrameTask = nil
+        #endif
         // Yeni "Başlat" eski oturumdan kalan (belki takılmış) okumayı beklemeden temiz başlar.
         frameGate.reset()
         isRunning = false
         onlineIssue = nil
+        lastFailure = nil
         sessionState = .disconnected(.stopped)
         phoneHide()
         keepScreenAwake(false)
@@ -653,6 +673,8 @@ final class PhoneModel: ObservableObject {
     private func outputChanged() {
         server.sendsToTV = settings.output.showsOnTV
         if !settings.output.showsOnComputer { phoneHide() }
+        // Köşe çevirileri altyazıyla aynı yerde görünür: telefona geçilince gelir, TV'ye geçilince telefondan kalkar.
+        showHints(hints?.items ?? [])
         guard isRunning else { return }
         if settings.output.showsOnTV {
             startKeeper()
@@ -699,6 +721,8 @@ final class PhoneModel: ObservableObject {
     private func sessionStateChanged(_ state: SessionState) {
         let wasStreaming = sessionState == .streaming
         sessionState = state
+        // Durdurulduktan sonra geç gelen durum nedeni geri getirmesin (durum bir Task üzerinden gelir).
+        if isRunning { lastFailure = Self.failure(after: state, previous: lastFailure, xbox: isXbox) }
         // Akış sürerken kendiliğinden koptu (kullanıcı durdurmadı): tercih açıksa bildirim (uygulama etkin değilse).
         if wasStreaming, isRunning, case .disconnected(let reason) = state, reason != .stopped, notifiesDisconnect {
             onConnectionLost()
@@ -707,6 +731,7 @@ final class PhoneModel: ObservableObject {
         if case .disconnected = state {
             pipeline?.reset()
             regionWatcher?.reset()
+            hints?.reset()
             server.clear()
         }
     }
@@ -743,6 +768,21 @@ final class PhoneModel: ObservableObject {
         // Ek alan okuyucusu yeni dil ve motorla, ilk ek alan karesinde yeniden kurulur.
         regionWatcher?.reset()
         regionWatcher = nil
+        // Nino: köşe ve mesaj çevirisi de yeni dil ve motorla yeniden kurulur. Ayar kapalıysa okuma hattı eskisi gibi
+        // çalışır (mesaj kartı altyazı sayılır, köşeler okunmaz).
+        hints?.reset()
+        hints = nil
+        if settings.translateCorners {
+            let hints = makeHints()
+            self.hints = hints
+            // Mesaj ve arama kartı altyazı olarak çevrilmez; kartın üstüne konmak üzere buraya gelir.
+            pipeline.onMessage = { [weak hints] card in hints?.message(card) }
+            // Oyunun menü/harita ekranında altyazı okunmaz (yer adları altyazı sanılmasın).
+            let menuFlag = hints.menuFlag
+            pipeline.isMenuScreen = { menuFlag.active }
+            // PS5'in kendi (hedef dildeki) ekranı: köşeler de bir süre çevrilmez.
+            pipeline.onAlreadyTarget = { [weak hints] in hints?.noteSystemScreen() }
+        }
         connectPacks(to: pipeline)
         startTranslationSync()
         onlineIssue = nil
@@ -758,6 +798,40 @@ final class PhoneModel: ObservableObject {
         return watcher
     }
 
+    /// Nino: köşe ve mesaj çevirisi (bkz. `ScreenHints`). Çeviri sırası Mac'tekiyle aynı: havuzdaki hazır çeviri, sunucunun
+    /// havuzu (Claude), sonra seçili çevirmen. Görev şeridi yalnız cihazın çevirmeniyle çevrilir.
+    private func makeHints() -> ScreenHints {
+        let translator = makeTranslator()
+        let pooled = settings.sharePool && settings.sourceLanguage == "en" && !offline
+        let (translations, packs, sense) = (translations, packs, gameChoice.sense)
+        // Köşeler ana altyazıdan ayrı okuyucularla okunur. İpucu satırlarında simge çoğu zaman yazının başındadır;
+        // menü aramasında simge aranmaz.
+        let hints = ScreenHints(reader: VisionReader(language: settings.sourceLanguage, edgeIcons: true),
+                                menuReader: VisionReader(language: settings.sourceLanguage)) { piece, kind in
+            if pooled, kind != .objective {
+                if let known = translations.store.match(piece) { return known }
+                let game = kind == .message ? translations.poolGame(sense.current?.name, packs.searchScope)
+                    : packs.searchScope ?? sense.current?.name
+                if let fresh = await translations.translate(piece, game: game) { return fresh }
+            }
+            return try await translator.translate(piece)
+        }
+        hints.targetLanguage = settings.targetLanguage
+        hints.onLog = { SubtitleLog.write($0) }
+        hints.onChange = { [weak self] items in self?.showHints(items) }
+        return hints
+    }
+
+    /// Köşe ve mesaj çevirileri değişti: telefonda yazının yerinde gösterilir, TV'ye "katman" olarak gider (o an görünen
+    /// altyazıyı silmez; Mac'teki `sendOverlays` gibi). Kullanıcı "Ekranı çevir"e bastıysa onunkiler önceliklidir:
+    /// TV'ye gönderilmez, telefonda da gizlenir; onlar kalkınca geri gelir (`hideScreen`).
+    private func showHints(_ items: [ScreenTranslation.Item]) {
+        let shown = settings.output.showsOnComputer ? items : []
+        if shown != hintItems { hintItems = shown }
+        guard isRunning, screenState == .idle else { return }
+        if items.isEmpty { server.clearScreen() } else { server.sendScreen(items, durationMs: 120_000, overlay: true) }
+    }
+
     private func handle(_ frame: CGImage, capturedAt: Int) async {
         framePreview.image = frame
         guard let current = pipeline else { return }
@@ -766,6 +840,13 @@ final class PhoneModel: ObservableObject {
         let areas = settings.activeExtraAreas
         if regionWatcher == nil, !areas.isEmpty { regionWatcher = makeRegionWatcher(packLookup: regionPackLookup) }
         regionWatcher?.offer(frame, areas: areas)
+        // Nino: köşeler 1,5 sn'de bir, ayrı ve düşük öncelikli görevde okunur (hemen döner; altyazıyı bekletmez).
+        // "Ekranı çevir" sürerken ya da sonuçları ekrandayken okunmaz.
+        if screenState == .idle {
+            hints?.offer(frame, subtitleBox: current.lastBox, subtitleText: lastSource)
+        } else {
+            hints?.clearStaleMessage()
+        }
         // Önceki kare hâlâ işleniyorsa bu kare atlanır. Tek okuma bitmezse çeviri tamamen duruyor, "Durdur / Başlat"
         // düzeltmiyordu (Mac'te görüldü, 2026-11-13); takılan okuma hattı yeniden kurdurur.
         var entry = frameGate.enter(now: SubtitleStabilizer.uptimeMs())
@@ -790,7 +871,7 @@ final class PhoneModel: ObservableObject {
 
     private func identifyGameIfNeeded(_ frame: CGImage) {
         // Paketten tahmin edilen oyun kesin değildir: havuz öncelikli oyun bilinmiyorsa ekrandan tanıma yine denenir.
-        guard isRunning, settings.sharePool, settings.sourceLanguage == "en", identifyTask == nil,
+        guard !offline, isRunning, settings.sharePool, settings.sourceLanguage == "en", identifyTask == nil,
               packs.searchScope == nil || !translations.isPoolFirst(translations.poolGame(gameChoice.sense.current?.name, packs.searchScope)) else { return }
         let known = gameChoice.sense.current
         let wait: TimeInterval
@@ -898,7 +979,8 @@ final class PhoneModel: ObservableObject {
         let active = packsActive
         let disabled = disabledPacks
         // Nino: sunucunun çeviri havuzu bütün dillerde, kaynak İngilizceyken ve ortak havuz açıkken.
-        let pooled = settings.sharePool && settings.sourceLanguage == "en"
+        // (Hata ayıklamadaki deneme karesinin uydurma satırları havuza gitmez, sunucuya sorulmaz: `offline`.)
+        let pooled = settings.sharePool && settings.sourceLanguage == "en" && !offline
         // Kapatılan paket: paketler tek sözlükte birleştiği için eşleşmeyi veren paket, bulanık aramanın kapsamından
         // (son tam eşleşmenin paketi) okunur; o paket kapalıysa satır motorla çevrilir.
         let packLookup: ((String) -> PackMatch?)? = !active ? nil : disabled.isEmpty ? { packs.match($0) } : { text in
@@ -919,7 +1001,7 @@ final class PhoneModel: ObservableObject {
         // Ek alanlar yalnız pakette aranır; havuza gitmez (arayüz ve bildirim yazıları kişisel olabilir).
         regionPackLookup = packLookup
         regionWatcher?.packLookup = regionPackLookup
-        guard settings.sourceLanguage == "en" else {
+        guard settings.sourceLanguage == "en", !offline else {
             pipeline.onPackMiss = nil
             return
         }
@@ -944,7 +1026,7 @@ final class PhoneModel: ObservableObject {
     /// Nino: oyunun havuzdaki çevirilerini oyun başlarken ve birkaç dakikada bir indirir.
     private func startTranslationSync() {
         translationSync?.cancel()
-        guard settings.sharePool, settings.sourceLanguage == "en" else { return }
+        guard settings.sharePool, settings.sourceLanguage == "en", !offline else { return }
         let (translations, packs, sense) = (translations, packs, gameChoice.sense)
         translationSync = Task {
             await translations.ping(game: packs.searchScope ?? sense.current?.name)
@@ -972,6 +1054,10 @@ final class PhoneModel: ObservableObject {
     /// Nino: havuz öncelikli oyunda (sunucunun listesi, varsayılan GTA 6) çeviri yalnız havuzdan, gelmezse ücretsiz
     /// çeviriden; kullanıcının anahtarlı motoru çağrılmaz. Ortak havuz ayarı kapalı olsa da (kullanıcı kararı).
     private func makeTranslator() -> TextTranslator {
+        #if DEBUG
+        // Deneme karesi: simülatörde Apple çevirisi olmayabilir; sabit, sahte bir çevirmen (yalnız bu yolda).
+        if debugFrames { return DebugFrameTranslator(target: settings.targetLanguage) }
+        #endif
         let (source, target) = (settings.sourceLanguage, settings.targetLanguage)
         let free = Translator(source: source, target: target,
                               cache: Self.translationCache(engine: Translator.engineID, source: source, target: target))
@@ -1197,6 +1283,8 @@ final class PhoneModel: ObservableObject {
         screenState = .idle
         server.clearScreen()
         server.clear()
+        // Nino: "Ekranı çevir" sonuçları kalktı; kendiliğinden çevrilen köşe yazıları (hâlâ ekrandaysa) geri gelir.
+        if let items = hints?.items, !items.isEmpty { showHints(items) }
     }
 
     /// Ekran çevrilemedi: nedeni telefonda ve TV'de birkaç saniye görünür.
@@ -1243,27 +1331,117 @@ final class PhoneModel: ObservableObject {
         case .connecting: return String(localized: "Connecting…")
         case .disconnected(let reason):
             guard isRunning else { return String(localized: "Not connected") }
-            switch reason {
-            case .consoleAsleep: return String(localized: "Turn on your PS5")
-            case .inUse: return String(localized: "Remote Play is in use on another device")
-            case .refused: return String(localized: "The PS5 refused the connection. Set up the PS5 again.")
-            case .loginPasscode:
-                return String(localized: "The PS5 asks for this account's login passcode. Enter it in Settings, or turn off this account's login passcode on the PS5.")
-            case .loginPasscodeIncorrect:
-                return String(localized: "The PS5 didn't accept the login passcode in Settings. Correct it, or turn off this account's login passcode on the PS5.")
-            case .registrationInvalid: return String(localized: "The PS5 didn't accept this pairing. Pair the PS5 again with the second account in Settings.")
-            case .remotePlayDisabled: return String(localized: "Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again.")
-            case .noPicture: return String(localized: "No picture from the PS5. Is Remote Play turned off, or is the PS5 in rest mode? Check, then start again.")
-            case .notFound(let host):
-                return String(format: String(localized: "PS5 not found at %@. Make sure it is on and on the same network. Reconnecting…"), host)
-            case .network: return String(localized: "Can't reach the PS5. Reconnecting…")
-            // Eskiden "Yeniden bağlanılıyor…" ile anlamsız libchiaki metni (Unknown Session Request Error) vardı.
-            case .rejected(let code?):
-                return String(format: String(localized: "The PS5 rejected the connection (code %@). Another Remote Play app (PS Remote Play) may be open, or the PS5 may be in another session. Close PS Remote Play, restart the PS5, then try again."), String(format: "0x%08x", code))
-            case .rejected(nil): return String(localized: "The PS5 didn't start the session. Another Remote Play app (PS Remote Play) may be open, or the PS5 may be in another session. Close PS Remote Play, restart the PS5, then try again.")
-            case .other(let detail) where isXbox: return detail
-            case .other, .stopped: return String(localized: "Reconnecting…")
+            return failureText(reason) ?? String(localized: "Reconnecting…")
+        }
+    }
+
+    /// Ana ekranda "Bağlanıyor…" yerine gösterilen neden: çeviri sürüyor, görüntü yok ve son deneme bir nedenle düştü.
+    /// Görüntü geliyorsa ya da neden bilinmiyorsa nil ("Bağlanıyor…" kalır).
+    var connectionProblemText: String? {
+        guard isRunning, !isDemo, sessionState != .streaming, let lastFailure else { return nil }
+        return failureText(lastFailure)
+    }
+
+    #if DEBUG
+    /// Hata ayıklama: PS5'siz, "bağlanılamıyor" görünümünü ekran görüntüsü için açar (COUCHSUBS_FAKE_PROBLEM=1).
+    func debugShowConnectionProblem(_ reason: DisconnectReason = .rejected(0x80108bff)) {
+        isRunning = true
+        lastFailure = reason
+        sessionState = .connecting
+    }
+
+    /// Hata ayıklama: COUCHSUBS_TEST_FRAME=<png>[,<png>…] verilmişse o dosyalar (simülatörde Mac'teki yollar).
+    static var debugTestFramePaths: [String]? {
+        guard let value = ProcessInfo.processInfo.environment["COUCHSUBS_TEST_FRAME"], !value.isEmpty else { return nil }
+        return value.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) }
+    }
+
+    /// Deneme karesi sürüyor: havuz, sunucu, oyun tanıma ve PS5 kapalı; çeviri sabit sahte çevirmenden.
+    private(set) var debugFrames = false
+    private var debugFrameTask: Task<Void, Never>?
+
+    /// Hata ayıklama: PS5'e bağlanmadan verilen görüntüleri saniyede üç kez okuma hattına kare olarak verir (çeviri
+    /// başlamış gibi; altyazı telefonda). Birden çok görüntü verilirse 2,4 sn'de bir sıradakine geçilir (oyunda altyazı
+    /// ile mesaj kartı aynı karede okunmaz: biri altyazılı, biri kartlı iki kareyle ikisi birlikte denenir).
+    /// Altyazı sunucusu başlatılmaz (8787 dinlenmez), ağa çıkılmaz.
+    func debugStartTestFrames(_ paths: [String]) {
+        let frames = paths.compactMap { path -> CGImage? in
+            guard let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil) else { return nil }
+            return CGImageSourceCreateImageAtIndex(source, 0, nil)
+        }
+        guard !frames.isEmpty, !isRunning else { return }
+        debugFrames = true
+        if settings.output != .computer { settings.output = .computer }
+        makePipeline()
+        isRunning = true
+        runningSince = Date()
+        sessionState = .streaming
+        debugFrameTask = Task { [weak self] in
+            var tick = 0
+            while !Task.isCancelled {
+                await self?.handle(frames[(tick / 8) % frames.count], capturedAt: SubtitleStabilizer.uptimeMs())
+                tick += 1
+                try? await Task.sleep(nanoseconds: 300_000_000)
             }
+        }
+    }
+    #endif
+
+    /// Yeni durumdan sonra saklanacak neden: görüntü gelince silinir, yeniden denenirken korunur, gösterilecek bir
+    /// metni olmayan kopmalar (durduruldu, PS5'te ayrıntısız "yeniden bağlanılıyor") eskisini değiştirmez.
+    static func failure(after state: SessionState, previous: DisconnectReason?, xbox: Bool) -> DisconnectReason? {
+        switch state {
+        case .streaming: return nil
+        case .connecting: return previous
+        case .disconnected(let reason):
+            switch reason {
+            case .stopped: return previous
+            case .other: return xbox ? reason : previous
+            default: return reason
+            }
+        }
+    }
+
+    /// Hata ayıklamadaki deneme karesi sürerken ağa çıkılmaz (havuz, sunucu, oyun tanıma); gerçek sürümde hep false.
+    private var offline: Bool {
+        #if DEBUG
+        return debugFrames
+        #else
+        return false
+        #endif
+    }
+
+    /// Deneme karesi istendi mi (yalnız hata ayıklama derlemesinde; bkz. `debugTestFramePaths`).
+    private static var testFramesRequested: Bool {
+        #if DEBUG
+        return debugTestFramePaths != nil
+        #else
+        return false
+        #endif
+    }
+
+    /// Kopma nedeninin kullanıcıya söylenen hâli; söylenecek bir şey yoksa nil.
+    private func failureText(_ reason: DisconnectReason) -> String? {
+        switch reason {
+        case .consoleAsleep: return String(localized: "Turn on your PS5")
+        case .inUse: return String(localized: "Remote Play is in use on another device")
+        case .refused: return String(localized: "The PS5 refused the connection. Set up the PS5 again.")
+        case .loginPasscode:
+            return String(localized: "The PS5 asks for this account's login passcode. Enter it in Settings, or turn off this account's login passcode on the PS5.")
+        case .loginPasscodeIncorrect:
+            return String(localized: "The PS5 didn't accept the login passcode in Settings. Correct it, or turn off this account's login passcode on the PS5.")
+        case .registrationInvalid: return String(localized: "The PS5 didn't accept this pairing. Pair the PS5 again with the second account in Settings.")
+        case .remotePlayDisabled: return String(localized: "Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again.")
+        case .noPicture: return String(localized: "No picture from the PS5. Is Remote Play turned off, or is the PS5 in rest mode? Check, then start again.")
+        case .notFound(let host):
+            return String(format: String(localized: "PS5 not found at %@. Make sure it is on and on the same network. Reconnecting…"), host)
+        case .network: return String(localized: "Can't reach the PS5. Reconnecting…")
+        // Eskiden "Yeniden bağlanılıyor…" ile anlamsız libchiaki metni (Unknown Session Request Error) vardı.
+        case .rejected(let code?):
+            return String(format: String(localized: "The PS5 rejected the connection (code %@). Another Remote Play app (PS Remote Play) may be open, or the PS5 may be in another session. Close PS Remote Play, restart the PS5, then try again."), String(format: "0x%08x", code))
+        case .rejected(nil): return String(localized: "The PS5 didn't start the session. Another Remote Play app (PS Remote Play) may be open, or the PS5 may be in another session. Close PS Remote Play, restart the PS5, then try again.")
+        case .other(let detail): return isXbox ? detail : nil
+        case .stopped: return nil
         }
     }
 
@@ -1343,6 +1521,33 @@ final class PhoneModel: ObservableObject {
         "http://\(NetworkAddress.near(tv.host.isEmpty ? "192.168.1.1" : tv.host) ?? "127.0.0.1"):\(serverPort)"
     }
 }
+
+#if DEBUG
+/// Hata ayıklama (COUCHSUBS_TEST_FRAME): deneme karelerindeki yazıların sabit çevirisi. Gerçek çevirmen değildir;
+/// yalnız simülatörde ekran görüntüsü alınırken, ağa çıkmadan ekranda çeviri görünsün diye vardır. Bilmediği yazıyı
+/// olduğu gibi döndürür.
+private struct DebugFrameTranslator: TextTranslator {
+    let target: String
+
+    private static let lines: [(source: String, tr: String, ar: String)] = [
+        ("HELP", "Yardım", "مساعدة"),
+        ("You can swim underwater to avoid being seen by the police. Stay close to the shore to get out quickly.",
+         "Polise görünmemek için su altında yüzebilirsin. Hızlıca çıkabilmek için kıyıya yakın dur.",
+         "يمكنك السباحة تحت الماء حتى لا تراك الشرطة. ابقَ قريبًا من الشاطئ لتخرج بسرعة."),
+        ("Hurry home babe", "Çabuk eve gel bebeğim", "عُد إلى البيت بسرعة يا حبيبي"),
+        ("I told you not to come back here.", "Sana buraya geri dönme demiştim.", "قلت لك ألا تعود إلى هنا."),
+    ]
+
+    func translate(_ text: String) async throws -> String {
+        let key = TextMatch.normalize(text)
+        guard let line = Self.lines.first(where: {
+            let known = TextMatch.normalize($0.source)
+            return known == key || (key.count >= 12 && TextMatch.isSimilar(known, key, threshold: 0.8))
+        }) else { return text }
+        return target.hasPrefix("ar") ? line.ar : line.tr
+    }
+}
+#endif
 
 /// Son PS5 karesi; yalnız bölge önizlemesi izler (her karede bütün ekranlar yeniden çizilmesin).
 @MainActor

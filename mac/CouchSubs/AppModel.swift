@@ -136,6 +136,8 @@ protocol StreamControlling: AnyObject {
     var onState: ((SessionState) -> Void)? { get set }
     /// PS5 ağda yeni bir adreste bulundu; yeni adres kaydedilir.
     var onConsoleMoved: ((RegisteredConsole) -> Void)? { get set }
+    /// Nino: macOS'un Yerel Ağ izni kapalı görünüyor ya da artık görünmüyor (yalnız gerçek PS5 oturumu bildirir).
+    var onLocalNetworkBlocked: ((Bool) -> Void)? { get set }
     func start()
     func stop()
     func reconnectNow()
@@ -143,6 +145,8 @@ protocol StreamControlling: AnyObject {
 
 extension StreamControlling {
     var onAudio: (([Float]) -> Void)? { get { nil } set {} }
+    /// Pencere ve yakalama kartı kaynakları PS5'i ağda aramaz; bildirecekleri bir şey yok (bkz. `LocalNetworkAccess`).
+    var onLocalNetworkBlocked: ((Bool) -> Void)? { get { nil } set {} }
     var wantsAudio: Bool { get { false } set {} }
 }
 
@@ -464,6 +468,9 @@ final class AppModel: ObservableObject {
     @Published var welcomeConsole: GameConsole?
     @Published var accountId: Data?
     @Published var console: RegisteredConsole?
+    /// Nino: macOS'un Yerel Ağ izni kapalı görünüyor (PS5 aranırken yerel adreslere hiçbir paket gönderilemedi). PS5
+    /// durumunda, ana ekranda ve Sistem sağlığı'nda uyarı gösterilir; çeviri durunca ya da PS5 bağlanınca kalkar.
+    @Published private(set) var localNetworkBlocked = false
     /// İkinci hesabın PS5 giriş şifresi Anahtarlık'ta kayıtlı.
     @Published private(set) var hasLoginPasscode: Bool
     @Published var tv: LGTV?
@@ -704,13 +711,14 @@ final class AppModel: ObservableObject {
         streamBackground = StreamBackground(stored: defaults.string(forKey: StoreKey.streamBackground))
         // Pencereler açılmadan önce: açılışta açık temanın bir an görünmesi olmaz.
         curated.appearance.apply()
-        let poolFile = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(AppIdentity.name, isDirectory: true).appendingPathComponent("pool.json")
+        let poolFile = AppFolder.support.appendingPathComponent("pool.json")
         let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-        // PS5 bağlantı günlüğü (~/Library/Logs/CouchSubs/remoteplay.log); eşleştirme olmazsa kullanıcı bunu gönderir.
+        // PS5 bağlantı günlüğü (~/Library/Logs/Nino/remoteplay.log); eşleştirme olmazsa kullanıcı bunu gönderir.
         if !testing {
             RemotePlayLog.enable()
             RemotePlayLog.write("Nino \(AppIdentity.version), macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
+            // Klasörler bu açılışta taşındıysa/kopyalandıysa ya da taşınamadıysa günlükte görünsün.
+            AppFolders.launchNotes.forEach(RemotePlayLog.write)
             // Altyazı günlüğü (aynı klasörde altyazi.log): okunan satırlar ve akıbetleri, görüntü duraklamaları.
             SubtitleLog.enable()
             // Ağ türü (kablo/Wi-Fi) ilk oturum başlamadan bilinsin.
@@ -789,8 +797,7 @@ final class AppModel: ObservableObject {
     /// yeni bir oyun tanınınca da (`packsForGame`). Yeni paket inince paketler yeniden okunur.
     private func startPackUpdates() {
         guard let base = PackUpdater.configuredBaseURL() else { return }
-        let state = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(AppIdentity.name, isDirectory: true).appendingPathComponent("packs-remote.json")
+        let state = AppFolder.support.appendingPathComponent("packs-remote.json")
         let updater = PackUpdater(baseURL: base, directory: GamePackLibrary.userDirectory, stateFile: state)
         packUpdater = updater
         let packs = self.packs
@@ -1155,6 +1162,11 @@ final class AppModel: ObservableObject {
         // gitmeden söylenir.
         guard let host = ManualAddress.normalize(typed) else {
             RemotePlayLog.write("PS5 kaydı: geçersiz adres yazıldı: \(typed)")
+            throw AppError.badAddress
+        }
+        // 0.0.0.0 gibi PS5'in adresi olamayacak bir adres hiçbir zaman kaydedilmez.
+        guard ConsoleAddress.isUsable(host) else {
+            RemotePlayLog.write("PS5 kaydı: kullanılamaz adres yazıldı: \(typed)")
             throw AppError.badAddress
         }
         guard let value = Registration.pin(from: pin) else { throw AppError.invalidPin }
@@ -1699,6 +1711,7 @@ final class AppModel: ObservableObject {
         } else { return }
         session.onState = { [weak self] state in Task { @MainActor in self?.sessionStateChanged(state) } }
         session.onConsoleMoved = { [weak self] moved in Task { @MainActor in self?.consoleMoved(moved) } }
+        session.onLocalNetworkBlocked = { [weak self] blocked in Task { @MainActor in self?.localNetworkChanged(blocked: blocked) } }
         session.onFrame = { [weak self] frame in
             // Karenin geldiği an: canlı altyazı alanındaki gecikme buradan TV'ye gidene kadar ölçülür.
             let capturedAt = SubtitleStabilizer.uptimeMs()
@@ -2321,8 +2334,7 @@ final class AppModel: ObservableObject {
         return center > 0.32 && center < 0.68
     }
     /// Nino: oyunların altyazı yeri öğrenilir (bkz. `SubtitleLayout`); bu çizginin altındaki yazılar altyazı sayılmaz.
-    private lazy var layoutStore = SubtitleLayoutStore(file: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent(AppIdentity.name, isDirectory: true).appendingPathComponent("subtitle-layout.json"))
+    private lazy var layoutStore = SubtitleLayoutStore(file: AppFolder.support.appendingPathComponent("subtitle-layout.json"))
     /// Şu anki oyun (çeviri paketinden); bilinmiyorsa "genel".
     private var currentGame: String { packs.searchScope ?? "genel" }
     private var currentHudTop: Double? { layoutStore.current.hudTop(for: currentGame) }
@@ -2745,8 +2757,7 @@ final class AppModel: ObservableObject {
 
     /// ~/Library/Application Support/CouchSubs/Translations içindeki kalıcı çeviri önbelleği.
     private static func translationCache(engine: String, source: String, target: String) -> TranslationCache {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let directory = base.appendingPathComponent(AppIdentity.name, isDirectory: true)
+        let directory = AppFolder.support
             .appendingPathComponent("Translations", isDirectory: true)
         return TranslationCache.shared(in: directory, engine: engine, source: source, target: target)
     }
@@ -2914,6 +2925,7 @@ final class AppModel: ObservableObject {
         sleepActivity = nil
         isRunning = false
         onlineIssue = nil
+        localNetworkBlocked = false
         sessionState = .disconnected(.stopped)
         windowStatus = .stopped
         cardStatus = .stopped
@@ -2941,6 +2953,8 @@ final class AppModel: ObservableObject {
             }
         }
         sessionState = state
+        // PS5 bağlandıysa yerel ağa ulaşılıyor demektir.
+        if state == .streaming, localNetworkBlocked { localNetworkBlocked = false }
         updateGameProbe(connected: state == .streaming)
         // Bağlantı koptuysa TV'de eski altyazı kalmasın.
         if case .disconnected = state {
@@ -2990,7 +3004,23 @@ final class AppModel: ObservableObject {
     var ps5StatusText: String {
         if usesGameWindow { return windowStatusText }
         if usesCaptureCard { return cardStatusText }
-        return Self.statusText(sessionState, running: isRunning, pairedName: console.map { $0.name.isEmpty ? "PS5" : $0.name })
+        return Self.statusText(sessionState, running: isRunning, pairedName: console.map { $0.name.isEmpty ? "PS5" : $0.name },
+                               localNetworkBlocked: localNetworkBlocked)
+    }
+
+    /// Yerel Ağ izni uyarısı (PS5 durumu, ana ekran ve Sistem sağlığı aynı metni gösterir).
+    static var localNetworkWarning: String {
+        String(localized: "This Mac's local network permission may be off. Turn on Nino in System Settings › Privacy & Security › Local Network, then restart Nino.")
+    }
+
+    /// Sistem Ayarları › Gizlilik ve Güvenlik › Yerel Ağ.
+    static let localNetworkSettingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocalNetwork")!
+
+    /// Oturumun bildirdiği yerel ağ izni işareti (bkz. `LocalNetworkAccess`); çeviri sürmüyorsa yok sayılır.
+    func localNetworkChanged(blocked: Bool) {
+        let value = blocked && isRunning
+        if value != localNetworkBlocked { localNetworkBlocked = value }
+        if value { SubtitleLog.write("PS5: yerel ağ izni kapalı görünüyor") }
     }
 
     /// Görüntü bu Mac'teki Remote Play penceresinden okunurken durumun metni.
@@ -3010,14 +3040,23 @@ final class AppModel: ObservableObject {
     /// PS5 durumunun kullanıcıya gösterilecek metni. `pairedName`: eşleşmiş PS5'in adı; çeviri başlamamışken eşleşmiş
     /// PS5 için "Bağlı değil" yerine "eşleşti, başlatınca bağlanır" denir (eskiden eşleştirme başarılı olsa da ana ekran
     /// "Bağlı değil" diyordu).
-    static func statusText(_ state: SessionState, running: Bool, pairedName: String? = nil) -> String {
+    /// `localNetworkBlocked`: macOS'un Yerel Ağ izni kapalı görünüyor; PS5'e ulaşılamıyorsa (bulunamadı, ağ hatası) asıl
+    /// neden budur ve o söylenir. PS5'in yanıt verdiği durumlarda (kullanımda, reddetti, şifre…) işaret yok sayılır.
+    static func statusText(_ state: SessionState, running: Bool, pairedName: String? = nil,
+                           localNetworkBlocked: Bool = false) -> String {
         switch state {
         case .streaming: return String(localized: "Connected")
-        case .connecting: return String(localized: "Connecting…")
+        case .connecting: return localNetworkBlocked && running ? localNetworkWarning : String(localized: "Connecting…")
         case .disconnected(let reason):
             guard running else {
                 guard let pairedName else { return String(localized: "Not connected") }
                 return String(format: String(localized: "Paired with %@. Connects when you start translating."), pairedName)
+            }
+            if localNetworkBlocked {
+                switch reason {
+                case .notFound, .network, .other: return localNetworkWarning
+                default: break
+                }
             }
             return disconnectText(reason)
         }
@@ -3055,6 +3094,11 @@ final class AppModel: ObservableObject {
     /// PS5'in adresi değişti: sonraki açılışlar yeni adresle başlasın.
     private func consoleMoved(_ moved: RegisteredConsole) {
         guard console != nil else { return }
+        // Geçersiz adres (0.0.0.0, boş) kaydedilmez: kaydedilirse PS5 bir daha bulunamıyordu.
+        guard ConsoleAddress.isUsable(moved.host) else {
+            RemotePlayLog.write("PS5'in yeni adresi geçersiz (\"\(moved.host)\"); kaydedilmedi")
+            return
+        }
         console = moved
         store.save(moved, for: StoreKey.console)
     }

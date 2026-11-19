@@ -9,6 +9,10 @@
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>CouchSubs</AssemblyName>
+    <!-- Nino: Görev Yöneticisi, Windows Güvenlik Duvarı sorusu ve dosya özellikleri bu iki adı gösterir. Dosya adı
+         (CouchSubs.exe) değişmez: Velopack, güvenlik duvarı kuralı ve kısayollar ona bağlı. -->
+    <AssemblyTitle>Nino</AssemblyTitle>
+    <Product>Nino</Product>
     <RootNamespace>CouchSubs.App</RootNamespace>
     <ApplicationIcon>Assets\CouchSubs.ico</ApplicationIcon>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -31,6 +35,8 @@
   <ItemGroup>
     <Resource Include="Assets\logo.png" />
     <Resource Include="Assets\living-room.png" />
+    <!-- Nino: Xbox'lı salon sahnesi; doğrudan Mac'in görselinden (aynı dosya), kopyası tutulmaz. -->
+    <Resource Include="..\..\..\mac\CouchSubs\Resources\Assets.xcassets\LivingRoomXbox.imageset\living-room-xbox.png" Link="Assets\living-room-xbox.png" />
     <!-- ShellWindow.xaml pencere simgesi olarak bunu okur; ApplicationIcon yalnız exe simgesidir. -->
     <Resource Include="Assets\CouchSubs.ico" />
     <!-- Nino: altyazı yazı tipleri (Barlow, Barlow Condensed, Nunito; OFL). Lisans metinleri uygulamanın yanına kopyalanır. -->

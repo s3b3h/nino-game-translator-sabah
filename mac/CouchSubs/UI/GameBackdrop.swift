@@ -51,11 +51,10 @@ private struct SunsetBackdrop: View {
     }
 }
 
-/// Kullanıcının oyun için koyduğu arka plan görseli: `~/Library/Application Support/CouchSubs/Covers/<oyun-kimliği>.png`
+/// Kullanıcının oyun için koyduğu arka plan görseli: `~/Library/Application Support/Nino/Covers/<oyun-kimliği>.png`
 /// (jpg, jpeg, heic, webp de olur). GTA 6 için `gta-6` adı da kabul edilir. Görsel yalnız bu Mac'te kalır.
 enum GameCovers {
-    static let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("CouchSubs/Covers", isDirectory: true)
+    static let directory = AppFolder.support.appendingPathComponent("Covers", isDirectory: true)
     private static let extensions = ["png", "jpg", "jpeg", "heic", "webp"]
     private static var cache: [String: (modified: Date, image: NSImage)] = [:]
 

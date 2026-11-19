@@ -415,7 +415,7 @@ internal fun phoneIpv4Address(networks: Iterable<NetworkAddressCandidate>): Stri
 
 internal fun shareLog(context: Context, file: File) {
     val text = runCatching { file.readText().takeLast(60_000) }.getOrDefault("")
-    val intent = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, "CouchSubs tvinstall.log")
+    val intent = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, "Nino tvinstall.log")
         .putExtra(Intent.EXTRA_TEXT, text)
     runCatching { context.startActivity(Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
 }

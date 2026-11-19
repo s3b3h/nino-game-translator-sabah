@@ -213,9 +213,8 @@ public sealed class GamePackLibrary(Func<IEnumerable<(string Name, byte[] Data)>
     /// <param name="BuiltIn">Kullanıcının klasöründen geldiyse false.</param>
     public sealed record Info(string Id, string Title, int Entries, bool BuiltIn);
 
-    /// <summary>%LOCALAPPDATA%\CouchSubs\packs</summary>
-    public static string UserDirectory { get; } =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", "packs");
+    /// <summary>%LOCALAPPDATA%\Nino\packs</summary>
+    public static string UserDirectory { get; } = DataFolder.In("packs");
 
     private readonly object gate = new();
     private bool loaded;

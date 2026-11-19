@@ -316,7 +316,7 @@ public sealed class ReportProblemWindow : Window
     }
 
     /// <summary>
-    /// Uygulamanın kendi günlükleri (%LOCALAPPDATA%\CouchSubs): hata.log (StartupGuard), remoteplay.log, altyazi.log
+    /// Uygulamanın kendi günlükleri (%LOCALAPPDATA%\Nino): hata.log (StartupGuard), remoteplay.log, altyazi.log
     /// (SubtitleLog) ve tvinstall.log; her birinin sonundan payı kadar. Toplam en çok 60 000 karakter.
     /// </summary>
     private static IEnumerable<(string Path, int Budget)> LogFiles() =>

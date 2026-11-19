@@ -43,6 +43,9 @@ object Services {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     /** Paket listesi değişince (indirme) artar; ekranlar yeniden okur. */
     val packsVersion = MutableStateFlow(0)
+    /** Nino: ana ekrandaki TV'de görünen toplam indirme sayısı (sunucunun `/v1/config` cevabından). */
+    lateinit var downloads: com.couchsubs.mobile.core.DownloadCounter
+        private set
 
     /** Xbox (Beta) Microsoft girişi ve jetonları: kullanıcı jetonu her yenilendiğinde Keystore'a yazılır. */
     val xboxAuth: com.couchsubs.mobile.xbox.XboxAuth by lazy {
@@ -82,6 +85,10 @@ object Services {
             }
         }
         settings = AppSettings(app)
+        // Adres çeviri havuzuyla aynı: havuz klasöründeki endpoint.txt (deneme sunucusu) ya da canlı sunucu.
+        downloads = com.couchsubs.mobile.core.DownloadCounter(settings,
+            com.couchsubs.mobile.core.NinoPool.configuredEndpoint(File(app.filesDir, "pool")),
+            fetch = { com.couchsubs.mobile.core.DownloadCounter.get(it, BuildConfig.VERSION_NAME) })
         Backend.init(app)
         Meta.init(app)
         applyMeasurement()

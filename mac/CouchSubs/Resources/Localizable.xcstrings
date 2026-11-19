@@ -103525,6 +103525,310 @@
           }
         }
       }
+    },
+    "This Mac's local network permission may be off. Turn on Nino in System Settings › Privacy & Security › Local Network, then restart Nino." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "قد يكون إذن الشبكة المحلية لهذا الـ Mac متوقفًا. فعّل Nino في إعدادات النظام › الخصوصية والأمن › الشبكة المحلية، ثم أعد تشغيل Nino."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "এই Mac-এর লোকাল নেটওয়ার্ক অনুমতি বন্ধ থাকতে পারে। System Settings › Privacy & Security › Local Network-এ Nino চালু করুন, তারপর Nino আবার চালু করুন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Mac's local network permission may be off. Turn on Nino in System Settings › Privacy & Security › Local Network, then restart Nino."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maaaring naka-off ang pahintulot sa local network ng Mac na ito. I-on ang Nino sa System Settings › Privacy & Security › Local Network, saka i-restart ang Nino."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हो सकता है इस Mac की लोकल नेटवर्क अनुमति बंद हो। सिस्टम सेटिंग्स › गोपनीयता और सुरक्षा › लोकल नेटवर्क में Nino चालू करें, फिर Nino को दोबारा शुरू करें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Izin jaringan lokal Mac ini mungkin nonaktif. Aktifkan Nino di Pengaturan Sistem › Privasi & Keamanan › Jaringan Lokal, lalu mulai ulang Nino."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kebenaran rangkaian setempat Mac ini mungkin dimatikan. Hidupkan Nino dalam System Settings › Privacy & Security › Local Network, kemudian mulakan semula Nino."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De toestemming voor het lokale netwerk van deze Mac staat mogelijk uit. Zet Nino aan in Systeeminstellingen › Privacy en beveiliging › Lokaal netwerk en start Nino daarna opnieuw."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "สิทธิ์เครือข่ายเฉพาะที่ของ Mac เครื่องนี้อาจปิดอยู่ โปรดเปิด Nino ใน การตั้งค่าระบบ › ความเป็นส่วนตัวและความปลอดภัย › เครือข่ายเฉพาะที่ แล้วเปิด Nino ใหม่อีกครั้ง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac'in yerel ağ izni kapalı olabilir. Sistem Ayarları › Gizlilik ve Güvenlik › Yerel Ağ'da Nino'yu aç, sonra Nino'yu yeniden başlat."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ہو سکتا ہے اس Mac کی لوکل نیٹ ورک اجازت بند ہو۔ System Settings › Privacy & Security › Local Network میں Nino آن کریں، پھر Nino دوبارہ شروع کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quyền mạng cục bộ của máy Mac này có thể đang tắt. Hãy bật Nino trong Cài đặt hệ thống › Quyền riêng tư & Bảo mật › Mạng cục bộ, rồi khởi động lại Nino."
+          }
+        }
+      }
+    },
+    "Open System Settings" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "افتح إعدادات النظام"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings খুলুন"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open System Settings"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buksan ang System Settings"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सिस्टम सेटिंग्स खोलें"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buka Pengaturan Sistem"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buka System Settings"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Systeeminstellingen"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เปิดการตั้งค่าระบบ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem Ayarları'nı aç"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings کھولیں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mở Cài đặt hệ thống"
+          }
+        }
+      }
+    },
+    "Total downloads" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إجمالي التنزيلات"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "মোট ডাউনলোড"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total downloads"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kabuuang download"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कुल डाउनलोड"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total unduhan"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jumlah muat turun"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Totaal downloads"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ดาวน์โหลดทั้งหมด"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toplam İndirme"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "کل ڈاؤن لوڈز"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tổng lượt tải"
+          }
+        }
+      }
+    },
+    "Drag the plug to the socket to start" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اسحب القابس إلى المقبس للتشغيل"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "চালু করতে প্লাগটি সকেটে টেনে আনুন"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag the plug to the socket to start"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I-drag ang plug sa saksakan para magsimula"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "शुरू करने के लिए प्लग को सॉकेट तक खींचें"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seret steker ke stopkontak untuk memulai"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seret palam ke soket untuk bermula"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep de stekker naar het stopcontact om te starten"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ลากปลั๊กไปที่เต้ารับเพื่อเริ่ม"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalıştırmak için fişi prize sürükleyiniz"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "شروع کرنے کے لیے پلگ کو ساکٹ تک گھسیٹیں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kéo phích cắm vào ổ điện để bắt đầu"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

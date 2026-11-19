@@ -85,6 +85,9 @@ struct HomeScreen: View {
         return model.canStart ? .ready : .notPaired
     }
 
+    /// Bağlanılamıyorsa nedeni (ör. "PS5'te Uzaktan Oynama kapalı…"); sahnede "Bağlanıyor…" yerine bu görünür.
+    private var problem: String? { state == .connecting ? model.connectionProblemText : nil }
+
     private var target: String { model.settings.targetLanguage }
     private var onPhone: Bool { model.isDemo || model.settings.output.showsOnComputer }
     private var languageName: String {
@@ -115,6 +118,7 @@ struct HomeScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .animation(.easeOut(duration: 0.25), value: state)
             HomeStage(state: state, line: currentLine, source: model.isDemo ? model.demoLine?.source : nil,
+                      problem: problem,
                       badge: t(model.isDemo ? "demo.badge" : "home.live"), locale: locale,
                       sunset: state == .live && !model.isDemo && model.liveGamePoolFirst,
                       onFullScreen: onPhone ? { openFullScreen() } : nil)
@@ -204,6 +208,14 @@ struct HomeScreen: View {
             #if DEBUG
             // Hata ayıklama: COUCHSUBS_START_DEMO=1 ile demo açılışta başlar (ekran görüntüsü için).
             if ProcessInfo.processInfo.environment["COUCHSUBS_START_DEMO"] == "1" { model.startDemo() }
+            // COUCHSUBS_FAKE_PROBLEM=1: "bağlanılamıyor" görünümü (PS5'siz ekran görüntüsü için).
+            if ProcessInfo.processInfo.environment["COUCHSUBS_FAKE_PROBLEM"] == "1" { model.debugShowConnectionProblem() }
+            // COUCHSUBS_TEST_FRAME=<png>[,<png>…]: PS5'siz deneme karesi okuma hattına verilir, tam ekran altyazı açılır
+            // (köşe ve mesaj çevirisinin simülatörde denenmesi için; ağa çıkmaz, sunucu başlatmaz).
+            if let frames = PhoneModel.debugTestFramePaths {
+                model.debugStartTestFrames(frames)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { if model.isRunning, !showSubtitles { openFullScreen() } }
+            }
             // COUCHSUBS_FULLSCREEN=1: demo tam ekran altyazıyla açılır (iPad/iPhone tam ekran denetimi için).
             if ProcessInfo.processInfo.environment["COUCHSUBS_FULLSCREEN"] == "1" {
                 model.startDemo()
@@ -245,7 +257,7 @@ struct HomeScreen: View {
         let (color, text): (Color, String) = switch state {
         case .notPaired: (inkSoft, t("home.status.notPaired"))
         case .ready: (Mobile.Palette.accent, t("home.status.ready"))
-        case .connecting: (Mobile.Palette.accent, t("home.status.connecting"))
+        case .connecting: (problem == nil ? Mobile.Palette.accent : Mobile.Palette.warning, t("home.status.connecting"))
         case .live: (liveGreen, t(onPhone ? "home.status.live" : "home.status.tv"))
         }
         let name = model.isXbox ? model.xboxConsole.map { $0.name.isEmpty ? "Xbox" : $0.name } ?? "Xbox"
@@ -298,6 +310,8 @@ private struct HomeStage: View {
     let state: HomeState
     let line: String?
     var source: String?
+    /// Bağlanılamama nedeni; varsa "Bağlanıyor…" yerine uyarı simgesiyle bu yazılır.
+    var problem: String?
     var badge: String
     let locale: Locale
     /// Tanınan oyun havuz öncelikli (GTA 6): koyu zemin yerine buzlu gün batımı fonu; altyazı önünde durur.
@@ -338,6 +352,22 @@ private struct HomeStage: View {
                 }
                 .padding(.horizontal, 16).padding(.bottom, 22)
                 .animation(.easeOut(duration: 0.2), value: line)
+            } else if let problem {
+                VStack(spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        // Koyu sahnede okunur turuncu (Palette.warning açık zemin içindir).
+                        .foregroundStyle(Color.orange)
+                    Text(verbatim: problem)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(7)
+                        .minimumScaleFactor(0.7)
+                }
+                .padding(.horizontal, 20).padding(.vertical, 16)
+                .accessibilityElement(children: .combine)
+                .transition(.opacity)
             } else {
                 Text(verbatim: t(state == .connecting ? "home.stage.connecting" : "home.stage.idle"))
                     .font(.system(size: 15, weight: .medium))

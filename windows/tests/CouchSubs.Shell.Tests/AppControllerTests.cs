@@ -178,6 +178,9 @@ internal sealed class FakeServices : IAppServices
     public TranslationPool? Translations { get; set; }
     public FakeTranslation Translation { get; } = new();
     public IFirewall? Firewall { get; set; }
+    public IUpdater? Updater { get; set; }
+    /// <summary>Kendiliğinden kurulum sayacı geçici bir dosyada durur; kullanıcının gerçek klasörüne hiçbir test yazmaz.</summary>
+    public string AutoUpdateFile { get; set; } = Path.Combine(Path.GetTempPath(), "nino-auto-update-" + Guid.NewGuid().ToString("N") + ".txt");
     ITranslationModel IAppServices.Translation => Translation;
     public OnlineKeyCheck KeyCheck { get; set; } = new(OnlineKeyState.Valid, 10, 500_000);
     public List<string> CheckedKeys { get; } = [];
@@ -587,7 +590,7 @@ public class AppControllerTests
             await controller.RegisterAsync("192.168.1.253", "12345678");
             Assert.Equal("PS5 paired: PS5-789 (192.168.1.253). Press Continue.", controller.PairedText);
             Assert.NotNull(store.Load<RegisteredConsole>(StoreKeys.Console));
-            Assert.Contains("[couchsubs] PS5 kaydı kaydedildi (192.168.1.253): PS5-789", lines);
+            Assert.Contains("[nino] PS5 kaydı kaydedildi (192.168.1.253): PS5-789", lines);
         }
         finally
         {

@@ -543,6 +543,8 @@ public interface IAppServices
     IAudioOutput? Audio => null;
     /// <summary>Uygulama güncellemesi; geliştirici derlemesinde null.</summary>
     IUpdater? Updater => null;
+    /// <summary>Kendiliğinden kurulum denemelerinin dosyası (<see cref="AutoUpdateLog"/>); testlerde geçici bir dosya.</summary>
+    string AutoUpdateFile => DataFolder.In("auto-update-tried.txt");
     /// <summary>Windows Güvenlik Duvarı izni; Windows dışında ve testlerde null (hiçbir şey önerilmez).</summary>
     IFirewall? Firewall => null;
     /// <summary>Oyun çeviri paketleri (uygulamayla gelenler ve kullanıcının klasöründekiler); bu derlemede yoksa null.</summary>
@@ -557,7 +559,7 @@ public interface IAppServices
     Task<RunningGame?> RunningGameAsync(string host) => Task.FromResult<RunningGame?>(null);
     /// <summary>Paket sunucusundan yeni paketler; adres yapılandırılmadıysa ve testlerde null.</summary>
     PackUpdater? PackUpdates => null;
-    /// <summary>Altyazı geçmişinin dosyası (%LOCALAPPDATA%\CouchSubs\history.json); testlerde null (diske yazılmaz).</summary>
+    /// <summary>Altyazı geçmişinin dosyası (%LOCALAPPDATA%\Nino\history.json); testlerde null (diske yazılmaz).</summary>
     string? HistoryFile => null;
     /// <summary>
     /// Nino: kareyi en çok <paramref name="maxWidth"/> piksel genişliğe küçültüp JPEG yapar (oyunu ekrandan tanımak için;

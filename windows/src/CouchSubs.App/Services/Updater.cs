@@ -27,10 +27,12 @@ internal sealed class Updater : IUpdater
         return pending?.TargetFullRelease.Version.ToString();
     }
 
-    public async Task InstallAsync(IProgress<double> progress)
+    public async Task InstallAsync(IProgress<double> progress, Action? beforeApply = null)
     {
         if (pending is null) return;
         await manager.DownloadUpdatesAsync(pending, percent => progress.Report(percent / 100.0));
+        // Buradan sonrası uygulamayı kapatır; deneme sayacı bu yüzden şimdi yazılır (AppController.InstallUpdateAsync).
+        beforeApply?.Invoke();
         manager.ApplyUpdatesAndRestart(pending);
     }
 
@@ -40,7 +42,7 @@ internal sealed class Updater : IUpdater
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("CouchSubs");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("Nino");
             using var document = System.Text.Json.JsonDocument.Parse(
                 await http.GetStringAsync("https://api.github.com/repos/yunusdemirbag/nino-game-translator/releases/latest"));
             var tag = document.RootElement.GetProperty("tag_name").GetString()?.TrimStart('v');

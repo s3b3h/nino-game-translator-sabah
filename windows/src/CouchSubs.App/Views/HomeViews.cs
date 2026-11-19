@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Nino: ana ekranın iki arayüzü (Mac'teki LivingRoomScene ve GlassTranslateToggle ile aynı davranış ve metinler).
 // 1. Salon: duvarda TV, sehpa, konsol ve priz; fiş prize takılınca (tıklama ya da sürükleme) çeviri başlar, mavi LED'ler
-//    yanar, TV'de Nino açılır ve Türkçe altyazı akar; fiş çekilince durur. 2. Cam düğme: sağa kayınca bayrak kırmızısı,
+//    yanar, TV'de Nino açılır ve Türkçe altyazı akar; fiş çekilince durur. Fiş çıkıkken TV'de ne yapılacağı yazar, priz
+//    yanıp söner; TV'nin sağ üstünde toplam indirme durur. Ölçüler ve fiş/kablo hesabı: LivingRoomLayout (Shell).
+// 2. Cam düğme: sağa kayınca bayrak kırmızısı,
 //    üstte canlı TV. Görünümler kodla kurulur: yanlış kaynak adı derlemede yakalanır (Windows'ta çalıştırılmadan yazıldı).
 
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -13,6 +16,8 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
+using CouchSubs.App.Controls;
 using CouchSubs.Core;
 using CouchSubs.RemotePlay;
 using CouchSubs.Shell;
@@ -65,13 +70,118 @@ internal static class Home
         return string.IsNullOrEmpty(c.LastTranslation) ? (T("Waiting for the next subtitle…"), false) : (c.LastTranslation, true);
     }
 
-    public static Image Picture(string asset, double width, double height) => new()
+    /// <summary>
+    /// Salon sahnesi Xbox'lı mı: Ayarlar › Bağlantı'daki konsol seçimi (Mac'teki settings.gameConsole) ya da kurulumda
+    /// seçilen Xbox (doğrudan Xbox bağlantısı).
+    /// </summary>
+    public static bool XboxScene(AppController c) => c.Settings.GameConsole == GameConsole.Xbox || c.IsXbox;
+
+    public static Image Picture(string asset, double width, double height, Stretch stretch = Stretch.Uniform) => new()
     {
         Source = new BitmapImage(new Uri($"pack://application:,,,/Assets/{asset}")),
         Width = width,
         Height = height,
-        Stretch = Stretch.Uniform,
+        Stretch = stretch,
     };
+
+    /// <summary>
+    /// Nino: fiş takılı değilken TV ekranı. Ortada ne yapılacağı ("Çalıştırmak için fişi prize sürükleyiniz"; eskiden
+    /// "SİNYAL YOK"): büyük harf, tek aralıklı, beyaz %40, ortalı. <paramref name="scale"/>: Mac'teki 588 noktalık
+    /// ekrandan sahnedeki ekrana büyütme (ölçüler Mac'tekilerle aynı).
+    /// </summary>
+    public static Grid StandbyScreen(double scale)
+    {
+        var screen = new Grid { Background = Brushes.Black };
+        screen.Children.Add(new TextBlock
+        {
+            Text = Localizer.Current.Upper(T("Drag the plug to the socket to start")),
+            FontFamily = new FontFamily("Consolas, Courier New"),
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 13 * scale,
+            Foreground = new SolidColorBrush(Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(40 * scale, 0, 40 * scale, 0),
+        });
+        return screen;
+    }
+
+    private static readonly Color HudGreen = Color.FromRgb(0x7B, 0xE8, 0x7B);
+
+    /// <summary>
+    /// Göstergenin yazı tipi: sistemdeki "Impact" (kendisi zaten kalın, olduğu gibi kullanılır); yoksa sistemin en kalın
+    /// yazısı (Segoe UI Black). Oyunun kendi logosu ya da yazı tipi kullanılmaz.
+    /// </summary>
+    private static readonly Lazy<(FontFamily Family, FontWeight Weight)> HudFont = new(() =>
+    {
+        try
+        {
+            if (Fonts.SystemFontFamilies.Any(family => string.Equals(family.Source, "Impact", StringComparison.OrdinalIgnoreCase)))
+                return (new FontFamily("Impact"), FontWeights.Normal);
+        }
+        catch (Exception) { /* yazı tipi listesi okunamadı: sistem yazısı */ }
+        return (new FontFamily("Segoe UI"), FontWeights.Black);
+    });
+
+    /// <summary>
+    /// Nino: toplam indirme göstergesi (TV'nin sağ üstü). Oyunlardaki para göstergesi gibi: kalın, hafif eğik (−0.12
+    /// yatırma), siyah çerçeveli; üstte küçük beyaz başlık, altında yeşil sayı. Sayı sunucudan geldiği gibi yazılır
+    /// (binlik ayırıcı yerel biçimde); üstüne ekleme yapılmaz.
+    /// </summary>
+    public static FrameworkElement DownloadHud(int total, double scale)
+    {
+        var title = T("Total downloads");
+        var arabic = TargetLanguage.ContainsArabic(title);
+        var top = Outlined(Localizer.Current.Upper(title), 11 * scale, Brushes.White, 1 * scale, scale);
+        var number = Outlined(DownloadCounter.Format(total, CultureInfo.CurrentCulture), 27 * scale, new SolidColorBrush(HudGreen), 1.5 * scale, scale);
+        number.Margin = new Thickness(0, 1 * scale, 0, 0);
+        var hud = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 18 * scale, 18 * scale, 0),
+            IsHitTestVisible = false,
+        };
+        hud.Children.Add(top);
+        hud.Children.Add(number);
+        // Hafif eğim: x' = x − 0.12·y + 3 (Arapça yazıda harfleri bozmasın diye yok).
+        if (!arabic) hud.RenderTransform = new MatrixTransform(1, 0, -0.12, 1, 3 * scale, 0);
+        return hud;
+    }
+
+    /// <summary>
+    /// Siyah çerçeveli yazı: yazının siyah kopyaları sekiz yöne <paramref name="weight"/> kadar kaydırılır (çerçeve),
+    /// altına bir derinlik gölgesi iner, en üstte renkli yazı durur.
+    /// </summary>
+    private static Grid Outlined(string text, double size, Brush color, double weight, double scale)
+    {
+        var (family, fontWeight) = HudFont.Value;
+        var grid = new Grid { HorizontalAlignment = HorizontalAlignment.Right };
+        void Add(Brush brush, double dx, double dy, double opacity = 1) => grid.Children.Add(new TextBlock
+        {
+            Text = text,
+            FontFamily = family,
+            FontWeight = fontWeight,
+            FontSize = size,
+            Foreground = brush,
+            Opacity = opacity,
+            RenderTransform = dx == 0 && dy == 0 ? Transform.Identity : new TranslateTransform(dx, dy),
+        });
+        // Derinlik: çerçevenin alt kenarı bir adım daha aşağı iner.
+        var depth = weight + 1 * scale;
+        foreach (var dx in new[] { -weight, 0, weight })
+        {
+            Add(Brushes.Black, dx, weight + depth, 0.9);
+            Add(Brushes.Black, dx, weight + depth / 2, 0.9);
+        }
+        foreach (var dx in new[] { -weight, 0, weight })
+            foreach (var dy in new[] { -weight, 0, weight })
+                if (dx != 0 || dy != 0) Add(Brushes.Black, dx, dy);
+        Add(color, 0, 0);
+        return grid;
+    }
 
     /// <summary>Canlı TV ekranı: koyu oyun sahnesi, sol üstte CANLI, altta satır (yarı saydam kutu, beyaz kalın yazı).</summary>
     public static (Grid screen, TextBlock line, Border lineBox) LiveScreen(double width, double height, double fontSize)
@@ -163,26 +273,40 @@ internal static class Home
 }
 
 /// <summary>
-/// 1. arayüz: salon sahnesi. Görsel sabit (1672×941, saydam zemin); üstüne TV ekranının içi, kablo ve fiş, arkasına mavi
-/// LED'ler çizilir. Sehpa pencerenin ortasında durur (görselin sağında priz ve konsol var). Koordinatlar Mac'tekiyle aynı.
+/// 1. arayüz: salon sahnesi. Görsel sabit (1672×941, saydam zemin; PS5'li ya da Xbox'lı salon); üstüne TV ekranının içi,
+/// kablo ve fiş, arkasına mavi LED'ler ve prizin ışığı çizilir. Sehpa pencerenin ortasında durur (görselin sağında priz ve
+/// konsol var). Koordinatlar Mac'tekiyle aynı (<see cref="LivingRoomLayout"/>; görseller de aynı dosyalar).
 /// </summary>
 public sealed class LivingRoomScene : UserControl
 {
-    private static readonly Rect ScreenRect = new(149, 40, 1151, 595);
-    private static readonly Rect TvRect = new(139, 27, 1171, 621);
-    private static readonly Rect StandRect = new(49, 713, 1502, 160);
-    private static readonly Point Socket = new(1564, 378);
-    private static readonly Point CableStart = new(1550, 734);
-    private static readonly Point Hanging = new(1600, 885);
-    /// <summary>Sehpayı ortalamak için sahnenin soluna eklenen boşluk.</summary>
-    private const double Shift = 72;
+    private readonly LivingRoomLayout layout;
+    private readonly Rect ScreenRect, TvRect, StandRect;
+    private readonly Point Socket, Hanging;
+    /// <summary>Sehpayı ortalamak için sahnenin soluna eklenen boşluk (PS5'li sahnede 72, Xbox'lıda 6).</summary>
+    private readonly double Shift;
 
     private readonly AppController controller;
     private readonly Canvas leds = new() { Opacity = 0, IsHitTestVisible = false };
-    private readonly Grid screenHost = new() { Width = ScreenRect.Width, Height = ScreenRect.Height, ClipToBounds = true };
-    private readonly Path cable = new() { Stroke = new SolidColorBrush(Color.FromRgb(0x10, 0x10, 0x10)), StrokeThickness = 10, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, IsHitTestVisible = false };
+    /// <summary>Nino: fiş takılı değilken prizin kenarlarından taşan, yanıp sönen ışık (geniş ve dar katman).</summary>
+    private readonly Canvas socketGlow = new() { IsHitTestVisible = false };
+    private Rectangle glowWide = null!, glowTight = null!;
+    private readonly Grid screenHost;
+    /// <summary>Nino: toplam indirme göstergesi; bekleme ekranında da canlı ekranda da aynı yerde (sağ üst) durur.</summary>
+    private readonly Grid hudHost;
+    private int? hudTotal;
+    private readonly DispatcherTimer downloadsTimer = new() { Interval = TimeSpan.FromSeconds(DownloadCounter.RefreshSeconds) };
+    private readonly Path cable = new()
+    {
+        Stroke = new SolidColorBrush(Color.FromRgb(0x0F, 0x0F, 0x0F)),
+        StrokeThickness = LivingRoomLayout.CableWidth,
+        StrokeStartLineCap = PenLineCap.Round,
+        StrokeEndLineCap = PenLineCap.Round,
+        StrokeLineJoin = PenLineJoin.Round,
+        Effect = new DropShadowEffect { BlurRadius = 6, ShadowDepth = 2, Direction = 270, Opacity = 0.25 },
+        IsHitTestVisible = false,
+    };
     private readonly Canvas plug = new() { Width = 120, Height = 140, Background = Brushes.Transparent, Cursor = Cursors.Hand };
-    private readonly Grid offScreen = new() { Background = Brushes.Black };
+    private readonly Grid offScreen;
     private Grid? splash;
     private readonly Grid liveScreen;
     private readonly TextBlock liveLine;
@@ -198,32 +322,43 @@ public sealed class LivingRoomScene : UserControl
     private Point? dragStart;
     private Vector drag;
 
+    private const double SceneWidth = LivingRoomLayout.CanvasWidth, SceneHeight = LivingRoomLayout.CanvasHeight;
+
+    private static Point At(ScenePoint point) => new(point.X, point.Y);
+    private static Rect At(SceneRect rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
+
     public LivingRoomScene(AppController controller)
     {
         this.controller = controller;
+        // Nino: sahne konsola göre değişir (konsol değişince MainView sahneyi yeniden kurar).
+        layout = LivingRoomLayout.For(Home.XboxScene(controller));
+        ScreenRect = At(layout.Screen);
+        TvRect = At(layout.TvFrame);
+        StandRect = At(layout.StandFrame);
+        Socket = At(layout.Socket);
+        Hanging = At(layout.Hanging);
+        Shift = layout.Shift;
+        screenHost = new Grid { Width = ScreenRect.Width, Height = ScreenRect.Height, ClipToBounds = true };
+        hudHost = new Grid { Width = ScreenRect.Width, Height = ScreenRect.Height, ClipToBounds = true, IsHitTestVisible = false };
+        offScreen = Home.StandbyScreen(layout.ScreenScale);
         // Nino: sahne Arapça arayüzde aynalanmaz.
         RightToLeft.KeepLeftToRight(this);
-        var canvas = new Canvas { Width = 1672 + Shift, Height = 941 };
-        var scene = new Canvas { Width = 1672, Height = 941 };
+        var canvas = new Canvas { Width = SceneWidth + Shift, Height = SceneHeight };
+        var scene = new Canvas { Width = SceneWidth, Height = SceneHeight };
         Canvas.SetLeft(scene, Shift);
         canvas.Children.Add(scene);
 
         BuildLeds();
         scene.Children.Add(leds);
-        scene.Children.Add(Home.Picture("living-room.png", 1672, 941));
+        // Prizin ışığı görselin arkasında: priz görselin parçasıdır, ışık kenarlarından taşar.
+        BuildSocketGlow();
+        scene.Children.Add(socketGlow);
+        // Xbox'lı görsel 1671 piksel genişliğindedir; Mac'teki gibi sahnenin ölçüsüne (1672×941) yayılır.
+        scene.Children.Add(Home.Picture(layout.Image, SceneWidth, SceneHeight, Stretch.Fill));
 
         var black = new Rectangle { Width = ScreenRect.Width, Height = ScreenRect.Height, Fill = Brushes.Black };
         Place(black, ScreenRect.X, ScreenRect.Y);
         scene.Children.Add(black);
-        offScreen.Children.Add(new TextBlock
-        {
-            Text = Home.T("NO SIGNAL"),
-            FontFamily = new FontFamily("Consolas"),
-            FontSize = 26,
-            Foreground = new SolidColorBrush(Color.FromArgb(0x48, 0xFF, 0xFF, 0xFF)),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
         (liveScreen, liveLine, liveBox) = Home.LiveScreen(ScreenRect.Width, ScreenRect.Height, 46);
         // Fon en arkada: CANLI rozeti ve altyazı önünde kalır.
         sunset = Home.SunsetBackdrop(ScreenRect.Width, ScreenRect.Height);
@@ -231,6 +366,8 @@ public sealed class LivingRoomScene : UserControl
         liveScreen.Children.Insert(0, sunset);
         Place(screenHost, ScreenRect.X, ScreenRect.Y);
         scene.Children.Add(screenHost);
+        Place(hudHost, ScreenRect.X, ScreenRect.Y);
+        scene.Children.Add(hudHost);
 
         // Prize tıklamak da fişi takar/çıkarır.
         var socketHit = new Rectangle { Width = 120, Height = 120, Fill = Brushes.Transparent, Cursor = Cursors.Hand };
@@ -238,6 +375,13 @@ public sealed class LivingRoomScene : UserControl
         socketHit.MouseLeftButtonUp += (_, _) => Home.Toggle(controller);
         scene.Children.Add(socketHit);
         scene.Children.Add(cable);
+        // Xbox görselinde kablo yoktur: kablo konsolun arkasındaki girişten küçük bir fiş başıyla çıkar.
+        if (layout.CableLead.Count == 0)
+        {
+            var head = new Rectangle { Width = 14, Height = 12, RadiusX = 3, RadiusY = 3, Fill = new SolidColorBrush(Color.FromRgb(0x14, 0x14, 0x14)), IsHitTestVisible = false };
+            Place(head, layout.CableStart.X - 7, layout.CableStart.Y - 6);
+            scene.Children.Add(head);
+        }
         plug.MouseLeftButtonDown += OnPlugDown;
         plug.MouseMove += OnPlugMove;
         plug.MouseLeftButtonUp += OnPlugUp;
@@ -246,9 +390,21 @@ public sealed class LivingRoomScene : UserControl
         Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = canvas };
         ToolTip = Home.T("Plug in to turn on Turkish subtitles");
         controller.PropertyChanged += OnChanged;
-        Unloaded += (_, _) => controller.PropertyChanged -= OnChanged;
+        // Toplam indirme: açılışta ve sonra aralıklarla yenilenir (alınamazsa son bilinen sayı kalır).
+        downloadsTimer.Tick += (_, _) => _ = controller.RefreshDownloadsAsync();
+        Loaded += (_, _) =>
+        {
+            _ = controller.RefreshDownloadsAsync();
+            downloadsTimer.Start();
+        };
+        Unloaded += (_, _) =>
+        {
+            controller.PropertyChanged -= OnChanged;
+            downloadsTimer.Stop();
+        };
         plugged = Home.On(controller);
         leds.Opacity = plugged ? 1 : 0;
+        ShowSocketGlow(animated: false);
         ShowScreen();
         DrawPlug();
     }
@@ -275,6 +431,61 @@ public sealed class LivingRoomScene : UserControl
         leds.Children.Add(ledStrip);
         ColorLeds();
     }
+
+    /// <summary>
+    /// Prizin ışığı: prizin (kenarı 86 sahne pikseli) arkasında iki katman. Geniş, bulanık açık mavi kare (kenar + 26) ve
+    /// dar, parlak kare (kenar + 8). Bulanıklık LED'lerdeki gibi Mac'tekinin iki katı yazılır (WPF yarıçapı farklı ölçer).
+    /// </summary>
+    private void BuildSocketGlow()
+    {
+        const double side = LivingRoomLayout.SocketSize;
+        glowWide = new Rectangle { Width = side + 26, Height = side + 26, RadiusX = 16, RadiusY = 16, Fill = new SolidColorBrush(Color.FromRgb(77, 168, 255)), Effect = new BlurEffect { Radius = 36 } };
+        Place(glowWide, Socket.X - (side + 26) / 2, Socket.Y - (side + 26) / 2);
+        glowTight = new Rectangle { Width = side + 8, Height = side + 8, RadiusX = 12, RadiusY = 12, Fill = new SolidColorBrush(Color.FromRgb(158, 214, 255)), Effect = new BlurEffect { Radius = 10 } };
+        Place(glowTight, Socket.X - (side + 8) / 2, Socket.Y - (side + 8) / 2);
+        socketGlow.Children.Add(glowWide);
+        socketGlow.Children.Add(glowTight);
+    }
+
+    /// <summary>
+    /// Fiş takılı değilken ışık 0,95 sn'de gidip gelen yumuşak bir nabızla yanıp söner (geniş katman 0,3 ↔ 0,95, dar
+    /// katman 0,45 ↔ 1); fiş takılınca 0,5 sn'de söner. Windows'ta animasyonlar kapalıysa yanıp sönmez, sabit yanar.
+    /// </summary>
+    private void ShowSocketGlow(bool animated)
+    {
+        var still = NinoBot.ReduceMotion;
+        if (!plugged)
+        {
+            if (still)
+            {
+                glowWide.BeginAnimation(OpacityProperty, null);
+                glowTight.BeginAnimation(OpacityProperty, null);
+                glowWide.Opacity = 0.95;
+                glowTight.Opacity = 1;
+            }
+            else
+            {
+                glowWide.BeginAnimation(OpacityProperty, Pulse(0.3, 0.95));
+                glowTight.BeginAnimation(OpacityProperty, Pulse(0.45, 1));
+            }
+        }
+        var fade = new DoubleAnimation(plugged ? 0 : 1, TimeSpan.FromMilliseconds(animated && !still ? 500 : 0));
+        // Söndükten sonra nabız durur (görünmeyen ışık boşuna canlanmasın).
+        fade.Completed += (_, _) =>
+        {
+            if (!plugged) return;
+            glowWide.BeginAnimation(OpacityProperty, null);
+            glowTight.BeginAnimation(OpacityProperty, null);
+        };
+        socketGlow.BeginAnimation(OpacityProperty, fade);
+    }
+
+    private static DoubleAnimation Pulse(double from, double to) => new(from, to, TimeSpan.FromSeconds(0.95))
+    {
+        AutoReverse = true,
+        RepeatBehavior = RepeatBehavior.Forever,
+        EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+    };
 
     /// <summary>
     /// LED'lerin rengi: her zamanki mavi; GTA 6 tanınınca (havuz öncelikli oyun, fonla aynı koşul) oyunun renkleri, soldan
@@ -316,6 +527,7 @@ public sealed class LivingRoomScene : UserControl
                 // Her takışta açılış animasyonu baştan oynar.
                 splashDone = !now;
                 splash = null;
+                ShowSocketGlow(animated: true);
                 DrawPlug();
             }
             ColorLeds();
@@ -334,9 +546,26 @@ public sealed class LivingRoomScene : UserControl
             sunset.Visibility = controller.LiveGamePoolFirst ? Visibility.Visible : Visibility.Collapsed;
             wanted = liveScreen;
         }
+        ShowHud();
         if (screenHost.Children.Count == 1 && screenHost.Children[0] == wanted) return;
         screenHost.Children.Clear();
         screenHost.Children.Add(wanted);
+    }
+
+    /// <summary>
+    /// Toplam indirme göstergesi: fiş takılı değilken (bekleme ekranı) ve canlı ekranda aynı yerde, sağ üstte; açılış
+    /// animasyonu oynarken gizli. Sayı hiç alınamadıysa görünmez.
+    /// </summary>
+    private void ShowHud()
+    {
+        var total = controller.DownloadTotal;
+        if (total != hudTotal)
+        {
+            hudTotal = total;
+            hudHost.Children.Clear();
+            if (total is { } value) hudHost.Children.Add(Home.DownloadHud(value, layout.ScreenScale));
+        }
+        hudHost.Visibility = !plugged || splashDone ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>Nino'nun açılışı TV'de: logo bulanıktan netleşerek büyür, arkasında ışık, sonra ad ve slogan; ~2,4 sn.</summary>
@@ -380,7 +609,11 @@ public sealed class LivingRoomScene : UserControl
 
     private Point PlugPoint => (plugged ? Socket : Hanging) + drag;
 
-    /// <summary>Fiş çıkıkken sehpanın yanından sarkar (siyah gövde, iki metal uç); takılıyken prizin önünde yuvarlak kapak.</summary>
+    /// <summary>
+    /// Fiş çıkıkken sehpanın yanından sarkar (siyah gövde, iki metal uç); uçlar dinlenirken aşağı bakar, prize yaklaştıkça
+    /// prize döner (<see cref="LivingRoomLayout.PlugTurn(ScenePoint)"/>). Takılıyken prizin önünde yuvarlak kapak. Kablo
+    /// konsoldan (PS5'te görseldeki kablonun üstünden) başlar ve fişin arkasına fişin ekseni boyunca girer.
+    /// </summary>
     private void DrawPlug()
     {
         var p = PlugPoint;
@@ -402,8 +635,12 @@ public sealed class LivingRoomScene : UserControl
         }
         else
         {
-            var neck = new Rectangle { Width = 16, Height = 14, RadiusX = 6, RadiusY = 6, Fill = new SolidColorBrush(Color.FromRgb(0x10, 0x10, 0x10)) };
-            Place(neck, 52, 24);
+            // Parçalar fişin ortasına (60, 70) göre dizilir: üstte kablo boğazı, gövde, altta iki uç (toplam 88 yüksek).
+            // Hepsi birlikte fişin ortası çevresinde döner; tıklama alanı (120×140) dönmez. Gölge dönmeyen katmandadır
+            // (hep aşağı düşer).
+            var turned = new Canvas { RenderTransform = new RotateTransform(layout.PlugTurn(new ScenePoint(p.X, p.Y)) * 180 / Math.PI, 60, 70) };
+            var neck = new Rectangle { Width = 13, Height = 14, RadiusX = 5, RadiusY = 5, Fill = new SolidColorBrush(Color.FromRgb(0x0F, 0x0F, 0x0F)) };
+            Place(neck, 53.5, 26);
             var body = new Rectangle
             {
                 Width = 36,
@@ -411,25 +648,28 @@ public sealed class LivingRoomScene : UserControl
                 RadiusX = 9,
                 RadiusY = 9,
                 Fill = new LinearGradientBrush(Color.FromRgb(0x38, 0x38, 0x38), Color.FromRgb(0x0A, 0x0A, 0x0A), 0),
-                Effect = new DropShadowEffect { BlurRadius = 8, ShadowDepth = 3, Opacity = 0.3 },
+                Stroke = new SolidColorBrush(Color.FromArgb(0x24, 0xFF, 0xFF, 0xFF)),
+                StrokeThickness = 1,
             };
-            Place(body, 42, 38);
-            plug.Children.Add(neck);
-            plug.Children.Add(body);
-            foreach (var x in new[] { 49.0, 65.0 })
+            Place(body, 42, 40);
+            turned.Children.Add(neck);
+            turned.Children.Add(body);
+            foreach (var x in new[] { 47.0, 67.0 })
             {
                 var pin = new Rectangle { Width = 6, Height = 24, RadiusX = 3, RadiusY = 3, Fill = new LinearGradientBrush(Color.FromRgb(0xEB, 0xEB, 0xEB), Color.FromRgb(0x99, 0x99, 0x99), 0) };
-                Place(pin, x, 88);
-                plug.Children.Add(pin);
+                Place(pin, x, 90);
+                turned.Children.Add(pin);
             }
+            var shadowed = new Canvas { IsHitTestVisible = false, Effect = new DropShadowEffect { BlurRadius = 8, ShadowDepth = 3, Direction = 270, Opacity = 0.3 } };
+            shadowed.Children.Add(turned);
+            plug.Children.Add(shadowed);
         }
         Place(plug, p.X - 60, p.Y - 70);
 
-        var end = seated ? new Point(p.X, p.Y + 30) : new Point(p.X, p.Y - 30);
-        var figure = new PathFigure { StartPoint = CableStart };
-        figure.Segments.Add(seated
-            ? new BezierSegment(new Point(1620, 720), new Point(end.X + 10, end.Y + 170), end, true)
-            : new BezierSegment(new Point(1585, 745), new Point(end.X - 8, end.Y - 70), end, true));
+        var shape = layout.Cable(new ScenePoint(p.X, p.Y), seated);
+        var figure = new PathFigure { StartPoint = At(shape.Lead[0]), IsFilled = false };
+        foreach (var point in shape.Lead.Skip(1)) figure.Segments.Add(new LineSegment(At(point), true));
+        figure.Segments.Add(new BezierSegment(At(shape.Control1), At(shape.Control2), At(shape.End), true));
         cable.Data = new PathGeometry([figure]);
     }
 
@@ -445,7 +685,7 @@ public sealed class LivingRoomScene : UserControl
     {
         if (dragStart is not { } start || e.LeftButton != MouseButtonState.Pressed) return;
         // Viewbox ölçeği: ekrandaki hareket görselin piksellerine çevrilir.
-        var scale = ((Viewbox)Content).ActualWidth / (1672 + Shift);
+        var scale = ((Viewbox)Content).ActualWidth / (SceneWidth + Shift);
         drag = (e.GetPosition(this) - start) / (scale > 0 ? scale : 1);
         DrawPlug();
     }

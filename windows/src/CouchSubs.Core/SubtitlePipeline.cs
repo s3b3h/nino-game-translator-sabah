@@ -235,7 +235,8 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
         var sized = raw.WithoutOversizedLines(area);
         var droppedLines = sized.Lines.Count == raw.Lines.Count ? null
             : string.Join(" / ", raw.Lines.Where(line => !sized.Lines.Contains(line)).Select(line => line.Text));
-        var reading = sized.WithoutButtonPrompts().WithoutOcrNoise().WithoutClippedLines().JoiningRows().SubtitleBlock(area);
+        // Nino: yol tarifi satırları ("Turn Right 405 ft") da altyazı değildir; düğme ipuçlarının hemen ardından ayıklanır.
+        var reading = sized.WithoutButtonPrompts().WithoutNavigationHints().WithoutOcrNoise().WithoutClippedLines().JoiningRows().SubtitleBlock(area);
         // Normal boyda ama bir altyazı için fazla yüksek ya da fazla satırlı blok da altyazı değildir (afiş, not, belge).
         Reading? droppedBlock = null;
         if (reading.IsOversizedBlock(area))

@@ -49,14 +49,14 @@ public sealed class LiveServices : IAppServices
     public IAudioOutput? Audio { get; } = new WindowsAudioOutput();
     public IUpdater? Updater { get; } = new Updater();
     public IFirewall? Firewall { get; } = new WindowsFirewall();
-    // Oyun paketleri: uygulamaya gömülü olanlar ve %LOCALAPPDATA%\CouchSubs\packs klasöründekiler.
+    // Oyun paketleri: uygulamaya gömülü olanlar ve %LOCALAPPDATA%\Nino\packs klasöründekiler.
     public GamePackLibrary? GamePacks { get; } = new(GamePackLibrary.EmbeddedPacks, GamePackLibrary.UserDirectory);
     public PackMatch? FindInPacks(string text) => GamePacks is { } packs ? PackLookup.Match(packs, text) : null;
-    // Nino'nun kendi havuzu (%LOCALAPPDATA%\CouchSubs\pool); CouchSubs'tan kalan pool.json kuyruğu bir kez ona aktarılır.
+    // Nino'nun kendi havuzu (%LOCALAPPDATA%\Nino\pool); CouchSubs'tan kalan pool.json kuyruğu bir kez ona aktarılır.
     public NinoPool? Pool { get; } = new(Path.Combine(AppPaths.Data, "pool"),
         AppVersion.Current(System.Reflection.Assembly.GetEntryAssembly() ?? typeof(LiveServices).Assembly),
         legacyFile: Path.Combine(AppPaths.Data, "pool.json"));
-    // Nino çeviri havuzu (%LOCALAPPDATA%\CouchSubs\pool-translations; "translations" klasörü motorların önbelleği). Dil ve
+    // Nino çeviri havuzu (%LOCALAPPDATA%\Nino\pool-translations; "translations" klasörü motorların önbelleği). Dil ve
     // açık/kapalı ayarı AppController açılışta verir.
     public TranslationPool? Translations { get; } = new(Path.Combine(AppPaths.Data, "pool-translations"),
         NinoPool.ConfiguredEndpoint(Path.Combine(AppPaths.Data, "pool")),
@@ -92,13 +92,27 @@ public sealed class LiveServices : IAppServices
         return [.. await lg, .. await samsung];
     }
 
+    private const string SamsungClientNameKey = "samsungClientName";
+
+    /// <summary>
+    /// Samsung TV'ye gönderilen cihaz adı. Yeni eşleşmede "Nino" olur ve hatırlanır; önceki sürümle eşleşmiş TV'de eski ad
+    /// ("CouchSubs") kalır: ad değişirse TV izni yeniden sorabilir (<see cref="SamsungMessages.ClientNameFor"/>).
+    /// </summary>
+    private static string SamsungClientName(bool hasPairing)
+    {
+        var remembered = SecureStore.Default.Load<string>(SamsungClientNameKey);
+        var name = SamsungMessages.ClientNameFor(remembered, hasPairing);
+        if (name == SamsungMessages.ClientName && remembered != name) SecureStore.Default.Save(SamsungClientNameKey, name);
+        return name;
+    }
+
     public async Task<TvPairing> PairTvAsync(LgTv tv, string? key, string server)
     {
         // Bilgisayar Android TV'yi denetlemez; TV uygulaması bilgisayarı kendisi bulur.
         if (tv.Brand == TvBrand.AndroidTv) return new TvPairing("", true);
         if (tv.Brand == TvBrand.Samsung)
         {
-            using var samsung = new SamsungClient(tv, key);
+            using var samsung = new SamsungClient(tv, key, SamsungClientName(hasPairing: key is not null));
             var token = await samsung.ConnectAsync();
             try { await samsung.LaunchAsync(SamsungClient.AppId, new Dictionary<string, string> { ["server"] = server }); }
             catch (Exception) { /* TV uygulaması bilgisayarı kendisi de bulabilir */ }
@@ -138,7 +152,7 @@ public sealed class LiveServices : IAppServices
             var token = new SamsungTokenHolder(key, onKey);
             var samsungLocator = new TvLocator(tv, async target =>
             {
-                var client = new SamsungClient(target, token.Current);
+                var client = new SamsungClient(target, token.Current, SamsungClientName(hasPairing: true));
                 try
                 {
                     token.Received(await client.ConnectAsync());
@@ -226,8 +240,7 @@ public sealed class LiveServices : IAppServices
     // --- Samsung ve Android TV (CouchSubs.TvInstall) ---
 
     /// <summary>Kalıcı dosyalar: ADB anahtarı ve Samsung sertifikaları.</summary>
-    private static string DataDirectory(string name) =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", name);
+    private static string DataDirectory(string name) => Path.Combine(AppPaths.Data, name);
 
     public BundledTvApp? BundledApp(TvBrand brand)
     {
@@ -274,7 +287,7 @@ public sealed class LiveServices : IAppServices
         }
     }
 
-    /// <summary>Samsung kurulum günlüğü: %LOCALAPPDATA%\CouchSubs\tvinstall.log (hata iletisinde de yazar).</summary>
+    /// <summary>Samsung kurulum günlüğü: %LOCALAPPDATA%\Nino\tvinstall.log (hata iletisinde de yazar).</summary>
     public static string TvInstallLogPath => DataDirectory("tvinstall.log");
 
     internal static DevModeError SamsungError(SamsungInstallError error) => error switch
@@ -511,7 +524,7 @@ public sealed class DpapiAppStore : IAppStore
     public void Remove(string key) => SecureStore.Default.Remove(key);
 }
 
-/// <summary>Sıradan ayarlar: %LOCALAPPDATA%\CouchSubs\settings.json.</summary>
+/// <summary>Sıradan ayarlar: %LOCALAPPDATA%\Nino\settings.json.</summary>
 public sealed class FileSettingsStore : ISettingsStore
 {
     private static readonly string FilePath = Path.Combine(AppPaths.Data, "settings.json");

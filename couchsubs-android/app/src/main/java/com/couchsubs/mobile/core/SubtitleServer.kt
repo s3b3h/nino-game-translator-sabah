@@ -51,7 +51,21 @@ data class SubtitleStyle(
     /** Hızlı konuşmada önceki satır(lar) yeni satırın üstünde kısa süre soluk kalsın mı; kapalıysa yeni satır eskisinin yerine geçer. */
     val stackPrevious: Boolean = true,
     val font: SubtitleFont = SubtitleFont.CONDENSED,
-)
+) {
+    companion object {
+        /** Örtme kipinde kutunun en az koyuluğu (yüzde); Ayarlar'daki kaydırıcı bu kipte buradan başlar. */
+        const val COVER_MIN_BACKGROUND = 60
+
+        /**
+         * TV'ye giden kutu koyuluğu (0-100). Nino: örtme kipinde saydam kutu oyundaki İngilizce yazıyı gizleyemez (iki yazı
+         * karışır); bu kipte [COVER_MIN_BACKGROUND] altındaki değer tamamen opak (100) gider (Mac/iPhone: SubtitleStyle,
+         * Windows: SubtitleServer ile aynı kural). Ayarlar'daki kaydırıcı da bu işlevi kullanır: gösterdiği yüzde TV'ye
+         * gidenle aynıdır (eskiden kaydırıcı %55 gösterirken TV'ye 100 gidiyor, kutu simsiyah oluyordu).
+         */
+        fun effectiveBackground(placement: SubtitlePlacement, background: Int): Int =
+            if (placement == SubtitlePlacement.COVER && background < COVER_MIN_BACKGROUND) 100 else background.coerceIn(0, 100)
+    }
+}
 
 /** Altyazıları TV'ye ileten taraf. */
 interface SubtitleSender {

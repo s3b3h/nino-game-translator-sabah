@@ -17,8 +17,16 @@ struct LivingRoomScene: View {
     let available: CGSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var drag: CGSize = .zero
+    @State private var drag: CGSize
     @State private var splashDone = false
+    /// Prizin çevresindeki ışığın yanıp sönmesi (fiş takılı değilken).
+    @State private var socketPulse = false
+
+    /// `drag`: fişin başlangıçtaki kayması; yalnız çizim denemelerinde verilir (fişin prize yaklaşırkenki hâli).
+    init(available: CGSize, drag: CGSize = .zero) {
+        self.available = available
+        _drag = State(initialValue: drag)
+    }
     @State private var splashID = UUID()
 
     static let canvas = CGSize(width: 1672, height: 941)
@@ -32,6 +40,11 @@ struct LivingRoomScene: View {
         let socket: CGPoint
         /// Kablonun çizilmeye başladığı yer (PS5'te görseldeki kablonun ucu, Xbox'ta konsolun sağ arkası).
         let cableStart: CGPoint
+        /// Görseldeki kablonun (varsa) son parçası: çizilen kablo bunun üstünden başlar, ek yeri görünmez. Yoksa boş
+        /// (Xbox görselinde kablo yok; kablo `cableStart`taki girişten çıkar).
+        var cableLead: [CGPoint] = []
+        /// Kablonun çizilen parçasının başladığı yerdeki yönü (birim vektör): görseldeki kablonun bittiği eğimle sürer.
+        var cableOut = CGVector(dx: 1, dy: 0.1)
         /// Fiş çıkıkken sehpanın yanından sarkar.
         let hanging: CGPoint
         var logicalScreen: CGSize { CGSize(width: 588, height: 588 * screen.height / screen.width) }
@@ -42,13 +55,18 @@ struct LivingRoomScene: View {
                                 standFrame: CGRect(x: 49, y: 713, width: 1502, height: 160),
                                 socket: CGPoint(x: 1564, y: 378),
                                 cableStart: CGPoint(x: 1550, y: 734),
+                                // Görseldeki kablo: PS5'in arkasından yatay çıkar (y≈706), 1523'ten sonra aşağı kıvrılıp
+                                // (1552, 727)'de biter (ölçüldü). Çizilen kablo aynı yolu izleyip oradan devam eder.
+                                cableLead: [CGPoint(x: 1490, y: 706), CGPoint(x: 1522, y: 706), CGPoint(x: 1535, y: 709),
+                                            CGPoint(x: 1545, y: 716), CGPoint(x: 1552, y: 727)],
+                                cableOut: CGVector(dx: 0.5, dy: 0.87),
                                 hanging: CGPoint(x: 1600, y: 885))
         static let xbox = Layout(image: "LivingRoomXbox",
                                  screen: CGRect(x: 136, y: 40, width: 1185, height: 596),
                                  tvFrame: CGRect(x: 121, y: 26, width: 1214, height: 630),
                                  standFrame: CGRect(x: 43, y: 733, width: 1580, height: 167),
                                  socket: CGPoint(x: 1561, y: 381),
-                                 cableStart: CGPoint(x: 1566, y: 738),
+                                 cableStart: CGPoint(x: 1572, y: 722),
                                  hanging: CGPoint(x: 1646, y: 912))
     }
 
@@ -61,6 +79,7 @@ struct LivingRoomScene: View {
         let scale = min(1, available.width / Self.canvas.width, available.height / Self.canvas.height)
         ZStack(alignment: .topLeading) {
             leds
+            socketGlow
             Image(layout.image)
                 .resizable()
                 .frame(width: Self.canvas.width, height: Self.canvas.height)
@@ -96,6 +115,13 @@ struct LivingRoomScene: View {
         }
         .onAppear { if DebugPreview.state == "live" || model.isRunning { splashDone = true } }
         .task {
+            // Toplam indirme: açılışta ve sonra aralıklarla yenilenir (alınamazsa son bilinen sayı kalır).
+            while !Task.isCancelled {
+                await downloads.refresh()
+                try? await Task.sleep(for: .seconds(DownloadCounter.interval))
+            }
+        }
+        .task {
             // Önizleme: uygulamanın kendi açılış ekranı bitince TV'deki açılış animasyonu yeniden oynar (görülebilsin).
             guard DebugPreview.state == "splash" else { return }
             try? await Task.sleep(for: .seconds(3.5))
@@ -108,17 +134,13 @@ struct LivingRoomScene: View {
         .accessibilityAction { toggle() }
     }
 
+    /// TV'nin sağ üst köşesindeki toplam indirme sayısı (sunucudan; bkz. `DownloadCounter`).
+    @ObservedObject private var downloads = DownloadCounter.shared
+
     @ViewBuilder
     private func screenContent(size: CGSize) -> some View {
         if !plugged {
-            ZStack {
-                Color.black
-                Text("NO SIGNAL")
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    // Nino: harf aralığı Arapça harflerin birleşmesini bozar.
-                    .tracking(TargetLanguage.containsArabic(String(localized: "NO SIGNAL")) ? 0 : 3)
-                    .foregroundStyle(Color.white.opacity(0.28))
-            }
+            TVStandbyScreen(downloads: downloads.total)
         } else if !splashDone {
             // Uygulamanın kendi açılış animasyonu, TV ekranına sığacak kadar küçültülmüş.
             let window = CGSize(width: 1040, height: 586)
@@ -152,6 +174,8 @@ struct LivingRoomScene: View {
                     .padding(.horizontal, 10).frame(height: 24)
                     .background(Capsule().fill(Color.black.opacity(0.4)))
                     Spacer()
+                    // Nino: toplam indirme, fiş takılı değilkenki yerinde (sağ üst) kalır.
+                    if let total = downloads.total { DownloadHUD(total: total) }
                 }
                 Spacer()
                 Group {
@@ -225,24 +249,103 @@ struct LivingRoomScene: View {
         return CGPoint(x: base.x + drag.width, y: base.y + drag.height)
     }
 
-    /// Sehpanın ucundan fişe giden kablo: çıkıkken aşağı sarkar, takılıyken yukarı, prize kıvrılır.
+    /// Nino: fiş takılı değilken prizin kenarlarından taşan, yanıp sönen ışık: fişin nereye takılacağı anlaşılsın.
+    /// Görselin arkasında çizilir (priz görselin parçasıdır; ışık kenarlarından taşar). Fiş takılınca söner. "Hareketi
+    /// azalt" açıksa yanıp sönmez, sabit yanar.
+    private var socketGlow: some View {
+        let color = Color(red: 0.30, green: 0.66, blue: 1.0)
+        let size = Self.socketSize
+        return ZStack {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(color)
+                .frame(width: size + 26, height: size + 26)
+                .blur(radius: 18)
+                .opacity(socketPulse ? 0.95 : 0.3)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(red: 0.62, green: 0.84, blue: 1.0))
+                .frame(width: size + 8, height: size + 8)
+                .blur(radius: 5)
+                .opacity(socketPulse ? 1 : 0.45)
+        }
+        .position(layout.socket)
+        .opacity(plugged ? 0 : 1)
+        .animation(.easeInOut(duration: reduceMotion ? 0 : 0.5), value: plugged)
+        .allowsHitTesting(false)
+        .onAppear {
+            guard !reduceMotion else { socketPulse = true; return }
+            withAnimation(.easeInOut(duration: 0.95).repeatForever(autoreverses: true)) { socketPulse = true }
+        }
+    }
+
+    /// Görseldeki prizin kenar uzunluğu (sahne pikseli).
+    static let socketSize: CGFloat = 86
+
+    /// Fiş çıkıkken uçlarının baktığı yön (radyan; 0 = aşağı, saat yönü artı). Dinlenirken yerçekimiyle aşağı sarkar;
+    /// prize yaklaştıkça uçlar prize döner (eskiden hep aşağı bakıyordu, prize götürürken de).
+    private var plugTurn: Double {
+        Self.plugTurn(plug: plugPoint, socket: layout.socket, rest: layout.hanging)
+    }
+
+    /// Yön kuralı (saf işlev, sınanır): priz uzaktayken 0, prize `Self.turnDone` kadar yaklaşınca tam prize dönük.
+    static func plugTurn(plug: CGPoint, socket: CGPoint, rest: CGPoint) -> Double {
+        let restDistance = hypot(socket.x - rest.x, socket.y - rest.y)
+        let distance = hypot(socket.x - plug.x, socket.y - plug.y)
+        guard restDistance > turnDone, distance > 1 else { return 0 }
+        let t = min(1, max(0, (restDistance - distance) / (restDistance - turnDone)))
+        let eased = t * t * (3 - 2 * t)
+        // Uçlar dönmeden önce (0, +1) yönüne bakar; θ kadar dönünce (−sin θ, cos θ). Prize bakması için:
+        let toward = atan2(-(socket.x - plug.x), socket.y - plug.y)
+        return eased * toward
+    }
+
+    /// Prize bu kadar yaklaşınca fiş tam prize dönmüş olur (sahne pikseli).
+    static let turnDone: CGFloat = 120
+    /// Kablonun serbest boyu: fiş konsola yaklaşınca kablo bu boydan artanı kadar sarkar.
+    static let cableLength: CGFloat = 330
+    static let cableWidth: CGFloat = 8
+
+    /// Konsoldan fişe giden kablo. Görseldeki kablonun (PS5) son parçasının üstünden başlar ki ek yeri belli olmasın;
+    /// Xbox'ta konsolun arkasından çıkar. Fişin arkasına fişin ekseni boyunca girer; çıkıkken sarkar, takılıyken
+    /// alttan prize kıvrılır.
     private var cable: some View {
         let p = plugPoint
-        let end = plugged && drag == .zero ? CGPoint(x: p.x, y: p.y + 30) : CGPoint(x: p.x, y: p.y - 30)
-        return Path { path in
-            path.move(to: layout.cableStart)
-            if plugged && drag == .zero {
-                path.addCurve(to: end, control1: CGPoint(x: 1620, y: 720), control2: CGPoint(x: end.x + 10, y: end.y + 170))
-            } else {
-                path.addCurve(to: end, control1: CGPoint(x: 1585, y: 745), control2: CGPoint(x: end.x - 8, y: end.y - 70))
+        let inSocket = plugged && drag == .zero
+        let turn = plugTurn
+        let prong = CGPoint(x: -sin(turn), y: cos(turn))
+        let start = layout.cableLead.last ?? layout.cableStart
+        let out = layout.cableOut
+        return ZStack {
+            Path { path in
+                path.move(to: layout.cableLead.first ?? layout.cableStart)
+                for point in layout.cableLead.dropFirst() { path.addLine(to: point) }
+                if inSocket {
+                    let end = CGPoint(x: p.x, y: p.y + 30)
+                    path.addCurve(to: end, control1: CGPoint(x: start.x + out.dx * 90, y: start.y + out.dy * 90),
+                                  control2: CGPoint(x: end.x + 10, y: end.y + 170))
+                } else {
+                    // Fişin arkası: gövdenin üstündeki kablo boğazı.
+                    let back = CGPoint(x: p.x - prong.x * 40, y: p.y - prong.y * 40)
+                    let sag = max(0, Self.cableLength - hypot(back.x - start.x, back.y - start.y)) * 0.45
+                    path.addCurve(to: back,
+                                  control1: CGPoint(x: start.x + out.dx * 70, y: start.y + out.dy * 70 + sag),
+                                  control2: CGPoint(x: back.x - prong.x * 80, y: back.y - prong.y * 80 + sag))
+                }
+            }
+            .stroke(Color(white: 0.06), style: StrokeStyle(lineWidth: Self.cableWidth, lineCap: .round, lineJoin: .round))
+            .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
+            // Xbox'ta kablo konsolun arkasındaki girişten çıkar: küçük bir fiş başı.
+            if layout.cableLead.isEmpty {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(Color(white: 0.08))
+                    .frame(width: 14, height: 12)
+                    .position(layout.cableStart)
             }
         }
-        .stroke(Color(white: 0.06), style: StrokeStyle(lineWidth: 10, lineCap: .round))
-        .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
         .allowsHitTesting(false)
     }
 
-    /// Fiş: çıkıkken siyah gövde ve iki metal uç aşağı bakar; takılıyken prizin önünde yuvarlak siyah kapak görünür.
+    /// Fiş: çıkıkken siyah gövde ve iki metal uç; uçlar `plugTurn` yönüne bakar. Takılıyken prizin önünde yuvarlak
+    /// siyah kapak görünür.
     private var plug: some View {
         ZStack {
             if plugged && drag == .zero {
@@ -253,9 +356,9 @@ struct LivingRoomScene: View {
                     .shadow(color: .black.opacity(0.45), radius: 6, y: 4)
             } else {
                 VStack(spacing: 0) {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
                         .fill(Color(white: 0.06))
-                        .frame(width: 16, height: 14)
+                        .frame(width: 13, height: 14)
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
                         .fill(LinearGradient(colors: [Color(white: 0.22), Color(white: 0.04)], startPoint: .leading, endPoint: .trailing))
                         .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Color.white.opacity(0.14)))
@@ -267,6 +370,7 @@ struct LivingRoomScene: View {
                             .frame(width: 6, height: 24)
                     }
                 }
+                .rotationEffect(.radians(plugTurn))
                 .shadow(color: .black.opacity(0.3), radius: 4, y: 3)
             }
         }
@@ -307,10 +411,72 @@ struct LivingRoomHint: View {
 
     var body: some View {
         // Nino: Xbox'ta PS5 bağlanmaz; eksik olan TV ya da bu Mac'te açılacak Xbox penceresidir.
+        // Fiş takılmaya hazırken burada bir şey yazmaz: ne yapılacağı TV ekranında yazıyor ("Çalıştırmak için fişi prize
+        // sürükleyiniz") ve priz yanıp sönüyor; aynı şeyi iki kez söylemeye gerek yok. Satırın yeri korunur (sahne kaymasın).
+        let idleReady = !(model.isRunning || DebugPreview.state != nil) && model.canStart
         Text(model.isRunning || DebugPreview.state != nil ? "Unplug to stop"
              : model.canStart ? "Plug in to turn on Turkish subtitles"
              : model.settings.gameConsole == .xbox ? "Connect your TV first, then plug in" : "Connect your PS5 first")
             .font(.csCallout)
             .foregroundStyle(Color.csSecondary)
+            .opacity(idleReady ? 0 : 1)
+            .accessibilityHidden(idleReady)
+    }
+}
+
+
+/// Nino: fiş takılı değilken TV ekranı. Ortada ne yapılacağı ("Çalıştırmak için fişi prize sürükleyiniz"; eskiden
+/// "SİNYAL YOK"), sağ üstte toplam indirme.
+struct TVStandbyScreen: View {
+    let downloads: Int?
+
+    var body: some View {
+        ZStack {
+            Color.black
+            Text("Drag the plug to the socket to start")
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                // Nino: harf aralığı Arapça harflerin birleşmesini bozar.
+                .tracking(TargetLanguage.containsArabic(String(localized: "Drag the plug to the socket to start")) ? 0 : 2)
+                .textCase(.uppercase)
+                .foregroundStyle(Color.white.opacity(0.4))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+        }
+        .overlay(alignment: .topTrailing) {
+            if let downloads { DownloadHUD(total: downloads).padding(18) }
+        }
+    }
+}
+
+/// Nino: toplam indirme göstergesi. Oyunlardaki para göstergesi gibi: kalın, hafif eğik, siyah çerçeveli; üstte küçük
+/// beyaz başlık, altında yeşil sayı. Yazı tipi sistemdeki "Impact" (yoksa sistemin en kalın yazısı); oyunun kendi
+/// logosu ya da yazı tipi kullanılmaz.
+struct DownloadHUD: View {
+    let total: Int
+
+    private static let green = Color(red: 0.48, green: 0.91, blue: 0.48)
+
+    var body: some View {
+        let arabic = TargetLanguage.containsArabic(String(localized: "Total downloads"))
+        VStack(alignment: .trailing, spacing: 1) {
+            outlined(Text("Total downloads").tracking(arabic ? 0 : 0.8), size: 11, color: .white, weight: 1)
+                .textCase(.uppercase)
+            outlined(Text(verbatim: total.formatted(.number.grouping(.automatic))), size: 27, color: Self.green, weight: 1.5)
+        }
+        // Hafif eğim (Arapçada harfleri bozmasın diye yok).
+        .transformEffect(arabic ? .identity : CGAffineTransform(a: 1, b: 0, c: -0.12, d: 1, tx: 3, ty: 0))
+        .fixedSize()
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Siyah çerçeveli yazı: dört yöne keskin gölge + altta derinlik gölgesi.
+    private func outlined(_ text: Text, size: CGFloat, color: Color, weight: CGFloat) -> some View {
+        text.font(Font.custom("Impact", size: size).weight(.black))
+            .foregroundStyle(color)
+            .shadow(color: .black, radius: 0, x: weight, y: 0)
+            .shadow(color: .black, radius: 0, x: -weight, y: 0)
+            .shadow(color: .black, radius: 0, x: 0, y: weight)
+            .shadow(color: .black, radius: 0, x: 0, y: -weight)
+            .shadow(color: .black.opacity(0.9), radius: 0, x: 0, y: weight + 1)
     }
 }

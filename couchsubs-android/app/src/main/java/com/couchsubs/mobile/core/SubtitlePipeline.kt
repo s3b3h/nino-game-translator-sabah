@@ -225,7 +225,7 @@ class SubtitlePipeline(
             visible = sized
         }
         // Kumanda ipuçları ve yazı tanıma çöpleri çevrilmez; yalnız altyazı bloğu çevrilir.
-        val block = visible.withoutButtonPrompts().withoutOcrNoise().joiningRows().subtitleBlock(area)
+        val block = visible.withoutButtonPrompts().withoutNavigationHints().withoutOcrNoise().joiningRows().subtitleBlock(area)
         // Normal boyda ama çok satırlı ya da çok yer kaplayan blok da altyazı değildir (afiş, not, üst üste tabelalar).
         val reading = if (block.isOversizedBlock(area)) {
             noteOversized(block.text) { "dev blok: ${excerpt(block.text)} altyazı için fazla yer kaplıyor (${block.lines.size} satır), atlandı" }

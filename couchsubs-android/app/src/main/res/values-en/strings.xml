@@ -296,7 +296,7 @@
     <string name="tvapp_update_body">Nino on the %1$s TV is %2$s, this phone has %3$s. Updating takes about a minute; keep the TV on and on the same Wi-Fi.</string>
     <string name="tvapp_update_button">Update the TV app</string>
     <string name="app_update_title">New version ready: %1$s</string>
-    <string name="app_update_body">Download and install the latest Nino.</string>
+    <string name="app_update_body">A new version of Nino is out. Tap the button below, then open the downloaded file and install it. You don\'t need to remove the old version; the new one installs over it and keeps your settings. If it won\'t install, uninstall the old version and install again.</string>
     <string name="app_update_button">Update</string>
     <string name="tvapp_update_short">Update available: %1$s</string>
     <string name="tvinstall_title">Install the TV app</string>
@@ -453,7 +453,8 @@
     <string name="nino_slide_to_unplug">Slide back to stop</string>
     <string name="nino_plug_to_start">Plug in to turn on %1$s subtitles</string>
     <string name="nino_pair_first">Pair your PS5 first</string>
-    <string name="nino_no_signal">NO SIGNAL</string>
+    <string name="nino_plug_drag_hint">DRAG THE PLUG TO THE SOCKET TO START</string>
+    <string name="nino_total_downloads">TOTAL DOWNLOADS</string>
     <string name="nino_live">LIVE</string>
     <string name="nino_connecting_ps5">Connecting to the PS5…</string>
     <string name="nino_waiting_next">Waiting for the next subtitle…</string>

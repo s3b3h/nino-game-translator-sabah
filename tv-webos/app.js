@@ -6,9 +6,9 @@
   'use strict';
 
   // TV uygulamasının sürümü: appinfo.json, tv-tizen/config.xml ve tv-android/app/build.gradle ile aynı tutulur.
-  var APP_VERSION = '3.4.0';
+  var APP_VERSION = '3.5.0';
   // Nino: herkesin göreceği sürüm adı (bütün uygulamalarda aynı: V3.2). Teknik numara parantez içinde.
-  var APP_LABEL = 'V3.4';
+  var APP_LABEL = 'V3.5';
   var t = window.t;
   var config = window.COUCHSUBS_CONFIG || {};
   var platform = window.COUCHSUBS_PLATFORM;
@@ -688,6 +688,15 @@
   var REGION_PAD = 0.004;
   var REGION_MIN_FONT = 18;
   var REGION_MAX_FONT = 44;
+  // Nino: ekranın alt yarısındaki KISA yazı (oyundaki telefonun sağ alttaki kısa mesaj bildirimi gibi) yerinde
+  // kapatılmaz: çeviri yazının hemen ÜSTÜNDE, yarı saydam kutuda durur, asıl mesaj da görünür kalır. Eskiden simsiyah
+  // kutu mesajın yarısını kapatıyordu. Uzun yazılar (açık telefon ekranı, görev metni) eskisi gibi yerinde çevrilir.
+  var REGION_BESIDE_MAX_HEIGHT = 0.16;
+
+  // Kutunun yüksekliği kısaysa ve alt yarıdaysa çeviri yazının üstüne konur.
+  function regionBeside(box) {
+    return (box.top + box.bottom) / 2 > 0.5 && (box.bottom - box.top) <= REGION_BESIDE_MAX_HEIGHT;
+  }
 
   function showRegion(data) {
     var id = data && typeof data.id === 'string' ? data.id : '';
@@ -711,7 +720,12 @@
     } else {
       el.style.left = (Math.max(0, box.left - REGION_PAD) * 100) + '%';
     }
-    if ((box.top + box.bottom) / 2 > 0.5) {
+    var beside = regionBeside(box);
+    el.className = beside ? 'region beside' : 'region';
+    if (beside) {
+      // Kutunun alt kenarı asıl yazının üst kenarına oturur (araya ince bir boşluk).
+      el.style.bottom = (Math.min(1, 1 - box.top + REGION_PAD * 2) * 100) + '%';
+    } else if ((box.top + box.bottom) / 2 > 0.5) {
       el.style.bottom = (Math.max(0, 1 - box.bottom - REGION_PAD) * 100) + '%';
     } else {
       el.style.top = (Math.max(0, box.top - REGION_PAD) * 100) + '%';

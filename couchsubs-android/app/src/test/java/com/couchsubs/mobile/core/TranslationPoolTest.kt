@@ -262,6 +262,27 @@ class TranslationPoolTest {
         assertEquals(emptyList<String>(), context.before("Go."))
     }
 
+    /** Sunucu ayarı okununca ham cevap dinleyene verilir: toplam indirme sayısı için ayrı istek yapılmaz. */
+    @Test fun configReplyIsHandedToTheDownloadCounter() {
+        val server = FakeServer()
+        server.config = """{"ok":true,"translate":{"enabled":true},"downloads":3439}"""
+        val pool = makePool(server)
+        val store = object : DownloadCounter.Store { override var downloadTotal = 0 }
+        var asked = 0
+        val counter = DownloadCounter(store, URL("https://pool.test"), { asked++; null }) { now }
+        pool.onConfigReply = { counter.accept(it) }
+        pool.refreshConfig(force = true)
+        assertEquals(3439, counter.total.value)
+        assertEquals(3439, store.downloadTotal)
+        counter.refresh()
+        assertEquals(0, asked)
+        // Dinleyen hata verse de ayar okunur.
+        pool.onConfigReply = { throw IllegalStateException("bozuk") }
+        server.config = """{"translate":{"enabled":false}}"""
+        pool.refreshConfig(force = true)
+        assertFalse(pool.config.enabled)
+    }
+
     // --- Havuz öncelikli oyunlar (poolFirst) ---
 
     @Test fun serverRecognisedGameMakesItPoolFirst() {

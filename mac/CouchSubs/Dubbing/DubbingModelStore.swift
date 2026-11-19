@@ -72,6 +72,21 @@ enum DubbingModelStore {
         try? FileManager.default.removeItem(at: root)
     }
 
+    /// Nino: ses motorunun ayar dosyasında (`couchsubs.yaml`) model dosyalarının TAM yolu yazar. Veri klasörü taşınınca
+    /// ya da kopyalanınca (CouchSubs → Nino) eski yol kalır: taşımadan sonra dosya bulunamaz, kopyadan sonra ise ses
+    /// motoru sessizce eski klasördeki modeli kullanırdı. Dosya, içeriği şimdiki klasöre göre üretilenle aynı değilse
+    /// yeniden yazılır (model hazır değilse hiçbir şey yapılmaz). Değiştiyse true.
+    @discardableResult
+    static func repairConfig(directory: URL = directory) -> Bool {
+        let manager = FileManager.default
+        guard manager.fileExists(atPath: directory.appendingPathComponent(".ready").path),
+              let original = try? String(contentsOf: directory.appendingPathComponent("config.yaml"), encoding: .utf8) else { return false }
+        let target = directory.appendingPathComponent("couchsubs.yaml")
+        let expected = DubbingModel.localConfig(from: original, directory: directory)
+        if (try? String(contentsOf: target, encoding: .utf8)) == expected { return false }
+        return (try? expected.write(to: target, atomically: true, encoding: .utf8)) != nil
+    }
+
     private static func sha256(of url: URL) throws -> String {
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }

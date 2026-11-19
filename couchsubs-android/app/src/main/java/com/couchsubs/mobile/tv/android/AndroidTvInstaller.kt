@@ -162,7 +162,7 @@ class AndroidTvInstaller(
             val dumpsys = adb.run("shell:dumpsys package $PACKAGE_NAME")
             val installed = versionFromDumpsys(dumpsys)
             val fromPlay = installedFromPlay(dumpsys)
-            log.write("TV'deki CouchSubs: ${installed ?: "yok"}${if (fromPlay) " (Google Play'den)" else ""}")
+            log.write("TV'deki Nino: ${installed ?: "yok"}${if (fromPlay) " (Google Play'den)" else ""}")
             if (installed != null && version != null && !SamsungDiagnostics.isNewer(version, installed)) {
                 grantOverlay(adb, log)
                 launch(adb)

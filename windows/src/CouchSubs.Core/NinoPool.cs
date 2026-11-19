@@ -147,7 +147,7 @@ public sealed class NinoPool : IDisposable
         return LiveEndpoint;
     }
 
-    /// <param name="directory">Havuz klasörü (%LOCALAPPDATA%\CouchSubs\pool).</param>
+    /// <param name="directory">Havuz klasörü (%LOCALAPPDATA%\Nino\pool).</param>
     /// <param name="endpoint">Sunucu; verilmezse <see cref="ConfiguredEndpoint"/>.</param>
     /// <param name="legacyFile">CouchSubs'tan kalan pool.json; gönderilmemiş satırları bir kez kuyruğa alınır.</param>
     /// <param name="handler">HTTP katmanı; testlerde sahtesi verilir.</param>

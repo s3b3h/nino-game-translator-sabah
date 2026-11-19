@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using CouchSubs.Core;
 
 namespace CouchSubs.App.Services;
 
@@ -73,10 +74,10 @@ public sealed class SecureStore(string path)
     }
 }
 
-/// <summary>Uygulamanın kullanıcıya özel klasörü (%LOCALAPPDATA%\CouchSubs).</summary>
+/// <summary>Uygulamanın kullanıcıya özel klasörü (%LOCALAPPDATA%\Nino).</summary>
 public static class AppPaths
 {
-    public static string Data { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs");
+    public static string Data { get; } = DataFolder.Path;
     public static string Models { get; } = Path.Combine(Data, "models");
     /// <summary>Kalıcı çeviri önbellekleri (motor ve dil çifti başına bir dosya).</summary>
     public static string Translations { get; } = Path.Combine(Data, "translations");

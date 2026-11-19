@@ -186,7 +186,7 @@ final class Dubber {
     private static func saveForInspection(_ window: [Float]) {
         guard !window.isEmpty else { return }
         savedCount += 1
-        let folder = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/CouchSubs/audio", isDirectory: true)
+        let folder = AppFolder.logs.appendingPathComponent("audio", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let file = folder.appendingPathComponent("anlasilamayan-\(savedCount % 20).wav")
         try? SpeechAudio(samples: window, sampleRate: Int(VoiceTracker.sampleRate)).wav.write(to: file)

@@ -7,7 +7,7 @@ namespace CouchSubs.Core;
 
 /// <summary>
 /// Altyazı günlüğü: her oturumda okunan altyazı satırlarının ve akıbetlerinin kısa kaydı
-/// (%LOCALAPPDATA%\CouchSubs\altyazi.log, remoteplay.log'un yanı; Mac'te ~/Library/Logs/CouchSubs/altyazi.log).
+/// (%LOCALAPPDATA%\Nino\altyazi.log, remoteplay.log'un yanı; Mac'te ~/Library/Logs/CouchSubs/altyazi.log).
 /// "İlk satırlar görünmedi" gibi bildirimlerde ne okunduğu ve her satıra ne olduğu (paket, önbellek, çeviri, geç kaldı,
 /// atıldı, çöp) buradan görülür. Altyazı metni dışında kişisel bilgi yazılmaz. Uygulama açılışta <see cref="Enable"/>
 /// çağırır; çağrılmazsa (testler) hiçbir şey yazılmaz. Satırlar arka planda yazılır; dosya 1 MB'yi geçince
@@ -16,14 +16,13 @@ namespace CouchSubs.Core;
 public static class SubtitleLog
 {
     /// <summary>Kullanıcıya gösterilen yol (Dosya Gezgini'nin adres çubuğuna yazılabilir).</summary>
-    public const string DisplayPath = @"%LOCALAPPDATA%\CouchSubs\altyazi.log";
+    public static string DisplayPath => DataFolder.Display("altyazi.log");
     /// <summary>Bir dosyanın en büyük boyutu; aşılınca eskisi <c>.1</c> olur.</summary>
     internal const long MaxBytes = 1 << 20;
     /// <summary>Günlükteki altyazı alıntısının en uzun hâli.</summary>
     public const int ExcerptLength = 120;
 
-    public static string DefaultPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchSubs", "altyazi.log");
+    public static string DefaultPath => DataFolder.In("altyazi.log");
 
     private static readonly BlockingCollection<(string? Path, string? Line, ManualResetEventSlim? Done)> Queue = new(boundedCapacity: 2000);
     private static readonly object Gate = new();

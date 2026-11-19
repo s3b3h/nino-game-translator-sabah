@@ -425,7 +425,7 @@ function renderSupport(d,s){
  set('ask',fmt(obj(d.assistant).questionsToday)+' soru');set('askCost','Harcama '+usd(s.assistantToday))}
 
 function renderTvs(t){
- var EMPTY='TV uygulamasının yeni sürümü (V3.4) kuruldukça burada görünecek';
+ var EMPTY='TV uygulamasının yeni sürümü (V3.5) kuruldukça burada görünecek';
  var count={androidtv:0,samsung:0,lg:0},models={androidtv:[],samsung:[],lg:[]};
  arr(t.byBrand).forEach(function(r){if(count[r.brand]!=null)count[r.brand]=num(r.n)});
  arr(t.models).forEach(function(r){if(models[r.brand]&&models[r.brand].length<20)models[r.brand].push(r)});

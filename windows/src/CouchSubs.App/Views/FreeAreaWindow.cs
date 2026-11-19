@@ -53,7 +53,7 @@ public sealed class FreeAreaWindow : Window
         // Nino: ekran koordinatlarıyla çalışır; Arapça arayüzde aynalanmaz.
         RightToLeft.KeepLeftToRight(this);
         this.frame = frame;
-        Title = "CouchSubs";
+        Title = "Nino";
         WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.NoResize;
         WindowState = WindowState.Maximized;

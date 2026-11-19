@@ -14,7 +14,7 @@ enum NinoDebugFrames {
     nonisolated(unsafe) private static var last: TimeInterval = 0
     private static let queue = DispatchQueue(label: "nino.debug-frames")
     static var folder: URL {
-        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/CouchSubs/frames", isDirectory: true)
+        AppFolder.logs.appendingPathComponent("frames", isDirectory: true)
     }
 
     static func capture(_ frame: CGImage, region: CropRegion, box: TextBox?, source: String, translation: String) {

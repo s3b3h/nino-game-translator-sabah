@@ -160,7 +160,8 @@ public enum DisconnectReason: Equatable, Sendable {
     static func classify(_ reason: DisconnectReason, searchAnswered: Bool, host: String) -> DisconnectReason {
         guard !searchAnswered else { return reason }
         switch reason {
-        case .network, .other: return .notFound(host)
+        // Kayıtlı adres bilinmiyorsa (0.0.0.0, boş) "PS5 0.0.0.0 adresinde bulunamadı" denmez.
+        case .network, .other: return ConsoleAddress.isUsable(host) ? .notFound(host) : .network
         default: return reason
         }
     }
@@ -347,6 +348,15 @@ public final class StreamSession: @unchecked Sendable {
     public var onState: ((SessionState) -> Void)?
     /// PS5 ağda yeni bir adreste bulununca (oturum kuyruğunda) çağrılır; yeni adres kaydedilmelidir.
     public var onConsoleMoved: ((RegisteredConsole) -> Void)?
+    /// Nino: macOS'un Yerel Ağ izni kapalı görünüyor (ya da artık görünmüyor); değer değişince oturum kuyruğunda
+    /// çağrılır. Nasıl karar verildiği: `LocalNetworkAccess`.
+    public var onLocalNetworkBlocked: ((Bool) -> Void)?
+    /// Son bildirilen değer (yalnız `queue`).
+    private var reportedBlocked = false
+    /// PS5 araması (testlerde sahtesi; gerçek arama ağa paket gönderir). `host` nil ise bütün ağ taranır.
+    var searchConsoles: (_ timeout: Double, _ host: String?) -> [ConsoleInfo] = { timeout, host in
+        Console.search(timeout: .seconds(timeout), host: host)
+    }
 
     /// Yalnız `queue` üzerinde değişir (PS5'in adresi değişirse; Windows'taki gibi).
     private var console: RegisteredConsole
@@ -442,8 +452,18 @@ public final class StreamSession: @unchecked Sendable {
         emit(.connecting)
 
         // PS5 uyuyorsa uyandır; uyanmayı kuyruğu bloklamadan, aralıklı kontrollerle bekle.
-        let info = Console.blockingDiscover(timeout: 2, host: console.host).first ?? relocate()
+        // Kayıtlı adres bilinmiyorsa (eski sürümlerin kaydettiği 0.0.0.0 ya da boş adres) o adrese sorulmaz; PS5 doğrudan
+        // adıyla ağda aranır.
+        let known = ConsoleAddress.isUsable(console.host)
+        if !known { RemotePlayLog.write("PS5 oturumu: kayıtlı adres geçersiz (\"\(console.host)\"); PS5 adıyla ağda aranıyor: \(console.name)") }
+        let info = (known ? searchConsoles(2, console.host).first : nil) ?? relocate()
+        reportLocalNetwork()
         searchAnswered = info != nil
+        // Adres hâlâ bilinmiyorsa oturum açılmaz (eskiden 0.0.0.0'a bağlanmayı deniyordu); sonraki denemede yeniden aranır.
+        guard ConsoleAddress.isUsable(console.host) else {
+            RemotePlayLog.write("PS5 oturumu: \(console.name) ağda bulunamadı ve kayıtlı adresi yok; yeniden aranacak")
+            return scheduleReconnect(current, reason: .network)
+        }
         if let info {
             RemotePlayLog.write("PS5 oturumu: \(info.name) \(info.host) \(info.isAwake ? "uyanık" : "dinlenmede, uyandırılıyor")")
         } else {
@@ -456,16 +476,31 @@ public final class StreamSession: @unchecked Sendable {
         openSession(current)
     }
 
+    /// Yerel ağ izni işareti değiştiyse uygulamaya bildirir (yalnız `queue`).
+    private func reportLocalNetwork() {
+        let blocked = LocalNetworkAccess.looksBlocked
+        guard blocked != reportedBlocked else { return }
+        reportedBlocked = blocked
+        onLocalNetworkBlocked?(blocked)
+    }
+
     /// Kayıtlı adreste PS5 yoksa (modem adresini değiştirmiş olabilir) ağda arar; bulursa adresi günceller.
     /// Eskiden yalnız Windows'ta vardı; Mac'te adres değişince bağlantı hiç kurulamıyordu.
     private func relocate() -> ConsoleInfo? {
         guard Date() >= nextRelocate else { return nil }
         nextRelocate = Date().addingTimeInterval(30)
-        guard let moved = Self.pickMoved(Console.search(timeout: .seconds(3), host: nil), name: console.name),
-              moved.host != console.host else { return nil }
+        guard let moved = Self.moved(console, found: searchConsoles(3, nil)) else { return nil }
         RemotePlayLog.write("PS5 yeni adreste: \(console.host) -> \(moved.host)")
         console = console.withHost(moved.host)
         onConsoleMoved?(console)
+        return moved
+    }
+
+    /// Taramada kayıtlı PS5 yeni bir adreste bulunduysa o yanıt; bulunamadıysa, adres aynıysa ya da yanıtın adresi
+    /// PS5'in adresi olamayacak bir şeyse (`0.0.0.0`, boş) nil. Geçersiz adres hiçbir zaman kaydedilmez.
+    static func moved(_ console: RegisteredConsole, found: [ConsoleInfo]) -> ConsoleInfo? {
+        guard let moved = pickMoved(found.filter { ConsoleAddress.isUsable($0.host) }, name: console.name),
+              moved.host != console.host else { return nil }
         return moved
     }
 
@@ -479,7 +514,7 @@ public final class StreamSession: @unchecked Sendable {
     private func waitForWake(_ current: Int, deadline: Date) {
         queue.asyncAfter(deadline: .now() + 2) { [weak self] in
             guard let self, self.isCurrent(current) else { return }
-            if Console.blockingDiscover(timeout: 2, host: self.console.host).contains(where: \.isAwake) {
+            if self.searchConsoles(2, self.console.host).contains(where: \.isAwake) {
                 self.openSession(current)
             } else if Date() < deadline {
                 self.waitForWake(current, deadline: deadline)
@@ -559,6 +594,9 @@ public final class StreamSession: @unchecked Sendable {
                 guard let self, self.box?.generation == eventGeneration else { return }
                 self.policy.connected()
                 self.watch { $0.connected() }
+                // Oturum açıldıysa yerel ağa ulaşılıyor demektir; izin uyarısı kalkar.
+                LocalNetworkAccess.noteReachable()
+                self.reportLocalNetwork()
                 self.emit(.streaming)
                 self.scheduleWatch(eventGeneration)
             }
@@ -682,12 +720,5 @@ public final class StreamSession: @unchecked Sendable {
         // Ana ekrandaki durumun nedeni remoteplay.log'da da görünsün.
         if state != .connecting { RemotePlayLog.write("PS5 oturumu: \(state)") }
         onState?(state)
-    }
-}
-
-extension Console {
-    /// Senkron arama (yalnız oturum kuyruğunda kullanılır).
-    static func blockingDiscover(timeout: Double, host: String) -> [ConsoleInfo] {
-        search(timeout: .seconds(timeout), host: host)
     }
 }

@@ -85,6 +85,28 @@ public struct Reading: Equatable, Sendable {
         Reading(lines: lines.filter { !ButtonPrompts.isPrompt($0.text) })
     }
 
+    /// Nino: oyunun yol tarifi satırları ("Turn Right 405 ft 432 ft", "Keep Left 0 ft 2 ft", "U-Turn Left 5 ft") altyazı
+    /// değildir: çevrilmez, ekranda da gösterilmez (kullanıcı isteği, 19 Kasım 2026). Her mesafe ayrı bir satır olduğu
+    /// için eskiden her biri ayrıca çeviriye de gidiyordu.
+    public func withoutNavigationHints() -> Reading {
+        Reading(lines: lines.filter { !Self.isNavigationHint($0.text) })
+    }
+
+    /// Yalnız yön + mesafelerden oluşan satır. Arkasında söz olan cümle ("Turn right at the lights, okay?") altyazıdır.
+    public static func isNavigationHint(_ raw: String) -> Bool {
+        let text = raw.trimmingCharacters(in: .whitespaces)
+        guard let move = text.range(of: #"^[\s\-–—'"‘’.,·•]*(u-?\s?turn|turn|keep)\s+(left|right)\b"#,
+                                    options: [.regularExpression, .caseInsensitive]) else { return false }
+        let rest = String(text[move.upperBound...])
+        // Mesafe: sayı (okuma hatasıyla "O"/"o" = 0) + birim.
+        let distance = #"(\d+(?:[.,]\d+)?|[Oo])\s*(ft|mi|yd|km|m)\b"#
+        guard rest.range(of: distance, options: .regularExpression) != nil else { return false }
+        // Mesafeler çıkınca geriye yalnız okuma kırıntısı (noktalama, tek tük harf) kalmalı.
+        let leftover = rest.replacingOccurrences(of: distance, with: " ", options: .regularExpression)
+            .filter { $0.isLetter || $0.isNumber }
+        return leftover.count <= 2
+    }
+
     /// Nino: oyunun eşya, kıyafet ve araç etiketleri altyazı değildir ("TRAP SANDALS", "WORTHAM / COMBAT RIFLE", "MILK"),
     /// tuş şeritleri de ("ADD TO TRUNK (1/5) □ WEAR ✕ EXIT ○"). Ayıklananlar: "(1/5)" gibi sayaç taşıyan satırlar, iki ya da
     /// daha çok tuş simgesi olan satırlar ve noktalama içermeyen, küçük harfi olmayan 1-4 sözcüklük kısa satırlar.

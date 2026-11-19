@@ -8,7 +8,7 @@ using CouchSubs.RemotePlay;
 namespace CouchSubs.App.Services;
 
 /// <summary>
-/// PS5 bağlantısının (libchiaki) günlüğünü %LOCALAPPDATA%\CouchSubs\remoteplay.log dosyasına yazar. PS5 "Yeniden
+/// PS5 bağlantısının (libchiaki) günlüğünü %LOCALAPPDATA%\Nino\remoteplay.log dosyasına yazar. PS5 "Yeniden
 /// bağlanıyor…"da kalınca sebep buradan görülür. Satırlar yerel kütüphanenin iş parçacığını bekletmeden arka planda
 /// yazılır; dosya 1 MB'yi geçince eski yarısı silinir.
 /// </summary>

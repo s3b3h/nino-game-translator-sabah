@@ -287,7 +287,7 @@
     <string name="tvapp_update_body">Nino pada TV %1$s ialah %2$s, telefon ini mempunyai %3$s. Kemas kini mengambil masa kira-kira seminit; pastikan TV dihidupkan dan pada Wi-Fi yang sama.</string>
     <string name="tvapp_update_button">Kemas kini apl TV</string>
     <string name="app_update_title">Versi baharu sedia: %1$s</string>
-    <string name="app_update_body">Muat turun dan pasang Nino versi terkini.</string>
+    <string name="app_update_body">Versi baharu Nino sudah tersedia. Ketik butang di bawah, kemudian buka fail yang dimuat turun dan pasang. Versi lama tidak perlu dibuang; versi baharu dipasang di atasnya dan tetapan anda kekal. Jika pemasangan gagal, nyahpasang versi lama dan pasang semula.</string>
     <string name="app_update_button">Kemas kini</string>
     <string name="tvapp_update_short">Kemas kini tersedia: %1$s</string>
     <string name="tvinstall_title">Pasang apl TV</string>
@@ -443,7 +443,8 @@
     <string name="nino_slide_to_unplug">Leret kembali untuk berhenti</string>
     <string name="nino_plug_to_start">Palamkan untuk menghidupkan sari kata %1$s</string>
     <string name="nino_pair_first">Pasangkan PS5 anda dahulu</string>
-    <string name="nino_no_signal">TIADA ISYARAT</string>
+    <string name="nino_plug_drag_hint">SERET PALAM KE SOKET UNTUK BERMULA</string>
+    <string name="nino_total_downloads">JUMLAH MUAT TURUN</string>
     <string name="nino_live">LANGSUNG</string>
     <string name="nino_connecting_ps5">Menyambung ke PS5…</string>
     <string name="nino_waiting_next">Menunggu sari kata seterusnya…</string>

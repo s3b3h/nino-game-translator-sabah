@@ -238,7 +238,7 @@ class LgInstaller(
         try {
             progress(InstallStep.CONNECTING)
             val onTv = installedVersion()
-            log.write("TV'deki CouchSubs: ${onTv ?: "yok"}")
+            log.write("TV'deki Nino: ${onTv ?: "yok"}")
             if (onTv != null && !SamsungDiagnostics.isNewer(version, onTv)) {
                 launch()
                 return Result(onTv, false)

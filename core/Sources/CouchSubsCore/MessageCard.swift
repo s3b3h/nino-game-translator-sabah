@@ -23,8 +23,15 @@ public enum MessageCard {
               !text.contains(where: { ".,!?:;…\"".contains($0) }) else { return false }
         guard nameBox.bottom <= firstBody.top + 0.01 else { return false }
         let body = lines.dropFirst().map(\.text).joined(separator: " ")
-        return body.split(separator: " ").count >= 3 && body.contains(where: \.isLowercase)
+        let bodyWords = body.split(separator: " ").count
+        if bodyWords >= 3 { return body.contains(where: \.isLowercase) }
+        // Kısa mesaj ("On my way", "Ok"): eskiden kart sayılmıyor, altyazı sanılıp siyah kutuyla kartın üstüne basılıyordu.
+        // Altyazı ekranın ortasındadır; ad + 1-2 sözcük yalnız okunan alanın sağ yarısında duruyorsa karttır.
+        return bodyWords >= 1 && body.contains(where: \.isLetter) && min(nameBox.left, firstBody.left) >= shortCardLeft
     }
+
+    /// Kısa mesajlı kartın sol kenarı en az burada olmalı (okunan alana oranla; GTA 6'da kart sağ alttadır).
+    static let shortCardLeft = 0.55
 
     /// Telefon araması kartı (üstte arananın adı "Paradise Taxi", altında "Calling...", "Incoming call" ya da süre "00:05").
     /// Altyazı değildir. Durumun Türkçesi hazırdır (çeviriye gitmez); süre gösterilirken (konuşma sürüyor) durum boştur.
@@ -68,6 +75,8 @@ public enum MessageCard {
     public static func repeats(_ text: String, of body: String) -> Bool {
         let read = Set(TextMatch.normalize(text).split(separator: " ").filter { $0.count > 1 }.map(String.init))
         let card = Set(TextMatch.normalize(body).split(separator: " ").map(String.init))
+        // Kısa mesajın ("On my way") adı okunmayan karesi: okunan sözcüklerin hepsi kartta geçiyorsa o da kartın parçasıdır.
+        if card.count <= 2 { return !read.isEmpty && read.isSubset(of: card) }
         guard read.count >= 2 else { return false }
         return Double(read.intersection(card).count) / Double(read.count) >= 0.5
     }

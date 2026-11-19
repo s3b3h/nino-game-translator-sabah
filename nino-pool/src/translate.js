@@ -10,6 +10,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { lineKey, saltedDigest } from "./key.js";
 import { junkReason } from "./filter.js";
+import { navTranslation } from "./nav.js";
 import { blocks, bestMatch } from "./fuzzy.js";
 
 export const TRANSLATE_LIMITS = Object.freeze({
@@ -341,6 +342,36 @@ export function usable(source, translation) {
 }
 
 /**
+ * Hazır çeviri tohumunda (seeds tablosu) bulunan satırlar Claude'a sorulmadan oradan cevaplanır ve İngilizcesiyle birlikte
+ * havuza yazılır (tier 1: sonradan gözden geçirilebilir). Dönüş: hâlâ çevirisi olmayanlar.
+ */
+async function fromSeeds(db, lang, game, missing, now) {
+  const { results } = await db.prepare(`SELECT key, text FROM seeds WHERE lang = ? AND key IN (SELECT value FROM json_each(?))`)
+    .bind(lang, JSON.stringify(missing.map((m) => m.key))).all().catch(() => ({ results: [] }));
+  if (results.length === 0) return missing;
+  const seeds = new Map(results.map((r) => [r.key, r.text]));
+  const rest = [];
+  const rows = [];
+  for (const m of missing) {
+    const text = seeds.get(m.key);
+    if (!text || !usable(m.text, text)) { rest.push(m); continue; }
+    m.result = clean(text);
+    m.tier = 1;
+    m.seeded = true;
+    rows.push({ k: m.key, s: m.text, t: m.result, r: 1 });
+  }
+  if (rows.length > 0) {
+    await db.prepare(
+      `INSERT OR IGNORE INTO translations (key, lang, game, source, text, tier, created, updated)
+       SELECT json_extract(value, '$.k'), ?, ?, json_extract(value, '$.s'), json_extract(value, '$.t'), json_extract(value, '$.r'), ?, ?
+       FROM json_each(?)`,
+    ).bind(lang, game, now, now, JSON.stringify(rows)).run().catch((error) => console.error("tohum satırı yazılamadı", error));
+    await indexBlocks(db, lang, rows).catch(() => {});
+  }
+  return rest;
+}
+
+/**
  * Havuzda aynı cümlenin bozuk bir kopyası çevrilmişse onun çevirisi verilir (Claude'a sorulmaz) ve bu yazılış da havuza
  * eklenir. Dönüş: hâlâ çevirisi olmayanlar.
  */
@@ -459,9 +490,14 @@ export async function handleTranslate(db, env, body, now, live = askLive) {
   for (const item of items) {
     if (!item.key || item.result !== null || item.known || seen.has(item.key)) continue;
     seen.add(item.key);
+    // Yol tarifi ("Turn Right 405 ft"): kuralla çevrilir, havuza yazılmaz (her mesafe ayrı satır olurdu).
+    const nav = navTranslation(item.text, lang);
+    if (nav) { item.result = nav; item.tier = 1; continue; }
     if (junkReason(item.text)) skipped.push(item);
     else missing.push(item);
   }
+  // Hazır çeviri tohumu: para harcamaz, dil kısıtına ve günlük sınıra takılmaz.
+  if (missing.length > 0) missing = await fromSeeds(db, lang, game, missing, now);
   if (missing.length > 0 && !langAllowed(env, lang)) { skipped.push(...missing); missing = []; }
   if (missing.length > 0) missing = await fromSimilar(db, lang, game, missing, now);
   if (skipped.length > 0) await rememberEnglish(db, game, skipped, now);

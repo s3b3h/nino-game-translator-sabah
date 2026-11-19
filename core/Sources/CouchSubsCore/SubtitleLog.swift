@@ -11,8 +11,8 @@ import Foundation
 /// ile aynı biçim.
 public enum SubtitleLog {
     public static var defaultFile: URL {
-        FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Logs/CouchSubs/altyazi.log")
+        // Mac'te ~/Library/Logs/Nino (bkz. `AppFolder`); iPhone'da eskisi gibi Logs/CouchSubs.
+        AppFolder.logs.appendingPathComponent("altyazi.log")
     }
 
     /// Bir dosyanın en büyük boyutu; aşılınca eskisi `.1` olur.

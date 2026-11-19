@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -93,6 +94,7 @@ private val InkSoft = Color(0xFF55607A)
 private val StageTop = Color(0xFF151E36)
 private val StageBottom = Color(0xFF06080F)
 private val LiveGreen = Color(0xFF30C578)
+private val StageHeight = 196.dp
 
 /** Ana ekranın durumu (tek yerde hesaplanır). */
 private enum class HomeState { NOT_PAIRED, READY, CONNECTING, LIVE }
@@ -103,6 +105,13 @@ private fun homeState(status: LiveStatus, paired: Boolean) = when {
     paired -> HomeState.READY
     else -> HomeState.NOT_PAIRED
 }
+
+/**
+ * Bağlanırken sahnede gösterilecek neden ("PS5 başka bir Remote Play oturumunda…" gibi; [LiveStatus.problem]). Uyarı
+ * kartında zaten duran metin (yakalama kartı sorunları, [LiveStatus.error]) ikinci kez gösterilmez.
+ */
+private fun stageProblem(status: LiveStatus, state: HomeState): String? =
+    status.problem?.takeIf { state == HomeState.CONNECTING && it.isNotBlank() && it != status.error }
 
 @Composable
 fun PremiumHome(
@@ -124,10 +133,11 @@ fun PremiumHome(
     consoleLabel: String = "PS5",
 ) {
     val state = homeState(status, paired)
+    val problem = stageProblem(status, state)
     val name = consoleName ?: consoleLabel
     Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        // Durum satırı: renkli nokta + PS5 adı + durum.
-        StatusLine(state, if (status.demo) stringResource(R.string.demo_name) else name, onTv)
+        // Durum satırı: renkli nokta + PS5 adı + durum. Bağlanamama nedeni varken nokta uyarı rengindedir (neden sahnede yazar).
+        StatusLine(state, if (status.demo) stringResource(R.string.demo_name) else name, onTv, warning = problem != null)
         Spacer(Modifier.height(6.dp))
         // Başlık: büyük, sıkı aralıklı.
         AnimatedContent(state, Modifier.fillMaxWidth(), transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) }, label = "title") { s ->
@@ -142,7 +152,7 @@ fun PremiumHome(
             )
         }
         Spacer(Modifier.height(20.dp))
-        Stage(status, state, onFullScreen.takeIf { !onTv })
+        Stage(status, state, problem, onFullScreen.takeIf { !onTv })
         Spacer(Modifier.height(22.dp))
         SlideControl(state, startMarker, onStart, onStop, onPairing)
         // PS5'i olmayanlar ve mağaza incelemesi için: örnek altyazılarla deneme.
@@ -171,11 +181,11 @@ fun PremiumHome(
 }
 
 @Composable
-private fun StatusLine(state: HomeState, name: String, onTv: Boolean) {
+private fun StatusLine(state: HomeState, name: String, onTv: Boolean, warning: Boolean = false) {
     val (color, text) = when (state) {
         HomeState.NOT_PAIRED -> InkSoft to stringResource(R.string.home_not_paired)
         HomeState.READY -> Tokens.Color.accent to stringResource(R.string.home_ready)
-        HomeState.CONNECTING -> Tokens.Color.accent to stringResource(R.string.home_connecting)
+        HomeState.CONNECTING -> (if (warning) Tokens.Color.warning else Tokens.Color.accent) to stringResource(R.string.home_connecting)
         HomeState.LIVE -> LiveGreen to stringResource(if (onTv) R.string.home_status_tv else R.string.home_live)
     }
     val pulse = rememberInfiniteTransition(label = "dot")
@@ -188,11 +198,15 @@ private fun StatusLine(state: HomeState, name: String, onTv: Boolean) {
     }
 }
 
-/** Sahne: koyu ekran. Canlıyken altyazı akar (dokununca tam ekran); değilken tek satırlık sakin bir yazı. */
+/**
+ * Sahne: koyu ekran. Canlıyken altyazı akar (dokununca tam ekran); değilken tek satırlık sakin bir yazı. Bağlanırken
+ * neden biliniyorsa ([problem]) "Bağlanıyor" yerine o yazar: çok satırlı, ortalı, okunaklı; metin uzunsa (üç cümle,
+ * büyük yazı boyu) sahne kesmez, aşağı doğru uzar.
+ */
 @Composable
-private fun Stage(status: LiveStatus, state: HomeState, onFullScreen: (() -> Unit)?) {
+private fun Stage(status: LiveStatus, state: HomeState, problem: String?, onFullScreen: (() -> Unit)?) {
     val shape = RoundedCornerShape(28.dp)
-    Box(Modifier.fillMaxWidth().height(196.dp)
+    Box(Modifier.fillMaxWidth().heightIn(min = StageHeight)
         .shadow(28.dp, shape, ambientColor = Ink.copy(alpha = 0.5f), spotColor = Ink.copy(alpha = 0.5f))
         .clip(shape)
         .background(Brush.verticalGradient(listOf(StageTop, StageBottom)))
@@ -200,9 +214,15 @@ private fun Stage(status: LiveStatus, state: HomeState, onFullScreen: (() -> Uni
         .then(if (state == HomeState.LIVE && onFullScreen != null) Modifier.clickable(onClick = onFullScreen) else Modifier)) {
         AnimatedContent(state == HomeState.LIVE, transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(250)) }, label = "stage") { live ->
             // Nino: oyun havuz öncelikliyse (GTA 6) sahnede gün batımı fonu (iPhone'daki HomeStage ile aynı).
-            if (live) CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { LiveTvScreen(status, Modifier.fillMaxSize(), sunset = status.poolFirstGame) }
-            else Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                Text(stringResource(if (state == HomeState.CONNECTING) R.string.home_connecting else R.string.home_stage_idle),
+            if (live) CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                LiveTvScreen(status, Modifier.fillMaxWidth().height(StageHeight), sunset = status.poolFirstGame)
+            }
+            else Box(Modifier.fillMaxWidth().heightIn(min = StageHeight).padding(horizontal = 22.dp, vertical = if (problem != null) 18.dp else 24.dp),
+                contentAlignment = Alignment.Center) {
+                // Neden metni arayüzün dilindedir; yönü (Arapçada sağdan sola) ortamdan gelir, satırlar ortalanır.
+                if (problem != null) Text(problem, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.85f), textAlign = TextAlign.Center)
+                else Text(stringResource(if (state == HomeState.CONNECTING) R.string.home_connecting else R.string.home_stage_idle),
                     fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.42f), textAlign = TextAlign.Center)
             }
         }

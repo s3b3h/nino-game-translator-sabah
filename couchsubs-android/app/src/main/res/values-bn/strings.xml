@@ -287,7 +287,7 @@
     <string name="tvapp_update_body">%1$s TV-তে Nino-র সংস্করণ %2$s, এই ফোনে আছে %3$s। আপডেট করতে প্রায় এক মিনিট লাগে; TV চালু এবং একই Wi-Fi-তে রাখুন।</string>
     <string name="tvapp_update_button">TV অ্যাপ আপডেট করুন</string>
     <string name="app_update_title">নতুন সংস্করণ প্রস্তুত: %1$s</string>
-    <string name="app_update_body">Nino-র সর্বশেষ সংস্করণ ডাউনলোড করে ইনস্টল করুন।</string>
+    <string name="app_update_body">Nino-র নতুন সংস্করণ এসেছে। নিচের বোতামে ট্যাপ করুন, তারপর ডাউনলোড হওয়া ফাইলটি খুলে ইনস্টল করুন। পুরোনো সংস্করণ মুছতে হবে না; নতুনটি তার ওপরেই ইনস্টল হয় এবং আপনার সেটিংস থেকে যায়। ইনস্টল না হলে পুরোনো সংস্করণ আনইনস্টল করে আবার ইনস্টল করুন।</string>
     <string name="app_update_button">আপডেট করুন</string>
     <string name="tvapp_update_short">আপডেট পাওয়া যাচ্ছে: %1$s</string>
     <string name="tvinstall_title">TV অ্যাপ ইনস্টল করুন</string>
@@ -443,7 +443,8 @@
     <string name="nino_slide_to_unplug">থামাতে পেছনে স্লাইড করুন</string>
     <string name="nino_plug_to_start">%1$s সাবটাইটেল চালু করতে প্লাগ লাগান</string>
     <string name="nino_pair_first">আগে আপনার PS5 পেয়ার করুন</string>
-    <string name="nino_no_signal">কোনো সিগন্যাল নেই</string>
+    <string name="nino_plug_drag_hint">চালু করতে প্লাগটি সকেটে টেনে আনুন</string>
+    <string name="nino_total_downloads">মোট ডাউনলোড</string>
     <string name="nino_live">লাইভ</string>
     <string name="nino_connecting_ps5">PS5-এ সংযোগ করা হচ্ছে…</string>
     <string name="nino_waiting_next">পরের সাবটাইটেলের অপেক্ষায়…</string>

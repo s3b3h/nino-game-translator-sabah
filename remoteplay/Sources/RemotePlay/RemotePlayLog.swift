@@ -25,7 +25,14 @@ public enum RemotePlayLog {
 
     public static var defaultFile: URL {
         FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Logs/CouchSubs/remoteplay.log")
+            .appendingPathComponent("Logs/\(folderName)/remoteplay.log")
+    }
+
+    /// Nino: günlük klasörünün adı (`~/Library/Logs/<ad>`). Varsayılanı CouchSubs'tan kalan addır (iPhone'da değişmez);
+    /// Mac uygulaması açılışta, günlük açılmadan önce kendi klasörünün adını verir (bkz. CouchSubsCore `AppFolder`).
+    public static var folderName: String {
+        get { state.lock.lock(); defer { state.lock.unlock() }; return state.folder }
+        set { state.lock.lock(); state.folder = newValue; state.lock.unlock() }
     }
 
     static let maxBytes = 1 << 20
@@ -34,6 +41,7 @@ public enum RemotePlayLog {
         let queue = DispatchQueue(label: "remoteplay.log", qos: .utility)
         let lock = NSLock()
         var file: URL?
+        var folder = "CouchSubs"
         var observer: (@Sendable (String) -> Void)?
         let formatter: DateFormatter = {
             let formatter = DateFormatter()

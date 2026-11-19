@@ -9,6 +9,9 @@ import SwiftUI
 
 @main
 struct CouchSubsApp: App {
+    /// Nino: her şeyden önce (özellikler bildirim sırasıyla kurulur; bu ilkidir): CouchSubs'tan kalan veri ve günlük
+    /// klasörleri, hiçbir dosya açılmadan `Nino` adına taşınır (bkz. `AppFolders`).
+    private let folders = AppFolders.prepareAtLaunch()
     @StateObject private var model = Self.makeModel()
     /// Bilgisayar ekranındaki altyazı penceresi.
     @State private var overlay = SubtitleOverlayController()
@@ -26,7 +29,8 @@ struct CouchSubsApp: App {
 
     /// Testler uygulamanın içinde çalışır. Gerçek Anahtarlığa dokunmazlar: imza farklı olunca macOS parola sorar ve test takılır.
     private static func makeModel() -> AppModel {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil ? AppModel() : AppModel(store: EphemeralStore())
+        AppFolders.prepareAtLaunch()
+        return ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil ? AppModel() : AppModel(store: EphemeralStore())
     }
 
     var body: some Scene {

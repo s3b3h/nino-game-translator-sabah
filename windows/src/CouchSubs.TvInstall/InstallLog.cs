@@ -3,7 +3,7 @@
 namespace CouchSubs.TvInstall;
 
 /// <summary>
-/// TV kurulum günlüğü (Windows: %LOCALAPPDATA%\CouchSubs\tvinstall.log, Mac: ~/Library/Logs/CouchSubs/tvinstall.log).
+/// TV kurulum günlüğü (Windows: %LOCALAPPDATA%\Nino\tvinstall.log, Mac: ~/Library/Logs/CouchSubs/tvinstall.log).
 /// Kurulum olmazsa kullanıcı bu dosyayı gönderir: her adım, TV'nin ve Samsung'un yanıtları burada. Samsung hesabının
 /// jetonu ve parolalar yazılmaz. Dosya 1 MB'yi geçince eski yarısı silinir; yazılamazsa kurulum yine sürer.
 /// </summary>

@@ -43,6 +43,16 @@ public sealed class Localizer
         : values.TryGetValue(language, out var value) ? value
         : values.TryGetValue("en", out var english) ? english : key;
 
+    /// <summary>
+    /// Metni arayüz dilinin kurallarıyla büyük harfe çevirir: Türkçede "i" → "İ", "ı" → "I" (dilden bağımsız çeviri
+    /// "İNDIRME" gibi yanlış yazardı). Büyük harfi olmayan yazılarda (Arapça, Hintçe, Tayca…) metin aynı kalır.
+    /// </summary>
+    public string Upper(string value)
+    {
+        try { return value.ToUpper(CultureInfo.GetCultureInfo(language)); }
+        catch (CultureNotFoundException) { return value.ToUpperInvariant(); }
+    }
+
     /// <summary>xcstrings biçim belirteçlerini (%@, %lld, %1$@ …) verilen değerlerle doldurur.</summary>
     public string Format(string key, params object[] args) => Fill(this[key], args);
 

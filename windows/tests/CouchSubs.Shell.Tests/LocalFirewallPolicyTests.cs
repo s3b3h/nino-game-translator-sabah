@@ -182,6 +182,84 @@ public class LocalFirewallPolicyTests
         Assert.Equal(0, store.Puts);
     }
 
+    // --- Nino: kural adları "CouchSubs - Local …" → "Nino - Local …" ---
+
+    private static FirewallRule[] PreviousRules(string exe) =>
+    [
+        new(LocalFirewallPolicy.PreviousTcpName, exe, true, 1, 1, 2, 6, "LocalSubnet", Grouping: LocalFirewallPolicy.PreviousGroup),
+        new(LocalFirewallPolicy.PreviousUdpName, exe, true, 1, 1, 2, 17, "LocalSubnet", Grouping: LocalFirewallPolicy.PreviousGroup),
+    ];
+
+    [Fact]
+    public void NewInstallGetsNinoNames()
+    {
+        var store = new Store();
+        Assert.True(LocalFirewallPolicy.Apply(store, Exe));
+        Assert.Equal(new[] { "Nino - Local TCP", "Nino - Local UDP" }, store.Rules.Select(r => r.Name));
+        Assert.All(store.Rules, r => Assert.Equal("Nino.LocalNetwork", r.Grouping));
+    }
+
+    [Fact]
+    public void RulesWithThePreviousNamesStillCountSoNoNewPromptIsNeeded()
+    {
+        // Önceki sürümün kuralları aynı işi görür: yalnız ad değişti diye yönetici izni istenmez.
+        Assert.True(LocalFirewallPolicy.HasRules(PreviousRules(Exe), Exe));
+    }
+
+    [Fact]
+    public void PreviousNamesAreRenamedWhenPermissionIsGrantedAnyway()
+    {
+        // İzin başka bir nedenle yeniden veriliyorsa (burada: kullanıcı Ayarlar'dan yeniledi) kurallar yeni adlara geçer.
+        var custom = Legacy with { Name = "My CouchSubs permission", Profiles = 2 };
+        var store = new Store([.. PreviousRules(Exe), custom]);
+        Assert.True(LocalFirewallPolicy.Apply(store, Exe));
+        Assert.Equal(new[] { "My CouchSubs permission", "Nino - Local TCP", "Nino - Local UDP" }, store.Rules.Select(r => r.Name).Order());
+        Assert.Equal(new[] { LocalFirewallPolicy.PreviousTcpName, LocalFirewallPolicy.PreviousUdpName }, store.Removed.Order());
+        Assert.True(LocalFirewallPolicy.HasRules(store.Read(), Exe));
+        // Yinelenince bir şey değişmez.
+        Assert.True(LocalFirewallPolicy.Apply(store, Exe));
+        Assert.Equal(3, store.Rules.Count);
+    }
+
+    [Fact]
+    public void UpstreamCouchSubsRulesWithThePreviousNamesAreLeftAlone()
+    {
+        // Asıl CouchSubs kendi exe'si için aynı eski adları kullanır: Nino kendi kurallarını ekler, onunkilere dokunmaz
+        // ve kurulamadı da demez.
+        const string upstream = @"C:\Users\Oyuncu\AppData\Local\CouchSubsApp\current\CouchSubs.exe";
+        var theirs = PreviousRules(upstream);
+        var store = new Store(theirs);
+        Assert.False(LocalFirewallPolicy.HasRules(store.Read(), Exe));
+        Assert.True(LocalFirewallPolicy.Apply(store, Exe));
+        Assert.Empty(store.Removed);
+        Assert.All(theirs, rule => Assert.Contains(rule, store.Rules));
+        Assert.Equal(4, store.Rules.Count);
+        Assert.True(LocalFirewallPolicy.HasRules(store.Read(), Exe));
+
+        LocalFirewallPolicy.RemoveOwned(store, Exe);
+        Assert.Equal(theirs, store.Rules);
+    }
+
+    [Fact]
+    public void PreviousNameSharedWithAnotherProgramIsNotDeleted()
+    {
+        // Aynı eski adı hem bu exe hem başka bir program taşıyorsa adla silme ötekine de dokunabilir: o ad silinmez.
+        const string upstream = @"C:\Users\Oyuncu\AppData\Local\CouchSubsApp\current\CouchSubs.exe";
+        var store = new Store([.. PreviousRules(Exe), .. PreviousRules(upstream)]);
+        Assert.True(LocalFirewallPolicy.Apply(store, Exe));
+        Assert.Empty(store.Removed);
+        Assert.Equal(6, store.Rules.Count);
+        Assert.True(LocalFirewallPolicy.HasRules(store.Read(), Exe));
+    }
+
+    [Fact]
+    public void UninstallRemovesBothPreviousAndNinoNames()
+    {
+        var store = new Store([.. PreviousRules(Exe), .. LocalFirewallPolicy.Required(Exe)]);
+        LocalFirewallPolicy.RemoveOwned(store, Exe);
+        Assert.Empty(store.Rules);
+    }
+
     [Fact]
     public void UninstallPreservesOtherProgramsAndCustomRules()
     {

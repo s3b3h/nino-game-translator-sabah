@@ -229,6 +229,12 @@ class TranslationPool(
     /** Sunucunun son çeviri cevabındaki oyun ve zamanı (saniye). */
     private var serverGame: Pair<String, Double> = "" to Double.NEGATIVE_INFINITY
 
+    /**
+     * Sunucunun `/v1/config` cevabı her alındığında (ham JSON) çağrılır. Ana ekrandaki toplam indirme sayısı aynı cevabın
+     * `downloads` alanıdır ([DownloadCounter]); böylece çeviri sürerken onun için ayrı istek yapılmaz.
+     */
+    @Volatile var onConfigReply: ((String) -> Unit)? = null
+
     /** Sunucunun ayarını en çok 10 dakikada bir sorar (bloklar). */
     fun refreshConfig(force: Boolean = false) {
         val base = endpoint ?: return
@@ -238,6 +244,7 @@ class TranslationPool(
             configChecked = now
         }
         val data = get(URL(base, "/v1/config")) ?: return
+        try { onConfigReply?.invoke(data) } catch (error: Exception) { }
         val reply = try { JSONObject(data) } catch (error: Exception) { null } ?: return
         val translate = reply.optJSONObject("translate") ?: return
         val defaults = Config()
