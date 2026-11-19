@@ -23,4 +23,5 @@
     <string name="picker_close">إغلاق</string>
     <string name="overlay_offer">أو انتقل إلى وضع الطبقة: يعرض التلفاز PS5 على مدخل HDMI الخاص به وتظهر الترجمة فوق الصورة.</string>
     <string name="overlay_switch">الانتقال إلى وضع الطبقة</string>
+    <string name="overlay_settings_missing">افتح على التلفاز الإعدادات › التطبيقات › أذونات خاصة للتطبيقات › الظهور فوق التطبيقات الأخرى وفعّل Nino. إن لم يكن هذا الإعداد موجودًا في تلفازك فاختر «المتابعة بدون إذن».</string>
 </resources>

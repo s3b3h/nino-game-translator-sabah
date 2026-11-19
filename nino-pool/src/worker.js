@@ -24,10 +24,10 @@ import { LIMITS } from "./validate.js";
 import { REPORT_LIMITS, receiveReport, listReports, getReport, getReportImage, setReportStatus } from "./reports.js";
 import { REPORTS_PAGE } from "./reports-page.js";
 import { ASSISTANT_LIMITS, handleAssistant, assistantEnabled } from "./assistant.js";
-import { touchInstall, handlePing, collectStats } from "./stats.js";
+import { touchInstall, handlePing, handleTv, collectStats, samplePlayers } from "./stats.js";
 import { ADMIN_PAGE } from "./admin-page.js";
 import { IDENTIFY_LIMITS, handleIdentify } from "./identify.js";
-import { TRANSLATE_LIMITS, handleTranslate, listTranslations, reviewTranslations, remoteConfig, addCost } from "./translate.js";
+import { TRANSLATE_LIMITS, LANGUAGES, handleTranslate, listTranslations, reviewTranslations, remoteConfig, addCost, askLiveModel, askReview } from "./translate.js";
 
 function json(status, body, headers = {}) {
   return new Response(JSON.stringify(body), {
@@ -83,6 +83,11 @@ export async function handle(request, env, now = Math.floor(Date.now() / 1000), 
     return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
   }
 
+  if (path === "/v1/tv" && request.method === "GET") {
+    await handleTv(env.DB, env, url.searchParams, now);
+    return new Response(null, { status: 204, headers: { "cache-control": "no-store", "access-control-allow-origin": "*" } });
+  }
+
   if (path === "/v1/stats" && request.method === "GET") {
     if (!env.EXPORT_TOKEN) return json(503, { ok: false, error: "export_disabled" });
     if (!authorized(request, env)) return json(401, { ok: false, error: "unauthorized" });
@@ -128,6 +133,24 @@ export async function handle(request, env, now = Math.floor(Date.now() / 1000), 
     if (!authorized(request, env)) return json(401, { ok: false, error: "unauthorized" });
     const delay = Number.parseInt(url.searchParams.get("delay") ?? "", 10);
     return json(200, { ok: true, ...(await reviewTranslations(env.DB, env, now, undefined, Number.isFinite(delay) ? delay : undefined)) });
+  }
+
+  // Yönetici: model kıyası (veritabanına yazmaz, harcama sayacına eklemez). Gövde:
+  // { kind:"live", model, effort, lang, lines, context } ya da { kind:"review", model, effort, lang, game, items }.
+  if (path === "/v1/eval" && request.method === "POST") {
+    if (!env.EXPORT_TOKEN) return json(503, { ok: false, error: "export_disabled" });
+    if (!authorized(request, env)) return json(401, { ok: false, error: "unauthorized" });
+    const body = await request.json().catch(() => null);
+    if (!body || !LANGUAGES[body.lang]) return json(400, { ok: false, error: "bad_request" });
+    const started = Date.now();
+    try {
+      const answer = body.kind === "review"
+        ? await askReview(env, body.lang, body.game ?? "", body.items ?? [], { model: body.model, effort: body.effort })
+        : await askLiveModel(env, body.model, body.lang, body.lines ?? [], body.context ?? [], 60_000, body.effort);
+      return json(200, { ok: true, ms: Date.now() - started, ...answer });
+    } catch (error) {
+      return json(200, { ok: false, ms: Date.now() - started, error: String(error?.message ?? error).slice(0, 300) });
+    }
   }
 
   if (path === "/v1/translations" && request.method === "GET") {
@@ -231,6 +254,8 @@ export default {
   },
   async scheduled(event, env) {
     const now = Math.floor(Date.now() / 1000);
+    // Panel geçmişi: kimse oynamıyorken de o saat 0 olarak yazılsın (yarım saatte bir).
+    await samplePlayers(env.DB, now, { force: true });
     // Gözden geçirme 30 dakikada bir (wrangler.toml), bakım günde bir.
     if (event?.cron === "17 3 * * *") await prune(env.DB, now);
     else console.log("gözden geçirme", JSON.stringify(await reviewTranslations(env.DB, env, now)));

@@ -85,6 +85,8 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
     private bool sawFrame;
     private bool sawText;
     private StabilizerNote? lastNote;
+    /// <summary>Günlüğe en son yazılan dev yazı; ekranda duran tabela her karede yeniden yazılmasın.</summary>
+    private string lastOversized = "";
     /// <summary>Son gerçek okumanın süresi (ms); kare değişmediği için yeniden okunmayınca bu kullanılır.</summary>
     private int? lastReadMs;
     /// <summary>Son işlenen karenin okuma bilgisi; o karede doğrulanan satırın isteğine eklenir (ölçümler için).</summary>
@@ -229,13 +231,35 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
         // Yazı tanımanın uydurduğu sözcük çöpleri ("ou$3e") de çevirmene gitmez.
         // Alandaki menü ve köşe göstergeleri de altyazı değildir; yalnız altyazı bloğu çevrilir ve kutusu ona göre olur.
         var area = new TextBox(region.Left, region.Top, region.Right, region.Bottom);
-        var reading = raw.WithoutButtonPrompts().WithoutOcrNoise().WithoutClippedLines().JoiningRows().SubtitleBlock(area);
+        // Nino: dev yazılar (tabela, reklam panosu) altyazı değildir; çevrilmez, TV'de kocaman siyah kutu da çıkmaz.
+        var sized = raw.WithoutOversizedLines(area);
+        var droppedLines = sized.Lines.Count == raw.Lines.Count ? null
+            : string.Join(" / ", raw.Lines.Where(line => !sized.Lines.Contains(line)).Select(line => line.Text));
+        var reading = sized.WithoutButtonPrompts().WithoutOcrNoise().WithoutClippedLines().JoiningRows().SubtitleBlock(area);
+        // Normal boyda ama bir altyazı için fazla yüksek ya da fazla satırlı blok da altyazı değildir (afiş, not, belge).
+        Reading? droppedBlock = null;
+        if (reading.IsOversizedBlock(area))
+        {
+            droppedBlock = reading;
+            reading = Reading.Empty;
+        }
 
         Action? after = null;
         Action? flushed = null;
         CancellationTokenSource? abandoned = null;
         lock (gate)
         {
+            // Ekranda duran tabela her karede yeniden yazılmasın: günlüğe yalnız değişince yazılır.
+            if (droppedLines is not null && droppedLines != lastOversized)
+            {
+                lastOversized = droppedLines;
+                Write($"dev yazı: {SubtitleLog.Excerpt(droppedLines)} altyazı için fazla büyük, atlandı");
+            }
+            if (droppedBlock is not null && droppedBlock.Text != lastOversized)
+            {
+                lastOversized = droppedBlock.Text;
+                Write($"dev blok: {SubtitleLog.Excerpt(droppedBlock.Text)} altyazı için fazla yer kaplıyor ({droppedBlock.Lines.Count} satır), atlandı");
+            }
             if (!sawText && reading.Text.Trim().Length > 0)
             {
                 sawText = true;
@@ -923,6 +947,7 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
             sawFrame = false;
             sawText = false;
             lastNote = null;
+            lastOversized = "";
             session++;
             lineOnScreen = null;
             waiting.Clear();

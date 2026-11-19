@@ -49,8 +49,12 @@ public enum AssistantChat {
         public var platform: String
         public var language: String
         public var messages: [Message]
+        /// Cihaz bilgileri (DeviceInfo.summary); yardımcı bildirim açarsa bildirime eklenir. Modele gönderilmez.
+        public var device: String?
 
-        public init(install: String, app: String, platform: String, language: String, turns: [Turn]) {
+        public init(install: String, app: String, platform: String, language: String, turns: [Turn], device: String? = nil) {
+            let device = String((device ?? "").trimmingCharacters(in: .whitespacesAndNewlines).prefix(DeviceInfo.maxLength))
+            self.device = device.isEmpty ? nil : device
             self.install = install
             self.app = app
             self.platform = platform
@@ -308,8 +312,11 @@ public final class AssistantChatSession: ObservableObject {
         public var app: String
         public var platform: String
         public var language: String
+        /// Cihaz bilgileri (DeviceInfo.summary). Bağlam her mesajda yeniden istenir, TV sonradan bağlanmış olabilir.
+        public var device: String?
 
-        public init(install: String, app: String, platform: String, language: String) {
+        public init(install: String, app: String, platform: String, language: String, device: String? = nil) {
+            self.device = device
             self.install = install
             self.app = app
             self.platform = platform
@@ -430,7 +437,7 @@ public final class AssistantChatSession: ObservableObject {
         task = Task { [weak self] in
             let context = await context()
             let payload = AssistantChat.Payload(install: context.install, app: context.app, platform: context.platform,
-                                                language: context.language, turns: turns)
+                                                language: context.language, turns: turns, device: context.device)
             let result: Result<AssistantChat.Reply, AssistantChat.Failure>
             do {
                 result = .success(try await AssistantChat.send(payload, endpoint: endpoint, send: send))

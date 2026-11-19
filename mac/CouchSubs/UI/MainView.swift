@@ -90,7 +90,13 @@ struct MainView: View {
             MainBottomBar(open: { settingsSection = $0 })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task { await updates.check() }
+        // Nino: açıkken yarım saatte bir yeni sürüme bakılır (denetimin kendisi en çok saatte bir ağa çıkar).
+        .task {
+            while !Task.isCancelled {
+                await updates.check()
+                try? await Task.sleep(for: .seconds(1800))
+            }
+        }
         .sheet(isPresented: $model.showSettings) { SettingsView().appSurface() }
         .sheet(item: $settingsSection) { SettingsView(section: $0).appSurface() }
         .sheet(isPresented: $model.showHistory) { HistoryView().appSurface() }
@@ -134,7 +140,17 @@ private struct MainHeader: View {
     var body: some View {
         HStack(spacing: Theme.space("s")) {
             LogoView(size: 46)
-            NinoWordmark(size: 24, alignment: .leading)
+            VStack(alignment: .leading, spacing: 5) {
+                NinoWordmark(size: 24, alignment: .leading)
+                // Nino: kurulu sürüm (bütün uygulamalarda aynı ad, ör. "V3.3"); üstüne gelince yapı numarası.
+                Text(verbatim: AppIdentity.label)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.csSecondary)
+                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .background(Capsule().fill(Color.csSecondary.opacity(0.12)))
+                    .help(Text(verbatim: AppIdentity.displayVersion))
+                    .accessibilityLabel(Text(String(format: String(localized: "Version %@"), AppIdentity.displayVersion)))
+            }
             Spacer()
             CircleIconButton(symbol: "clock.arrow.circlepath", help: "History") { model.showHistory = true }
             CircleIconButton(symbol: "gearshape.fill", help: "Settings") { model.showSettings = true }

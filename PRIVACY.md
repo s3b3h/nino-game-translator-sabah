@@ -45,6 +45,15 @@ iPhone, Mac, Windows ve TV uygulamaları. Nino ücretsiz ve açık kaynaklıdır
   İngilizce satır, ortak havuz ayarı kapalı olsa da çeviri için sunucumuza (ve oradan Anthropic'e) gider. Kendi DeepL,
   Gemini ya da yapay zekâ anahtarınız bu oyunlarda kullanılmaz; sunucuya ulaşılamazsa cihazın ücretsiz çevirisi devreye
   girer. Liste sunucudan gelir ve bu sayfada duyurulur.
+- **TV modeli (TV uygulaması V3.4'ten beri):** Nino TV uygulaması günde bir kez TV'nin markasını ve modelini (ör.
+  "TCL 98U95A"), uygulama sürümünü ve TV'de üretilen rastgele bir kimliği sunucumuza bildirir. Amaç, Nino'nun hangi
+  TV'lerde çalıştığını görmek ve sorunlu modelleri bulmaktır. TV'nin adı, adresi ya da hesabı gönderilmez.
+- **Cihaz bilgileri (V3.4'ten beri, yalnız siz bildirim gönderince):** Sorun Bildir ya da Nino'ya Sor ile bir bildirim
+  gönderdiğinizde yanına kısa bir özet eklenir: uygulama sürümü, cihazınızın modeli (ör. "Mac16,1", "Samsung SM-S918B"),
+  işletim sistemi, TV'nin markası ve TV uygulamasının sürümü, konsol (PS5 ya da Xbox) ve o anki bağlantı durumu. Amaç,
+  ne kullandığınızı size sormadan sorunu çözebilmektir. Aynı özeti Ayarlar › Sistem sağlığı › Cihaz bilgileri'nde
+  görebilirsiniz. Cihazın adı, seri numarası, IP adresi ya da hesap bilgisi eklenmez; bildirim göndermezseniz hiçbir
+  yere gitmez.
 
 **Olmayanlar:** Reklam, reklam kimliği, analiz ya da izleme kodu, hesap sistemi, uygulama içi satın alma yoktur.
 Nino 13 yaş altındaki çocuklara yönelik değildir ve bilerek onlardan veri toplamaz.
@@ -90,6 +99,15 @@ only to read a capture card's picture.
   English line on screen goes to our server (and from there to Anthropic) for translation even if the shared pool is
   turned off. Your own DeepL, Gemini or AI key is not used in these games; if the server can't be reached, the free
   on-device translation is used. The list comes from the server and is announced on this page.
+- **TV model (since TV app V3.4):** once a day the Nino TV app reports the TV's brand and model (e.g. "TCL
+  98U95A"), the app version and a random ID generated on the TV to our server. This shows which TVs Nino runs on and
+  helps find models with problems. The TV's name, address or account is not sent.
+- **Device info (since V3.4, only when you send a report):** when you send a report with Report a Problem or Ask Nino,
+  a short summary is attached: app version, your device's model (e.g. "Mac16,1", "Samsung SM-S918B"), operating system,
+  the TV's brand and the TV app version, the console (PS5 or Xbox) and the connection status at that moment. It lets us
+  solve the problem without asking what you use. You can see the same summary under Settings › System health › Device
+  info. The device's name, serial number, IP address or account details are not included; if you never send a report,
+  it goes nowhere.
 
 **Not included:** ads, advertising IDs, analytics or tracking code, accounts, in-app purchases. Nino is not directed
 at children under 13 and does not knowingly collect their data.

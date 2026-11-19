@@ -47,6 +47,7 @@ import com.couchsubs.mobile.R
 import com.couchsubs.mobile.Services
 import com.couchsubs.mobile.account.ProblemReport
 import com.couchsubs.mobile.account.ReportAttachments
+import com.couchsubs.mobile.account.ThisDevice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -101,8 +102,9 @@ fun ReportProblemScreen(onBack: () -> Unit) {
                 val install = ProblemReport.installId(filesDir, { prefs.getString("install", null) },
                     { prefs.edit().putString("install", it).apply() })
                 val log = if (includeLog) ReportAttachments.recentLog() else null
+                // Nino: cihaz bilgileri (model, Android sürümü, TV, konsol) gönderim anında okunur; ad ya da adres içermez.
                 val body = ProblemReport.body(install, BuildConfig.VERSION_NAME, Services.settings.targetLanguage,
-                    description, contact, log, jpegs)
+                    description, contact, log, jpegs, device = ThisDevice.summary())
                 val endpoint = ProblemReport.endpoint(filesDir)
                 if (endpoint == null) ProblemReport.Outcome.FAILED else ProblemReport.send(endpoint, body)
             }

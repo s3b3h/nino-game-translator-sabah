@@ -88,6 +88,7 @@ import com.couchsubs.mobile.Services
 import com.couchsubs.mobile.account.NinoAssistant
 import com.couchsubs.mobile.account.ProblemReport
 import com.couchsubs.mobile.account.ReportAttachments
+import com.couchsubs.mobile.account.ThisDevice
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -159,7 +160,9 @@ object AssistantSession {
                 val prefs = context.getSharedPreferences("report", Context.MODE_PRIVATE)
                 val install = ProblemReport.installId(filesDir, { prefs.getString("install", null) },
                     { prefs.edit().putString("install", it).apply() })
-                val body = NinoAssistant.fittedBody(install, BuildConfig.VERSION_NAME, Services.settings.targetLanguage, turns)
+                // Nino: cihaz bilgileri her mesajda yeniden okunur (TV sonradan bağlanmış olabilir).
+                val body = NinoAssistant.fittedBody(install, BuildConfig.VERSION_NAME, Services.settings.targetLanguage, turns,
+                    device = ThisDevice.summary())
                 val endpoint = ProblemReport.endpoint(filesDir)
                 when {
                     body == null -> NinoAssistant.Result.TooLarge

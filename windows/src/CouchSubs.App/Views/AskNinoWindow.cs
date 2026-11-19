@@ -544,10 +544,12 @@ public sealed class AskNinoWindow : Window
         var app = AppVersion.Current(Assembly.GetEntryAssembly() ?? typeof(AskNinoWindow).Assembly);
         var language = Localizer.Current.Language;
         var poolInstall = controller.PoolInstallId;
+        // Cihaz bilgileri her mesajda yeniden alınır (TV sonradan bağlanmış olabilir); Nino bildirim açarsa ona eklenir.
+        var device = controller.DeviceSummary(app);
         return Task.Run(async () =>
         {
             var install = ProblemReport.InstallId(poolInstall, Path.Combine(AppPaths.Data, "report-install.txt"));
-            var payload = NinoAssistant.Build(install, app, language, turns);
+            var payload = NinoAssistant.Build(install, app, language, turns, device: device);
             return await NinoAssistant.SendAsync(Http, endpoint, payload);
         });
     }

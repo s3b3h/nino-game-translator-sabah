@@ -74,45 +74,34 @@
   <div id="no-picture" class="hidden"><div class="card"><b data-i18n="noPictureTitle"></b><span id="no-picture-text"></span><div id="no-picture-choices"></div><span id="no-picture-help" data-i18n="noPictureStillBlack"></span></div></div>
 
   <div id="panel">
-    <div class="p-top">
-      <img class="logo" src="logo.png" alt="">
-      <div class="brand" data-i18n="panelTitle"></div>
-      <span id="app-version" class="ver"></span>
-    </div>
-
-    <!-- Büyük durum: bağlantının durumuna göre (data-state) renk ve yazı değişir. -->
+    <!-- Durum: "N" harfinden sarkan salıncakta robot. Bağlantıya göre (data-state: ok / bad / başka her şey = bekliyor)
+         renk, başlık ve salınım değişir. Çizim satır içi SVG ve nino-bot.png'dir; ayrı dosya yok. Resim pakette yoksa
+         (onerror) gizlenir: boş salıncak kalır, kırık resim simgesi çıkmaz. -->
     <div class="tile hero">
-      <div class="ring"><i></i></div>
+      <div class="p-art">
+        <div class="swing">
+          <svg class="ropes" viewBox="0 0 112 104" width="112" height="104"><path d="M19 0 L5 101 M93 0 L107 101" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span class="bot"><img src="nino-bot.png" alt="" onerror="this.style.display='none'"></span>
+          <i class="seat"></i>
+        </div>
+        <svg class="n" viewBox="0 0 84 60" width="84" height="60"><path d="M5 55 V5 L79 55 V5" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
       <div class="hero-text">
-        <div class="h-title"><span class="s-ok" data-i18n="heroOk"></span><span class="s-wait" data-i18n="heroWait"></span><span class="s-bad" data-i18n="heroBad"></span></div>
-        <div class="h-sub"><span id="st-conn">-</span> · <span id="st-server">-</span></div>
-        <div class="h-sub"><span data-i18n="hdmi"></span> <span id="st-hdmi">-</span> <span id="st-video"></span></div>
+        <div class="brand" data-i18n="panelTitle"></div>
+        <div class="h-title"><i class="dot"></i><span class="s-ok" data-i18n="heroOk"></span><span class="s-wait" data-i18n="heroWait"></span><span class="s-bad" data-i18n="heroBad"></span></div>
+        <div class="h-sub"><span data-i18n="hdmi"></span> <span id="st-hdmi">-</span><span id="st-video"></span></div>
       </div>
     </div>
 
-    <!-- Son altyazı, TV'de göründüğü gibi. -->
-    <div class="p-preview">
+    <!-- Son altyazı: yalnız gerçek bir altyazı geldikten sonra görünür (app.js notePanelSubtitle "empty" sınıfını kaldırır). -->
+    <div id="st-preview" class="p-preview empty">
       <div class="p-label" data-i18n="previewLabel"></div>
-      <div class="screen"><span id="st-last" class="sub empty" data-i18n="previewEmpty"></span></div>
+      <div id="st-last" class="sub" dir="auto"></div>
     </div>
 
-    <!-- Kumanda: yön tuşları ve renkli tuşlar çizilir, ne yaptıkları yanında. -->
-    <div class="p-remote">
-      <div class="dpad"><b class="u">▲</b><b class="d">▼</b><b class="l">◀</b><b class="r">▶</b><b class="ok">OK</b></div>
-      <div class="r-list">
-        <div><b>OK</b><span data-i18n="rOk"></span></div>
-        <div><b>◀ ▶</b><span data-i18n="rLR"></span></div>
-        <div><b>▲ ▼</b><span data-i18n="rUD"></span></div>
-        <div><b>0–4</b><span data-i18n="rNum"></span></div>
-      </div>
-    </div>
-    <div class="p-colors">
-      <div><i class="red"></i><span data-i18n="rRed"></span></div>
-      <div><i class="green"></i><span data-i18n="rGreen"></span></div>
-      <div><i class="blue"></i><span data-i18n="rBlue"></span></div>
-    </div>
-
-    <div class="p-diag"><span data-i18n="diagnostics"></span> <span id="st-diag">-</span></div>
+    <!-- Teknik bilgiler (sürüm, bağlantı, adres, tanı sayaçları): app.js doldurmayı sürdürür, platform.js sürümü buradan
+         okur; ekranda gösterilmez. Kumanda tuşları da artık listelenmez, hepsi eskisi gibi çalışır. -->
+    <div class="p-diag"><span id="app-version"></span><span id="st-conn"></span><span id="st-server"></span><span id="st-diag"></span></div>
     <div id="keys" style="display: none" data-i18n="keys"></div>
   </div>
 

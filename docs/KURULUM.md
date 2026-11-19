@@ -138,12 +138,16 @@ ekranında **TV uygulamasını kurun**.) Telefon ağdaki TV'leri arar. Markanız
 Hata ayıklamayı açık bırakın. Böylece TV uygulaması kendiliğinden güncellenir.
 
 #### Samsung TV / akıllı monitör
-1. TV'de **Uygulamalar** ekranını açın.
-2. Kumandada **1 2 3 4 5**'e basın. **Geliştirici modu** penceresi açılır.
+1. TV'de **Uygulamalar** ekranını açın. 2022 ve sonrası modellerde sayfanın **en altına** inip **Uygulama Ayarları**'nı seçin; rakamlar ilk sayfada hiçbir şey yapmaz.
+2. **1 2 3 4 5** yazın. Kumandada rakam tuşu yoksa **123** tuşuna basıp rakamları ekrandan seçin. Beşinci rakamdan sonra **Geliştirici modu** penceresi açılır.
 3. **Developer mode**'u **On** yapın.
-4. **Host PC IP** alanına telefonda gösterilen adresi yazın ve **OK**'e basın.
-5. TV'yi yeniden başlatın: güç tuşunu TV kapanana kadar ~2 saniye basılı tutun, sonra açın. (Kısa basmak yetmez.)
+4. **Host PC IP** alanına telefonda (ya da bilgisayarda) gösterilen adresi yazın ve **OK**'i seçin. Her bölümü olduğu gibi yazın, başına sıfır koymayın (001 değil 1). Adres değiştirilemiyorsa önce **123** tuşuna basın.
+5. TV'yi tam olarak yeniden başlatın: güç tuşunu **Samsung logosu görünene kadar** basılı tutun ya da TV'nin fişini bir dakikalığına çekin. (Kısa basmak yetmez; TV yalnızca bekleme moduna geçer.)
 6. Telefonda **Kur ve aç**'a basın. İlk kurulumda bir kez **ücretsiz Samsung hesabıyla** giriş istenir.
+
+Pencere açılmıyorsa: TV'yi tam yeniden başlatıp yeniden deneyin (bazı TV'lerde ikinci ya da üçüncü denemede açılır), TV'ye USB klavye takıp 12345 yazın ya da Mac'teki Nino'da **Pencere açılmıyor mu?** altındaki **TV'ye 1 2 3 4 5 yaz** düğmesini deneyin (yalnızca bazı TV'lerde çalışır).
+
+Mac'teki Nino neyin eksik olduğunu kendisi gösterir: geliştirici modu açık mı, TV'deki Host PC IP bilgisayarın adresi mi, TV ayardan sonra yeniden başlatılmış mı. Eksik adım tamamlanınca kurulum kendiliğinden sürer.
 
 #### LG TV (deneysel)
 1. webostv.developer.lge.com'da ücretsiz **LG geliştirici hesabı** açın.
@@ -254,7 +258,7 @@ kalır (oyunun İngilizce altyazısı da alttan görünür).
 | Sadece görmek istiyorum | Ana ekranda **"PS5'siz Deneyin"**e dokunun; örnek altyazılarla uygulamayı gezebilirsiniz. |
 | TV'deki Nino eski görünüyor | TV'de Nino panelinde **V3.2** yazmıyorsa telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın. |
 | TV "USB hata ayıklama" sorusunu göstermiyor | Geliştirici seçeneklerinde hata ayıklamanın açık olduğundan emin olun; TV'yi kapatıp açın ve tekrar deneyin. |
-| Samsung TV telefonu kabul etmiyor | Geliştirici modu penceresindeki **Host PC IP** telefonun adresi mi? Değiştirdikten sonra TV'yi güç tuşunu basılı tutarak yeniden başlatın. |
+| Samsung TV telefonu ya da bilgisayarı kabul etmiyor | Geliştirici modu penceresindeki **Host PC IP** telefonun (ya da bilgisayarın) adresi mi, başında sıfır olmadan yazılmış mı? Değiştirdikten sonra TV'yi güç tuşunu Samsung logosu görünene kadar basılı tutarak yeniden başlatın. Ayarlar doğruysa TV'nin fişini bir dakikalığına çekin, açıldıktan bir dakika sonra yeniden deneyin. |
 | OBS'te iki altyazı çıkıyor | Nino penceresini değil, kartın kendisini OBS'e ekleyin ve Bölüm 7'deki yolu izleyin. |
 
 ---

@@ -198,6 +198,8 @@ export function validateConversation(body) {
     install, platform, messages,
     app: typeof body.app === "string" ? body.app.slice(0, 40) : "",
     language: typeof body.language === "string" ? body.language.slice(0, 16) : "",
+    // Cihaz bilgileri modele gönderilmez; yalnız yardımcının açtığı bildirime eklenir.
+    device: typeof body.device === "string" ? body.device : "",
   };
 }
 
@@ -345,7 +347,7 @@ export async function handleAssistant(db, env, body, now, ask = askModel) {
     const transcript = input.messages.map((m) => `${m.role === "user" ? "Kullanıcı" : "Nino"}: ${maskSecrets(m.text)}${m.images.length ? ` [${m.images.length} ekran görüntüsü]` : ""}`).join("\n");
     const images = input.messages.flatMap((m) => m.images).slice(-3);
     const saved = await receiveReport(db, env, {
-      v: 1, install: input.install, app: input.app, platform: input.platform, language: input.language,
+      v: 1, install: input.install, app: input.app, platform: input.platform, language: input.language, device: input.device,
       text: `[Yardımcı · ${KIND_LABELS[answer.report.kind] ?? "Sorun"}] ${maskSecrets(summary)}\n\n--- Sohbet ---\n${transcript}\nNino: ${maskSecrets(reply)}`.slice(0, 4000), images,
     }, now);
     if (saved.status === 200) reportId = saved.body.id;

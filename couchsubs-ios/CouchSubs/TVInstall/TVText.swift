@@ -72,6 +72,8 @@ enum TVText {
     static func lgTvSays(_ a0: String) -> String { String(format: String(localized: "TV says: %@"), a0) }
     static var lgErrUnreachable: String { String(localized: "The TV did not respond. Make sure the TV is on and on the same Wi-Fi as this phone, and that Dev Mode Status is on in the Developer Mode app.") }
     static var lgErrKeyServer: String { String(localized: "Key Server is off. Turn it on in the Developer Mode app and keep the app on screen.") }
+    static var lgNeedTv: String { String(localized: "Choose your TV in the list above or type its address first.") }
+    static var lgNeedPassphrase: String { String(localized: "Type the 6-character passphrase shown on the TV first.") }
     static var lgErrPassphrase: String { String(localized: "The passphrase is not correct. Check it on the TV screen.") }
     static var lgErrKeyRefused: String { String(localized: "The TV refused the key. Open Key Server and type the passphrase again.") }
     static var stepPairing: String { String(localized: "Pairing with the TV…") }

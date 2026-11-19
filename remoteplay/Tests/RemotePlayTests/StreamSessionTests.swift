@@ -264,6 +264,10 @@ final class DisconnectReasonTests: XCTestCase {
 
     /// "Unknown Session Request Error"ın asıl nedeni libchiaki'nin günlük satırındadır (satırlar session.c'deki gibi).
     func testSessionRequestLogLinesAreClassified() {
+        // Nino: PS5'te Uzaktan Oynama kapalı ve PS5'in tanımadığı eşleme; ikisi de yeniden denemekle düzelmez.
+        XCTAssertEqual(DisconnectReason.sessionRequestHint(fromLog: "Reported Application Reason: 0x80108b12 (unknown)"), .remotePlayDisabled)
+        XCTAssertEqual(DisconnectReason.sessionRequestHint(fromLog: "Reported Application Reason: 0x80108b26 (unknown)"), .registrationInvalid)
+        XCTAssertEqual(DisconnectReason.sessionRequestHint(fromLog: "Reported Application Reason: 0x80108b13 (unknown)"), .rejected(0x80108b13))
         XCTAssertEqual(DisconnectReason.sessionRequestHint(fromLog: "Reported Application Reason: 0x80108b09 (Regist failed, probably invalid PIN)"),
                        .registrationInvalid)
         XCTAssertEqual(DisconnectReason.sessionRequestHint(fromLog: "Reported Application Reason: 0x80108B02 (Invalid PSN ID)"),

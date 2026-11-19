@@ -366,6 +366,7 @@
     <string name="phase_rejected_code">رفض PS5 الاتصال (الرمز %1$s). ربما يكون تطبيق Remote Play آخر (PS Remote Play) مفتوحًا، أو أن PS5 في جلسة أخرى. أغلق PS Remote Play وأعد تشغيل PS5، ثم حاول مرة أخرى.</string>
     <string name="phase_rejected">لم يبدأ PS5 الجلسة. قد يكون تطبيق Remote Play آخر (PS Remote Play) مفتوحًا، أو قد يكون PS5 في جلسة أخرى. أغلق PS Remote Play، وأعد تشغيل PS5، ثم حاول مرة أخرى.</string>
     <string name="phase_registration_invalid">لم يقبل PS5 هذا الإقران. أقرِن PS5 مرة أخرى بالحساب الثاني من الإعدادات.</string>
+    <string name="phase_remote_play_disabled">ميزة اللعب عن بُعد متوقفة على PS5. على PS5، افتح الإعدادات › النظام › اللعب عن بُعد وفعّل «تفعيل اللعب عن بُعد»، ثم ابدأ من جديد.</string>
     <string name="phase_no_picture">لا توجد صورة من PS5. هل Remote Play متوقف، أو أن PS5 في وضع الراحة؟ تحقق من ذلك، ثم ابدأ الترجمة مرة أخرى.</string>
     <string name="phase_passcode_incorrect">لم يقبل PS5 رمز الدخول الموجود في الإعدادات. صحّحه، أو أوقف رمز الدخول لهذا الحساب على PS5.</string>
     <string name="screen_translate">ترجمة الشاشة</string>
@@ -659,4 +660,23 @@
     <string name="assistant_invalid">لم أتمكن من إرسال هذه الرسالة. غيّرها قليلًا وحاول مرة أخرى.</string>
     <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
     <string name="translation_started_notice">نينو: بدأت ترجمة الحوارات. استمتع باللعب!</string>
+    <!-- Nino: Cihaz bilgileri, Ayarlar'da GTA 6 kartı ve Güncelleme satırı -->
+    <string name="device_info_title">معلومات الجهاز</string>
+    <string name="device_info_note">تُضاف إلى بلاغات المشاكل التي ترسلها لنرى ما تستخدمه دون أن نسألك. لا تتضمن أسماء أو أرقامًا تسلسلية أو عناوين.</string>
+    <string name="device_info_app">إصدار التطبيق</string>
+    <string name="device_info_device">طراز الجهاز</string>
+    <string name="device_info_system">نظام التشغيل</string>
+    <string name="device_info_tv">التلفزيون</string>
+    <string name="device_info_console">جهاز الألعاب</string>
+    <string name="device_info_status">الحالة الحالية</string>
+    <string name="device_info_copy">نسخ معلومات الجهاز</string>
+    <string name="nino_gta6_active">Nino · GTA 6 مفعّل</string>
+    <string name="nino_gta6_note">في GTA 6 تأتي الترجمة التركية من ترجمة Nino المشتركة: يُترجم كل سطر مرة واحدة بذكاء اصطناعي قوي ويحصل الجميع على النتيجة نفسها. لا تحتاج إلى اختيار أي شيء أو إدخال مفتاح، وهي مجانية.</string>
+    <string name="settings_engine_other_games">ألعاب أخرى</string>
+    <string name="update_row_title">التحديث</string>
+    <string name="update_row_newer">يتوفر إصدار جديد: %1$s</string>
+    <string name="update_row_download">تنزيل</string>
+    <string name="update_row_current">محدَّث</string>
+    <string name="update_row_check">تحقق الآن</string>
+    <string name="update_row_checking">جارٍ التحقق…</string>
 </resources>

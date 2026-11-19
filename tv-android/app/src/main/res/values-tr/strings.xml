@@ -22,4 +22,5 @@
     <string name="overlay_switch">Katman\'a geç</string>
     <string name="overlay_active">Nino açık. Altyazılar PS5 görüntüsünün üstünde çıkacak; çeviriyi bilgisayardaki ya da telefondaki Nino\'dan başlatın.</string>
     <string name="press_input_again">PS5\'in girişini seçmek için kaynak tuşuna bir daha basın.</string>
+    <string name="overlay_settings_missing">TV\'de Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster\'e girip Nino\'yu açın. TV\'nizde bu ayar yoksa “İzin vermeden devam et”i seçin.</string>
 </resources>

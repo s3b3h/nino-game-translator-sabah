@@ -5,6 +5,8 @@ package com.couchsubs.mobile.ui
 
 import com.couchsubs.mobile.R
 import androidx.compose.ui.res.stringResource
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -32,15 +34,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.couchsubs.mobile.BuildConfig
 import com.couchsubs.mobile.Services
+import com.couchsubs.mobile.account.ThisDevice
+import com.couchsubs.mobile.core.DeviceInfo
 import com.couchsubs.mobile.core.HealthLevel
 import com.couchsubs.mobile.core.HealthReport
 import com.couchsubs.mobile.core.HealthSnapshot
 import com.couchsubs.mobile.core.NetworkKind
 import com.couchsubs.mobile.service.LiveState
+import com.couchsubs.mobile.service.LiveStatus
 import com.couchsubs.mobile.settings.SubtitleTarget
 import kotlinx.coroutines.delay
 
@@ -126,6 +132,47 @@ fun SystemHealthScreen(onBack: () -> Unit) {
                     context.startActivity(Intent.createChooser(send, shareTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
             }
+        }
+        DeviceInfoCard(status)
+    }
+}
+
+/**
+ * Nino: "Cihaz bilgileri". Sorun Bildir ve Nino'ya Sor'a eklenen özetin aynısı: uygulama sürümü, telefonun modeli,
+ * Android sürümü, TV, konsol ve şu anki durum (bilinmeyen satır gösterilmez). Ad, seri numarası ya da adres içermez.
+ * Düğme özeti panoya kopyalar (destek yazışmasına yapıştırmak için).
+ */
+@Composable
+private fun DeviceInfoCard(status: LiveStatus) {
+    val context = LocalContext.current
+    // Durum değiştikçe (bağlanıyor, hata) satırlar yenilenir.
+    val rows = remember(status.running, status.phase, status.error) { ThisDevice.rows(status = status) }
+    var copied by remember { mutableStateOf(false) }
+    LaunchedEffect(copied) {
+        if (copied) {
+            delay(2000)
+            copied = false
+        }
+    }
+    Tile(Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.device_info_title), style = Tokens.Type.headline, color = Tokens.Color.text)
+        Text(stringResource(R.string.device_info_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
+        rows.forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
+                Text(stringResource(when (row.id) {
+                    "app" -> R.string.device_info_app
+                    "device" -> R.string.device_info_device
+                    "system" -> R.string.device_info_system
+                    "tv" -> R.string.device_info_tv
+                    "console" -> R.string.device_info_console
+                    else -> R.string.device_info_status
+                }), style = Tokens.Type.body, color = Tokens.Color.secondary)
+                Text(row.value, style = Tokens.Type.body, color = Tokens.Color.text, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+            }
+        }
+        SecondaryButton(stringResource(if (copied) R.string.history_copied else R.string.device_info_copy)) {
+            context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Nino", DeviceInfo.summary(rows)))
+            copied = true
         }
     }
 }

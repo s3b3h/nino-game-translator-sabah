@@ -263,3 +263,78 @@ test("GTA VI oynayan kurulumda ekran GTA V sanılırsa GTA VI sayılır", async 
     env, NOW + 60, undefined, undefined, wrong)).json();
   assert.equal(other.id, "grand-theft-auto-v");
 });
+
+test("çöp satırlar Claude'a gitmez, İngilizcesi havuza yazılır", async () => {
+  const { post, calls, env } = setup();
+  const res = await (await post(req(["RESTORE ALL (A) RESTORE DEFAULT", "Eklenti Yüklenmesi gerekmiyor", "XIS", "GET DOWN!", "Hi."]))).json();
+  assert.deepEqual(res.translations.map((t) => t.text), [null, null, null, "TR:GET DOWN!", "TR:Hi."]);
+  assert.deepEqual(calls[0].lines, ["GET DOWN!", "Hi."]);
+  const saved = env.DB.raw.prepare("SELECT text FROM lines ORDER BY text").all().map((r) => r.text);
+  assert.deepEqual(saved, ["Eklenti Yüklenmesi gerekmiyor", "RESTORE ALL (A) RESTORE DEFAULT", "XIS"]);
+});
+
+test("ekran okumasının bozduğu kopya havuzdaki çeviriyi alır, Claude'a sorulmaz", async () => {
+  const { post, calls } = setup();
+  await post(req(["Looks like I'm gonna need to come back when I have a little more cash."]));
+  const res = await (await post(req(["Looks Iike lI'm gonna need to come back when I have a little more cash.", "Turn Right 417 ft"]))).json();
+  assert.equal(res.translations[0].text, "TR:Looks like I'm gonna need to come back when I have a little more cash.");
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[1].lines, ["Turn Right 417 ft"]);
+  // Sayısı ya da olumsuzluğu farklı olan eşleşmez.
+  await post(req(["I really want to go back to the boat tonight."]));
+  await post(req(["I really don't want to go back to the boat tonight."]));
+  assert.deepEqual(calls.at(-1).lines, ["I really don't want to go back to the boat tonight."]);
+});
+
+test("Claude yalnız izinli dillerde çevirir; öbürlerinde havuzdakiler yine döner", async () => {
+  const { post, calls, env } = setup();
+  const res = await (await post(req(["Where's the money?"], { lang: "ar" }))).json();
+  assert.equal(res.translations[0].text, null);
+  assert.equal(res.limited, "lang");
+  assert.equal(calls.length, 0);
+  env.DB.raw.prepare("INSERT INTO translations (key, lang, game, source, text, tier, created, updated) VALUES (?, 'ar', '', ?, ?, 1, 0, 0)")
+    .run(await lineKey("Relax."), "Relax.", "اهدأ.");
+  const known = await (await post(req(["Relax."], { lang: "ar" }))).json();
+  assert.equal(known.translations[0].text, "اهدأ.");
+  const body = await (await handle(new Request("http://pool/v1/config"), env, NOW)).json();
+  assert.deepEqual(body.poolFirst.langs, ["tr"]);
+  const { post: postAll, calls: allCalls } = setup({ TRANSLATE_LANGS: "tr,ar" });
+  await postAll(req(["Where's the money?"], { lang: "ar" }));
+  assert.equal(allCalls.length, 1);
+});
+
+test("gözden geçirme toplu işlemle: gönderilir, bekleyen yeniden gönderilmez, bitince yazılır ve yarı fiyat sayılır", async () => {
+  const { post, env } = setup();
+  await post(req(["Where's the money?", "Relax.", "RESTORE ALL (A) RESTORE DEFAULT"]), NOW);
+  const created = [];
+  let ended = false;
+  const fake = {
+    async create(requests) { created.push(requests); return { id: `b${created.length}` }; },
+    async retrieve() { return { processing_status: ended ? "ended" : "in_progress" }; },
+    async results() {
+      const params = created[0][0].params;
+      assert.equal(params.model, "claude-opus-5-5");
+      assert.equal(params.output_config.effort, "medium");
+      const n = Number(params.messages[0].content.match(/(\d+)\. EN: Relax\./)[1]);
+      const content = JSON.stringify({ lines: [{ n, text: "Sakin ol be." }] });
+      return [{ custom_id: "c0", result: { type: "succeeded", message: { stop_reason: "end_turn", content: [{ type: "text", text: content }],
+        usage: { input_tokens: 1000, output_tokens: 1000 } } } }];
+    },
+  };
+  let result = await reviewTranslations(env.DB, env, NOW + 3600, undefined, undefined, fake);
+  assert.equal(result.submitted, 1);
+  assert.equal(created[0].length, 1);
+  // Çöp satır gönderilmez (havuza zaten çevrilmeden girmezdi); yalnız iki satır.
+  assert.match(created[0][0].params.messages[0].content, /Review these 2 subtitle/);
+  result = await reviewTranslations(env.DB, env, NOW + 5400, undefined, undefined, fake);
+  assert.equal(result.submitted, 0);
+  assert.equal(created.length, 1);
+  ended = true;
+  result = await reviewTranslations(env.DB, env, NOW + 7200, undefined, undefined, fake);
+  assert.equal(result.reviewed, 2);
+  assert.equal(result.changed, 1);
+  assert.equal(result.cost, Math.ceil(translateCost("claude-opus-5-5", { input_tokens: 1000, output_tokens: 1000 }) / 2));
+  const rows = env.DB.raw.prepare("SELECT source, text, tier FROM translations ORDER BY source").all().map((r) => [r.source, r.text, r.tier]);
+  assert.deepEqual(rows, [["Relax.", "Sakin ol be.", 2], ["Where's the money?", "TR:Where's the money?", 2]]);
+  assert.equal(env.DB.raw.prepare("SELECT COUNT(*) n FROM review_pending").get().n, 0);
+});

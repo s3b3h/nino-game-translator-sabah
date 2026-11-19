@@ -54,7 +54,9 @@ import com.couchsubs.mobile.core.SubtitlePlacement
 import com.couchsubs.mobile.core.SubtitleTextColor
 import com.couchsubs.mobile.core.TvDisplayMode
 import com.couchsubs.mobile.remoteplay.LoginPasscode
+import com.couchsubs.mobile.service.LiveState
 import com.couchsubs.mobile.service.TranslationService
+import com.couchsubs.mobile.update.AppUpdate
 import com.couchsubs.mobile.settings.AppSettings
 import com.couchsubs.mobile.settings.EngineChoice
 import com.couchsubs.mobile.settings.SubtitleTarget
@@ -143,6 +145,7 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
                    onAssistant: () -> Unit = {}) {
     val context = LocalContext.current
     val settings = Services.settings
+    val live by LiveState.status.collectAsState()
     var engine by remember { mutableStateOf(settings.engine) }
     // Anahtar kaydedilmeden önce denenir (iPhone gibi): yalnız kabul edilen anahtar gizli depoya yazılır.
     var key by remember(engine) { mutableStateOf("") }
@@ -206,8 +209,19 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
             Text(stringResource(R.string.nino_translation_language_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
         }
         RowList(listOf({ RowItem(stringResource(R.string.nino_system_health), stringResource(R.string.nino_system_health_detail), onClick = onHealth) }))
+        // Nino: GTA 6'da (Türkçe) çeviri Nino'nun havuzundan gelir, seçilecek bir şey yoktur; motor kartının hemen
+        // üstünde açıkça yazar (Mac'teki "GTA 6" kartı ve alt şeritteki "Nino · GTA 6 Aktif"). Çevirinin kendisi değişmez.
+        val ninoActive = live.ninoPoolActive(targetLanguage)
+        if (ninoActive) Tile(Modifier.fillMaxWidth()) {
+            TileLabel("GTA 6")
+            Row(Modifier.background(Tokens.Color.surface2, RoundedCornerShape(50)).padding(start = 6.dp, end = 12.dp, top = 4.dp, bottom = 4.dp)) {
+                StatusLabel(stringResource(R.string.nino_gta6_active))
+            }
+            Text(stringResource(R.string.nino_gta6_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
+        }
         Tile(Modifier.fillMaxWidth()) {
-            TileLabel(stringResource(R.string.settings_engine))
+            // GTA 6 kartı görünürken bu kart yalnız diğer oyunlar içindir.
+            TileLabel(stringResource(if (ninoActive) R.string.settings_engine_other_games else R.string.settings_engine))
             Segmented(listOf(stringResource(R.string.engine_free_short), "DeepL", "Gemini", stringResource(R.string.engine_other)), segment) { index ->
                 choose(when (index) {
                     0 -> EngineChoice.FREE
@@ -381,6 +395,7 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
             Text(stringResource(R.string.settings_passcode_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
         }
         var xboxAudio by remember { mutableStateOf(settings.xboxAudioOnDevice) }
+        val showUpdateRow = remember { !AppUpdate.managedByPlay(context) }
         RowList(listOfNotNull<@Composable () -> Unit>(
             { RowItem(stringResource(R.string.settings_packs), onClick = onPacks) { Pill(stringResource(if (settings.packsEnabled) R.string.main_packs_on else R.string.main_packs_off)) } },
             { RowItem(stringResource(R.string.settings_target), if (settings.target == SubtitleTarget.TV) settings.tvName ?: stringResource(R.string.main_target_tv)
@@ -395,6 +410,9 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
             // Nino: Nino'ya Sor ve Sorun Bildir, Hakkında'nın hemen üstünde.
             { RowItem(stringResource(R.string.assistant_title), stringResource(R.string.assistant_row_note), onClick = onAssistant) },
             { RowItem(stringResource(R.string.report_title), stringResource(R.string.report_row_note), onClick = onReport) },
+            // Nino: Güncelleme. Yeni sürüm biliniyorsa (ana ekrandaki kart ✕ ile kapatılmış olsa da) indirme düğmesi;
+            // yoksa "Güncel" ve süreyi beklemeden bakan "Şimdi denetle". Play kopyasında gösterilmez (Play günceller).
+            if (showUpdateRow) ({ UpdateRow() }) else null,
             { RowItem(stringResource(R.string.settings_about), BuildConfig.VERSION_NAME, onClick = { open(context, context.getString(R.string.url_source)) }) },
         ))
         XboxSignOutRow()
@@ -415,6 +433,41 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
     }
 }
 
+
+/**
+ * Ayarlar'daki "Güncelleme" satırı (GitHub'dan kurulan kopya). Yeni sürüm biliniyorsa "Yeni sürüm var: 3.5.0" ve APK'yı
+ * indiren "İndir"; yoksa "Güncel" ve "Şimdi denetle" (3 saatlik aralığı beklemeden GitHub'a bakar). GitHub'a
+ * ulaşılamadıysa "Güncel" denmez, bağlantı uyarısı yazılır.
+ */
+@Composable
+private fun UpdateRow() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val newer by AppUpdate.newer.collectAsState()
+    var checking by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    val latest = newer
+    if (latest != null) {
+        RowItem(stringResource(R.string.update_row_title), stringResource(R.string.update_row_newer, latest)) {
+            GhostButton(stringResource(R.string.update_row_download)) { open(context, AppUpdate.DOWNLOAD_URL) }
+        }
+    } else {
+        RowItem(stringResource(R.string.update_row_title), stringResource(when {
+            checking -> R.string.update_row_checking
+            failed -> R.string.xbox_error_offline
+            else -> R.string.update_row_current
+        })) {
+            if (!checking) GhostButton(stringResource(R.string.update_row_check)) {
+                checking = true
+                failed = false
+                scope.launch {
+                    failed = !AppUpdate.check(context.applicationContext, force = true)
+                    checking = false
+                }
+            }
+        }
+    }
+}
 
 /** Xbox seçiliyken ve giriş yapılmışken Microsoft hesabından çıkış (jeton Keystore'dan silinir). */
 @Composable

@@ -46,9 +46,13 @@ public enum ProblemReport {
         public var contact: String?
         public var log: String?
         public var images: [Image]?
+        /// Cihaz bilgileri (DeviceInfo.summary): uygulama, cihaz modeli, sistem, TV, konsol. Kişisel bilgi içermez.
+        public var device: String?
 
         public init(install: String, app: String, platform: String, language: String, text: String,
-                    contact: String? = nil, log: String? = nil, images: [Data] = []) {
+                    contact: String? = nil, log: String? = nil, images: [Data] = [], device: String? = nil) {
+            let device = String((device ?? "").trimmingCharacters(in: .whitespacesAndNewlines).prefix(DeviceInfo.maxLength))
+            self.device = device.isEmpty ? nil : device
             self.install = install
             self.app = app
             self.platform = platform
@@ -321,7 +325,7 @@ public final class ProblemReportForm: ObservableObject {
 
     /// Gönderir. `logFiles`: "Uygulama günlüğünü ekle" açıksa sonları eklenecek günlükler. Hata olursa form korunur.
     public func submit(install: String, app: String, platform: String, language: String,
-                       logFiles: [URL], logHeader: String? = nil) async {
+                       logFiles: [URL], logHeader: String? = nil, device: String? = nil) async {
         guard canSend else { return }
         phase = .sending
         let includeLog = includeLog
@@ -329,7 +333,7 @@ public final class ProblemReportForm: ObservableObject {
             ProblemReport.recentLog(files: logFiles, header: logHeader)
         }.value : nil
         let payload = ProblemReport.Payload(install: install, app: app, platform: platform, language: language, text: text,
-                                            contact: contact, log: log, images: attachments.map(\.jpeg))
+                                            contact: contact, log: log, images: attachments.map(\.jpeg), device: device)
         do {
             _ = try await ProblemReport.send(payload, endpoint: endpoint, send: send)
             phase = .sent

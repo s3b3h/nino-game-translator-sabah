@@ -141,8 +141,8 @@ struct LivingRoomScene: View {
         let connecting = DebugPreview.state == "connecting"
         let translation = DebugPreview.isActive ? (DebugPreview.state == "live" ? DebugPreview.sample(for: model.settings.targetLanguage) : "") : model.lastTranslation
         return ZStack {
-            LinearGradient(colors: [Color(red: 0.09, green: 0.12, blue: 0.24), Color(red: 0.15, green: 0.09, blue: 0.18)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
+            // Nino: oyun tanınınca oyuna özel buzlu fon (GTA 6'da gün batımı); altyazı önünde durur.
+            GameBackdrop(gameID: model.liveGameID, poolFirst: model.liveGamePoolFirst)
             VStack {
                 HStack {
                     HStack(spacing: 6) {
@@ -178,35 +178,45 @@ struct LivingRoomScene: View {
         .animation(.easeOut(duration: 0.3), value: translation)
     }
 
-    /// Mavi LED'ler: TV'nin arkasından duvara vuran ışık ve sehpanın altındaki şerit. Görselin arkasında çizilir; saydam
-    /// görselin kenarlarından taşar. Fiş takılınca yanar, çekilince söner.
+    /// LED'ler: TV'nin arkasından duvara vuran ışık ve sehpanın altındaki şerit. Görselin arkasında çizilir; saydam
+    /// görselin kenarlarından taşar. Fiş takılınca yanar, çekilince söner. Her zamanki renk mavidir; GTA 6 tanınınca
+    /// (havuz öncelikli oyun) oyunun renklerine döner: solda pembe, sağda açık mavi.
     private var leds: some View {
+        let gta = model.liveGamePoolFirst
         let blue = Color(red: 0.12, green: 0.36, blue: 1.0)
+        // İki durumda da üç duraklı geçiş: renk değişimi yumuşak canlanır.
+        let wide = gta ? [Color(red: 1.0, green: 0.24, blue: 0.62), Color(red: 0.74, green: 0.50, blue: 0.96), Color(red: 0.30, green: 0.78, blue: 1.0)]
+                       : [blue, blue, blue]
+        let tight = gta ? [Color(red: 1.0, green: 0.52, blue: 0.78), Color(red: 0.84, green: 0.70, blue: 1.0), Color(red: 0.58, green: 0.88, blue: 1.0)]
+                        : Array(repeating: Color(red: 0.3, green: 0.55, blue: 1.0), count: 3)
+        let strip = gta ? tight : Array(repeating: Color(red: 0.45, green: 0.65, blue: 1.0), count: 3)
+        func glow(_ colors: [Color]) -> LinearGradient { LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing) }
         let tv = layout.tvFrame, stand = layout.standFrame
         return ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 30)
-                .fill(blue)
+                .fill(glow(wide))
                 .frame(width: tv.width + 40, height: tv.height + 40)
                 .blur(radius: 46)
                 .offset(x: tv.minX - 20, y: tv.minY - 20)
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color(red: 0.3, green: 0.55, blue: 1.0))
+                .fill(glow(tight))
                 .frame(width: tv.width + 10, height: tv.height + 10)
                 .blur(radius: 12)
                 .offset(x: tv.minX - 5, y: tv.minY - 5)
             Capsule()
-                .fill(blue)
+                .fill(glow(wide))
                 .frame(width: stand.width - 60, height: 40)
                 .blur(radius: 26)
                 .offset(x: stand.minX + 30, y: stand.maxY - 14)
             Capsule()
-                .fill(Color(red: 0.45, green: 0.65, blue: 1.0))
+                .fill(glow(strip))
                 .frame(width: stand.width - 90, height: 8)
                 .blur(radius: 4)
                 .offset(x: stand.minX + 45, y: stand.maxY - 4)
         }
         .opacity(plugged ? 1 : 0)
         .animation(.easeInOut(duration: reduceMotion ? 0 : 0.8), value: plugged)
+        .animation(.easeInOut(duration: reduceMotion ? 0 : 1.2), value: gta)
         .allowsHitTesting(false)
     }
 

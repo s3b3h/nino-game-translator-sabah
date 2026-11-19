@@ -170,13 +170,15 @@ struct ReportProblemSheet: View {
         focused = false
         let language = model.settings.targetLanguage
         let header = "Nino iOS \(AppIdentity.version), \(UIDevice.current.systemName) \(UIDevice.current.systemVersion), \(UIDevice.current.model)"
+        // Nino: cihaz bilgileri (sürüm, model, TV markası, konsol, durum); ad ve adres içermez.
+        let device = model.deviceInfoSummary
         Task {
             RemotePlayLog.flush()
             SubtitleLog.flush()
             let install = await model.reportInstallID()
             await form.submit(install: install, app: AppIdentity.version, platform: "ios", language: language,
                               logFiles: [RemotePlayLog.defaultFile, SubtitleLog.defaultFile, InstallLog.shared.file],
-                              logHeader: header)
+                              logHeader: header, device: device)
         }
     }
 

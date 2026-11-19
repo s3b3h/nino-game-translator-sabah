@@ -288,6 +288,8 @@ public sealed class ReportProblemWindow : Window
         var app = AppVersion.Current(Assembly.GetEntryAssembly() ?? typeof(ReportProblemWindow).Assembly);
         var language = controller.Settings.TargetLanguage;
         var poolInstall = controller.PoolInstallId;
+        // Cihaz bilgileri (sürüm, bilgisayarın modeli, sistem, TV, konsol): ne kullanıldığı sorulmadan görülsün.
+        var device = controller.DeviceSummary(app);
         ProblemReport.Result result;
         try
         {
@@ -295,7 +297,7 @@ public sealed class ReportProblemWindow : Window
             {
                 var log = withLog ? ProblemReport.CollectLogs(LogFiles()) : null;
                 var install = ProblemReport.InstallId(poolInstall, Path.Combine(AppPaths.Data, "report-install.txt"));
-                var payload = ProblemReport.Build(install, app, language, text, reach, log, jpegs);
+                var payload = ProblemReport.Build(install, app, language, text, reach, log, jpegs, device);
                 return await ProblemReport.SendAsync(Http, endpoint, payload);
             });
         }

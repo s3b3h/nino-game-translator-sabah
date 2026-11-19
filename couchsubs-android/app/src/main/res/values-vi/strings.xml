@@ -23,6 +23,7 @@
     <string name="phase_rejected_code">PS5 từ chối kết nối (mã %1$s). Có thể một ứng dụng Remote Play khác (PS Remote Play) đang mở, hoặc PS5 đang trong một phiên khác. Hãy đóng PS Remote Play, khởi động lại PS5 rồi thử lại.</string>
     <string name="phase_rejected">PS5 không bắt đầu phiên. Có thể một ứng dụng Remote Play khác (PS Remote Play) đang mở, hoặc PS5 đang trong một phiên khác. Hãy đóng PS Remote Play, khởi động lại PS5 rồi thử lại.</string>
     <string name="phase_registration_invalid">PS5 không chấp nhận ghép nối này. Hãy ghép nối lại PS5 bằng tài khoản phụ trong Cài đặt.</string>
+    <string name="phase_remote_play_disabled">Remote Play đang tắt trên PS5. Trên PS5, mở Settings › System › Remote Play và bật Enable Remote Play, rồi bắt đầu lại.</string>
     <string name="phase_no_picture">Không có hình ảnh từ PS5. Remote Play đã bị tắt, hay PS5 đang ở chế độ nghỉ? Hãy kiểm tra rồi bắt đầu dịch lại.</string>
     <string name="phase_not_found">Không tìm thấy PS5 trong mạng. Điện thoại và PS5 có cùng mạng không?</string>
     <string name="phase_asleep">PS5 không thức dậy từ chế độ nghỉ.</string>
@@ -653,4 +654,23 @@
     <string name="assistant_invalid">Mình không gửi được tin nhắn này. Sửa lại một chút rồi thử lại nhé.</string>
     <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
     <string name="translation_started_notice">Nino: Đã Bắt Đầu Dịch Phụ Đề. Chúc Chơi Vui!</string>
+    <!-- Nino: Cihaz bilgileri, Ayarlar'da GTA 6 kartı ve Güncelleme satırı -->
+    <string name="device_info_title">Thông tin thiết bị</string>
+    <string name="device_info_note">Được thêm vào báo cáo sự cố của bạn để chúng tôi biết bạn đang dùng gì mà không cần hỏi. Không chứa tên, số sê-ri hay địa chỉ.</string>
+    <string name="device_info_app">Phiên bản ứng dụng</string>
+    <string name="device_info_device">Mẫu thiết bị</string>
+    <string name="device_info_system">Hệ điều hành</string>
+    <string name="device_info_tv">TV</string>
+    <string name="device_info_console">Máy chơi game</string>
+    <string name="device_info_status">Trạng thái hiện tại</string>
+    <string name="device_info_copy">Sao chép thông tin thiết bị</string>
+    <string name="nino_gta6_active">Nino · GTA 6 đang bật</string>
+    <string name="nino_gta6_note">Trong GTA 6, phụ đề tiếng Thổ Nhĩ Kỳ đến từ bản dịch dùng chung của Nino: mỗi dòng được một AI mạnh dịch một lần và mọi người đều nhận cùng một kết quả. Bạn không cần chọn gì hay nhập khóa, và hoàn toàn miễn phí.</string>
+    <string name="settings_engine_other_games">Trò chơi khác</string>
+    <string name="update_row_title">Cập nhật</string>
+    <string name="update_row_newer">Có phiên bản mới: %1$s</string>
+    <string name="update_row_download">Tải xuống</string>
+    <string name="update_row_current">Đã là bản mới nhất</string>
+    <string name="update_row_check">Kiểm tra ngay</string>
+    <string name="update_row_checking">Đang kiểm tra…</string>
 </resources>

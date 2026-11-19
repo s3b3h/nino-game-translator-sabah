@@ -33,6 +33,12 @@ final class TvPage {
 
         /** Bilgisayar görüntü modunu değiştirdi (yeni mod kaydedildikten sonra çağrılır). */
         void displayModeChanged(String mode);
+
+        /** İzin ekranı: TV'nin "Diğer uygulamaların üzerinde göster" ayarını açar. */
+        void openOverlaySettings();
+
+        /** İzin ekranı: izin vermeden, oyunu Nino'nun içinde göstererek devam eder. */
+        void continueInApp();
     }
 
     private static final String PREFS = "couchsubs";
@@ -152,6 +158,21 @@ final class TvPage {
 
         @JavascriptInterface
         public String homeMode() { return homeMode; }
+
+        /** Nino: TV'nin markası ve modeli (ör. "TCL 98U95A"); panelde hangi TV'lere kurulduğu görünsün diye. */
+        @JavascriptInterface
+        public String deviceModel() {
+            String maker = android.os.Build.MANUFACTURER == null ? "" : android.os.Build.MANUFACTURER.trim();
+            String model = android.os.Build.MODEL == null ? "" : android.os.Build.MODEL.trim();
+            if (maker.isEmpty() || model.toLowerCase(java.util.Locale.ROOT).startsWith(maker.toLowerCase(java.util.Locale.ROOT))) return model;
+            return maker + " " + model;
+        }
+
+        @JavascriptInterface
+        public void openOverlaySettings() { ui.post(host::openOverlaySettings); }
+
+        @JavascriptInterface
+        public void continueInApp() { ui.post(host::continueInApp); }
 
         @JavascriptInterface
         public String consoleHint() { return HdmiInputs.consoleHint(context); }

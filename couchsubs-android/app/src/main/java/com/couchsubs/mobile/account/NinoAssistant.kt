@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.couchsubs.mobile.account
 
+import com.couchsubs.mobile.core.DeviceInfo
 import com.couchsubs.mobile.translation.Http
 import org.json.JSONArray
 import org.json.JSONObject
@@ -55,9 +56,11 @@ object NinoAssistant {
     /**
      * Sunucuya giden JSON gövdesi. Son [MAX_MESSAGES] mesaj gider; metin [MAX_TEXT]'te kırpılır; fotoğraf yalnız son
      * [keepImages] fotoğraflı kullanıcı mesajında (her birinde en çok [MAX_IMAGES]) gider, öncekilerde "[screenshot]"
-     * yazısı kalır. Metni ve fotoğrafı olmayan mesaj atlanır.
+     * yazısı kalır. Metni ve fotoğrafı olmayan mesaj atlanır. [device]: cihaz bilgileri ([DeviceInfo.summary]); yardımcı
+     * bildirim açarsa bildirime eklenir, modele gönderilmez. Boşsa alan hiç gönderilmez.
      */
-    fun body(install: String, app: String, language: String, turns: List<Turn>, keepImages: Int = IMAGE_MESSAGES): String {
+    fun body(install: String, app: String, language: String, turns: List<Turn>, keepImages: Int = IMAGE_MESSAGES,
+             device: String? = null): String {
         val recent = turns.filter { it.text.isNotBlank() || (it.user && it.images.isNotEmpty()) }.takeLast(MAX_MESSAGES)
         val withImages = recent.indices.filter { recent[it].user && recent[it].images.isNotEmpty() }.takeLast(keepImages).toSet()
         val messages = JSONArray()
@@ -78,23 +81,25 @@ object NinoAssistant {
             }
             messages.put(message)
         }
-        return JSONObject()
+        val json = JSONObject()
             .put("v", 1)
             .put("install", install)
             .put("app", app)
             .put("platform", "android")
             .put("language", language)
             .put("messages", messages)
-            .toString()
+        device?.trim()?.take(DeviceInfo.MAX_LENGTH)?.takeIf { it.isNotEmpty() }?.let { json.put("device", it) }
+        return json.toString()
     }
 
     /**
      * [body] gibi, ama gövde [maxBytes]'ı aşarsa önce eski fotoğraflı mesaj, sonra hepsi "[screenshot]" yazısına
      * indirilir. Yine de sığmazsa null.
      */
-    fun fittedBody(install: String, app: String, language: String, turns: List<Turn>, maxBytes: Int = MAX_BODY_BYTES): String? {
+    fun fittedBody(install: String, app: String, language: String, turns: List<Turn>, maxBytes: Int = MAX_BODY_BYTES,
+                   device: String? = null): String? {
         for (keep in IMAGE_MESSAGES downTo 0) {
-            val body = body(install, app, language, turns, keep)
+            val body = body(install, app, language, turns, keep, device)
             if (body.toByteArray(Charsets.UTF_8).size <= maxBytes) return body
         }
         return null

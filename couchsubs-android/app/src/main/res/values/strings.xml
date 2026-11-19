@@ -24,6 +24,7 @@
     <string name="phase_rejected_code">PS5 bağlantıyı reddetti (kod %1$s). Başka bir Uzaktan Oynatma (PS Remote Play) açık olabilir ya da PS5 başka bir oturumda olabilir. PS Remote Play\'i kapatın, PS5\'i yeniden başlatıp tekrar deneyin.</string>
     <string name="phase_rejected">PS5 oturumu başlatmadı. Başka bir Uzaktan Oynatma (PS Remote Play) açık olabilir ya da PS5 başka bir oturumda olabilir. PS Remote Play\'i kapatın, PS5\'i yeniden başlatıp tekrar deneyin.</string>
     <string name="phase_registration_invalid">PS5 bu eşlemeyi kabul etmedi. Ayarlar\'dan PS5\'i ikinci hesapla yeniden eşleyin.</string>
+    <string name="phase_remote_play_disabled">PS5\'te Uzaktan Oynama kapalı. PS5\'te Ayarlar › Sistem › Uzaktan Oynama\'ya girip Uzaktan Oynamayı Etkinleştir\'i açın, sonra yeniden başlatın.</string>
     <string name="phase_no_picture">PS5 görüntüsü alınamıyor; PS Remote Play kapalı mı, PS5 uykuda mı? Kontrol edip çeviriyi yeniden başlatın.</string>
     <string name="phase_not_found">PS5 ağda bulunamadı. Telefonunuz ve PS5\'iniz aynı ağda mı?</string>
     <string name="phase_asleep">PS5 dinlenme modundan uyanmadı.</string>
@@ -673,4 +674,23 @@
     <string name="assistant_invalid">Bu mesajı gönderemedim. Biraz değiştirip tekrar dene.</string>
     <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
     <string name="translation_started_notice">Nino: Altyazı Çevirisi Başladı. Keyifli Oyunlar!</string>
+    <!-- Nino: Cihaz bilgileri, Ayarlar'da GTA 6 kartı ve Güncelleme satırı -->
+    <string name="device_info_title">Cihaz bilgileri</string>
+    <string name="device_info_note">Sorun bildirdiğinizde eklenir; ne kullandığınızı sormadan görürüz. Ad, seri numarası ya da adres içermez.</string>
+    <string name="device_info_app">Uygulama sürümü</string>
+    <string name="device_info_device">Cihaz modeli</string>
+    <string name="device_info_system">İşletim sistemi</string>
+    <string name="device_info_tv">TV</string>
+    <string name="device_info_console">Konsol</string>
+    <string name="device_info_status">Şu anki durum</string>
+    <string name="device_info_copy">Cihaz bilgilerini kopyala</string>
+    <string name="nino_gta6_active">Nino · GTA 6 Aktif</string>
+    <string name="nino_gta6_note">GTA 6\'da Türkçe altyazı Nino\'nun ortak çevirisinden gelir: her satır güçlü bir yapay zekâyla bir kez çevrilir, herkes aynı sonucu alır. Bir şey seçmeniz ya da anahtar girmeniz gerekmez, ücretsizdir.</string>
+    <string name="settings_engine_other_games">Diğer oyunlar</string>
+    <string name="update_row_title">Güncelleme</string>
+    <string name="update_row_newer">Yeni sürüm var: %1$s</string>
+    <string name="update_row_download">İndir</string>
+    <string name="update_row_current">Güncel</string>
+    <string name="update_row_check">Şimdi denetle</string>
+    <string name="update_row_checking">Denetleniyor…</string>
 </resources>

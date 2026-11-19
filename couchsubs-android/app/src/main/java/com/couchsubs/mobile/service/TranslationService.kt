@@ -384,6 +384,8 @@ class TranslationService : Service() {
         // Nino: havuz öncelikli oyunda (varsayılan GTA 6) çeviri havuzdan, gelmezse ücretsiz ML Kit'ten; motor çağrılmaz.
         val translator = TargetAwareTranslator(poolFirst(engine, free), target)
         pipeline = SubtitlePipeline(translator, subtitleServer).apply {
+            // Nino: atlanan dev yazılar (tabela, reklam panosu) günlüğe yazılır; Sorun Bildir günlüğünde görünür.
+            log = { message -> Log.i(TAG, message) }
             hudTop = layout.hudTop(game)
             // Yarım ya da bozuk okuma hemen çevrilmez; aynı satırın en iyi okuması çevrilir (Windows ve iPhone ile aynı).
             holdReadings = true
@@ -420,6 +422,8 @@ class TranslationService : Service() {
                 LiveState.shown(pair, pair.packId?.let { packTitles?.get(it) ?: it })
                 LiveState.health.line(pair.translationMs?.toLong())
                 if (realGame) PlayedGame.noteLine(pair.origin == "paket", library)
+                // Oyunu sunucu satırlardan tanıdıysa ya da hedef dil / sunucu ayarı değiştiyse bir sonraki satırda yansır.
+                publishPoolFirst()
                 Services.addToHistory(pair.source, pair.translation,
                     if (pair.origin == "paket") com.couchsubs.mobile.core.SubtitleHistory.PACK else com.couchsubs.mobile.core.SubtitleHistory.ENGINE)
                 // Paket başına oturumda bir kez (her satırda olay göndermeyelim); toplam sayı oturum sonunda gider.
@@ -549,6 +553,7 @@ class TranslationService : Service() {
             PlayedGame.onChange = { game ->
                 val changed = playedGame != game?.name
                 playedGame = game?.name
+                publishPoolFirst()
                 // Nino: yeni oyunun havuzdaki çevirileri hemen iner.
                 if (changed) restartSync()
                 // Yeni oyun: o oyunun (havuzdan otomatik) paketi sunucuda yeni çıkmış olabilir; inerse bu oturumun
@@ -793,6 +798,18 @@ class TranslationService : Service() {
      * çeviriden ([free]); kullanıcının anahtarlı motoru çağrılmaz. Ortak havuz ayarı kapalı olsa da (kullanıcı kararı).
      * Windows: AppController.MakePoolFirst.
      */
+    /**
+     * Nino: oynanan oyunun havuz öncelikli olup olmadığını arayüze bildirir ([LiveStatus.poolFirstGame]); ana
+     * ekrandaki sahnenin fonu buna göre seçilir. Çevirinin yönünü belirleyen karar ([poolFirstActive]) ve tanınmış bir
+     * oyun ([PlayedGame]) birlikte aranır: oyun tanınmadıysa fon değişmez (Mac ve iPhone'daki liveGamePoolFirst gibi).
+     * Oyun değişince ve her gösterilen satırda çağrılır; değer değişmediyse arayüz yeniden çizilmez.
+     */
+    private fun publishPoolFirst() {
+        // Karar kilit alır; güncelleme bloğu yeniden çalışabildiği için dışarıda hesaplanır.
+        val first = PlayedGame.sense.current != null && poolFirstActive()
+        if (LiveState.status.value.poolFirstGame != first) LiveState.update { it.copy(poolFirstGame = first) }
+    }
+
     private fun poolFirst(engine: TextTranslator, free: TextTranslator): TextTranslator {
         val pool = translations ?: return engine
         return PoolFirstTranslator(engine, free, { poolFirstActive() }, { line -> pool.translateFirst(line, poolContext.before(line), poolGame()) })
@@ -865,6 +882,7 @@ class TranslationService : Service() {
             DisconnectKind.NOT_FOUND -> state.detail?.let { getString(R.string.phase_not_found_host, it) } ?: getString(R.string.phase_not_found)
             DisconnectKind.NETWORK -> getString(R.string.phase_network)
             DisconnectKind.REGISTRATION_INVALID -> getString(R.string.phase_registration_invalid)
+            DisconnectKind.REMOTE_PLAY_DISABLED -> getString(R.string.phase_remote_play_disabled)
             // Eskiden "Bağlantı koptu, yeniden bağlanılıyor…" görünüyordu, neden anlaşılmıyordu (GitHub #33, #202).
             DisconnectKind.REJECTED -> state.detail?.let { getString(R.string.phase_rejected_code, it) } ?: getString(R.string.phase_rejected)
             DisconnectKind.NO_PICTURE -> getString(R.string.phase_no_picture)
@@ -967,7 +985,8 @@ class TranslationService : Service() {
         lineHandler.removeCallbacksAndMessages(lineExpiry)
         // Nino: yakalama kartı uyarısı oturumla birlikte kalkar (kaynak değişince eski uyarı kalmasın).
         LiveState.update { it.copy(running = false, phase = "", current = "", previous = "", regions = emptyList(), screen = emptyList(),
-            screenState = LiveStatus.ScreenState.IDLE, streaming = false, error = if (it.error in cardMessages) null else it.error) }
+            screenState = LiveStatus.ScreenState.IDLE, streaming = false, poolFirstGame = false,
+            error = if (it.error in cardMessages) null else it.error) }
         super.onDestroy()
     }
 }

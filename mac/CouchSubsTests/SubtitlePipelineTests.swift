@@ -341,7 +341,8 @@ final class SubtitlePipelineTests: XCTestCase {
 
     func testSubtitleBoxIsSentInFrameCoordinates() async {
         let sender = FakeSender()
-        let reading = Reading(lines: [TextLine("Hold the gate.", box: TextBox(left: 0.25, top: 0.5, right: 0.75, bottom: 1))])
+        // Satır alanın %12,5'i, yani karenin %5'i kadar yüksek: gerçek bir altyazı satırı (dev yazı süzgecine takılmaz).
+        let reading = Reading(lines: [TextLine("Hold the gate.", box: TextBox(left: 0.25, top: 0.5, right: 0.75, bottom: 0.625))])
         let pipeline = SubtitlePipeline(reader: LinesReader(reading), translator: FakeTranslator(), server: sender)
         await pipeline.process(frame, region: CropRegion(top: 0.6, bottom: 1.0, left: 0.1, right: 0.9))
         await pipeline.waitForTranslations()
@@ -349,7 +350,17 @@ final class SubtitlePipelineTests: XCTestCase {
         XCTAssertEqual(box?.left ?? 0, 0.3, accuracy: 1e-9)
         XCTAssertEqual(box?.top ?? 0, 0.8, accuracy: 1e-9)
         XCTAssertEqual(box?.right ?? 0, 0.7, accuracy: 1e-9)
-        XCTAssertEqual(box?.bottom ?? 0, 1.0, accuracy: 1e-9)
+        XCTAssertEqual(box?.bottom ?? 0, 0.85, accuracy: 1e-9)
+    }
+
+    func testGiantSignIsNotSentToTheTV() async {
+        // Tabela: satır karenin %20'si kadar yüksek. Çevrilmez, TV'ye kutu gitmez.
+        let sender = FakeSender()
+        let reading = Reading(lines: [TextLine("Welcome to Leonida.", box: TextBox(left: 0.25, top: 0.5, right: 0.75, bottom: 1))])
+        let pipeline = SubtitlePipeline(reader: LinesReader(reading), translator: FakeTranslator(), server: sender)
+        await pipeline.process(frame, region: CropRegion(top: 0.6, bottom: 1.0, left: 0.1, right: 0.9))
+        await pipeline.waitForTranslations()
+        XCTAssertTrue(sender.sent.isEmpty)
     }
 
     func testTextRecognitionRunsOffTheMainThread() async {

@@ -63,6 +63,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -107,6 +109,20 @@ internal fun onColors(): Pair<Color, Color> = when (TargetLanguage.code(Services
 }
 private val LedBlue = Color(0xFF1F5CFF)
 private val LedLight = Color(0xFF738CFF)
+/** Nino: GTA 6 tanınınca LED'lerin renkleri, soldan sağa (pembe, lila, açık mavi): geniş ışık ve ince kenar ışığı / şerit. */
+private val GtaLedWide = listOf(Color(1f, 0.24f, 0.62f), Color(0.74f, 0.50f, 0.96f), Color(0.30f, 0.78f, 1f))
+private val GtaLedTight = listOf(Color(1f, 0.52f, 0.78f), Color(0.84f, 0.70f, 1f), Color(0.58f, 0.88f, 1f))
+/**
+ * Nino: GTA 6 için Nino'nun kendi fonu (Mac'teki SunsetBackdrop ile aynı renkler): yukarıdan aşağı mor, pembe, şeftali;
+ * üstüne %28 siyah biner. Yalnız renk geçişidir: güneş, bulanıklık, oyunun logosu ya da görseli yoktur (kullanıcı
+ * ortadaki sarı güneşi istemedi; bulanıklık da gerekmediği için bütün Android sürümlerinde aynı görünür).
+ */
+private val SunsetStops = arrayOf(
+    0f to Color(0.10f, 0.08f, 0.34f),
+    0.40f to Color(0.46f, 0.16f, 0.62f),
+    0.74f to Color(0.93f, 0.29f, 0.60f),
+    1f to Color(1f, 0.55f, 0.48f),
+)
 
 /** Telefonda ekranda gösterilecek çeviri satırı: şu an görünen, yoksa son çeviri (Arapça sağdan sola). */
 private fun LiveStatus.liveText(): String = TargetLanguage.displayText(current.ifEmpty { recent.firstOrNull()?.translation.orEmpty() })
@@ -129,6 +145,9 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
     var splashDone by remember { mutableStateOf(status.running) }
     LaunchedEffect(plugged) { if (plugged && !status.streaming) splashDone = false }
     val leds by animateFloatAsState(if (plugged) 1f else 0f, tween(if (reduced) 0 else 800), label = "leds")
+    // Nino: GTA 6 tanınınca (havuz öncelikli oyun; TV'deki gün batımı fonuyla aynı koşul) LED'ler oyunun renklerine
+    // döner; renk değişimi yumuşak canlanır (Mac'teki gibi 1,2 sn).
+    val gtaLeds by animateFloatAsState(if (plugged && status.poolFirstGame) 1f else 0f, tween(if (reduced) 0 else 1200), label = "gtaLeds")
     fun toggle() = if (plugged) onStop() else if (paired) onStart() else onLocked()
 
     BoxWithConstraints(modifier.fillMaxWidth()) {
@@ -162,8 +181,9 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
             contentDescription = if (plugged) unplugText else plugText
             onClick { toggle(); true }
         }) {
-            // Mavi LED'ler: görselin arkasında, saydam kenarlarından taşar (bulanıklık yerine katmanlı ışık; Android 8'de de çalışır).
-            Canvas(Modifier.fillMaxSize().alpha(leds)) { drawLeds(scale) }
+            // LED'ler: görselin arkasında, saydam kenarlarından taşar (bulanıklık yerine katmanlı ışık; Android 8'de de çalışır).
+            // Her zamanki renk mavidir; GTA 6'da soldan sağa pembe, lila, açık mavi.
+            Canvas(Modifier.fillMaxSize().alpha(leds)) { drawLeds(scale, gtaLeds) }
             Image(painterResource(R.drawable.living_room), contentDescription = null,
                 modifier = Modifier.offset(0.dp, 0.dp).requiredSize(dp(CANVAS_W), dp(CANVAS_H)).align(Alignment.TopStart))
             // TV ekranı: altta siyah zemin (geçişlerde görseldeki ekran görünmesin), içerik 588 noktalık TV'ye göre çizilip büyütülür.
@@ -180,7 +200,8 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
                                 letterSpacing = if (TargetLanguage.containsArabic(noSignal)) 0.sp else 3.sp, color = Color.White.copy(alpha = 0.28f))
                         }
                         !splashDone -> TvSplash(onFinish = { splashDone = true })
-                        else -> LiveTvScreen(status)
+                        // Nino: oyun havuz öncelikliyse (GTA 6) TV'de gün batımı fonu (Mac'teki gibi).
+                        else -> LiveTvScreen(status, sunset = status.poolFirstGame)
                     }
                 }
             }
@@ -299,11 +320,18 @@ private fun TvSplash(onFinish: () -> Unit) {
     }
 }
 
-/** Çeviri açık: oyun sahnesi gibi koyu ekran, sol üstte CANLI, altta Türkçe satır ya da PS5'in durumu. */
+/**
+ * Çeviri açık: oyun sahnesi gibi koyu ekran, sol üstte CANLI, altta Türkçe satır ya da PS5'in durumu.
+ * [sunset]: havuz öncelikli oyunda (GTA 6) koyu zemin yerine Nino'nun kendi gün batımı fonu ([SunsetStops]); yalnız ana
+ * ekrandaki iki sahne verir (salondaki TV ve cam düğmeli arayüzün sahnesi). Yazılar ve CANLI rozeti aynen önde kalır.
+ * Yan çevrilince açılan tam ekran altyazı (PhoneSubtitleActivity) bunu kullanmaz, düz siyah kalır.
+ */
 @Composable
-fun LiveTvScreen(status: LiveStatus, modifier: Modifier = Modifier) {
+fun LiveTvScreen(status: LiveStatus, modifier: Modifier = Modifier, sunset: Boolean = false) {
     val text = status.liveText()
-    Box(modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF171F3D), Color(0xFF26172E)))).padding(18.dp)) {
+    val backdrop = if (sunset) Modifier.background(Brush.verticalGradient(*SunsetStops)).background(Color.Black.copy(alpha = 0.28f))
+        else Modifier.background(Brush.linearGradient(listOf(Color(0xFF171F3D), Color(0xFF26172E))))
+    Box(modifier.fillMaxSize().then(backdrop).padding(18.dp)) {
         Row(Modifier.align(Alignment.TopStart).background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Box(Modifier.size(8.dp).background(FlagRed, CircleShape))
@@ -324,23 +352,32 @@ fun LiveTvScreen(status: LiveStatus, modifier: Modifier = Modifier) {
     }
 }
 
-private fun DrawScope.drawLeds(s: Float) {
+/**
+ * LED'ler. [gta] 0 iken her zamanki mavi (düz renk, eskisiyle aynı); 1 iken GTA 6 renkleri: her ışık kendi genişliğinde
+ * soldan sağa pembe, lila, açık mavi (Mac'teki `leds` ile aynı renkler). Arası, renk değişirken yumuşak geçiştir. Boyutlar ve
+ * katmanlar iki durumda da aynıdır.
+ */
+private fun DrawScope.drawLeds(s: Float, gta: Float = 0f) {
+    // Bir ışığın boyası: [base] mavi ya da [colors] geçişi, [left]'ten [width] boyunca (görsel pikseli).
+    fun paint(base: Color, colors: List<Color>, alpha: Float, left: Float, width: Float): Brush =
+        if (gta <= 0f) SolidColor(base.copy(alpha = base.alpha * alpha))
+        else Brush.horizontalGradient(colors.map { lerp(base, it, gta).copy(alpha = base.alpha * alpha) }, startX = left * s, endX = (left + width) * s)
     // TV'nin arkasından duvara vuran ışık: içten dışa soluklaşan katmanlar.
     val tvX = 139f; val tvY = 27f; val tvW = 1171f; val tvH = 621f
     for (i in 6 downTo 0) {
         val grow = 10f + i * 12f
-        drawRoundRect(LedBlue.copy(alpha = 0.06f + 0.05f * (6 - i) / 6f), Offset((tvX - grow) * s, (tvY - grow) * s),
+        drawRoundRect(paint(LedBlue, GtaLedWide, 0.06f + 0.05f * (6 - i) / 6f, tvX - grow, tvW + 2 * grow), Offset((tvX - grow) * s, (tvY - grow) * s),
             Size((tvW + 2 * grow) * s, (tvH + 2 * grow) * s), CornerRadius((30f + grow) * s))
     }
-    drawRoundRect(LedLight.copy(alpha = 0.55f), Offset((tvX - 5) * s, (tvY - 5) * s), Size((tvW + 10) * s, (tvH + 10) * s), CornerRadius(12 * s))
+    drawRoundRect(paint(LedLight, GtaLedTight, 0.55f, tvX - 5, tvW + 10), Offset((tvX - 5) * s, (tvY - 5) * s), Size((tvW + 10) * s, (tvH + 10) * s), CornerRadius(12 * s))
     // Sehpanın altındaki şerit.
     val standX = 49f; val standW = 1502f; val standBottom = 873f
     for (i in 5 downTo 0) {
         val h = 10f + i * 8f
-        drawRoundRect(LedBlue.copy(alpha = 0.08f + 0.06f * (5 - i) / 5f), Offset((standX + 30 - i * 4) * s, (standBottom - h / 2) * s),
+        drawRoundRect(paint(LedBlue, GtaLedWide, 0.08f + 0.06f * (5 - i) / 5f, standX + 30 - i * 4, standW - 60 + i * 8), Offset((standX + 30 - i * 4) * s, (standBottom - h / 2) * s),
             Size((standW - 60 + i * 8) * s, h * s), CornerRadius(h / 2 * s))
     }
-    drawRoundRect(LedLight, Offset((standX + 45) * s, (standBottom - 4) * s), Size((standW - 90) * s, 6 * s), CornerRadius(3 * s))
+    drawRoundRect(paint(LedLight, GtaLedTight, 1f, standX + 45, standW - 90), Offset((standX + 45) * s, (standBottom - 4) * s), Size((standW - 90) * s, 6 * s), CornerRadius(3 * s))
 }
 
 /** Fiş: çıkıkken siyah gövde ve iki metal uç aşağı bakar; takılıyken prizin önünde yuvarlak siyah kapak. */

@@ -75,11 +75,31 @@ struct TVAppCard: View {
                         Text("Waiting for the TV…").foregroundStyle(Color.csSecondary)
                     }
                 }
+            case .failed(.unreachable, let reason) where brand == .samsung:
+                // TV bu Mac'i kabul etmedi: neyin eksik olduğu denetim kartında görünür. TV'ye üç saniyede bir yeniden
+                // sorulur; eksik adım belli olunca ya da TV yeniden başlayınca kendiliğinden devam eder.
+                SamsungSetupGuide(dropped: true, reason: reason)
+                    .task {
+                        while !Task.isCancelled, case .failed(.unreachable, _) = model.tvApp {
+                            try? await Task.sleep(for: .seconds(3))
+                            await model.recheckSamsungSetup()
+                        }
+                    }
             case .failed(let error, let reason):
                 Card(title: "Nino TV app") {
                     ErrorText(error: Self.message(for: error, brand: brand, reason: reason))
                     Button("Try again") { Task { await model.refreshTVApp() } }.buttonStyle(.secondary)
                 }
+            case .hostPcMismatch:
+                // Host PC IP bu Mac'in adresi değil (#343): denetim kartı hangi adresin yazılacağını söyler.
+                // Düzeltilip TV yeniden başlayınca kendiliğinden devam eder.
+                SamsungSetupGuide()
+                    .task {
+                        while !Task.isCancelled, case .hostPcMismatch = model.tvApp {
+                            try? await Task.sleep(for: .seconds(3))
+                            await model.refreshTVApp()
+                        }
+                    }
             }
         }
     }
@@ -98,15 +118,8 @@ struct TVAppCard: View {
                 passphraseEntry(error: nil)
             }
         case .samsung:
-            Card(title: "Nino TV app") {
-                Text("The TV app is not installed. Nino installs it once Developer Mode is on.")
-                HintText(text: "1. On the TV, open Apps and scroll to the very bottom of the page.")
-                HintText(text: "2. There, press 1 2 3 4 5 on the remote (or type 12345 on the on-screen keypad). The Developer Mode window opens.")
-                HintText(text: "3. Turn Developer mode On, type this computer's address as Host PC IP: \(model.computerAddress ?? "?") and press OK.")
-                HintText(text: "4. Restart the TV: hold the power button on the remote for about 2 seconds until the TV turns off, then turn it on again. This screen continues by itself.")
-                HintText(text: "Later you sign in once with a free Samsung account; Samsung needs it to sign the app for your TV.")
-                HintText(text: "If the TV keeps switching to HDMI 1 or another source while the Nino TV app is open, turn off Anynet+ (HDMI-CEC) and Auto Source Switching on the TV: Settings › All Settings › Connection › External Device Manager.")
-            }
+            // Neyin eksik olduğunu (mod kapalı, adres yanlış, TV yeniden başlamamış) gösteren denetim kartı.
+            SamsungSetupGuide()
         case .androidTV:
             Card(title: "Nino TV app") {
                 Text("The TV app is not installed. Nino installs it over the network once debugging is on.")

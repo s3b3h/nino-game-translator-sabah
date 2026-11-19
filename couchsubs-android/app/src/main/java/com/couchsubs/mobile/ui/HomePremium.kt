@@ -199,7 +199,8 @@ private fun Stage(status: LiveStatus, state: HomeState, onFullScreen: (() -> Uni
         .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.03f))), shape)
         .then(if (state == HomeState.LIVE && onFullScreen != null) Modifier.clickable(onClick = onFullScreen) else Modifier)) {
         AnimatedContent(state == HomeState.LIVE, transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(250)) }, label = "stage") { live ->
-            if (live) CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { LiveTvScreen(status, Modifier.fillMaxSize()) }
+            // Nino: oyun havuz öncelikliyse (GTA 6) sahnede gün batımı fonu (iPhone'daki HomeStage ile aynı).
+            if (live) CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { LiveTvScreen(status, Modifier.fillMaxSize(), sunset = status.poolFirstGame) }
             else Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                 Text(stringResource(if (state == HomeState.CONNECTING) R.string.home_connecting else R.string.home_stage_idle),
                     fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.42f), textAlign = TextAlign.Center)

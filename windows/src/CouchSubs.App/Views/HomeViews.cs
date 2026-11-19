@@ -120,6 +120,37 @@ internal static class Home
         return (screen, line, lineBox);
     }
 
+    /// <summary>
+    /// Nino: havuz öncelikli oyunda (GTA 6) TV ekranının fonu: mor-pembe-turuncu gün batımı, ufukta güneş, üstünde %30
+    /// karartma (Mac'teki SunsetBackdrop). Nino'nun kendi çizimidir: oyunun logosu ya da görseli kullanılmaz.
+    /// Bulanıklık (BlurEffect) kullanılmaz: Mac'te güneş ayrı, saydam kenarlı bir katmanken bulanıklık onu siyah köşeli
+    /// bir blok olarak çiziyordu. Fon yalnız ekranı tam kaplayan geçişlerden oluşur; buzlu görünümü geçişlerin yumuşaklığı
+    /// verir, bozulacak bir şey kalmaz.
+    /// </summary>
+    public static Grid SunsetBackdrop(double width, double height)
+    {
+        // Yalnız bir geçiş: güneş yok (kullanıcı ortada sarı bir şey istemiyor). Renkler Mac'teki GameBackdrop.swift ile aynı.
+        var sky = new LinearGradientBrush { StartPoint = new Point(0.5, 0), EndPoint = new Point(0.5, 1) };
+        sky.GradientStops.Add(new GradientStop(Color.FromRgb(26, 20, 87), 0));
+        sky.GradientStops.Add(new GradientStop(Color.FromRgb(117, 41, 158), 0.40));
+        sky.GradientStops.Add(new GradientStop(Color.FromRgb(237, 74, 153), 0.74));
+        sky.GradientStops.Add(new GradientStop(Color.FromRgb(255, 140, 122), 1));
+        var backdrop = new Grid { Width = width, Height = height, IsHitTestVisible = false };
+        backdrop.Children.Add(new Rectangle { Fill = sky });
+        backdrop.Children.Add(new Rectangle { Fill = new SolidColorBrush(Color.FromArgb(0x47, 0, 0, 0)) });
+        return backdrop;
+    }
+
+    /// <summary>Soldan sağa üç renkli LED geçişi (GTA 6: solda pembe, sağda açık mavi).</summary>
+    public static LinearGradientBrush LedGlow(Color left, Color middle, Color right)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0.5), EndPoint = new Point(1, 0.5) };
+        brush.GradientStops.Add(new GradientStop(left, 0));
+        brush.GradientStops.Add(new GradientStop(middle, 0.5));
+        brush.GradientStops.Add(new GradientStop(right, 1));
+        return brush;
+    }
+
     public static void ShowLine(TextBlock line, Border box, (string text, bool subtitle) value)
     {
         if (line.Text == TargetLanguage.DisplayText(value.text)) return;
@@ -156,6 +187,12 @@ public sealed class LivingRoomScene : UserControl
     private readonly Grid liveScreen;
     private readonly TextBlock liveLine;
     private readonly Border liveBox;
+    /// <summary>Nino: havuz öncelikli oyunda (GTA 6) canlı ekranın arkasındaki gün batımı; öbür oyunlarda gizli.</summary>
+    private readonly Grid sunset;
+    /// <summary>LED'ler: TV'nin arkasındaki geniş ışık, TV'nin kenarındaki dar ışık, sehpanın altındaki ışık ve ince şerit.</summary>
+    private Rectangle ledWide = null!, ledTight = null!, ledUnder = null!, ledStrip = null!;
+    /// <summary>LED'ler GTA 6 renklerinde mi (pembe, mor, mavi); değilse her zamanki mavi.</summary>
+    private bool? ledsGta;
     private bool plugged;
     private bool splashDone = true;
     private Point? dragStart;
@@ -188,6 +225,10 @@ public sealed class LivingRoomScene : UserControl
             VerticalAlignment = VerticalAlignment.Center,
         });
         (liveScreen, liveLine, liveBox) = Home.LiveScreen(ScreenRect.Width, ScreenRect.Height, 46);
+        // Fon en arkada: CANLI rozeti ve altyazı önünde kalır.
+        sunset = Home.SunsetBackdrop(ScreenRect.Width, ScreenRect.Height);
+        sunset.Visibility = Visibility.Collapsed;
+        liveScreen.Children.Insert(0, sunset);
         Place(screenHost, ScreenRect.X, ScreenRect.Y);
         scene.Children.Add(screenHost);
 
@@ -220,19 +261,47 @@ public sealed class LivingRoomScene : UserControl
 
     private void BuildLeds()
     {
-        var blue = new SolidColorBrush(Home.LedBlue);
-        var wide = new Rectangle { Width = TvRect.Width + 40, Height = TvRect.Height + 40, RadiusX = 30, RadiusY = 30, Fill = blue, Effect = new BlurEffect { Radius = 90 } };
-        Place(wide, TvRect.X - 20, TvRect.Y - 20);
-        var tight = new Rectangle { Width = TvRect.Width + 10, Height = TvRect.Height + 10, RadiusX = 10, RadiusY = 10, Fill = new SolidColorBrush(Color.FromRgb(0x4D, 0x8C, 0xFF)), Effect = new BlurEffect { Radius = 24 } };
-        Place(tight, TvRect.X - 5, TvRect.Y - 5);
-        var under = new Rectangle { Width = StandRect.Width - 60, Height = 40, RadiusX = 20, RadiusY = 20, Fill = blue, Effect = new BlurEffect { Radius = 50 } };
-        Place(under, StandRect.X + 30, StandRect.Bottom - 14);
-        var strip = new Rectangle { Width = StandRect.Width - 90, Height = 8, RadiusX = 4, RadiusY = 4, Fill = new SolidColorBrush(Color.FromRgb(0x73, 0xA6, 0xFF)), Effect = new BlurEffect { Radius = 8 } };
-        Place(strip, StandRect.X + 45, StandRect.Bottom - 4);
-        leds.Children.Add(wide);
-        leds.Children.Add(tight);
-        leds.Children.Add(under);
-        leds.Children.Add(strip);
+        ledWide = new Rectangle { Width = TvRect.Width + 40, Height = TvRect.Height + 40, RadiusX = 30, RadiusY = 30, Effect = new BlurEffect { Radius = 90 } };
+        Place(ledWide, TvRect.X - 20, TvRect.Y - 20);
+        ledTight = new Rectangle { Width = TvRect.Width + 10, Height = TvRect.Height + 10, RadiusX = 10, RadiusY = 10, Effect = new BlurEffect { Radius = 24 } };
+        Place(ledTight, TvRect.X - 5, TvRect.Y - 5);
+        ledUnder = new Rectangle { Width = StandRect.Width - 60, Height = 40, RadiusX = 20, RadiusY = 20, Effect = new BlurEffect { Radius = 50 } };
+        Place(ledUnder, StandRect.X + 30, StandRect.Bottom - 14);
+        ledStrip = new Rectangle { Width = StandRect.Width - 90, Height = 8, RadiusX = 4, RadiusY = 4, Effect = new BlurEffect { Radius = 8 } };
+        Place(ledStrip, StandRect.X + 45, StandRect.Bottom - 4);
+        leds.Children.Add(ledWide);
+        leds.Children.Add(ledTight);
+        leds.Children.Add(ledUnder);
+        leds.Children.Add(ledStrip);
+        ColorLeds();
+    }
+
+    /// <summary>
+    /// LED'lerin rengi: her zamanki mavi; GTA 6 tanınınca (havuz öncelikli oyun, fonla aynı koşul) oyunun renkleri, soldan
+    /// sağa pembe, mor, mavi (Mac'teki leds). Boyutlar ve bulanıklık aynı kalır; yalnız dolgu değişir.
+    /// </summary>
+    private void ColorLeds()
+    {
+        var gta = controller.LiveGamePoolFirst;
+        if (ledsGta == gta) return;
+        ledsGta = gta;
+        if (gta)
+        {
+            var wide = Home.LedGlow(Color.FromRgb(255, 61, 158), Color.FromRgb(189, 128, 245), Color.FromRgb(77, 199, 255));
+            var tight = Home.LedGlow(Color.FromRgb(255, 133, 199), Color.FromRgb(214, 179, 255), Color.FromRgb(148, 224, 255));
+            ledWide.Fill = wide;
+            ledUnder.Fill = wide;
+            ledTight.Fill = tight;
+            ledStrip.Fill = tight;
+        }
+        else
+        {
+            var blue = new SolidColorBrush(Home.LedBlue);
+            ledWide.Fill = blue;
+            ledUnder.Fill = blue;
+            ledTight.Fill = new SolidColorBrush(Color.FromRgb(0x4D, 0x8C, 0xFF));
+            ledStrip.Fill = new SolidColorBrush(Color.FromRgb(0x73, 0xA6, 0xFF));
+        }
     }
 
     private void OnChanged(object? sender, PropertyChangedEventArgs e)
@@ -249,6 +318,7 @@ public sealed class LivingRoomScene : UserControl
                 splash = null;
                 DrawPlug();
             }
+            ColorLeds();
             ShowScreen();
         });
     }
@@ -261,6 +331,7 @@ public sealed class LivingRoomScene : UserControl
         else
         {
             Home.ShowLine(liveLine, liveBox, Home.ScreenText(controller));
+            sunset.Visibility = controller.LiveGamePoolFirst ? Visibility.Visible : Visibility.Collapsed;
             wanted = liveScreen;
         }
         if (screenHost.Children.Count == 1 && screenHost.Children[0] == wanted) return;

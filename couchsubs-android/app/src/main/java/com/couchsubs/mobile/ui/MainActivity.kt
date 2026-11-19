@@ -17,6 +17,8 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
@@ -89,6 +91,15 @@ object Routes {
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: android.content.Context) = super.attachBaseContext(newBase.withInterfaceLanguage())
 
+    /**
+     * Nino: telefon uygulamasının yeni sürümüne uygulama her öne geldiğinde bakılır (ağa en çok 3 saatte bir çıkar).
+     * Eskiden yalnız uygulama açılırken bakılıyordu; günlerce arka planda açık kalan uygulama yeni sürümü görmüyordu.
+     */
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch { com.couchsubs.mobile.update.AppUpdate.check(applicationContext) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Uygulama hep koyu; sistem açık temadayken de durum çubuğu simgeleri açık renk kalsın.
         enableEdgeToEdge(SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT), SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT))
@@ -109,8 +120,6 @@ class MainActivity : ComponentActivity() {
                 // eskiyse ana ekran "TV uygulamasını güncelle" önerir.
                 val tvConnected = status.connectedTvs > 0
                 LaunchedEffect(tvConnected) { TvAppUpdate.check(applicationContext) }
-                // Nino: telefon uygulamasının yeni sürümüne en çok 12 saatte bir bakılır.
-                LaunchedEffect(Unit) { com.couchsubs.mobile.update.AppUpdate.check(applicationContext) }
                 DisposableEffect(navigation) {
                     val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, _ ->
                         destination.route?.let { Telemetry.screen(it.substringBefore('/')) }

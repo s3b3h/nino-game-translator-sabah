@@ -23,6 +23,15 @@ enum SamsungMessages {
         return (try? JSONSerialization.data(withJSONObject: message)) ?? Data()
     }
 
+    /// Kumanda tuşu iletisi (`command`: "Press", "Release" ya da "Click"; `key`: ör. "KEY_1").
+    static func key(_ key: String, command: String) -> Data {
+        let message: [String: Any] = [
+            "method": "ms.remote.control",
+            "params": ["Cmd": command, "DataOfCmd": key, "Option": "false", "TypeOfRemote": "SendRemoteKey"],
+        ]
+        return (try? JSONSerialization.data(withJSONObject: message)) ?? Data()
+    }
+
     /// Bağlantı sonucu: onaylandıysa jeton (TV vermediyse boş), reddedildiyse ya da soru zaman aşımına uğradıysa hata.
     static func connectResult(_ text: String) throws -> String? {
         guard let object = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any] else { return nil }
@@ -44,6 +53,44 @@ enum SamsungMessages {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let device = object["device"] as? [String: Any], let name = device["name"] as? String else { return nil }
         return name.replacingOccurrences(of: "&quot;", with: "\"")
+    }
+
+    /// 8001 yanıtında geliştirici modu açık mı (`device.developerMode`: "1"/"0"); bildirilmezse nil.
+    static func developerMode(_ data: Data) -> Bool? {
+        guard let value = deviceField(data, "developerMode") else { return nil }
+        return value == "1" || value.lowercased() == "true"
+    }
+
+    /// TV'nin geliştirici modundaki "Host PC IP" (`device.developerIP`); boş ya da "0.0.0.0" ise nil.
+    static func developerIp(_ data: Data) -> String? {
+        guard let value = deviceField(data, "developerIP"), value != "0.0.0.0" else { return nil }
+        return value
+    }
+
+    private static func deviceField(_ data: Data, _ name: String) -> String? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let device = object["device"] as? [String: Any], let raw = device[name] else { return nil }
+        let text = (raw as? String ?? "\(raw)").trimmingCharacters(in: .whitespaces)
+        return text.isEmpty ? nil : text
+    }
+}
+
+/// Samsung TV'nin 8001 yanıtındaki geliştirici modu bilgisi.
+public struct SamsungDeveloperInfo: Equatable, Sendable {
+    /// Geliştirici modu açık mı; TV bildirmezse nil.
+    public var developerMode: Bool?
+    /// TV'deki "Host PC IP"; boşsa nil.
+    public var developerIp: String?
+    public init(developerMode: Bool?, developerIp: String?) {
+        self.developerMode = developerMode
+        self.developerIp = developerIp
+    }
+
+    /// TV'deki Host PC IP bu bilgisayarın adresinden farklı mı? Biri bilinmiyorsa farklı sayılmaz (#343).
+    public static func hostPcIpMismatch(developerIp: String?, computer: String?) -> Bool {
+        guard let ip = developerIp?.trimmingCharacters(in: .whitespaces), !ip.isEmpty,
+              let mine = computer?.trimmingCharacters(in: .whitespaces), !mine.isEmpty else { return false }
+        return ip != mine
     }
 }
 
@@ -142,6 +189,15 @@ public final class SamsungClient: NSObject, TVControlling, URLSessionDelegate, @
         try await socket.send(.string(String(decoding: SamsungMessages.launch(appId: appId, params: params), as: UTF8.self)))
     }
 
+    /// Kumanda tuşuna basar (ör. "KEY_1"). Basma ve bırakma ayrı gönderilir: geliştirici modu kodu (1 2 3 4 5) bazı
+    /// modellerde yalnız böyle sayılıyor (couch-tv #53, 2022 Q60B).
+    public func pressKey(_ key: String, hold: Duration = .milliseconds(90)) async throws {
+        guard let socket else { throw SamsungError.cannotConnect }
+        try await socket.send(.string(String(decoding: SamsungMessages.key(key, command: "Press"), as: UTF8.self)))
+        try await Task.sleep(for: hold)
+        try await socket.send(.string(String(decoding: SamsungMessages.key(key, command: "Release"), as: UTF8.self)))
+    }
+
     /// Samsung önplandaki uygulamayı söylemez; bağlantı ayakta mı diye bakılır, boş döner.
     public func foregroundAppId() async throws -> String {
         guard let socket else { throw SamsungError.cannotConnect }
@@ -168,6 +224,14 @@ public final class SamsungClient: NSObject, TVControlling, URLSessionDelegate, @
 /// Yerel ağdaki Samsung TV'leri SSDP ile bulur.
 public enum SamsungDiscovery {
     static let searchTarget = "urn:samsung.com:device:RemoteControlReceiver:1"
+
+    /// TV'nin geliştirici modu bilgisi (`http://TV:8001/api/v2/`); TV yanıt vermezse nil.
+    public static func developerInfo(host: String) async -> SamsungDeveloperInfo? {
+        guard let url = URL(string: "http://\(host):8001/api/v2/"),
+              let (data, _) = try? await LocalNetwork.probeSession.data(from: url) else { return nil }
+        guard (try? JSONSerialization.jsonObject(with: data)) != nil else { return nil }
+        return SamsungDeveloperInfo(developerMode: SamsungMessages.developerMode(data), developerIp: SamsungMessages.developerIp(data))
+    }
 
     public static func search(timeout: Duration = .seconds(3)) async -> [LGTV] {
         let hosts = await Task.detached { LGDiscovery.collectHosts(searchTarget: searchTarget, timeout: timeout) }.value

@@ -34,6 +34,7 @@ async function load(reset){
   data.reports.forEach(function(x){
     var d=document.createElement('div');d.className='card';
     d.innerHTML='<div class="meta"><span class="pill '+(x.status==='new'?'new':'')+'">'+esc(x.status)+'</span><span>'+new Date(x.created*1000).toLocaleString('tr-TR')+'</span><span>'+esc(x.platform)+' '+esc(x.app)+'</span><span>'+esc(x.language)+'</span>'+(x.contact?'<span>İletişim: '+esc(x.contact)+'</span>':'')+'</div>'
+      +(x.device?'<div class="meta" style="margin-top:6px">'+esc(x.device).split(' | ').map(function(v){return '<span>'+v+'</span>'}).join('')+'</div>':'')
       +'<div class="text">'+esc(x.text)+'</div><div class="imgs"></div>'
       +'<div class="row" style="margin-top:8px">'+(x.log_length?'<button data-log>Günlüğü göster</button>':'')+'<button data-s="seen">Görüldü</button><button data-s="done">Çözüldü</button></div><pre hidden></pre>';
     for(var i=0;i<x.images;i++)(function(i){api('/v1/reports/'+x.id+'/images/'+i).then(function(r){return r.blob()}).then(function(b){

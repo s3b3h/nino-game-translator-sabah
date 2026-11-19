@@ -91,6 +91,39 @@ public sealed class Reading
     public Reading WithoutClippedLines(double margin = 0.015) =>
         new(Lines.Where(line => line.Box is not { } box || !(box.Left <= margin && box.Right >= 1 - margin)));
 
+    /// <summary>
+    /// Nino: dev yazı altyazı değildir. Oyunun içindeki tabela, reklam panosu, dükkân adı ya da ekranı kaplayan başlık
+    /// altyazı sanılıp çevriliyor, TV'de de yazının kapladığı yer kadar kocaman siyah bir kutu çıkıyordu. Altyazı satırı
+    /// ekran yüksekliğinin yaklaşık %2,5-5'i kadardır (en büyük erişilebilirlik ayarında %6); bundan belirgin biçimde
+    /// büyük satır atılır (Mac: Reading.maxSubtitleLineHeight).
+    /// </summary>
+    public const double MaxSubtitleLineHeight = 0.075;
+
+    /// <summary>
+    /// Altyazı bloğunun karede kaplayabileceği en çok yükseklik ve satır sayısı; aşan blok altyazı değildir (afiş, not,
+    /// belge, üst üste tabelalar).
+    /// </summary>
+    public const double MaxSubtitleBlockHeight = 0.26;
+    public const int MaxSubtitleLines = 5;
+
+    /// <summary>
+    /// Dev satırlar (bkz. <see cref="MaxSubtitleLineHeight"/>) çıkarılmış hali. Ölçü karenin tamamına göredir
+    /// (<paramref name="area"/>: okunan alanın karedeki yeri), dar seçilmiş alanda normal satır büyük görünmesin. Yeri
+    /// bilinmeyen satıra dokunulmaz (Mac: Reading.withoutOversizedLines).
+    /// </summary>
+    public Reading WithoutOversizedLines(TextBox area, double limit = MaxSubtitleLineHeight)
+    {
+        var scale = area.Bottom - area.Top;
+        return new(Lines.Where(line => line.Box is not { } box || (box.Bottom - box.Top) * scale <= limit));
+    }
+
+    /// <summary>Blok bir altyazı için fazla mı yüksek ya da fazla mı satırlı (bkz. <see cref="MaxSubtitleBlockHeight"/>).</summary>
+    public bool IsOversizedBlock(TextBox area)
+    {
+        if (Lines.Count > MaxSubtitleLines) return true;
+        return Box is { } box && (box.Bottom - box.Top) * (area.Bottom - area.Top) > MaxSubtitleBlockHeight;
+    }
+
     public Reading WithoutOcrNoise() => new(Lines.Select(line => line with { Text = OcrNoise.Clean(line.Text) }));
 
     /// <summary>

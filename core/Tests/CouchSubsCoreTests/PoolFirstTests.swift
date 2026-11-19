@@ -31,10 +31,22 @@ final class PoolFirstTests: XCTestCase {
         var asked: Int { lock.withLock { translateBodies.count } }
     }
 
-    func makePool(_ server: Server, enabled: Bool = true) -> TranslationPool {
+    func makePool(_ server: Server, enabled: Bool = true, language: String = "tr") -> TranslationPool {
         TranslationPool(directory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
                         endpoint: URL(string: "https://pool.test")!, install: UUID().uuidString.lowercased(),
-                        app: "0.2.2", platform: "test", language: "tr", enabled: enabled, send: { await server.handle($0) })
+                        app: "0.2.2", platform: "test", language: language, enabled: enabled, send: { await server.handle($0) })
+    }
+
+    /// Nino: havuz önceliği yalnız sunucunun saydığı hedef dillerde (varsayılan Türkçe); öbürlerinde kendi motor.
+    func testOnlyListedLanguages() async {
+        XCTAssertFalse(makePool(Server(), language: "ar").isPoolFirst("Grand Theft Auto VI"))
+        let server = Server()
+        server.config = #"{"ok":true,"translate":{"enabled":true,"deadlineMs":900,"syncSeconds":180,"contextLines":4,"maxLines":12},"poolFirst":{"games":["gta6"],"deadlineMs":700,"langs":["tr","ar"]}}"#
+        let pool = makePool(server, language: "ar-SA")
+        await pool.refreshConfig(force: true)
+        XCTAssertTrue(pool.isPoolFirst("gta6"))
+        await pool.setLanguage("th")
+        XCTAssertFalse(pool.isPoolFirst("gta6"))
     }
 
     // MARK: Havuz

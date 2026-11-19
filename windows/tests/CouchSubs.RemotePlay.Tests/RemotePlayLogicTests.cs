@@ -205,6 +205,8 @@ public class DisconnectReasonTests
     [Theory]
     [InlineData("Reported Application Reason: 0x80108b09 (Regist failed, probably invalid PIN)", DisconnectKind.RegistrationInvalid)]
     [InlineData("Reported Application Reason: 0x80108B02 (Invalid PSN ID)", DisconnectKind.RegistrationInvalid)]
+    [InlineData("Reported Application Reason: 0x80108b26 (unknown)", DisconnectKind.RegistrationInvalid)]
+    [InlineData("Reported Application Reason: 0x80108b12 (unknown)", DisconnectKind.RemotePlayDisabled)]
     [InlineData("Session request connect failed eventually.", DisconnectKind.Network)]
     [InlineData("Failed to receive session request response", DisconnectKind.Network)]
     [InlineData("Failed to send session request", DisconnectKind.Network)]

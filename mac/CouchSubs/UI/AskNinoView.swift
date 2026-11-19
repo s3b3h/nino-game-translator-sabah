@@ -319,7 +319,7 @@ struct AskNinoSheet: View {
         let language = TargetLanguage.interfaceLanguage(model.settings.targetLanguage)
         return {
             AssistantChatSession.Context(install: await model.reportInstallID(), app: AppIdentity.version,
-                                         platform: "mac", language: language)
+                                         platform: "mac", language: language, device: await model.deviceSummary)
         }
     }
 

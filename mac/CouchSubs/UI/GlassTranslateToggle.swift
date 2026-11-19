@@ -322,12 +322,16 @@ struct MainBottomBar: View {
                     }
                 }
                 Spacer(minLength: 12)
-                link(title: "Theme", value: Text(model.settings.style.theme.title)) { open(.appearance) }
+                // Nino: "Tema" kısayolu kaldırıldı (Ayarlar › Altyazı görünümü'nde duruyor). GTA 6'da çeviri Nino'nun
+                // havuzundan geldiği için burada o yazar; başka bir oyun tanınınca seçili motor görünür.
                 link(title: "Translation",
-                     value: Text(verbatim: model.settings.translationEngine == .free ? String(localized: "Free") : model.settings.translationEngine.displayName)) { open(.translation) }
+                     value: Text(verbatim: model.ninoPoolActive ? String(localized: "Nino · GTA 6 active")
+                                 : model.settings.translationEngine == .free ? String(localized: "Free") : model.settings.translationEngine.displayName)) { open(.translation) }
             }
             .padding(.horizontal, Theme.space("xl"))
             .frame(height: 44)
+            // Nino: ortada güncelleme denetimi; yeni sürüm varsa hemen indirip kurar.
+            .overlay { UpdateCheckLink() }
         }
     }
 
@@ -356,6 +360,80 @@ struct MainBottomBar: View {
             }
             .font(.csCaption)
             .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Nino: alt şeridin ortasındaki güncelleme durumu. Güncelse "Güncel" ve yanında yenile düğmesi; yeni sürüm bulununca
+/// kendiliğinden iner ("… indiriliyor"), inince "Güncelleme hazır · Yeniden başlat" görünür: tek tıkla kurulur ve Nino
+/// yeniden açılır (çeviri sürüyorsa yeniden açılınca kendiliğinden sürer). Boştayken sorulmadan kurulur.
+struct UpdateCheckLink: View {
+    @ObservedObject private var updates = NinoUpdates.shared
+    @State private var hovering = false
+
+    var body: some View {
+        if updates.ready {
+            pill(icon: "arrow.clockwise.circle.fill", title: "Update ready · Restart") { updates.open() }
+        } else if let version = updates.available?.version {
+            if updates.downloading {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text("Downloading \(version)…").lineLimit(1)
+                }
+                .font(.csCaption)
+                .foregroundStyle(Color.csSecondary)
+            } else {
+                pill(icon: "arrow.down.circle.fill", title: "New version \(version) · Update") { updates.open() }
+            }
+        } else {
+            HStack(spacing: 6) {
+                HStack(spacing: 5) {
+                    if updates.state == .upToDate { Image(systemName: "checkmark.circle").font(.system(size: 10, weight: .bold)) }
+                    Text(status).lineLimit(1)
+                }
+                .font(.csCaption)
+                .foregroundStyle(Color.csSecondary)
+                // Yenile: şimdi yeniden bakar.
+                Button { Task { await updates.check(force: true) } } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(hovering ? Color.csText : Color.csSecondary)
+                        .frame(width: 22, height: 22)
+                        .background(Circle().fill(Color.csSecondary.opacity(hovering ? 0.18 : 0.10)))
+                        .contentShape(Circle())
+                        .rotationEffect(.degrees(updates.state == .checking ? 360 : 0))
+                        .animation(updates.state == .checking ? .linear(duration: 0.9).repeatForever(autoreverses: false) : .default,
+                                   value: updates.state == .checking)
+                }
+                .buttonStyle(.plain)
+                .disabled(updates.state == .checking)
+                .onHover { hovering = $0 }
+                .help(Text("Check for updates"))
+                .accessibilityLabel(Text("Check for updates"))
+            }
+        }
+    }
+
+    private var status: LocalizedStringKey {
+        switch updates.state {
+        case .checking: return "Checking…"
+        case .upToDate: return "Up to date"
+        default: return "Check for updates"
+        }
+    }
+
+    private func pill(icon: String, title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: icon).font(.system(size: 11, weight: .bold))
+                Text(title).lineLimit(1)
+            }
+            .font(.csCaption.weight(.semibold))
+            .foregroundStyle(Color.white)
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .background(Capsule().fill(Color.csAccent))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }

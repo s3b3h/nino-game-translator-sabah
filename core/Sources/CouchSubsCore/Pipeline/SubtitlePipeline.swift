@@ -134,6 +134,8 @@ public final class SubtitlePipeline {
     /// Nino: ekranda bu çizginin (0–1, üstten) altında başlayan satırlar altyazı sayılmaz. Oyunlar öğretici ve menü
     /// yazılarını en alta koyar; en alttaki blok seçildiği için üstündeki gerçek altyazı okunmuyordu.
     public var hudTop: Double?
+    /// Günlüğe en son yazılan dev yazı; ekranda duran tabela her karede yeniden yazılmasın.
+    private var lastOversized = ""
     /// Nino: hedef dil (ör. "tr"). Satır zaten bu dildeyse (PS5'in Türkçe menüsü) çevirmene hiç gitmez.
     public var targetLanguage: String?
     /// Nino: okunan satır zaten hedef dildeydi (PS5'in kendi Türkçe ekranı). Köşe okuyucusu bunu görünce bir süre durur.
@@ -268,6 +270,16 @@ public final class SubtitlePipeline {
             })
         }
         visible = withoutStaleLines(visible, at: captured)
+        // Nino: dev yazılar (tabela, reklam panosu) altyazı değildir; çevrilmez, TV'de kocaman siyah kutu da çıkmaz.
+        let sized = visible.withoutOversizedLines(in: place)
+        if sized.lines.count != visible.lines.count {
+            let dropped = visible.lines.filter { line in !sized.lines.contains(line) }.map(\.text).joined(separator: " / ")
+            if dropped != lastOversized {
+                lastOversized = dropped
+                log("dev yazı: \(SubtitleLog.excerpt(dropped)) altyazı için fazla büyük, atlandı")
+            }
+            visible = sized
+        }
         var reading = visible.withoutButtonPrompts().withoutOcrNoise().withoutItemLabels().withoutClippedLines().joiningRows().subtitleBlock(in: place)
         // Nino: mesaj kartında gönderenin adı tek sözcük olabilir ("Brian"); eşya etiketi süzgeci onu siliyor, kart
         // altyazı sanılıp siyah kutuda çıkıyordu. Kart, süzgeçten önceki okumada aranır.
@@ -303,6 +315,13 @@ public final class SubtitlePipeline {
         } else if let card = lastCard, captured - card.at < 6000, MessageCard.repeats(reading.text, of: card.body) {
             // Mesaj kartı ekrandayken bazı karelerde gönderenin adı okunamıyor; kalan metin altyazı sanılıp siyah kutuda
             // ikinci kez çıkıyordu. Kartın metnine benzeyen okuma altyazı değildir.
+            reading = .empty
+        }
+        if reading.isOversizedBlock(in: place) {
+            if reading.text != lastOversized {
+                lastOversized = reading.text
+                log("dev blok: \(SubtitleLog.excerpt(reading.text)) altyazı için fazla yer kaplıyor (\(reading.lines.count) satır), atlandı")
+            }
             reading = .empty
         }
         onPrompts?(Reading(lines: visible.withoutOcrNoise().lines.filter { ButtonPrompts.isPrompt($0.text) }).placed(in: place))

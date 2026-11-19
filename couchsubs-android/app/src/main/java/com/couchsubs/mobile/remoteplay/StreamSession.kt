@@ -21,6 +21,11 @@ enum class DisconnectKind {
      */
     REGISTRATION_INVALID,
     /**
+     * PS5'te Uzaktan Oynama kapalı (0x80108b12): eşleme durur ama PS5 oturum açmaz; kullanıcı PS5'te Ayarlar › Sistem ›
+     * Uzaktan Oynama'dan açmalıdır. Yeniden denemek aynı yere çıkar.
+     */
+    REMOTE_PLAY_DISABLED,
+    /**
      * Bağlantı kuruluyor ama art arda [PictureWatchdog.MAX_NO_PICTURE_SESSIONS] oturumda PS5'ten hiç görüntü gelmedi
      * (iki çözücü türüyle de). Sonsuz "Bağlantı koptu, yeniden bağlanılıyor" döngüsü yerine durulur.
      */
@@ -36,8 +41,14 @@ enum class DisconnectKind {
     NO_CAPTURE_CARD, NO_CAMERA_PERMISSION, BLACK_PICTURE;
 
     companion object {
-        /** CHIAKI_RP_APPLICATION_REASON_REGIST_FAILED ve _INVALID_PSN_ID. */
-        val REGISTRATION_REJECTED_CODES = setOf(0x80108b09L, 0x80108b02L)
+        /**
+         * CHIAKI_RP_APPLICATION_REASON_REGIST_FAILED ve _INVALID_PSN_ID; 0x80108b26: PS5 eşleme anahtarını kendi
+         * kayıtlarında bulamadı (eşleme PS5'te silinmiş ya da başka hesapla yapılmış), PS5 yeniden eşlenmelidir.
+         */
+        val REGISTRATION_REJECTED_CODES = setOf(0x80108b09L, 0x80108b02L, 0x80108b26L)
+
+        /** PS5'te Uzaktan Oynama kapalıyken dönen kod. */
+        const val REMOTE_PLAY_DISABLED_CODE = 0x80108b12L
         private val unreachableLines = listOf(
             "Session request connect failed eventually",
             "Failed to send session request",
@@ -58,6 +69,7 @@ enum class DisconnectKind {
             if (at >= 0) {
                 val token = line.substring(at + marker.length).trimStart(' ').takeWhile { !it.isWhitespace() }.lowercase()
                 val code = token.removePrefix("0x").toLongOrNull(16) ?: return null
+                if (code == REMOTE_PLAY_DISABLED_CODE) return SessionState.Disconnected(REMOTE_PLAY_DISABLED)
                 return if (code in REGISTRATION_REJECTED_CODES) SessionState.Disconnected(REGISTRATION_INVALID)
                     else SessionState.Disconnected(REJECTED, "0x%08x".format(code))
             }
@@ -429,8 +441,8 @@ class StreamSession(
                     val kind = state.kind
                     Log.i(TAG, "Oturum kapandı: $kind ${state.detail.orEmpty()} $text")
                     closeNative()
-                    if (kind == DisconnectKind.REGISTRATION_INVALID) {
-                        // Kayıt geçersiz: yeniden denemek aynı yere çıkar (eskiden sonsuza kadar "Yeniden bağlanılıyor…").
+                    if (kind == DisconnectKind.REGISTRATION_INVALID || kind == DisconnectKind.REMOTE_PLAY_DISABLED) {
+                        // Kayıt geçersiz ya da Uzaktan Oynama kapalı: yeniden denemek aynı yere çıkar (eskiden sonsuza kadar "Yeniden bağlanılıyor…").
                         bump(false)
                         emit(SessionState.Disconnected(kind, text))
                         return@execute

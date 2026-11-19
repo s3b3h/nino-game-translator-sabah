@@ -71,4 +71,62 @@ final class SubtitleBlockTests: XCTestCase {
         XCTAssertEqual(OcrNoise.clean("23m CESARE: It's here! Shoot him!"), "CESARE: It's here! Shoot him!")
         XCTAssertEqual(OcrNoise.clean("100 men came"), "100 men came")
     }
+
+    // MARK: - Dev yazılar (tabela, reklam panosu)
+
+    private let lowerHalf = TextBox(left: 0.06, top: 0.56, right: 0.98, bottom: 1)
+
+    func testNormalSubtitleLinesAreKept() {
+        // Alanın %9'u × alan yüksekliği 0.44 ≈ karenin %4'ü: sıradan altyazı satırı.
+        let reading = Reading(lines: [
+            TextLine("I told you not to come here.", box: TextBox(left: 0.3, top: 0.60, right: 0.7, bottom: 0.69)),
+            TextLine("You never listen.", box: TextBox(left: 0.38, top: 0.70, right: 0.62, bottom: 0.79)),
+        ])
+        XCTAssertEqual(reading.withoutOversizedLines(in: lowerHalf), reading)
+        XCTAssertFalse(reading.isOversizedBlock(in: lowerHalf))
+    }
+
+    func testGiantSignLineIsDroppedButSubtitleStays() {
+        // Tabela satırı alanın %30'u ≈ karenin %13'ü; altyazı yanında kalır.
+        let sign = TextLine("Welcome to Leonida", box: TextBox(left: 0.1, top: 0.05, right: 0.9, bottom: 0.35))
+        let subtitle = TextLine("Where are we going?", box: TextBox(left: 0.35, top: 0.80, right: 0.65, bottom: 0.88))
+        let reading = Reading(lines: [sign, subtitle]).withoutOversizedLines(in: lowerHalf)
+        XCTAssertEqual(reading.lines, [subtitle])
+    }
+
+    func testLineHeightIsMeasuredAgainstTheWholeFrame() {
+        // Aynı satır dar bir alanda alanın yarısını kaplar ama karede %5'tir: atılmaz.
+        let narrow = TextBox(left: 0.2, top: 0.85, right: 0.8, bottom: 0.95)
+        let line = TextLine("Stay close to me.", box: TextBox(left: 0.2, top: 0.2, right: 0.8, bottom: 0.7))
+        XCTAssertEqual(Reading(lines: [line]).withoutOversizedLines(in: narrow).lines, [line])
+        // Aynı oran bütün karede okunursa karenin yarısıdır: atılır.
+        let full = TextBox(left: 0, top: 0, right: 1, bottom: 1)
+        XCTAssertTrue(Reading(lines: [line]).withoutOversizedLines(in: full).lines.isEmpty)
+    }
+
+    func testLinesWithoutBoxesAreNeverDropped() {
+        let reading = Reading(lines: [TextLine("No position known.")])
+        XCTAssertEqual(reading.withoutOversizedLines(in: lowerHalf), reading)
+        XCTAssertFalse(reading.isOversizedBlock(in: lowerHalf))
+    }
+
+    func testTallBlockIsNotASubtitle() {
+        // Normal boyda ama üst üste yedi satır (afiş, not): blok karenin %26'sından yüksek ve 5 satırdan çok.
+        let lines = (0 ..< 7).map { index -> TextLine in
+            let top = 0.05 + Double(index) * 0.12
+            return TextLine("Line number \(index) of a poster.", box: TextBox(left: 0.3, top: top, right: 0.7, bottom: top + 0.09))
+        }
+        XCTAssertTrue(Reading(lines: lines).isOversizedBlock(in: lowerHalf))
+        // Üç satırlık uzun altyazı kalır.
+        XCTAssertFalse(Reading(lines: Array(lines.prefix(3))).isOversizedBlock(in: lowerHalf))
+    }
+
+    func testFewLinesCoveringTooMuchHeightAreNotASubtitle() {
+        // İki satır ama aralarında büyük boşluk: kutu karenin %30'u.
+        let reading = Reading(lines: [
+            TextLine("Top of a billboard", box: TextBox(left: 0.3, top: 0.05, right: 0.7, bottom: 0.15)),
+            TextLine("bottom of a billboard", box: TextBox(left: 0.3, top: 0.65, right: 0.7, bottom: 0.75)),
+        ])
+        XCTAssertTrue(reading.isOversizedBlock(in: lowerHalf))
+    }
 }

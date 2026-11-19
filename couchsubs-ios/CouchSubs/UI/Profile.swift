@@ -161,8 +161,19 @@ struct SettingsScreen: View {
                         .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
                 }
             }
+            // Nino: GTA 6'da (Türkçe) çeviri Nino'nun havuzundan gelir, seçilecek bir şey yoktur; Mac'teki gibi açıkça yazar.
+            // Başka bir oyun tanınınca kart kalkar ve aşağıdaki motor seçimi geçerlidir.
+            let ninoPool = model.ninoPoolActive
+            if ninoPool {
+                Tile {
+                    Text(verbatim: "GTA 6").font(Mobile.TypeScale.headline)
+                    MobilePill(text: String(localized: "Nino · GTA 6 active"), dot: true)
+                    Text("In GTA 6 the Turkish subtitles come from Nino's shared translation: every line is translated once by a strong AI and everyone gets the same result. You do not choose anything or enter a key, and it is free.")
+                        .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
+                }
+            }
             Tile {
-                Text("Translation engine").font(Mobile.TypeScale.headline)
+                Text(ninoPool ? LocalizedStringKey("Other games") : LocalizedStringKey("Translation engine")).font(Mobile.TypeScale.headline)
                 SegmentedTabs(options: Self.choices,
                               selection: Binding(get: { choice }, set: { setChoice($0) }))
                 if choice == .other {
@@ -319,6 +330,7 @@ struct SettingsScreen: View {
                 NavigationLink(value: Route.about) { ListRow(symbol: "info.circle", title: "About", detail: AppIdentity.version) }
             }
             .buttonStyle(.plain)
+            DeviceInfoTile()
         } bottom: {
             Button("Send test subtitle") { model.sendTestSubtitle() }.buttonStyle(.mobileSecondary)
         }
@@ -365,6 +377,55 @@ struct SettingsScreen: View {
         keyResult = accepted ? nil : String(localized: "The key did not work. Check it and try again.")
         if accepted { key = "" }
         checking = false
+    }
+}
+
+/// Nino: "Cihaz bilgileri" (Mac'te Ayarlar › Sistem sağlığı'nda; telefonda öyle bir ekran yok, Ayarlar'ın en altında).
+/// Sorun Bildir ve Nino'ya Sor bildirimlerine eklenen özetin aynısını gösterir; düğme o özeti panoya kopyalar.
+private struct DeviceInfoTile: View {
+    @EnvironmentObject private var model: PhoneModel
+    @State private var copied = false
+
+    var body: some View {
+        let rows = model.deviceInfoRows
+        Tile {
+            Text("Device info").font(Mobile.TypeScale.headline)
+            VStack(alignment: .leading, spacing: Mobile.Space.inline) {
+                ForEach(rows) { row in
+                    HStack(alignment: .firstTextBaseline, spacing: Mobile.Space.gap) {
+                        Text(verbatim: Self.label(row.id)).foregroundStyle(Mobile.Palette.secondary)
+                        Spacer(minLength: 0)
+                        Text(verbatim: row.value).foregroundStyle(Mobile.Palette.text).multilineTextAlignment(.trailing)
+                    }
+                    .font(Mobile.TypeScale.caption)
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            Text("Added to your problem reports so we can see what you use without asking. It contains no names, serial numbers or addresses.")
+                .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
+            Button(copied ? String(localized: "Copied") : String(localized: "Copy device info")) {
+                UIPasteboard.general.string = DeviceInfo.summary(rows)
+                copied = true
+                Task {
+                    try? await Task.sleep(for: .seconds(2))
+                    copied = false
+                }
+            }
+            .buttonStyle(.mobileSecondary)
+        }
+    }
+
+    /// Satırın çevrilmiş etiketi (`DeviceInfo.Row.id` sabit ve çevrilmez).
+    private static func label(_ id: String) -> String {
+        switch id {
+        case "app": String(localized: "App version")
+        case "device": String(localized: "Device model")
+        case "system": String(localized: "Operating system")
+        case "tv": String(localized: "TV")
+        case "console": String(localized: "Console")
+        case "status": String(localized: "Current status")
+        default: id
+        }
     }
 }
 

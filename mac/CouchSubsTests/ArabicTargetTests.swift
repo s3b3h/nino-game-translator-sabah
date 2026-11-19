@@ -23,7 +23,8 @@ final class ArabicTargetTests: XCTestCase {
         model.settings.targetLanguage = "tr"
         model.settings.dubbing.enabled = true
         model.settings.translationEngine = .deepL
-        XCTAssertTrue(model.dubbingActive)
+        // Dublaj şimdilik kapalı (AppModel.dubbingAvailable); açıldığında Türkçede çalışır.
+        XCTAssertEqual(model.dubbingActive, AppModel.dubbingAvailable)
         XCTAssertTrue(model.onlineTranslationActive)
         model.lastTranslation = "Bu iş daha bitmedi."
         model.settings.targetLanguage = "ar"

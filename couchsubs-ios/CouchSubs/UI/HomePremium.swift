@@ -116,6 +116,7 @@ struct HomeScreen: View {
                 .animation(.easeOut(duration: 0.25), value: state)
             HomeStage(state: state, line: currentLine, source: model.isDemo ? model.demoLine?.source : nil,
                       badge: t(model.isDemo ? "demo.badge" : "home.live"), locale: locale,
+                      sunset: state == .live && !model.isDemo && model.liveGamePoolFirst,
                       onFullScreen: onPhone ? { openFullScreen() } : nil)
                 .padding(.top, 8)
             SlideToTranslate(state: state, target: target, label: slideLabel,
@@ -299,6 +300,8 @@ private struct HomeStage: View {
     var source: String?
     var badge: String
     let locale: Locale
+    /// Tanınan oyun havuz öncelikli (GTA 6): koyu zemin yerine buzlu gün batımı fonu; altyazı önünde durur.
+    var sunset = false
     let onFullScreen: (() -> Void)?
 
     private func t(_ key: String) -> String { UILanguage.text(key, locale) }
@@ -307,6 +310,9 @@ private struct HomeStage: View {
         let shape = RoundedRectangle(cornerRadius: 28, style: .continuous)
         ZStack {
             shape.fill(LinearGradient(colors: [stageTop, stageBottom], startPoint: .top, endPoint: .bottom))
+            if sunset {
+                SunsetBackdrop().clipShape(shape).transition(.opacity)
+            }
             if state == .live {
                 VStack {
                     Spacer(minLength: 0)
@@ -341,6 +347,7 @@ private struct HomeStage: View {
             }
         }
         .frame(height: 196)
+        .animation(.easeOut(duration: 0.3), value: sunset)
         .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.03)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
         .overlay(alignment: .topLeading) {
             if state == .live {
@@ -377,6 +384,25 @@ private struct HomeStage: View {
         .shadow(color: ink.opacity(0.35), radius: 18, y: 10)
         .contentShape(shape)
         .onTapGesture { if state == .live { onFullScreen?() } }
+    }
+}
+
+/// GTA 6 için Nino'nun kendi fonu (Mac'teki `SunsetBackdrop` ile aynı): laciverd-mor-pembe gün batımı geçişi,
+/// hafif karartılmış. Oyunun logosu ya da görseli kullanılmaz, yalnız renk geçişi.
+private struct SunsetBackdrop: View {
+    // Yalnız bir geçiş: güneş, bulanıklık ya da ayrı katman yok (Mac: GameBackdrop.swift ile aynı renkler).
+    var body: some View {
+        ZStack {
+            LinearGradient(stops: [
+                .init(color: Color(red: 0.10, green: 0.08, blue: 0.34), location: 0),
+                .init(color: Color(red: 0.46, green: 0.16, blue: 0.62), location: 0.40),
+                .init(color: Color(red: 0.93, green: 0.29, blue: 0.60), location: 0.74),
+                .init(color: Color(red: 1.00, green: 0.55, blue: 0.48), location: 1),
+            ], startPoint: .top, endPoint: .bottom)
+            Color.black.opacity(0.28)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 

@@ -68,6 +68,9 @@ public actor TranslationPool {
     public struct PoolFirst: Codable, Equatable, Sendable {
         public var games = ["grand-theft-auto-vi", "gta-vi", "gta-6", "gta6"]
         public var deadlineMs = 1500
+        /// Havuz önceliğin geçerli olduğu hedef diller (Claude yalnız bunlarda çevirir); öbür dillerde kullanıcının kendi
+        /// motoru kullanılır. "*" hepsi. Eski sunucu göndermez: Türkçe.
+        public var langs = ["tr"]
         public init() {}
 
         /// Eksik alan varsayılanla kalır (sunucu yalnız birini gönderse de).
@@ -75,6 +78,13 @@ public actor TranslationPool {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             if let games = try container.decodeIfPresent([String].self, forKey: .games) { self.games = games }
             if let deadline = try container.decodeIfPresent(Int.self, forKey: .deadlineMs) { deadlineMs = deadline }
+            if let langs = try container.decodeIfPresent([String].self, forKey: .langs) { self.langs = langs }
+        }
+
+        /// Hedef dil havuz öncelikli mi.
+        public func allows(language: String) -> Bool {
+            let code = TranslationPool.code(language)
+            return langs.contains { $0 == "*" || TranslationPool.code($0) == code }
         }
 
         /// Oyun listede mi: kimlik (`NinoPool.gameID`) parçalardan birini içeriyorsa (sunucudaki kural).
@@ -93,6 +103,7 @@ public actor TranslationPool {
         private var first = PoolFirst()
         private var serverOn = true
         private var reachable = false
+        private var language = ""
         /// Sunucunun son çeviri cevabındaki oyun ve zamanı.
         private var serverGame = ""
         private var serverGameAt = -Double.infinity
@@ -104,8 +115,9 @@ public actor TranslationPool {
             }
         }
 
-        func update(first: PoolFirst? = nil, serverOn: Bool? = nil, reachable: Bool? = nil) {
+        func update(first: PoolFirst? = nil, serverOn: Bool? = nil, reachable: Bool? = nil, language: String? = nil) {
             lock.withLock {
+                if let language { self.language = language }
                 if let first { self.first = first }
                 if let serverOn { self.serverOn = serverOn }
                 if let reachable { self.reachable = reachable }
@@ -117,7 +129,7 @@ public actor TranslationPool {
         /// tanıdığı havuz öncelikli oyun `serverGameSeconds` boyunca geçerlidir; sunucu her cevapta oyunu yeniden söyler.
         func active(_ game: String?, now: Double) -> Bool {
             lock.withLock {
-                guard serverOn && reachable else { return false }
+                guard serverOn && reachable, first.allows(language: language) else { return false }
                 return first.contains(game) || (now - serverGameAt <= TranslationPool.serverGameSeconds && first.contains(serverGame))
             }
         }
@@ -175,6 +187,7 @@ public actor TranslationPool {
         self.send = send
         self.clock = clock
         self.language = Self.code(language)
+        poolFirstState.update(language: self.language)
         isEnabled = enabled
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let saved = Self.load(directory: directory, language: self.language)
@@ -212,6 +225,7 @@ public actor TranslationPool {
         guard code != language else { return }
         save()
         language = code
+        poolFirstState.update(language: code)
         let saved = Self.load(directory: directory, language: code)
         cursors = saved?.cursors ?? [:]
         store.replace(language: code, texts: isEnabled ? saved?.texts ?? [:] : [:])

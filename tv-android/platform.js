@@ -45,6 +45,33 @@
     document.dispatchEvent(event);
   };
 
+  // Nino: kurulu TV'lerin marka ve modeli panelde görünsün diye günde bir kez anonim bildirilir: rastgele bir kimlik,
+  // marka, model ve uygulama sürümü. Ad, adres ya da hesap gönderilmez. İnternet yoksa sessizce geçilir.
+  function reportTv(brand, model) {
+    try {
+      var store = window.localStorage;
+      if (!store || !model) return;
+      var now = new Date().getTime();
+      if (now - parseInt(store.getItem('ninoTvPing') || '0', 10) < 20 * 3600 * 1000) return;
+      var id = store.getItem('ninoTvId');
+      if (!id) {
+        id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          var r = Math.floor(Math.random() * 16);
+          return (c === 'x' ? r : (r & 3) | 8).toString(16);
+        });
+        store.setItem('ninoTvId', id);
+      }
+      store.setItem('ninoTvPing', String(now));
+      var label = document.getElementById('app-version');
+      var version = (((label && label.textContent) || '').match(/\d+(\.\d+)+/) || [''])[0];
+      new Image().src = 'https://nino-pool.y-demirbag2506.workers.dev/v1/tv?install=' + id + '&brand=' + brand +
+        '&model=' + encodeURIComponent(String(model).slice(0, 60)) + '&app=' + encodeURIComponent(version);
+    } catch (e) { /* bildirim isteğe bağlı */ }
+  }
+  window.addEventListener('load', function () {
+    setTimeout(function () { reportTv('androidtv', bridge.deviceModel ? bridge.deviceModel() : ''); }, 4000);
+  });
+
   // Nino ana ekranı: logo, bağlantı durumu ve tek bir yönerge. Düğme ve ayar yok; Geri tuşu çıkar.
   var TR = /^tr/i.test(navigator.language || '');
   // Türkçe ekler sayıya göre: HDMI 1'de/1'e, 2'de/2'ye, 3'te/3'e, 4'te/4'e.
@@ -52,29 +79,38 @@
   var DAT = { 1: "'e", 2: "'ye", 3: "'e", 4: "'e" };
   // Giriş adı yalnız "PS5" değilse parantez içinde gösterilir (ör. "Oyun").
   function extraLabel(label) { return label && !/ps\s*5|playstation/i.test(label) ? ' (' + label + ')' : ''; }
+  // Nino: TV'yi telefon da bilgisayar da sürebilir; yazılar ikisini de söyler (eskiden yalnız "bilgisayardaki Nino").
   var TEXT = TR ? {
-    connected: 'Bilgisayardaki Nino\'ya bağlı',
-    waiting: 'Bilgisayardaki Nino bekleniyor',
+    connected: 'Nino\'ya bağlı',
+    waiting: 'Telefondaki ya da bilgisayardaki Nino bekleniyor',
     goTitle: function (port, label) { return port ? 'PS5\'iniz HDMI ' + port + (LOC[port] || "'de") + extraLabel(label) : 'PS5\'inizin girişine geçin'; },
     goText: function (port) {
       return 'Kumandanın kaynak tuşuyla ' + (port ? 'HDMI ' + port + (DAT[port] || "'e") : 'PS5\'in bağlı olduğu girişe') +
-        ' geçin. Türkçe altyazı oyunun üstünde görünecek.';
+        ' geçin. Altyazı çevirisi oyunun üstünde görünecek.';
     },
-    permTitle: 'Bir kerelik onay gerekiyor',
-    permText: 'Altyazıyı oyunun üstünde göstermek için bilgisayardaki Nino\'da çeviriyi başlatın. TV\'de “USB hata ayıklamaya ' +
-      'izin verilsin mi?” sorusu çıkınca “Bu bilgisayardan her zaman izin ver”i işaretleyip İzin ver\'i seçin.',
+    permTitle: 'Bir kerelik izin gerekiyor',
+    permText: 'Altyazının oyunun üstünde görünmesi için Nino\'ya “Diğer uygulamaların üzerinde göster” izni gerekir. ' +
+      'TV\'de USB hata ayıklama açıksa telefondaki ya da bilgisayardaki Nino\'da çeviriyi başlatın; TV sorunca ' +
+      '“Her zaman izin ver”i işaretleyip İzin ver\'i seçin, izin kendiliğinden verilir. Açık değilse aşağıdan seçin.',
+    permSettings: 'İzni TV\'den ver',
+    permInApp: 'İzin vermeden devam et',
+    permHint: 'İzin vermeden devam ederseniz oyun Nino\'nun içinde gösterilir; bazı TV\'lerde görüntü siyah kalabilir.',
     back: 'Geri: çık'
   } : {
-    connected: 'Connected to Nino on your computer',
-    waiting: 'Waiting for Nino on your computer',
+    connected: 'Connected to Nino',
+    waiting: 'Waiting for Nino on your phone or computer',
     goTitle: function (port, label) { return port ? 'Your PS5 is on HDMI ' + port + extraLabel(label) : 'Switch to your PS5\'s input'; },
     goText: function (port) {
       return 'Use the input button on your remote to switch to ' + (port ? 'HDMI ' + port : 'the PS5\'s input') +
-        '. Turkish subtitles will appear over the game.';
+        '. Translated subtitles will appear over the game.';
     },
-    permTitle: 'One-time approval needed',
-    permText: 'To show subtitles over the game, start translating in Nino on your computer. When the TV asks to allow USB ' +
-      'debugging, tick “Always allow from this computer” and choose Allow.',
+    permTitle: 'One-time permission needed',
+    permText: 'To show subtitles over the game, Nino needs the “Display over other apps” permission. If USB debugging ' +
+      'is on, start translating in Nino on your phone or computer; when the TV asks, tick “Always allow” and choose ' +
+      'Allow, and the permission is granted by itself. If it is off, choose below.',
+    permSettings: 'Grant on the TV',
+    permInApp: 'Continue without permission',
+    permHint: 'Without the permission the game is shown inside Nino; on some TVs the picture may stay black.',
     back: 'Back: exit'
   };
 
@@ -101,6 +137,20 @@
       '#nino-home .card h1 { margin: 0; font-size: 54px; font-weight: 700; letter-spacing: -0.5px; }',
       '#nino-home .card p { margin: 18px 0 0; font-size: 30px; line-height: 1.45; color: rgba(255,255,255,0.72); }',
       '#nino-home .card.warn h1 { color: #ffd166; }',
+      '#nino-home .actions { display: flex; gap: 22px; margin-top: 34px; justify-content: center; }',
+      '#nino-home .btn { font-size: 28px; font-weight: 600; padding: 18px 34px; border-radius: 999px; color: #fff;',
+      ' background: rgba(255,255,255,0.10); border: 3px solid transparent; }',
+      '#nino-home .btn.on { background: #fff; color: #03060d; border-color: #ffd166; }',
+      '#nino-home .card .hint { font-size: 22px; color: rgba(255,255,255,0.5); margin-top: 20px; }',
+      // İzin ekranında yazı ve düğmeler de var: 1080 piksele sığsın diye logo ve boşluklar küçülür.
+      '#nino-home.perm .logo { width: 120px; height: 120px; border-radius: 28px; }',
+      '#nino-home.perm .name { margin-top: 18px; font-size: 60px; }',
+      '#nino-home.perm .tag { display: none; }',
+      '#nino-home.perm .status { margin-top: 20px; }',
+      '#nino-home.perm .card { margin-top: 30px; padding: 34px 48px; }',
+      '#nino-home.perm .card h1 { font-size: 46px; }',
+      '#nino-home.perm .card p { font-size: 27px; margin-top: 14px; }',
+      '#nino-home.perm .card .hint { font-size: 21px; }',
       '#nino-home .foot { position: absolute; bottom: 54px; left: 0; right: 0; text-align: center; font-size: 22px; color: rgba(255,255,255,0.38); z-index: 1; }'
     ].join('\n');
     document.head.appendChild(style);
@@ -112,16 +162,41 @@
     var permission = homeMode === 'permission';
     var root = document.createElement('div');
     root.id = 'nino-home';
+    if (permission) root.className = 'perm';
     root.innerHTML =
       '<div class="glow g1"></div><div class="glow g2"></div>' +
       '<div class="brand"><img class="logo" src="logo.png" alt=""><div class="name">Nino</div><div class="tag">GAME TRANSLATOR</div></div>' +
       '<div class="status"><span class="dot"></span><span class="s-text"></span></div>' +
-      '<div class="card' + (permission ? ' warn' : '') + '"><h1></h1><p></p></div>' +
+      '<div class="card' + (permission ? ' warn' : '') + '"><h1></h1><p></p>' +
+      (permission && bridge.continueInApp ? '<div class="actions"><div class="btn on"></div><div class="btn"></div></div><p class="hint"></p>' : '') +
+      '</div>' +
       '<div class="foot"></div>';
     document.body.appendChild(root);
     root.querySelector('.card h1').textContent = permission ? TEXT.permTitle : TEXT.goTitle(hint.port, hint.label);
     root.querySelector('.card p').textContent = permission ? TEXT.permText : TEXT.goText(hint.port);
     root.querySelector('.foot').textContent = TEXT.back + (version ? '  ·  Nino ' + version : '');
+
+    // İzin ekranı: iki düğme (sol/sağ ile seçilir, OK ile açılır). Geliştirici seçeneği olmayan TV'lerde ekran çıkışsız
+    // kalıyordu (panelde 13 bildirim); izin TV'nin ayarından verilebilir ya da izinsiz, Nino'nun içinde devam edilir.
+    var buttons = root.querySelectorAll('.btn');
+    var chosen = 0;
+    if (buttons.length === 2) {
+      buttons[0].textContent = TEXT.permSettings;
+      buttons[1].textContent = TEXT.permInApp;
+      root.querySelector('.hint').textContent = TEXT.permHint;
+      document.addEventListener('keydown', function (e) {
+        var code = e.keyCode;
+        if (code === 37 || code === 39) {
+          chosen = code === 37 ? 0 : 1;
+          buttons[0].className = 'btn' + (chosen === 0 ? ' on' : '');
+          buttons[1].className = 'btn' + (chosen === 1 ? ' on' : '');
+          e.preventDefault();
+        } else if (code === 13) {
+          e.preventDefault();
+          if (chosen === 0) bridge.openOverlaySettings(); else bridge.continueInApp();
+        }
+      }, true);
+    }
     homeStatus = root.querySelector('.status');
     homeConnection(false);
 

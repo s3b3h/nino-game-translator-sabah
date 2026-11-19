@@ -21,9 +21,14 @@ ASSISTANT_PROVIDER = "anthropic"
 # Günlük en çok harcama (dolar). Aynı ilk sorular hazır cevaptan ücretsiz verilir.
 ASSISTANT_DAILY_USD = "2"
 
-# Çeviri havuzu (src/translate.js): anında çeviri ve 30 dakikada bir bağlamla gözden geçirme Claude Sonnet.
+# Çeviri havuzu (src/translate.js): anında çeviri Claude Sonnet, 30 dakikada bir bağlamla gözden geçirme Claude Opus (toplu işlem, yarı fiyat).
 # Günlük en çok harcama (dolar); dolunca uygulamalar kendi çevirileriyle devam eder.
 TRANSLATE_DAILY_USD = "20"
+# Claude yalnız bu hedef dillerde para harcar (virgüllü; "*" hepsi). Öbür dillerde havuzdaki çeviriler yine verilir,
+# yeni satırları uygulama kullanıcının kendi motoruyla ya da ücretsiz çeviriyle çevirir; İngilizcesi havuza yazılır.
+TRANSLATE_LANGS = "tr"
+# Gözden geçirmenin özeni (Opus 5.5): kıyasta "medium" "high" kadar iyi çıktı, daha ucuz. "0" REVIEW_BATCH: anında.
+REVIEW_EFFORT = "medium"
 # Claude yalnız bu oyunlarda çevirir (oyun kimliği bu parçalardan birini içeriyorsa); "*" bütün oyunlar.
 TRANSLATE_GAMES = "grand-theft-auto-vi,gta-vi,gta-6,gta6,mafia"
 # Uygulama sunucunun çevirisini en çok bu kadar bekler (milisaniye), sonra kendi çevirisini gösterir.

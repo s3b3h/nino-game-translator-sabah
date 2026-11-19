@@ -121,6 +121,18 @@ final class FakeServices: AppServices {
     var brandInstalls: [(brand: TVBrand, host: String)] = []
     func bundledApp(for brand: TVBrand) -> BundledTVApp? { bundled[brand] }
     func isSamsungDevModeOn(host: String) async -> Bool { samsungDevMode }
+    /// Samsung TV'nin 8001 yanıtı ve TV'ye giden yolun bu Mac'teki adresi.
+    var samsungCheck = SamsungPreflight(info: nil, computerAddress: nil)
+    func checkSamsung(host: String) async -> SamsungPreflight { samsungCheck }
+    var samsungYear: Int?
+    func samsungModelYear(host: String) async -> Int? { samsungYear }
+    var typedCodes = 0
+    var typeCodeError: Error?
+    func typeSamsungCode(tv: LGTV, key: String?) async throws -> String {
+        if let typeCodeError { throw typeCodeError }
+        typedCodes += 1
+        return "77"
+    }
     /// Samsung TV'de kurulu sürüm (sahte TV'nin vd_applist'i); nil: uygulama yok.
     var samsungOnTV: String?
     func installSamsungApp(host: String, app: BundledTVApp,
@@ -1069,6 +1081,152 @@ final class TVAppInstallTests: XCTestCase {
         await model.refreshTVApp()
         XCTAssertEqual(model.tvApp, .devModeOff)
         XCTAssertTrue(model.canInstallTVApp)
+    }
+
+    // #343: TV'deki Host PC IP başka bir adres; sdb denenmez, iki adres de söylenir.
+    func testSamsungWithAnotherHostPcIpSaysWhichAddressToType() async {
+        let services = FakeServices()
+        services.samsungDevMode = true
+        services.samsungCheck = SamsungPreflight(info: SamsungDeveloperInfo(developerMode: true, developerIp: "192.168.1.50"),
+                                                 computerAddress: "192.168.1.34")
+        services.bundled[.samsung] = app
+        let model = model(services)
+        model.tv = samsung
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .hostPcMismatch(tvIp: "192.168.1.50", computer: "192.168.1.34"))
+        XCTAssertTrue(services.brandInstalls.isEmpty)
+
+        services.samsungCheck = SamsungPreflight(info: SamsungDeveloperInfo(developerMode: true, developerIp: "192.168.1.34"),
+                                                 computerAddress: "192.168.1.34")
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .upToDate("0.7.0"))
+    }
+
+    func testSamsungSayingDeveloperModeIsOffShowsTheSteps() async {
+        let services = FakeServices()
+        services.samsungDevMode = true
+        services.samsungCheck = SamsungPreflight(info: SamsungDeveloperInfo(developerMode: false, developerIp: nil), computerAddress: "192.168.1.34")
+        services.bundled[.samsung] = app
+        let model = model(services)
+        model.tv = samsung
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .devModeOff)
+    }
+
+    // Nino: geliştirici modu açık ve adres doğru, ama TV tam yeniden başlamamış (kurulum kapısı kapalı).
+    func testSamsungThatHasNotRestartedSaysSoInsteadOfTheWindowSteps() async {
+        let services = FakeServices()
+        services.samsungDevMode = false
+        services.samsungCheck = SamsungPreflight(info: SamsungDeveloperInfo(developerMode: true, developerIp: "192.168.1.34"),
+                                                 computerAddress: "192.168.1.34")
+        services.bundled[.samsung] = app
+        let model = model(services)
+        model.tv = samsung
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .devModeOff)
+        XCTAssertEqual(model.samsungSetup?.problem, .needsRestart)
+        XCTAssertTrue(services.brandInstalls.isEmpty)
+
+        // TV yeniden başlayınca kurulum kendiliğinden sürer.
+        services.samsungDevMode = true
+        await model.refreshTVApp()
+        XCTAssertNil(model.samsungSetup?.problem)
+        XCTAssertEqual(model.tvApp, .upToDate("0.7.0"))
+    }
+
+    // Nino: adres doğru ama sıfırlarla yazılmış; TV kabul etmez, sdb denenmez.
+    func testSamsungAddressTypedWithZerosIsToldApart() async {
+        let services = FakeServices()
+        services.samsungDevMode = true
+        services.samsungCheck = SamsungPreflight(info: SamsungDeveloperInfo(developerMode: true, developerIp: "192.168.001.034"),
+                                                 computerAddress: "192.168.1.34")
+        services.bundled[.samsung] = app
+        let model = model(services)
+        model.tv = samsung
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .hostPcMismatch(tvIp: "192.168.001.034", computer: "192.168.1.34"))
+        XCTAssertEqual(model.samsungSetup?.problem, .hostPcIpPadded(tvIp: "192.168.001.034"))
+        XCTAssertTrue(services.brandInstalls.isEmpty)
+    }
+
+    // Nino: TV bağlantıyı kesti; TV kapanıp açılınca (kapı kapalı → açık) kurulum kendiliğinden yeniden denenir.
+    func testSamsungRetriesByItselfAfterTheTVRestarts() async {
+        let services = FakeServices()
+        services.samsungDevMode = true
+        services.samsungCheck = SamsungPreflight(info: SamsungDeveloperInfo(developerMode: true, developerIp: "192.168.1.34"),
+                                                 computerAddress: "192.168.1.34")
+        services.bundled[.samsung] = app
+        services.installError = DevModeError.unreachable
+        let model = model(services)
+        model.tv = samsung
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .failed(.unreachable))
+
+        // Hiçbir şey değişmediyse yeniden denenmez (kart titremesin, günlük dolmasın).
+        await model.recheckSamsungSetup()
+        XCTAssertEqual(model.tvApp, .failed(.unreachable))
+
+        // Fiş çekildi: TV yanıt vermiyor.
+        services.samsungDevMode = false
+        services.samsungCheck = SamsungPreflight(info: nil, computerAddress: "192.168.1.34")
+        await model.recheckSamsungSetup()
+        XCTAssertEqual(model.tvApp, .devModeOff)
+        XCTAssertEqual(model.samsungSetup?.problem, .tvNotResponding)
+
+        // TV geri geldi.
+        services.samsungDevMode = true
+        services.samsungCheck = SamsungPreflight(info: SamsungDeveloperInfo(developerMode: true, developerIp: "192.168.1.34"),
+                                                 computerAddress: "192.168.1.34")
+        services.installError = nil
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .upToDate("0.7.0"))
+        XCTAssertEqual(services.brandInstalls.count, 1)
+    }
+
+    // Nino: TV adresi yanlış bildirebilir; "Yine de dene" kurulumu bir kez dener, sonraki denetim yine uyarır.
+    func testSamsungInstallAnywayTriesOnceDespiteTheAddress() async {
+        let services = FakeServices()
+        services.samsungDevMode = true
+        services.samsungCheck = SamsungPreflight(info: SamsungDeveloperInfo(developerMode: true, developerIp: "192.168.1.50"),
+                                                 computerAddress: "192.168.1.34")
+        services.bundled[.samsung] = app
+        services.installError = DevModeError.unreachable
+        let model = model(services)
+        model.tv = samsung
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .hostPcMismatch(tvIp: "192.168.1.50", computer: "192.168.1.34"))
+
+        await model.installSamsungAnyway()
+        XCTAssertEqual(model.tvApp, .failed(.unreachable))
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .hostPcMismatch(tvIp: "192.168.1.50", computer: "192.168.1.34"))
+
+        services.installError = nil
+        await model.installSamsungAnyway()
+        XCTAssertEqual(model.tvApp, .upToDate("0.7.0"))
+    }
+
+    // Nino: model yılı bir kez okunur; kod TV'ye yazılınca TV'nin verdiği jeton saklanır.
+    func testSamsungModelYearIsReadAndTheCodeCanBeTyped() async {
+        let services = FakeServices()
+        services.samsungYear = 2023
+        services.samsungCheck = SamsungPreflight(info: SamsungDeveloperInfo(developerMode: false, developerIp: nil), computerAddress: "192.168.1.34")
+        services.bundled[.samsung] = app
+        let store = MemoryStore()
+        let model = model(services, store: store)
+        model.tv = samsung
+        await model.refreshTVApp()
+        XCTAssertEqual(model.tvApp, .devModeOff)
+        XCTAssertEqual(model.samsungModelYear, 2023)
+
+        await model.typeSamsungDevCode()
+        XCTAssertEqual(model.samsungCode, .sent)
+        XCTAssertEqual(services.typedCodes, 1)
+        XCTAssertEqual(store.load(String.self, for: StoreKey.tvKey), "77")
+
+        services.typeCodeError = SamsungClient.SamsungError.cannotConnect
+        await model.typeSamsungDevCode()
+        XCTAssertEqual(model.samsungCode, .failed)
     }
 
     func testSamsungInstallOpensSignInAndRemembersTheVersion() async {

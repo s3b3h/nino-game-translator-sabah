@@ -23,4 +23,5 @@
     <string name="overlay_switch">Switch to overlay</string>
     <string name="overlay_active">Nino is on. Subtitles will appear over the PS5 picture; start translating from Nino on your computer or phone.</string>
     <string name="press_input_again">Press the input button again to choose the PS5\'s input.</string>
+    <string name="overlay_settings_missing">Open the TV\'s Settings › Apps › Special app access › Display over other apps and turn on Nino. If your TV does not have this setting, choose “Continue without permission”.</string>
 </resources>

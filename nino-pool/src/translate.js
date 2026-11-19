@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Nino çeviri havuzu. Uygulama, hazır pakette olmayan bir satırı buraya sorar:
 //   - çevirisi varsa (başka bir oyuncu daha önce görmüşse) hemen döner;
-//   - yoksa hızlı model (Claude Haiku) o an çevirir, kaydeder ve döner; sonraki herkes aynısını anında alır.
-// Birkaç saatte bir güçlü model (Claude Sonnet) son çevirileri oyunun bağlamıyla yeniden okur, daha iyi olanları
-// değiştirir. Uygulamalar oyun başlarken o oyunun bütün çevirilerini tek seferde, sonra yalnız değişenleri çeker.
+//   - yoksa (çöp değilse ve havuzda bozuk bir kopyası da yoksa) Claude Sonnet o an çevirir, kaydeder ve döner;
+//     sonraki herkes aynısını anında alır. Claude yalnız TRANSLATE_LANGS dillerinde (varsayılan Türkçe) para harcar.
+// 30 dakikada bir Claude Opus son çevirileri oyunun bağlamıyla toplu işlemle (yarı fiyat) yeniden okur, daha iyi
+// olanları değiştirir. Uygulamalar oyun başlarken o oyunun bütün çevirilerini tek seferde, sonra yalnız değişenleri çeker.
 // Küfür ve argo sansürsüz: oyun diyaloğu olduğu gibi çevrilir.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { lineKey, saltedDigest } from "./key.js";
+import { junkReason } from "./filter.js";
+import { blocks, bestMatch } from "./fuzzy.js";
 
 export const TRANSLATE_LIMITS = Object.freeze({
   maxBodyBytes: 64 * 1024,
@@ -73,6 +76,10 @@ const LANGUAGE_NOTES = {
     "  \"Fuck!\" / \"Oh fuck!\" → \"Siktir!\" / \"Hassiktir!\"; \"What the fuck?\" → \"Ne halt?\" / \"Bu ne amına koyayım?\"; \"Who the fuck are you?\" → \"Sen de kimsin lan?\";",
     "  \"Shut the fuck up\" → \"Kapa çeneni lan\" / \"Sus amına koyayım\"; \"fucking\" as intensifier → \"lanet olası\", \"siktiğimin\", \"amına koyduğumun\" or a strong \"lan\", never dropped;",
     "  \"motherfucker\" → \"orospu çocuğu\"; \"son of a bitch\" → \"şerefsiz\" / \"orospu çocuğu\"; \"shit\" → \"bok\" (\"No more stupid shit\" → \"Artık saçma sapan bok yemek yok\"), \"shitshow\" → \"bok gibi rezalet\"; \"ass\" → \"göt\"; \"fuck up\" → \"sıçıp batırmak\".",
+    "Swear words inside English idioms are never translated literally; translate what the idiom means, in equally rough Turkish that people really say:",
+    "  \"I'm fuckin' around\" / \"I'm just fucking with you\" → \"Dalga geçiyorum lan\"; \"I'm not fucking around\" → \"Şaka yapmıyorum lan\"; \"Don't fuck around\" → \"Oyalanma lan\" / \"Saçmalama lan\"; \"Don't fuck with me\" → \"Benimle uğraşma lan\";",
+    "  \"shit\" meaning stuff, things or business (\"shit like this\", \"money shit\", \"all that shit\", \"get your shit\") → \"böyle şeyler\", \"para derdi\", \"o zımbırtılar\", \"eşyaların\" with a rough tone, not \"bok\"; \"Don't shit yourself\" → \"Altına sıçma\".",
+    "  A Turkish sentence nobody would say (\"Sadece sikik atıyorum\", \"Sikmiyorum lan, defolun\", \"Böyle bokları daha sık yapmalıyız\") is a wrong translation.",
     "Never add swearing or insults that are not in the English line, and never change the meaning to make it ruder: translate idioms by meaning (\"Says who?\" → \"Kim demiş?\", \"Says fuckin' who?\" → \"Kim demiş lan?\", \"pick you up\" said of cops → \"seni içeri alırlar\").",
   ].join("\n"),
   ar: "Use natural spoken Modern Standard Arabic suitable for game subtitles.",
@@ -111,7 +118,7 @@ const LIVE_SCHEMA = {
 };
 
 /** Tek modelle anında çeviri. Dönüş { texts: string[]|null, cost }. */
-async function askLiveModel(env, model, lang, lines, context, timeoutMs) {
+export async function askLiveModel(env, model, lang, lines, context, timeoutMs, effort = model === LIVE_MODEL ? liveEffort(env) : "low") {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: timeoutMs, maxRetries: 0 });
   const body = [
     context.length ? `Context (do not translate):\n${context.map((c) => `- ${c}`).join("\n")}\n` : "",
@@ -127,14 +134,19 @@ async function askLiveModel(env, model, lang, lines, context, timeoutMs) {
     // Talimat her dilde aynı kalır: bir saat önbellekte durur, her satırda yeniden ücretlendirilmez.
     system: [{ type: "text", text: instructions(lang), cache_control: { type: "ephemeral", ttl: "1h" } }],
     messages: [{ role: "user", content: body }],
-    output_config: { effort: sonnet ? "high" : "low", format: { type: "json_schema", schema: LIVE_SCHEMA } },
+    output_config: { effort, format: { type: "json_schema", schema: LIVE_SCHEMA } },
   });
   const cost = translateCost(model, response.usage);
-  if (response.stop_reason !== "end_turn") return { texts: null, cost };
+  if (response.stop_reason !== "end_turn") return { texts: null, cost, usage: response.usage };
   const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
   const parsed = JSON.parse(text);
   const texts = Array.isArray(parsed.translations) && parsed.translations.length === lines.length ? parsed.translations : null;
-  return { texts, cost };
+  return { texts, cost, usage: response.usage };
+}
+
+/** Anında çevirinin özeni (Sonnet): env.LIVE_EFFORT, varsayılan "medium". */
+export function liveEffort(env) {
+  return ["low", "medium", "high"].includes(env?.LIVE_EFFORT) ? env.LIVE_EFFORT : "medium";
 }
 
 /**
@@ -172,33 +184,62 @@ const REVIEW_SCHEMA = {
   additionalProperties: false,
 };
 
-/** Gözden geçirme: [{source, text}] sırayla; dönüş { texts: string[]|null, cost }. */
-export async function askReview(env, lang, game, items) {
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 90_000, maxRetries: 1 });
+/** Gözden geçirmenin özeni (Opus): env.REVIEW_EFFORT, varsayılan "medium" (kıyasta "high" kadar iyi, daha ucuz). */
+export function reviewEffort(env) {
+  return ["low", "medium", "high"].includes(env?.REVIEW_EFFORT) ? env.REVIEW_EFFORT : "medium";
+}
+
+/** Gözden geçirme isteği (anında ve toplu işlemde aynı). */
+export function reviewParams(lang, game, items, { model = REVIEW_MODEL, effort = "medium" } = {}) {
   const body = [
     `Game: ${game || "unknown"}. Review these ${items.length} subtitle translations into ${LANGUAGES[lang]}.`,
     `Return all ${items.length} lines with their number n and the final translation.`,
     "",
     ...items.map((item, i) => `${i + 1}. EN: ${item.source}\n   ${lang.toUpperCase()}: ${item.text}`),
   ].join("\n");
-  const response = await client.messages.create({
-    model: REVIEW_MODEL,
+  return {
+    model,
     max_tokens: 16000,
     system: instructions(lang, { review: true }),
     messages: [{ role: "user", content: body }],
     thinking: { type: "adaptive" },
-    output_config: { effort: "high", format: { type: "json_schema", schema: REVIEW_SCHEMA } },
-  });
-  const cost = translateCost(REVIEW_MODEL, response.usage);
-  if (response.stop_reason !== "end_turn") return { texts: null, cost };
-  const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+    output_config: { effort, format: { type: "json_schema", schema: REVIEW_SCHEMA } },
+  };
+}
+
+/** Modelin gözden geçirme cevabından satırlar (bozuksa null). */
+export function parseReview(items, message) {
+  if (!message || message.stop_reason !== "end_turn") return null;
+  const text = message.content.filter((b) => b.type === "text").map((b) => b.text).join("");
   const parsed = JSON.parse(text);
   const out = items.map((item) => item.text);
   for (const line of parsed.lines ?? []) {
     const i = Number(line.n) - 1;
     if (i >= 0 && i < out.length && typeof line.text === "string") out[i] = line.text;
   }
-  return { texts: out, cost };
+  return out;
+}
+
+/** Gözden geçirme (anında): [{source, text}] sırayla; dönüş { texts: string[]|null, cost }. */
+export async function askReview(env, lang, game, items, { model = REVIEW_MODEL, effort = reviewEffort(env) } = {}) {
+  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 90_000, maxRetries: 1 });
+  const response = await client.messages.create(reviewParams(lang, game, items, { model, effort }));
+  const cost = translateCost(model, response.usage);
+  return { texts: parseReview(items, response), cost, usage: response.usage };
+}
+
+/** Toplu işlem (Batch API, yarı fiyat): oluştur, durumunu sor, sonuçlarını oku. Testlerde taklidi verilir. */
+export function anthropicBatches(env) {
+  const client = () => new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 60_000, maxRetries: 1 });
+  return {
+    async create(requests) { return client().messages.batches.create({ requests }); },
+    async retrieve(id) { return client().messages.batches.retrieve(id); },
+    async results(id) {
+      const out = [];
+      for await (const result of await client().messages.batches.results(id)) out.push(result);
+      return out;
+    },
+  };
 }
 
 function day(now) {
@@ -232,6 +273,43 @@ export function gameAllowed(env, game) {
 }
 
 /**
+ * Claude yalnız bu dillerde para harcar: env.TRANSLATE_LANGS (virgüllü), varsayılan "tr". Öbür dillerde havuzdaki
+ * çeviriler yine verilir; yeni satırları uygulama kullanıcının kendi motoruyla ya da ücretsiz çeviriyle çevirir.
+ */
+export function translateLangs(env) {
+  return String(env?.TRANSLATE_LANGS ?? "tr").split(",").map((l) => l.trim().toLowerCase()).filter((l) => LANGUAGES[l] || l === "*");
+}
+
+export function langAllowed(env, lang) {
+  const list = translateLangs(env);
+  return list.includes("*") || list.includes(lang);
+}
+
+/** Çevirinin benzer satır parçalarını yazar (src/fuzzy.js). */
+async function indexBlocks(db, lang, rows) {
+  const entries = rows.flatMap((r) => blocks(r.s).map((b) => ({ b, k: r.k })));
+  if (entries.length === 0) return;
+  await db.prepare(
+    `INSERT OR IGNORE INTO translation_blocks (lang, block, key)
+     SELECT ?, json_extract(value, '$.b'), json_extract(value, '$.k') FROM json_each(?)`,
+  ).bind(lang, JSON.stringify(entries)).run().catch((error) => console.error("benzer satır dizini", error));
+}
+
+/**
+ * Claude'a gitmeyen satırların (çöp, izinsiz dil) İngilizcesi yine havuza yazılır (kurulum kimliği tutulmaz);
+ * dışa aktarmada ve elle çeviride kullanılır.
+ */
+async function rememberEnglish(db, game, items, now) {
+  const rows = items.filter((i) => i.key).map((i) => ({ k: i.key, t: i.text }));
+  if (rows.length === 0) return;
+  await db.prepare(
+    `INSERT INTO lines (game, key, text, seen, installs, first_seen, last_seen)
+     SELECT ?1, json_extract(value, '$.k'), json_extract(value, '$.t'), 1, 0, ?2, ?2 FROM json_each(?3) WHERE true
+     ON CONFLICT (game, key) DO UPDATE SET seen = seen + 1, last_seen = max(last_seen, excluded.last_seen)`,
+  ).bind(game, now, JSON.stringify(rows)).run().catch((error) => console.error("İngilizce havuza yazılamadı", error));
+}
+
+/**
  * Oyun kimliği gelmeyen (PS5 çoğu zaman bildirmez, hazır paketi olmayan oyunda paketten de tanınamaz) satırlardan oyunu
  * tanır: oyuna özgü isimler (karakter, şehir) satırda ya da bağlamında geçiyorsa. Tanınan oyun kuruluma birkaç saat
  * yazılır; o kurulumun sonraki satırları da o oyundan sayılır.
@@ -262,6 +340,38 @@ export function usable(source, translation) {
   if ([...t].length > Math.max(40, [...source].length * 4)) return false;
   if (/\b(I can(?:not|'t)|I'm sorry|as an AI|I won't)\b/i.test(t) && !/\b(I can(?:not|'t)|sorry|won't)\b/i.test(source)) return false;
   return true;
+}
+
+/**
+ * Havuzda aynı cümlenin bozuk bir kopyası çevrilmişse onun çevirisi verilir (Claude'a sorulmaz) ve bu yazılış da havuza
+ * eklenir. Dönüş: hâlâ çevirisi olmayanlar.
+ */
+async function fromSimilar(db, lang, game, missing, now) {
+  const wanted = [...new Set(missing.flatMap((m) => blocks(m.text)))];
+  if (wanted.length === 0) return missing;
+  const { results } = await db.prepare(
+    `SELECT t.key, t.source, t.text, t.tier FROM translation_blocks b JOIN translations t ON t.lang = b.lang AND t.key = b.key
+     WHERE b.lang = ? AND b.block IN (SELECT value FROM json_each(?)) AND t.text <> '' LIMIT 400`,
+  ).bind(lang, JSON.stringify(wanted)).all().catch(() => ({ results: [] }));
+  if (results.length === 0) return missing;
+  const rest = [];
+  const rows = [];
+  for (const m of missing) {
+    const match = bestMatch(m.text, results);
+    if (!match) { rest.push(m); continue; }
+    m.result = match.text;
+    m.tier = match.tier;
+    m.similar = true;
+    rows.push({ k: m.key, s: m.text, t: match.text, r: match.tier });
+  }
+  if (rows.length > 0) {
+    await db.prepare(
+      `INSERT OR IGNORE INTO translations (key, lang, game, source, text, tier, created, updated)
+       SELECT json_extract(value, '$.k'), ?, ?, json_extract(value, '$.s'), json_extract(value, '$.t'), json_extract(value, '$.r'), ?, ?
+       FROM json_each(?)`,
+    ).bind(lang, game, now, now, JSON.stringify(rows)).run().catch((error) => console.error("benzer satır yazılamadı", error));
+  }
+  return rest;
 }
 
 // Sunucu örneği içi kaba sınır: kurulum → [saat, satır].
@@ -344,13 +454,21 @@ export async function handleTranslate(db, env, body, now, live = askLive) {
     }
   }
 
-  // Bilinmeyenler: hızlı model (sınır ve kota içindeyse).
-  const missing = [];
+  // Bilinmeyenler: önce çöp süzgeci (tabela, menü, kırıntı, zaten Türkçe), sonra havuzdaki benzer satır, sonra Claude.
+  let missing = [];
+  const skipped = [];
   const seen = new Set();
   for (const item of items) {
-    if (item.key && item.result === null && !item.known && !seen.has(item.key)) { seen.add(item.key); missing.push(item); }
+    if (!item.key || item.result !== null || item.known || seen.has(item.key)) continue;
+    seen.add(item.key);
+    if (junkReason(item.text)) skipped.push(item);
+    else missing.push(item);
   }
+  if (missing.length > 0 && !langAllowed(env, lang)) { skipped.push(...missing); missing = []; }
+  if (missing.length > 0) missing = await fromSimilar(db, lang, game, missing, now);
+  if (skipped.length > 0) await rememberEnglish(db, game, skipped, now);
   let limited = null;
+  if (missing.length === 0 && skipped.length > 0 && !langAllowed(env, lang)) limited = "lang";
   if (missing.length > 0) {
     if (!translateEnabled(env)) limited = "disabled";
     else if (!gameAllowed(env, game)) limited = "game";
@@ -392,6 +510,7 @@ export async function handleTranslate(db, env, body, now, live = askLive) {
              SELECT json_extract(value, '$.k'), ?, ?, json_extract(value, '$.s'), json_extract(value, '$.t'), json_extract(value, '$.r'), ?, ?
              FROM json_each(?)`,
           ).bind(lang, game, now, now, JSON.stringify(rows)).run();
+          await indexBlocks(db, lang, rows.filter((r) => r.t));
         }
         // Aynı satır aynı istekte birden çok kez geçtiyse.
         const byKey = new Map(missing.filter((m) => m.result !== null).map((m) => [m.key, m]));
@@ -400,6 +519,12 @@ export async function handleTranslate(db, env, body, now, live = askLive) {
         }
       }
     }
+  }
+
+  // Aynı satır istekte birden çok geçtiyse (benzer satırdan gelenler dahil) hepsine aynı çeviri.
+  const done = new Map(items.filter((i) => i.key && i.result !== null).map((i) => [i.key, i]));
+  for (const item of items) {
+    if (item.result === null && item.key && done.has(item.key)) { item.result = done.get(item.key).result; item.tier = done.get(item.key).tier; }
   }
 
   return {
@@ -443,25 +568,26 @@ export async function listTranslations(db, params, now) {
   };
 }
 
+/** Toplu işlemde bir parçanın (20 satır) tahmini maliyeti (mikro dolar); cevap gelene kadar bütçeden düşülür. */
+const BATCH_CHUNK_ESTIMATE = 20000;
+/** Bu kadar saatte bitmeyen toplu işlem unutulur (Anthropic en çok 24 saatte bitirir). */
+const BATCH_FORGET_SECONDS = 26 * 3600;
+
 /**
- * Gözden geçirme turu (zamanlanmış): en eski gözden geçirilmemiş çeviriler, oyun ve dile göre, görüldükleri sırayla
- * güçlü modele gider. Değişen çeviri `updated`i yenilenir; uygulamalar bir sonraki çekişte alır.
+ * Sıradaki gözden geçirilecek parça: en eski gözden geçirilmemiş çeviriler, oyun ve dile göre, görüldükleri sırayla.
+ * İzinsiz oyun/dil ve çöp satırlar para harcanmadan gözden geçirilmiş sayılır. `exclude`: bu turda seçilenler.
  */
-export async function reviewTranslations(db, env, now, review = askReview, delay = TRANSLATE_LIMITS.reviewDelay) {
-  if (!translateEnabled(env)) return { reviewed: 0, changed: 0, cost: 0 };
-  const cap = capMicro(env) * TRANSLATE_LIMITS.reviewShare;
-  let reviewed = 0;
-  let changed = 0;
-  let cost = 0;
-  let failed = 0;
-  for (let run = 0; run < TRANSLATE_LIMITS.reviewChunksPerRun; run++) {
-    if ((await spentToday(db, now)) >= cap) break;
+async function nextChunk(db, env, now, delay, exclude) {
+  for (let guard = 0; guard < 20; guard++) {
     const group = await db.prepare(
-      `SELECT lang, game FROM translations WHERE tier = 1 AND text <> '' AND created < ? GROUP BY lang, game ORDER BY MIN(created) LIMIT 1`,
-    ).bind(now - delay).first();
-    if (!group) break;
-    if (!gameAllowed(env, group.game)) {
-      // İzinli olmayan oyunun satırları gözden geçirilmez (para harcanmaz); bir daha seçilmesin diye işaretlenir.
+      `SELECT lang, game FROM translations t WHERE tier = 1 AND text <> '' AND created < ?
+         AND NOT EXISTS (SELECT 1 FROM review_pending p WHERE p.lang = t.lang AND p.key = t.key)
+         AND key NOT IN (SELECT value FROM json_each(?))
+       GROUP BY lang, game ORDER BY MIN(created) LIMIT 1`,
+    ).bind(now - delay, JSON.stringify([...exclude])).first();
+    if (!group) return null;
+    if (!gameAllowed(env, group.game) || !langAllowed(env, group.lang)) {
+      // İzinli olmayan oyun ya da dilin satırları gözden geçirilmez (para harcanmaz); bir daha seçilmesin diye işaretlenir.
       await db.prepare("UPDATE translations SET tier = 2 WHERE tier = 1 AND lang = ? AND game = ?").bind(group.lang, group.game).run();
       continue;
     }
@@ -470,39 +596,181 @@ export async function reviewTranslations(db, env, now, review = askReview, delay
               COALESCE((SELECT MIN(l.first_seen) FROM lines l WHERE l.key = t.key AND (l.game = t.game OR t.game = '')), t.created) AS seen
        FROM translations t
        WHERE t.tier = 1 AND t.text <> '' AND t.lang = ? AND t.game = ? AND t.created < ?
+         AND NOT EXISTS (SELECT 1 FROM review_pending p WHERE p.lang = t.lang AND p.key = t.key)
+         AND t.key NOT IN (SELECT value FROM json_each(?))
        ORDER BY seen, t.key LIMIT ${TRANSLATE_LIMITS.reviewChunk}`,
-    ).bind(group.lang, group.game, now - delay).all();
-    if (results.length === 0) break;
+    ).bind(group.lang, group.game, now - delay, JSON.stringify([...exclude])).all();
+    if (results.length === 0) return null;
+    const junk = results.filter((r) => junkReason(r.source));
+    if (junk.length > 0) {
+      await db.prepare(`UPDATE translations SET tier = 2 WHERE lang = ?1 AND key IN (SELECT value FROM json_each(?2))`)
+        .bind(group.lang, JSON.stringify(junk.map((r) => r.key))).run();
+    }
+    const rows = results.filter((r) => !junkReason(r.source));
+    if (rows.length > 0) return { lang: group.lang, game: group.game, rows };
+  }
+  return null;
+}
+
+/** Gözden geçirilmiş metinleri yazar (null: ret ya da bozuk cevap, satırlar olduğu gibi kalır). Dönüş: değişen sayısı. */
+async function applyReview(db, lang, rows, texts, now) {
+  if (!texts) {
+    await db.prepare(`UPDATE translations SET tier = 2 WHERE lang = ?1 AND key IN (SELECT value FROM json_each(?2))`)
+      .bind(lang, JSON.stringify(rows.map((r) => r.key))).run();
+    return 0;
+  }
+  let changed = 0;
+  const out = rows.map((r, i) => {
+    const better = usable(r.source, texts[i]) ? clean(texts[i]) : r.text;
+    if (better !== r.text) changed++;
+    return { k: r.key, t: better, c: better !== r.text ? 1 : 0 };
+  });
+  await db.prepare(
+    `UPDATE translations SET
+       tier = 2,
+       text = (SELECT json_extract(value, '$.t') FROM json_each(?1) WHERE json_extract(value, '$.k') = translations.key),
+       updated = CASE WHEN (SELECT json_extract(value, '$.c') FROM json_each(?1) WHERE json_extract(value, '$.k') = translations.key) = 1
+                      THEN ?2 ELSE updated END
+     WHERE lang = ?3 AND key IN (SELECT json_extract(value, '$.k') FROM json_each(?1))`,
+  ).bind(JSON.stringify(out), now, lang).run();
+  return changed;
+}
+
+/**
+ * Gözden geçirme turu (zamanlanmış, 30 dakikada bir). Varsayılan: toplu işlem (Batch API, yarı fiyat) — önce biten
+ * toplu işlemlerin sonuçları yazılır, sonra bütçe kalırsa yenileri gönderilir. `review` verilirse (testler) ya da
+ * env.REVIEW_BATCH = "0" ise eskisi gibi anında. Değişen çevirinin `updated`i yenilenir; uygulamalar sonraki çekişte alır.
+ */
+export async function reviewTranslations(db, env, now, review = undefined, delay = TRANSLATE_LIMITS.reviewDelay, batches = undefined) {
+  if (!translateEnabled(env)) return { reviewed: 0, changed: 0, cost: 0 };
+  if (review || env.REVIEW_BATCH === "0") return reviewNow(db, env, now, review ?? askReview, delay);
+  return reviewInBatches(db, env, now, delay, batches ?? anthropicBatches(env));
+}
+
+async function reviewNow(db, env, now, review, delay) {
+  const cap = capMicro(env) * TRANSLATE_LIMITS.reviewShare;
+  let reviewed = 0;
+  let changed = 0;
+  let cost = 0;
+  let failed = 0;
+  for (let run = 0; run < TRANSLATE_LIMITS.reviewChunksPerRun; run++) {
+    if ((await spentToday(db, now)) >= cap) break;
+    const chunk = await nextChunk(db, env, now, delay, new Set());
+    if (!chunk) break;
     let answer = { texts: null, cost: 0 };
     try {
-      answer = await review(env, group.lang, group.game, results.map((r) => ({ source: r.source, text: r.text })));
+      answer = await review(env, chunk.lang, chunk.game, chunk.rows.map((r) => ({ source: r.source, text: r.text })));
     } catch (error) {
       console.error("gözden geçirme hatası", error);
     }
     if (answer.cost) { await addCost(db, now, answer.cost); cost += answer.cost; }
-    if (!answer.texts) {
-      // Ret ya da bozuk cevap: bu satırlar olduğu gibi kalır, bir daha gönderilmez (her turda yeniden ücretlendirilmesin).
-      await db.prepare(`UPDATE translations SET tier = 2 WHERE lang = ?1 AND key IN (SELECT value FROM json_each(?2))`)
-        .bind(group.lang, JSON.stringify(results.map((r) => r.key))).run();
-      failed++;
-      continue;
-    }
-    const rows = results.map((r, i) => {
-      const better = usable(r.source, answer.texts[i]) ? clean(answer.texts[i]) : r.text;
-      if (better !== r.text) changed++;
-      return { k: r.key, t: better, c: better !== r.text ? 1 : 0 };
-    });
-    await db.prepare(
-      `UPDATE translations SET
-         tier = 2,
-         text = (SELECT json_extract(value, '$.t') FROM json_each(?1) WHERE json_extract(value, '$.k') = translations.key),
-         updated = CASE WHEN (SELECT json_extract(value, '$.c') FROM json_each(?1) WHERE json_extract(value, '$.k') = translations.key) = 1
-                        THEN ?2 ELSE updated END
-       WHERE lang = ?3 AND key IN (SELECT json_extract(value, '$.k') FROM json_each(?1))`,
-    ).bind(JSON.stringify(rows), now, group.lang).run();
-    reviewed += results.length;
+    if (!answer.texts) failed++;
+    else reviewed += chunk.rows.length;
+    changed += await applyReview(db, chunk.lang, chunk.rows, answer.texts, now);
   }
   return { reviewed, changed, cost, ...(failed ? { failed } : {}) };
+}
+
+async function reviewInBatches(db, env, now, delay, batches) {
+  let reviewed = 0;
+  let changed = 0;
+  let cost = 0;
+  let failed = 0;
+  let pendingChunks = 0;
+
+  // 1) Bitenleri topla.
+  const { results: open } = await db.prepare("SELECT id, model, chunks, created FROM review_batches ORDER BY created").all();
+  for (const batch of open) {
+    const chunks = JSON.parse(batch.chunks);
+    let status = null;
+    try {
+      status = await batches.retrieve(batch.id);
+    } catch (error) {
+      console.error("toplu işlem sorulamadı", batch.id, String(error?.message ?? error).slice(0, 200));
+    }
+    if (status?.processing_status !== "ended") {
+      if (now - batch.created > BATCH_FORGET_SECONDS) {
+        await db.prepare("DELETE FROM review_pending WHERE batch = ?").bind(batch.id).run();
+        await db.prepare("DELETE FROM review_batches WHERE id = ?").bind(batch.id).run();
+      } else {
+        pendingChunks += chunks.length;
+      }
+      continue;
+    }
+    let results = [];
+    try {
+      results = await batches.results(batch.id);
+    } catch (error) {
+      console.error("toplu işlem sonuçları okunamadı", batch.id, String(error?.message ?? error).slice(0, 200));
+      pendingChunks += chunks.length;
+      continue;
+    }
+    const byId = new Map(results.map((r) => [r.custom_id, r.result]));
+    for (const chunk of chunks) {
+      const result = byId.get(chunk.id);
+      const { results: rows } = await db.prepare(
+        `SELECT key, source, text FROM translations WHERE lang = ?1 AND key IN (SELECT value FROM json_each(?2))`,
+      ).bind(chunk.lang, JSON.stringify(chunk.keys)).all();
+      const ordered = chunk.keys.map((k) => rows.find((r) => r.key === k)).filter(Boolean);
+      if (result?.type === "succeeded") {
+        const micro = Math.ceil(translateCost(batch.model, result.message.usage) / 2);
+        await addCost(db, now, micro);
+        cost += micro;
+        let texts = null;
+        try {
+          texts = parseReview(ordered, result.message);
+        } catch {
+          texts = null;
+        }
+        if (!texts) failed++;
+        else reviewed += ordered.length;
+        changed += await applyReview(db, chunk.lang, ordered, texts, now);
+      } else if (result?.type === "errored" && result.error?.error?.type === "invalid_request_error") {
+        // Geçersiz istek her seferinde reddedilir: yeniden gönderilmesin.
+        failed++;
+        await applyReview(db, chunk.lang, ordered, null, now);
+      }
+      // Sunucu hatası, süresi dolmuş ya da iptal: satırlar gözden geçirilmemiş kalır, sonraki turda yeniden gönderilir.
+    }
+    await db.prepare("DELETE FROM review_pending WHERE batch = ?").bind(batch.id).run();
+    await db.prepare("DELETE FROM review_batches WHERE id = ?").bind(batch.id).run();
+  }
+
+  // 2) Bütçe kalırsa yenilerini gönder (bekleyenlerin tahmini maliyeti de düşülür).
+  const cap = capMicro(env) * TRANSLATE_LIMITS.reviewShare;
+  const room = cap - (await spentToday(db, now)) - pendingChunks * BATCH_CHUNK_ESTIMATE;
+  const allowed = Math.min(TRANSLATE_LIMITS.reviewChunksPerRun, Math.floor(room / BATCH_CHUNK_ESTIMATE));
+  const picked = [];
+  const exclude = new Set();
+  for (let i = 0; i < allowed; i++) {
+    const chunk = await nextChunk(db, env, now, delay, exclude);
+    if (!chunk) break;
+    for (const r of chunk.rows) exclude.add(r.key);
+    picked.push(chunk);
+  }
+  let submitted = 0;
+  if (picked.length > 0) {
+    const effort = reviewEffort(env);
+    const requests = picked.map((chunk, i) => ({
+      custom_id: `c${i}`,
+      params: reviewParams(chunk.lang, chunk.game, chunk.rows.map((r) => ({ source: r.source, text: r.text })), { model: REVIEW_MODEL, effort }),
+    }));
+    try {
+      const batch = await batches.create(requests);
+      const chunks = picked.map((chunk, i) => ({ id: `c${i}`, lang: chunk.lang, game: chunk.game, keys: chunk.rows.map((r) => r.key) }));
+      await db.prepare("INSERT INTO review_batches (id, model, chunks, created) VALUES (?, ?, ?, ?)")
+        .bind(batch.id, REVIEW_MODEL, JSON.stringify(chunks), now).run();
+      const pending = chunks.flatMap((c) => c.keys.map((k) => ({ l: c.lang, k })));
+      await db.prepare(
+        `INSERT OR REPLACE INTO review_pending (lang, key, batch)
+         SELECT json_extract(value, '$.l'), json_extract(value, '$.k'), ? FROM json_each(?)`,
+      ).bind(batch.id, JSON.stringify(pending)).run();
+      submitted = picked.length;
+    } catch (error) {
+      console.error("toplu işlem gönderilemedi", String(error?.message ?? error).slice(0, 200));
+    }
+  }
+  return { reviewed, changed, cost, submitted, pending: pendingChunks + submitted, ...(failed ? { failed } : {}) };
 }
 
 /** GET /v1/config: uygulamaların uzaktan ayarı (yeni sürüm gerekmeden açılıp kapanır). */
@@ -530,6 +798,8 @@ export function remoteConfig(env) {
     // NinoPool.gameId biçiminde; eşleşme TRANSLATE_GAMES gibi "kimlik bu parçayı içeriyor" kuralıyla.
     poolFirst: {
       games: poolFirstGames(env),
+      // Havuz öncelik yalnız bu hedef dillerde (Claude yalnız bunlarda çevirir); öbür dillerde uygulama kendi motorunu kullanır.
+      langs: translateLangs(env),
       deadlineMs: num(env.POOL_FIRST_DEADLINE_MS, 1500),
     },
     minVersion: {

@@ -31,6 +31,22 @@ extension AppServices {
         guard let info = await Console.discover(timeout: .seconds(2), host: host).first else { return nil }
         return RunningGame(titleId: info.runningAppTitleId, name: info.runningAppName)
     }
+    /// Samsung kurulumundan önce: TV'nin 8001 yanıtı ve TV'ye giden yolun bu Mac'teki adresi (#343).
+    func checkSamsung(host: String) async -> SamsungPreflight {
+        SamsungPreflight(info: await SamsungDiscovery.developerInfo(host: host), computerAddress: NetworkAddress.near(host))
+    }
+    /// Samsung TV'nin model yılı (geliştirici modu penceresinin nerede açıldığı yıla göre değişir).
+    func samsungModelYear(host: String) async -> Int? { await SamsungDiscovery.modelYear(host: host) }
+    /// Geliştirici modu kodunu (1 2 3 4 5) TV'ye kumanda bağlantısından yazar; TV'nin verdiği jetonu döner.
+    func typeSamsungCode(tv: LGTV, key: String?) async throws -> String {
+        try await SamsungDeveloperCode.type(on: tv, token: key)
+    }
+}
+
+/// Samsung kurulumundan önceki denetim: TV'nin geliştirici modu bilgisi ve TV'nin göreceği bu Mac'in adresi.
+struct SamsungPreflight: Equatable {
+    var info: SamsungDeveloperInfo?
+    var computerAddress: String?
 }
 
 protocol AppServices: AnyObject {
@@ -73,6 +89,9 @@ protocol AppServices: AnyObject {
     /// Samsung ve Android TV için uygulamayla gelen paket (geliştirici derlemesinde olmayabilir).
     func bundledApp(for brand: TVBrand) -> BundledTVApp?
     func isSamsungDevModeOn(host: String) async -> Bool
+    func checkSamsung(host: String) async -> SamsungPreflight
+    func samsungModelYear(host: String) async -> Int?
+    func typeSamsungCode(tv: LGTV, key: String?) async throws -> String
     /// TV'deki sürüme bakar, eksik ya da eskiyse kurar; TV'deki sürümü ve kurulup kurulmadığını döner.
     func installSamsungApp(host: String, app: BundledTVApp,
                            onEvent: @escaping @Sendable (TVInstallEvent) -> Void) async throws -> (version: String, installed: Bool)
@@ -404,6 +423,13 @@ enum TVAppState: Equatable {
     case signIn(URL)
     /// Android TV: TV ekranında hata ayıklama izni bekleniyor.
     case approveOnTV
+    /// Samsung: TV'deki Host PC IP (`tvIp`) bu Mac'in adresi (`computer`) değil; sdb denenmedi (#343).
+    case hostPcMismatch(tvIp: String, computer: String)
+}
+
+/// Geliştirici modu kodunu TV'ye yazma denemesinin durumu.
+enum SamsungCodeState: Equatable {
+    case idle, sending, sent, failed
 }
 
 extension AppAppearance {
@@ -452,6 +478,16 @@ final class AppModel: ObservableObject {
     @Published private var refreshingTVApp = false
     /// Samsung kurulumu ya da sürüm denetimi sürüyor: olaylar (giriş, kurulum adımı) kartı değiştirebilir.
     @Published private var samsungCheckRunning = false
+    /// Samsung kurulumundan önceki son denetim: geliştirici modu, Host PC IP ve kurulum kapısı. Kart hangi adımın
+    /// eksik olduğunu buradan gösterir.
+    @Published private(set) var samsungSetup: SamsungSetupCheck?
+    /// Samsung TV'nin model yılı (ör. 2023); TV bildirmediyse nil. Bir kez okunur.
+    @Published private(set) var samsungModelYear: Int?
+    private var samsungModelYearHost: String?
+    /// Geliştirici modu kodunun TV'ye bu Mac'ten yazılması (deneysel düğme).
+    @Published private(set) var samsungCode = SamsungCodeState.idle
+    /// "Yine de dene": TV'nin bildirdiği Host PC IP yanlış görünse de kurulum bir kez denenir (TV yanlış bildirebilir).
+    private var samsungIgnoreAddressOnce = false
     @Published var settings: UserSettings {
         didSet {
             // Sıradan tercih; her kaydırıcı hareketinde Anahtarlık'a yazılmasın.
@@ -713,9 +749,20 @@ final class AppModel: ObservableObject {
             guard let self else { return false }
             return self.pipeline != nil || self.step != .done || self.dubbingDownload != nil
         }
+        // "Yeniden başlat": çeviri sürüyorsa yeni sürüm açılınca kendiliğinden sürsün (takılınca yeniden açılmadaki işaret).
+        AppUpdater.prepareForRestart = { [weak self] in
+            guard let self, self.isRunning else { return }
+            SubtitleLog.write("güncelleme kuruluyor; Nino yeniden açılıyor, çeviri kendiliğinden sürecek")
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.resumeKey)
+            UserDefaults.standard.synchronize()
+            self.stop()
+        }
         #endif
         // Nino: NinoPool oyunu her satırla birlikte alır (`offer(_:game:)`; bkz. connectPacks), ayrıca bildirilmez.
         gameChoice.onChange = { [weak self] game in
+            // Nino: oyun tanınınca ekran hemen yenilenir (salondaki buzlu fon, alt şeritteki "GTA 6 Aktif"). Eskiden
+            // ekran bir sonraki altyazıya kadar eski halinde kalıyordu: GTA 6 açıkken fon gelmiyordu.
+            self?.objectWillChange.send()
             // Bu oyunun (havuzdan otomatik) paketi sunucuda yeni çıkmış olabilir.
             if game != nil { self?.packsForGame() }
             // Nino: yeni oyunun havuzdaki çevirileri hemen iner.
@@ -1259,10 +1306,41 @@ final class AppModel: ObservableObject {
         guard let bundled = services.bundledApp(for: .samsung) else { return }
         let remembered = !needsInstall(bundled)
         let current = TVAppState.upToDate(installedAppVersion ?? bundled.version)
-        guard await services.isSamsungDevModeOn(host: tv.host) else {
-            // Geliştirici modu kapalıyken TV'ye sorulamaz; bu Mac'in kurduğu sürüme bakılır.
+        // TV 8001'de geliştirici modunu ve Host PC IP'yi söyler (Android ve iPhone uygulaması da buna bakar). Host PC IP
+        // bu Mac'inki değilse TV sdb el sıkışmasında bağlantıyı keser (#343); sdb hiç denenmez, iki adres söylenir.
+        // Nino: hangi adımın eksik olduğu tek tek ayırt edilir (mod kapalı, adres yanlış/sıfırlı/ters, TV yeniden
+        // başlatılmamış); kart yalnız o adımı anlatır.
+        let check = await services.checkSamsung(host: tv.host)
+        let setup = SamsungSetupCheck(info: check.info, computer: check.computerAddress,
+                                      portOpen: await services.isSamsungDevModeOn(host: tv.host))
+        if setup != samsungSetup { samsungSetup = setup }
+        if samsungModelYearHost != tv.host, check.info != nil {
+            samsungModelYear = await services.samsungModelYear(host: tv.host)
+            samsungModelYearHost = tv.host
+        }
+        let ignoreAddress = samsungIgnoreAddressOnce
+        samsungIgnoreAddressOnce = false
+        switch setup.problem {
+        case .tvNotResponding, .developerModeOff, .needsRestart:
+            // Geliştirici modu kapalıyken (ya da TV yeniden başlamadan) TV'ye sorulamaz; bu Mac'in kurduğu sürüme bakılır.
             tvApp = remembered ? current : .devModeOff
             return
+        case .hostPcIpLoopback, .hostPcIpPadded, .hostPcIpReversed, .hostPcIpWrong:
+            let tvIp = check.info?.developerIp ?? "?"
+            let computer = check.computerAddress ?? "?"
+            if ignoreAddress {
+                // TV adresi yanlış bildirebilir; kullanıcı isterse kurulum bir kez yine de denenir.
+                TVInstallLog.write("TV'deki Host PC IP (developerIP) \(tvIp), bu Mac'in adresi \(computer); kullanıcı yine de denemek istedi.")
+                break
+            }
+            let next = remembered ? current : TVAppState.hostPcMismatch(tvIp: tvIp, computer: computer)
+            if tvApp != next {
+                TVInstallLog.write("TV'deki Host PC IP (developerIP) \(tvIp), bu Mac'in TV'ye giden adresi \(computer); kurulum denenmedi.")
+            }
+            tvApp = next
+            return
+        case nil:
+            break
         }
         // Güncel bilinen uygulamada denetim sessiz sürer; kart ancak kurulum başlarsa değişir.
         tvApp = remembered ? current : .working
@@ -1282,6 +1360,44 @@ final class AppModel: ObservableObject {
             tvApp = current
         } catch {
             tvApp = Self.failedState(error)
+        }
+    }
+
+    /// Samsung kurulumu "TV bu bilgisayarı kabul etmedi" ile durduğunda TV'nin durumuna yeniden bakar. Eksik adım
+    /// belli olduysa kart onu gösterir; TV yeniden başladıysa (kurulum kapısı kapanıp açıldı) kurulum kendiliğinden
+    /// yeniden denenir. Kurulum denemez, yalnız TV'ye sorar: kart üç saniyede bir çağırabilir.
+    func recheckSamsungSetup() async {
+        guard let tv, tv.brand == .samsung, !samsungCheckRunning, !refreshingTVApp else { return }
+        guard case .failed(.unreachable, _) = tvApp else { return }
+        let check = await services.checkSamsung(host: tv.host)
+        let setup = SamsungSetupCheck(info: check.info, computer: check.computerAddress,
+                                      portOpen: await services.isSamsungDevModeOn(host: tv.host))
+        let before = samsungSetup
+        if setup != before { samsungSetup = setup }
+        guard case .failed(.unreachable, _) = tvApp else { return }
+        if setup.problem != nil || (before?.portOpen == false && setup.portOpen) { await refreshTVApp() }
+    }
+
+    /// "Yine de dene": TV'nin bildirdiği Host PC IP bu Mac'inki değil görünse de kurulumu bir kez dener.
+    func installSamsungAnyway() async {
+        samsungIgnoreAddressOnce = true
+        await refreshTVApp()
+    }
+
+    /// Geliştirici modu kodunu (1 2 3 4 5) TV'ye bu Mac'ten yazar. Kullanıcı önce TV'de kodun yazılacağı yeri açar.
+    /// Her modelde çalışmaz; sonuç TV ekranında görülür (pencere açılır ya da açılmaz).
+    func typeSamsungDevCode() async {
+        guard let tv, tv.brand == .samsung, samsungCode != .sending else { return }
+        samsungCode = .sending
+        do {
+            let savedKey = store.load(String.self, for: StoreKey.tvKey)
+            let token = try await services.typeSamsungCode(tv: tv, key: savedKey)
+            store.save(SamsungTokenHolder.keptToken(stored: savedKey, received: token), for: StoreKey.tvKey)
+            TVInstallLog.write("Geliştirici modu kodu TV'ye kumanda bağlantısından yazıldı (\(tv.host)).")
+            samsungCode = .sent
+        } catch {
+            TVInstallLog.write("Geliştirici modu kodu TV'ye yazılamadı (\(tv.host)): \(error)")
+            samsungCode = .failed
         }
     }
 
@@ -2919,6 +3035,8 @@ final class AppModel: ObservableObject {
             return String(localized: "The PS5 didn't accept the login passcode in Settings. Correct it, or turn off this account's login passcode on the PS5.")
         // Eskiden "Yeniden bağlanılıyor… (Unknown Session Request Error)" diye sonsuza kadar deneniyordu.
         case .registrationInvalid: return String(localized: "The PS5 didn't accept this pairing. Pair the PS5 again with the second account in Settings.")
+        // PS5 kodu 0x80108b12: eskiden yalnız "PS5 bağlantıyı reddetti (kod …)" deniyordu.
+        case .remotePlayDisabled: return String(localized: "Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again.")
         // Eskiden görüntü hiç gelmeyince sonsuza kadar "Yeniden bağlanılıyor… (no picture from the PS5)".
         case .noPicture: return String(localized: "No picture from the PS5. Is Remote Play turned off, or is the PS5 in rest mode? Check, then start again.")
         // Eskiden ağ hatası, bulunamayan PS5 ve diğer nedenler hep yalnız "Yeniden bağlanılıyor…" idi.
@@ -3062,7 +3180,28 @@ extension AppModel {
     }
 
     /// Nino: dublaj yalnız Türkçe çeviride çalışır (sesler ve metin hazırlığı Türkçe için); Arapçada kapalıdır.
-    var dubbingActive: Bool { settings.dubbing.enabled && TargetLanguage.isTurkish(settings.targetLanguage) }
+    /// Alt şerit ve Ayarlar › Çeviri: GTA 6 (havuz öncelikli oyun) için Nino'nun kendi çevirisi geçerli mi? Hedef dil
+    /// havuzun çevirdiği dillerdense (şimdilik Türkçe) ve tanınan oyun havuz öncelikliyse ya da henüz oyun tanınmadıysa
+    /// evet: kullanıcı varsayılanın açık olduğunu görür. Başka bir oyun tanınınca seçili motor gösterilir.
+    var ninoPoolActive: Bool {
+        guard translations.poolFirst.allows(language: settings.targetLanguage) else { return false }
+        guard let name = gameChoice.sense.current?.name else { return true }
+        return translations.isPoolFirst(translations.poolGame(name, packs.searchScope))
+    }
+
+    /// Tanınan oyunun kimliği (ör. "grand-theft-auto-vi"); tanınmadıysa nil. Salon sahnesindeki fon buna göre seçilir.
+    var liveGameID: String? { NinoPool.gameID(gameChoice.sense.current?.name) }
+    /// Tanınan oyun havuz öncelikli mi (şimdilik GTA 6). Yalnız görünüm içindir: sunucuya o an ulaşılamasa da
+    /// (`isPoolFirst` o zaman false döner) oyun aynı oyundur, fon kalır.
+    var liveGamePoolFirst: Bool {
+        guard let name = gameChoice.sense.current?.name else { return false }
+        return translations.poolFirst.contains(translations.poolGame(name, packs.searchScope))
+    }
+
+    /// Nino: Türkçe dublaj şimdilik kapalı (19 Kasım 2026, kullanıcı isteği): Ayarlar'da görünmez ve açık kalmış olsa
+    /// da çalışmaz. Geri açmak için bunu true yapmak yeter; kod ve ayarlar yerinde durur.
+    static let dubbingAvailable = false
+    var dubbingActive: Bool { Self.dubbingAvailable && settings.dubbing.enabled && TargetLanguage.isTurkish(settings.targetLanguage) }
 
     /// Nino: çeviri dili değişti. Eski dildeki köşe çevirileri ve ekrandaki satırlar kalkar; dublaj Türkçe dışında durur.
     private func targetLanguageChanged() {

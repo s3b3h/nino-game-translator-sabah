@@ -49,6 +49,8 @@ public static class ProblemReport
         [JsonPropertyName("contact")] public string? Contact { get; set; }
         [JsonPropertyName("log")] public string? Log { get; set; }
         [JsonPropertyName("images")] public List<Image> Images { get; set; } = [];
+        /// <summary>Cihaz bilgileri (<see cref="DeviceInfo.Summary"/>): uygulama, bilgisayarın modeli, sistem, TV, konsol. Kişisel bilgi içermez; bilinmiyorsa gönderilmez.</summary>
+        [JsonPropertyName("device")] public string? Device { get; set; }
     }
 
     public enum Outcome { Sent, RateLimited, TooLarge, Rejected, Failed }
@@ -67,9 +69,10 @@ public static class ProblemReport
 
     /// <summary>
     /// İsteği kurar: metin ve iletişim kırpılır, boş iletişim ve günlük gönderilmez, en çok 3 fotoğraf (JPEG baytları).
+    /// <paramref name="device"/> cihaz bilgileridir (<see cref="DeviceInfo.Summary"/>); boşsa alan hiç gönderilmez.
     /// </summary>
     public static Payload Build(string install, string app, string language, string text, string? contact, string? log,
-                                IEnumerable<byte[]> jpegs)
+                                IEnumerable<byte[]> jpegs, string? device = null)
     {
         var payload = new Payload
         {
@@ -79,6 +82,7 @@ public static class ProblemReport
             Text = Clip(text.Trim(), MaxText),
             Contact = string.IsNullOrWhiteSpace(contact) ? null : Clip(contact.Trim(), MaxContact),
             Log = string.IsNullOrWhiteSpace(log) ? null : log.Length > MaxLog ? log[^MaxLog..] : log,
+            Device = DeviceInfo.ForPayload(device),
         };
         foreach (var jpeg in jpegs.Where(bytes => bytes.Length > 0).Take(MaxImages))
             payload.Images.Add(new Image { Mime = "image/jpeg", Data = Convert.ToBase64String(jpeg) });

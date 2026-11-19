@@ -300,7 +300,9 @@ struct AskNinoSheet: View {
         let language = UILanguage.code(for: model.settings.targetLanguage)
         return {
             AssistantChatSession.Context(install: await model.reportInstallID(), app: AppIdentity.version,
-                                         platform: "ios", language: language)
+                                         platform: "ios", language: language,
+                                         // Her mesajda yeniden okunur: TV ya da konsol sonradan bağlanmış olabilir.
+                                         device: await model.deviceInfoSummary)
         }
     }
 

@@ -960,10 +960,24 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     {
         if (services.BundledApp(TvBrand.Samsung) is not { } bundled) return;
         var remembered = !NeedsInstall(bundled);
-        if (!await services.IsSamsungDevModeOnAsync(target.Host))
+        // TV 8001'de geliştirici modunu ve Host PC IP'yi söyler (Android ve iPhone uygulaması da buna bakar). Host PC IP
+        // bu bilgisayarınki değilse TV 26101'de sdb el sıkışmasında bağlantıyı keser ve önceden yalnız genel "TV bu
+        // bilgisayarı kabul etmedi" görünüyordu (#343); bu durumda sdb hiç denenmez, iki adres de söylenir.
+        var check = await services.CheckSamsungAsync(target.Host);
+        var devModeOn = check.Info?.DeveloperMode != false && await services.IsSamsungDevModeOnAsync(target.Host);
+        if (!devModeOn)
         {
             // Geliştirici modu kapalıyken TV'ye sorulamaz; bu bilgisayarın kurduğu sürüme bakılır.
             TvApp = remembered ? new TvAppState(TvAppKind.UpToDate, InstalledAppVersion ?? bundled.Version) : new TvAppState(TvAppKind.DevModeOff);
+            return;
+        }
+        if (SamsungMessages.HostPcIpMismatch(check.Info?.DeveloperIp, check.ComputerAddress))
+        {
+            // Çalışan uygulama "kurulamadı" diye gösterilmez (Unreachable'daki gibi); güncelleme Host PC IP düzelince gelir.
+            TvApp = remembered
+                ? new TvAppState(TvAppKind.UpToDate, InstalledAppVersion ?? bundled.Version)
+                : new TvAppState(TvAppKind.Failed, Error: DevModeError.HostPcMismatch, HostPcIp: check.Info!.DeveloperIp,
+                    ComputerAddress: check.ComputerAddress);
             return;
         }
         // Güncel bilinen uygulamada denetim sessiz sürer; kart ancak kurulum başlarsa değişir.
@@ -1854,6 +1868,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
             DisconnectKind.LoginPasscodeIncorrect => text["The PS5 didn't accept the login passcode in Settings. Correct it, or turn off this account's login passcode on the PS5."],
             // Eskiden "Yeniden bağlanılıyor… (Unknown Session Request Error)" diye sonsuza kadar deneniyordu.
             DisconnectKind.RegistrationInvalid => text["The PS5 didn't accept this pairing. Pair the PS5 again with the second account in Settings."],
+            // PS5 kodu 0x80108b12: eskiden yalnız "PS5 bağlantıyı reddetti (kod …)" deniyordu.
+            DisconnectKind.RemotePlayDisabled => text["Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again."],
             // Eskiden ağ hatası, bulunamayan PS5 ve diğer nedenler hep yalnız "Yeniden bağlanılıyor…" idi.
             DisconnectKind.NotFound => text.Format("PS5 not found at %@. Make sure it is on and on the same network. Reconnecting…", detail ?? "?"),
             DisconnectKind.Network => text["Can't reach the PS5. Reconnecting…"],
@@ -1893,7 +1909,27 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     }
 
     /// <summary>Oynanan oyunun adı (bilinmiyorsa null): ana ekrandaki "Oynanan oyun: X · Değiştir".</summary>
-    public string? PlayedGame { get => playedGame; private set => Set(ref playedGame, value); }
+    public string? PlayedGame { get => playedGame; private set => Set(ref playedGame, value, [nameof(LiveGamePoolFirst)]); }
+
+    /// <summary>
+    /// Nino: "Cihaz bilgileri" satırları (Sistem sağlığı'ndaki kart; Sorun Bildir ve Nino'ya Sor bildirimlerine özeti
+    /// eklenir). Kişiyi tanıtan hiçbir şey içermez (bkz. <see cref="DeviceReport"/>). <paramref name="app"/> uygulamanın
+    /// sürümüdür (<see cref="AppVersion.Current"/>).
+    /// </summary>
+    public IReadOnlyList<DeviceInfo.Row> DeviceRows(string app) => DeviceInfo.Rows(app,
+        tv: DeviceReport.Tv(tv, tvApp.Version ?? InstalledAppVersion, tvClients > 0),
+        console: DeviceReport.Console(settings, consoleKind, xboxConsole),
+        status: DeviceReport.Status(isRunning, settings, consoleKind, sessionState, windowStatus, cardStatus.State,
+            HealthRecorder.Shared.Snapshot().LastDisconnect));
+
+    /// <summary>Sunucuya giden tek satırlık özet (<see cref="DeviceInfo.Summary"/>).</summary>
+    public string DeviceSummary(string app) => DeviceInfo.Summary(DeviceRows(app));
+
+    /// <summary>
+    /// Nino: tanınan oyun havuz öncelikli mi (şimdilik GTA 6). Ana ekrandaki salon sahnesinde TV'nin fonu buna göre seçilir
+    /// (Mac'teki liveGamePoolFirst). Oyun tanınmadıysa false: yalnız paketten ya da sunucudan tahmin edilen oyun saymaz.
+    /// </summary>
+    public bool LiveGamePoolFirst => gameSense.Current?.Name is not null && services.Translations?.IsPoolFirst(PoolFirstGame()) == true;
 
     /// <summary>"Hangi oyunu oynuyorsunuz?" kartı açık.</summary>
     public bool AskingGame { get => askingGame; private set => Set(ref askingGame, value); }
@@ -2645,12 +2681,15 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
 
     /// <summary>
     /// <paramref name="near"/> adresine (TV) ulaşan bu bilgisayar adresi; TV adresi bilinmiyorsa (null ya da geçersiz)
-    /// Wi-Fi/Ethernet adresi. VPN ve sanal bağdaştırıcılar ancak başka adres yoksa seçilir (<see cref="LocalNetwork.ChooseComputerAddress"/>).
+    /// Wi-Fi/Ethernet adresi. TV adresi biliniyorsa işletim sisteminin TV'ye çıkacağı bağdaştırıcının adresi önce gelir
+    /// (birden çok bağdaştırıcıda doğru kaynak adres, #343). VPN ve sanal bağdaştırıcılar ancak başka adres yoksa seçilir
+    /// (<see cref="LocalNetwork.ChooseComputerAddress(IReadOnlyList{LocalNetwork.AdapterAddress}, IPAddress?, IPAddress?)"/>).
     /// </summary>
     public static string? LocalAddress(string? near)
     {
         IPAddress? target = IPAddress.TryParse(near, out var parsed) && parsed.AddressFamily == AddressFamily.InterNetwork ? parsed : null;
-        return LocalNetwork.ChooseComputerAddress(LocalNetwork.Ipv4Adapters(), target);
+        var route = target is null ? null : LocalNetwork.RouteSourceAddress(target);
+        return LocalNetwork.ChooseComputerAddress(LocalNetwork.Ipv4Adapters(), target, route);
     }
 
     // --- Windows Güvenlik Duvarı ---
@@ -2776,7 +2815,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         // Nino: oyun penceresinden ya da yakalama kartından okunurken PS5'e bağlanılmaz; güvenlik duvarı önerisi çıkmaz.
         var ps5Trouble = !IsXbox && isRunning && settings.VideoSource == VideoSource.Ps5 && sessionState.Phase != SessionPhase.Streaming && sessionState.Reason?.Kind is not
             (DisconnectKind.ConsoleAsleep or DisconnectKind.InUse or DisconnectKind.Refused or DisconnectKind.LoginPasscode
-             or DisconnectKind.LoginPasscodeIncorrect or DisconnectKind.RegistrationInvalid or DisconnectKind.Rejected);
+             or DisconnectKind.LoginPasscodeIncorrect or DisconnectKind.RegistrationInvalid or DisconnectKind.Rejected
+             or DisconnectKind.RemotePlayDisabled);
         ps5TroubleSince = ps5Trouble ? ps5TroubleSince ?? now : null;
         // Altyazı TV'ye gitmiyorsa ya da TV yoksa TV beklenmez.
         tvWaitingSince = isRunning && ShowsOnTv && HasTv && tvClients == 0 ? tvWaitingSince ?? now : null;

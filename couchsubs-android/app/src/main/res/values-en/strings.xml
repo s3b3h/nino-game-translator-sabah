@@ -24,6 +24,7 @@
     <string name="phase_rejected_code">The PS5 rejected the connection (code %1$s). Another Remote Play app (PS Remote Play) may be open, or the PS5 may be in another session. Close PS Remote Play, restart the PS5, then try again.</string>
     <string name="phase_rejected">The PS5 didn\'t start the session. Another Remote Play app (PS Remote Play) may be open, or the PS5 may be in another session. Close PS Remote Play, restart the PS5, then try again.</string>
     <string name="phase_registration_invalid">The PS5 didn\'t accept this pairing. Pair the PS5 again with the second account in Settings.</string>
+    <string name="phase_remote_play_disabled">Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again.</string>
     <string name="phase_no_picture">No picture from the PS5. Is Remote Play turned off, or is the PS5 in rest mode? Check, then start translating again.</string>
     <string name="phase_not_found">PS5 not found on the network. Are the phone and PS5 on the same network?</string>
     <string name="phase_asleep">PS5 did not wake from rest mode.</string>
@@ -665,4 +666,23 @@
     <string name="assistant_invalid">I couldn\'t send that message. Change it a little and try again.</string>
     <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
     <string name="translation_started_notice">Nino: Subtitle Translation Started. Enjoy the Game!</string>
+    <!-- Nino: Cihaz bilgileri, Ayarlar'da GTA 6 kartı ve Güncelleme satırı -->
+    <string name="device_info_title">Device info</string>
+    <string name="device_info_note">Added to your problem reports so we can see what you use without asking. It contains no names, serial numbers or addresses.</string>
+    <string name="device_info_app">App version</string>
+    <string name="device_info_device">Device model</string>
+    <string name="device_info_system">Operating system</string>
+    <string name="device_info_tv">TV</string>
+    <string name="device_info_console">Console</string>
+    <string name="device_info_status">Current status</string>
+    <string name="device_info_copy">Copy device info</string>
+    <string name="nino_gta6_active">Nino · GTA 6 Active</string>
+    <string name="nino_gta6_note">In GTA 6 the Turkish subtitles come from Nino\'s shared translation: every line is translated once by a strong AI and everyone gets the same result. You do not choose anything or enter a key, and it is free.</string>
+    <string name="settings_engine_other_games">Other games</string>
+    <string name="update_row_title">Update</string>
+    <string name="update_row_newer">New version available: %1$s</string>
+    <string name="update_row_download">Download</string>
+    <string name="update_row_current">Up to date</string>
+    <string name="update_row_check">Check now</string>
+    <string name="update_row_checking">Checking…</string>
 </resources>

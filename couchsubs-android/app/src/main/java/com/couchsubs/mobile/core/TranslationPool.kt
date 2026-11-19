@@ -86,7 +86,12 @@ class TranslationPool(
     data class PoolFirstConfig(
         val games: List<String> = listOf("grand-theft-auto-vi", "gta-vi", "gta-6", "gta6"),
         val deadlineMs: Int = 1500,
+        /** Havuz önceliğin geçerli olduğu hedef diller (Claude yalnız bunlarda çevirir); "*" hepsi. Eski sunucu: Türkçe. */
+        val langs: List<String> = listOf("tr"),
     ) {
+        /** Hedef dil havuz öncelikli mi. */
+        fun allows(language: String): Boolean = langs.any { it == "*" || code(it) == code(language) }
+
         /** Oyun listede mi: kimlik ([NinoPool.gameId]) parçalardan birini içeriyorsa (sunucudaki kural). */
         fun contains(rawGame: String?): Boolean {
             val id = NinoPool.gameId(rawGame) ?: return false
@@ -213,6 +218,7 @@ class TranslationPool(
      */
     fun isPoolFirst(rawGame: String?): Boolean {
         if (!(config.enabled && endpoint != null)) return false
+        if (!poolFirst.allows(synchronized(lock) { language })) return false
         if (poolFirst.contains(rawGame)) return true
         // Uygulama oyunu bilmiyor ya da yanlış biliyor (ör. benzer satırlı başka oyunun paketi): sunucu satırlardan havuz
         // öncelikli oyunu tanıdıysa o geçerli. Sunucu her cevapta oyunu yeniden söyler.
@@ -246,7 +252,8 @@ class TranslationPool(
         reply.optJSONObject("poolFirst")?.let { first ->
             val current = PoolFirstConfig()
             val games = first.optJSONArray("games")?.let { list -> (0 until list.length()).mapNotNull { list.opt(it) as? String } }
-            poolFirst = PoolFirstConfig(games ?: current.games, first.optInt("deadlineMs", current.deadlineMs))
+            val langs = first.optJSONArray("langs")?.let { list -> (0 until list.length()).mapNotNull { list.opt(it) as? String } }
+            poolFirst = PoolFirstConfig(games ?: current.games, first.optInt("deadlineMs", current.deadlineMs), langs ?: current.langs)
         }
     }
 

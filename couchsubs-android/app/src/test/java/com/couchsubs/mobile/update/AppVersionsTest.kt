@@ -53,13 +53,25 @@ class AppVersionsTest {
     }
 
     @Test
-    fun checksAtMostEveryTwelveHours() {
+    fun checksAtMostEveryThreeHours() {
         val hour = 60 * 60 * 1000L
         val now = 100 * hour
+        assertEquals(3 * hour, AppVersions.CHECK_INTERVAL_MS)
         assertTrue(AppVersions.isCheckDue(now, 0L))
-        assertFalse(AppVersions.isCheckDue(now, now - 11 * hour))
-        assertTrue(AppVersions.isCheckDue(now, now - 12 * hour))
+        assertFalse(AppVersions.isCheckDue(now, now - 2 * hour))
+        assertFalse(AppVersions.isCheckDue(now, now - 3 * hour + 1))
+        assertTrue(AppVersions.isCheckDue(now, now - 3 * hour))
         assertTrue(AppVersions.isCheckDue(now, now + hour))
+    }
+
+    @Test
+    fun settingsRowKeepsShowingADismissedVersion() {
+        // Ana ekrandaki kart ✕ ile kapatıldı: kart gizlenir, Ayarlar'daki satır sürümü göstermeye devam eder.
+        assertNull(AppVersions.versionToShow("0.2.0", "0.1.9", "0.2.0"))
+        assertEquals("0.2.0", AppVersions.newerVersion("0.2.0", "0.1.9"))
+        assertNull(AppVersions.newerVersion("0.2.0", "0.2.0"))
+        assertNull(AppVersions.newerVersion("0.1.8", "0.1.9"))
+        assertNull(AppVersions.newerVersion(null, "0.1.9"))
     }
 
     @Test

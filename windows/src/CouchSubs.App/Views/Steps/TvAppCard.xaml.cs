@@ -63,7 +63,9 @@ public partial class TvAppCard : UserControl
         var devModeOff = state.Kind == TvAppKind.DevModeOff;
         Visibility = Visible(state.Kind != TvAppKind.Unknown);
         LgSteps.Visibility = Visible(devModeOff && brand == TvBrand.Lg);
-        SamsungSteps.Visibility = Visible(devModeOff && brand == TvBrand.Samsung);
+        // TV bu bilgisayarı kabul etmediyse de adımlar (Host PC IP satırı bu bilgisayarın adresiyle) görünür (#343).
+        var hostPcProblem = state.Kind == TvAppKind.Failed && state.Error is DevModeError.Unreachable or DevModeError.HostPcMismatch;
+        SamsungSteps.Visibility = Visible((devModeOff || hostPcProblem) && brand == TvBrand.Samsung);
         AndroidSteps.Visibility = Visible(devModeOff && brand == TvBrand.AndroidTv);
         // Parola alanı LG'nin geliştirici modu adımlarında da görünür: CouchSubs geliştirici modunu göremese de TV'de Key
         // Server ve parola açıksa kullanıcı takılmaz (#94). Anahtar ancak "TV'ye kur"a basılınca istenir.
@@ -71,7 +73,7 @@ public partial class TvAppCard : UserControl
         OpenAgain.Visibility = Visible(state.Kind == TvAppKind.SignIn);
         if (state.Kind != TvAppKind.SignIn) CopyLink.Content = text["Copy the link"];
         Retry.Visibility = Visible(state.Kind == TvAppKind.Failed);
-        SamsungHostStep.Text = text["3. Turn Developer mode On, type this computer's address as Host PC IP: %@ and press OK."]
+        SamsungHostStep.Text = text["3. Turn Developer mode On and type this computer's address as Host PC IP: %@. Type each part as it is, without zeros in front (1, not 001), then choose OK. If the address cannot be changed, press the 123 button first."]
             .Replace("%@", controller?.ComputerAddress ?? "?");
 
         Status.Text = state.Kind switch
@@ -101,8 +103,9 @@ public partial class TvAppCard : UserControl
             _ => "",
         };
         Detail.Visibility = Visible(Detail.Text.Length > 0);
-        Problem.Text = TvAppMessages.Problem(state, brand, text, Services.LiveServices.TvInstallLogPath);
-        if (devModeOff) devModeWatch.Start();
+        Problem.Text = TvAppMessages.Problem(state, brand, text, Services.LiveServices.TvInstallLogPath, controller?.ComputerAddress);
+        // Host PC IP düzeltilip TV yeniden başlayınca da kendiliğinden devam eder.
+        if (devModeOff || (brand == TvBrand.Samsung && state.Error == DevModeError.HostPcMismatch)) devModeWatch.Start();
         else devModeWatch.Stop();
     }
 
@@ -132,5 +135,5 @@ public partial class TvAppCard : UserControl
     }
 
     private void OnGuide(object sender, RoutedEventArgs e) =>
-        Process.Start(new ProcessStartInfo("https://github.com/yorulmazsinan/couchsubs/blob/main/docs/tv-kurulum.md#android-tv--google-tv") { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo("https://github.com/yunusdemirbag/nino-game-translator/blob/main/docs/KURULUM-ANDROID-TV.md") { UseShellExecute = true });
 }

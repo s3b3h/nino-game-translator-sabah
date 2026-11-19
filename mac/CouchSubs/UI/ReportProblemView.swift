@@ -197,6 +197,7 @@ struct ReportProblemCard: View {
     private func send() {
         let language = model.settings.targetLanguage
         let header = "Nino \(AppIdentity.version), macOS \(ProcessInfo.processInfo.operatingSystemVersionString)"
+        let device = model.deviceSummary
         Task {
             SubtitleLog.flush()
             RemotePlayLog.flush()
@@ -204,7 +205,7 @@ struct ReportProblemCard: View {
             let logs = SubtitleLog.defaultFile.deletingLastPathComponent()
             await form.submit(install: install, app: AppIdentity.version, platform: "mac", language: language,
                               logFiles: ["remoteplay.log", "altyazi.log", "tvinstall.log"].map { logs.appendingPathComponent($0) },
-                              logHeader: header)
+                              logHeader: header, device: device)
         }
     }
 

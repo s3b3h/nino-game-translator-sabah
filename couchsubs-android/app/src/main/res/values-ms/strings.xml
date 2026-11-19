@@ -23,6 +23,7 @@
     <string name="phase_rejected_code">PS5 menolak sambungan (kod %1$s). Apl Remote Play lain (PS Remote Play) mungkin terbuka, atau PS5 mungkin dalam sesi lain. Tutup PS Remote Play, mulakan semula PS5, kemudian cuba lagi.</string>
     <string name="phase_rejected">PS5 tidak memulakan sesi. Apl Remote Play lain (PS Remote Play) mungkin terbuka, atau PS5 mungkin dalam sesi lain. Tutup PS Remote Play, mulakan semula PS5, kemudian cuba lagi.</string>
     <string name="phase_registration_invalid">PS5 tidak menerima perpasangan ini. Pasangkan PS5 semula dengan akaun kedua dalam Tetapan.</string>
+    <string name="phase_remote_play_disabled">Remote Play dimatikan pada PS5. Pada PS5, buka Settings › System › Remote Play dan hidupkan Enable Remote Play, kemudian mulakan semula.</string>
     <string name="phase_no_picture">Tiada gambar daripada PS5. Adakah Remote Play dimatikan, atau adakah PS5 dalam mod rehat? Semak, kemudian mula menterjemah semula.</string>
     <string name="phase_not_found">PS5 tidak ditemui pada rangkaian. Adakah telefon dan PS5 pada rangkaian yang sama?</string>
     <string name="phase_asleep">PS5 tidak bangun daripada mod rehat.</string>
@@ -653,4 +654,23 @@
     <string name="assistant_invalid">Saya tidak dapat menghantar mesej itu. Ubah sedikit dan cuba lagi.</string>
     <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
     <string name="translation_started_notice">Nino: Terjemahan Sari Kata Bermula. Selamat Bermain!</string>
+    <!-- Nino: Cihaz bilgileri, Ayarlar'da GTA 6 kartı ve Güncelleme satırı -->
+    <string name="device_info_title">Maklumat peranti</string>
+    <string name="device_info_note">Ditambah pada laporan masalah anda supaya kami tahu apa yang anda gunakan tanpa perlu bertanya. Ia tidak mengandungi nama, nombor siri atau alamat.</string>
+    <string name="device_info_app">Versi aplikasi</string>
+    <string name="device_info_device">Model peranti</string>
+    <string name="device_info_system">Sistem pengendalian</string>
+    <string name="device_info_tv">TV</string>
+    <string name="device_info_console">Konsol</string>
+    <string name="device_info_status">Status semasa</string>
+    <string name="device_info_copy">Salin maklumat peranti</string>
+    <string name="nino_gta6_active">Nino · GTA 6 Aktif</string>
+    <string name="nino_gta6_note">Dalam GTA 6, sari kata bahasa Turki datang daripada terjemahan kongsi Nino: setiap baris diterjemah sekali oleh AI yang berkuasa dan semua orang mendapat hasil yang sama. Anda tidak perlu memilih apa-apa atau memasukkan kunci, dan ia percuma.</string>
+    <string name="settings_engine_other_games">Permainan lain</string>
+    <string name="update_row_title">Kemas kini</string>
+    <string name="update_row_newer">Versi baharu tersedia: %1$s</string>
+    <string name="update_row_download">Muat turun</string>
+    <string name="update_row_current">Terkini</string>
+    <string name="update_row_check">Semak sekarang</string>
+    <string name="update_row_checking">Menyemak…</string>
 </resources>

@@ -505,6 +505,9 @@ struct LGInstallSection: View {
     @State private var passphrase = ""
     @State private var phase = TVInstallPhase.idle
     @State private var started = false
+    /// Düğmeye basıldı ama kurulum başlayamadı: neden düğmenin hemen üstünde yazar. Eskiden düğme sessizce kapalı
+    /// duruyor ya da uyarı sayfanın yukarısında, ekranın dışında çıkıyordu ("düğme tepki vermiyor", panelde 5 kişi).
+    @State private var hint: String?
 
     private var hasKey: Bool {
         let target = host.trimmingCharacters(in: .whitespaces)
@@ -542,14 +545,16 @@ struct LGInstallSection: View {
         InstallSteps(title: TVText.lgStepsTitle, steps: [TVText.lgStep1, TVText.lgStep2, TVText.lgStep3, TVText.lgStep4])
         Text(verbatim: TVText.lgSessionNote).font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary).fixedSize(horizontal: false, vertical: true)
         InstallResult(phase: phase)
+        if let hint, !phase.isWorking { MobileNote(text: hint) }
         // Kurulum bitince ana düğme ana ekrana götürür; kurulumda kullanıcı 3. adımda kalıyordu (#113).
         Group {
             if phase.isDone {
                 Button(TVText.goHome, action: onDone).buttonStyle(.mobilePrimary)
             } else {
+                // Düğme yalnız kurulum sürerken kapalıdır; eksik bir şey varsa basınca ne olduğu yazılır.
                 Button(phase == .idle || phase.isWorking ? TVText.button : TVText.retry) { install() }
                     .buttonStyle(.mobilePrimary)
-                    .disabled(phase.isWorking || host.trimmingCharacters(in: .whitespaces).isEmpty || (passphrase.isEmpty && !hasKey))
+                    .disabled(phase.isWorking)
             }
         }
             .task { await search() }
@@ -583,13 +588,28 @@ struct LGInstallSection: View {
     }
 
     private func install() {
+        hint = nil
+        // Arapça ya da Farsça klavyeyle yazılan rakamlar (١٩٢…) adres sayılmıyordu; Latin rakama çevrilir.
+        let address = String(host.map { ch in ch.isASCII ? ch : ch.wholeNumberValue.map { Character(String($0)) } ?? ch })
+        guard !address.trimmingCharacters(in: .whitespaces).isEmpty else {
+            hint = TVText.lgNeedTv
+            InstallLog.shared.write("LG kurulumu başlamadı: TV seçilmedi.")
+            return
+        }
         // Elle yazılan adres temizlenir ("192.168.1.5:3000", "http://…", virgüllü yazım); adres değilse söylenir.
-        guard let target = ManualAddress.normalize(host) else {
+        guard let target = ManualAddress.normalize(address) else {
             addressError = true
+            hint = String(localized: "This is not a valid IP address. Type it like 192.168.1.20, without http:// or a port number.")
+            InstallLog.shared.write("LG kurulumu başlamadı: adres geçersiz (\(host)).")
             return
         }
         addressError = false
         let typed = passphrase.trimmingCharacters(in: .whitespaces)
+        guard !typed.isEmpty || LGKeys.load(target) != nil else {
+            hint = TVText.lgNeedPassphrase
+            InstallLog.shared.write("LG kurulumu başlamadı: parola yazılmadı ve kayıtlı anahtar yok.")
+            return
+        }
         phase = .working(.connecting)
         working = true
         ScreenAwake.set(true, for: .tvInstall)

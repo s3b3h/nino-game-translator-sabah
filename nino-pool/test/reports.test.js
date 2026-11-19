@@ -56,3 +56,16 @@ test("okuma sayfası veri içermez", async () => {
   assert.equal(page.status, 200);
   assert.match(await page.text(), /Nino Bildirimleri/);
 });
+
+test("cihaz bilgileri bildirimle saklanır; eski sürüm göndermezse boş kalır", async () => {
+  const { call } = setup();
+  const device = "app: 3.4.0 (19) | device: Mac16,1 | system: macOS 27.0 | tv: Samsung QE55Q70C | console: PS5";
+  await call("/v1/reports", { method: "POST", body: report({ device: `${device}\n` + "x".repeat(2000) }) });
+  await call("/v1/reports", { method: "POST", body: report() });
+  await call("/v1/reports", { method: "POST", body: report({ device: 42 }) });
+  const list = await (await call("/v1/reports", { token: TOKEN })).json();
+  const devices = list.reports.map((r) => r.device).sort((a, b) => b.length - a.length);
+  assert.equal(devices[0].length, 600);
+  assert.ok(devices[0].startsWith(`${device} xxx`));
+  assert.deepEqual(devices.slice(1), ["", ""]);
+});

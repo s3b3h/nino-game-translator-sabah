@@ -23,6 +23,7 @@
     <string name="phase_rejected_code">Tinanggihan ng PS5 ang koneksyon (code %1$s). Baka may bukas na ibang Remote Play app (PS Remote Play), o baka nasa ibang session ang PS5. Isara ang PS Remote Play, i-restart ang PS5, saka subukan ulit.</string>
     <string name="phase_rejected">Hindi sinimulan ng PS5 ang session. Baka may bukas na ibang Remote Play app (PS Remote Play), o baka nasa ibang session ang PS5. Isara ang PS Remote Play, i-restart ang PS5, saka subukan ulit.</string>
     <string name="phase_registration_invalid">Hindi tinanggap ng PS5 ang pagpapares na ito. Ipares ulit ang PS5 gamit ang pangalawang account sa Mga Setting.</string>
+    <string name="phase_remote_play_disabled">Naka-off ang Remote Play sa PS5. Sa PS5, buksan ang Settings › System › Remote Play at i-on ang Enable Remote Play, saka magsimulang muli.</string>
     <string name="phase_no_picture">Walang larawan mula sa PS5. Naka-off ba ang Remote Play, o nasa rest mode ba ang PS5? Suriin, saka magsimulang magsalin ulit.</string>
     <string name="phase_not_found">Walang nakitang PS5 sa network. Nasa parehong network ba ang phone at ang PS5?</string>
     <string name="phase_asleep">Hindi nagising ang PS5 mula sa rest mode.</string>
@@ -653,4 +654,23 @@
     <string name="assistant_invalid">Hindi ko maipadala ang mensaheng iyan. Baguhin nang kaunti at subukan ulit.</string>
     <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
     <string name="translation_started_notice">Nino: Nagsimula na ang Pagsasalin ng Subtitle. Mag-enjoy sa Laro!</string>
+    <!-- Nino: Cihaz bilgileri, Ayarlar'da GTA 6 kartı ve Güncelleme satırı -->
+    <string name="device_info_title">Impormasyon ng device</string>
+    <string name="device_info_note">Idinadagdag sa mga ulat mo ng problema para makita namin ang gamit mo nang hindi na nagtatanong. Wala itong pangalan, serial number, o address.</string>
+    <string name="device_info_app">Bersyon ng app</string>
+    <string name="device_info_device">Modelo ng device</string>
+    <string name="device_info_system">Operating system</string>
+    <string name="device_info_tv">TV</string>
+    <string name="device_info_console">Console</string>
+    <string name="device_info_status">Kasalukuyang status</string>
+    <string name="device_info_copy">Kopyahin ang impormasyon ng device</string>
+    <string name="nino_gta6_active">Nino · GTA 6 Aktibo</string>
+    <string name="nino_gta6_note">Sa GTA 6, ang mga Turkish na subtitle ay galing sa shared na pagsasalin ng Nino: isang beses lang isinasalin ang bawat linya ng malakas na AI at pareho ang resultang nakukuha ng lahat. Wala kang kailangang piliin o ilagay na key, at libre ito.</string>
+    <string name="settings_engine_other_games">Iba pang laro</string>
+    <string name="update_row_title">Update</string>
+    <string name="update_row_newer">May bagong bersyon: %1$s</string>
+    <string name="update_row_download">I-download</string>
+    <string name="update_row_current">Napapanahon</string>
+    <string name="update_row_check">Suriin ngayon</string>
+    <string name="update_row_checking">Sinusuri…</string>
 </resources>

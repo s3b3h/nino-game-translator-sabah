@@ -44,6 +44,20 @@ class Reading(lines: List<TextLine>) {
         /** [joiningRows]: aynı satırdaki iki parça arasındaki en büyük boşluk (alan genişliğine oranla). */
         const val ROW_GAP = 0.05
 
+        /**
+         * Nino: dev yazı altyazı değildir. Oyunun içindeki tabela, reklam panosu, dükkân adı ya da ekranı kaplayan başlık
+         * altyazı sanılıp çevriliyor, TV'de de yazının kapladığı yer kadar kocaman siyah bir kutu çıkıyordu. Altyazı satırı
+         * ekran yüksekliğinin yaklaşık %2,5-5'i kadardır (en büyük erişilebilirlik ayarında %6); bundan belirgin biçimde
+         * büyük satır atılır ([withoutOversizedLines]; Mac: Reading.maxSubtitleLineHeight).
+         */
+        const val MAX_SUBTITLE_LINE_HEIGHT = 0.075
+        /**
+         * Altyazı bloğunun karede kaplayabileceği en çok yükseklik ve satır sayısı; aşan blok altyazı değildir (afiş,
+         * not, belge, üst üste tabelalar; [isOversizedBlock]).
+         */
+        const val MAX_SUBTITLE_BLOCK_HEIGHT = 0.26
+        const val MAX_SUBTITLE_LINES = 5
+
         fun fromText(text: String) = Reading(text.replace("\r\n", "\n").split('\n').map { TextLine(it.trim()) })
 
         /** Aynı satırdaki iki sözcük arasındaki boşluk ayrı yazılara mı işaret ediyor (menü ile gösterge gibi). */
@@ -65,6 +79,26 @@ class Reading(lines: List<TextLine>) {
 
     /** Oyunun düğme ipuçları ("R2 Swing", "△ Pick up") çıkarılmış hali; bunlar altyazı değildir. */
     fun withoutButtonPrompts() = Reading(lines.filter { !ButtonPrompts.isPrompt(it.text) })
+
+    /**
+     * Dev satırlar (tabela, reklam panosu) çıkarılmış hali. Ölçü karenin tamamına göredir ([area]: okunan alanın karedeki
+     * yeri), dar seçilmiş alanda normal satır büyük görünmesin. Yeri bilinmeyen satıra dokunulmaz
+     * (Mac: Reading.withoutOversizedLines, Windows: Reading.WithoutOversizedLines).
+     */
+    fun withoutOversizedLines(area: TextBox, limit: Double = MAX_SUBTITLE_LINE_HEIGHT): Reading {
+        val scale = area.bottom - area.top
+        return Reading(lines.filter { line ->
+            val box = line.box ?: return@filter true
+            (box.bottom - box.top) * scale <= limit
+        })
+    }
+
+    /** Blok bir altyazı için fazla mı yüksek ya da fazla mı satırlı (bkz. [MAX_SUBTITLE_BLOCK_HEIGHT]). */
+    fun isOversizedBlock(area: TextBox): Boolean {
+        if (lines.size > MAX_SUBTITLE_LINES) return true
+        val box = box ?: return false
+        return (box.bottom - box.top) * (area.bottom - area.top) > MAX_SUBTITLE_BLOCK_HEIGHT
+    }
 
     /** Yazı tanımanın uydurduğu sözcük çöpleri ("ou$3e") ayıklanmış hali. */
     fun withoutOcrNoise() = Reading(lines.map { it.copy(text = OcrNoise.clean(it.text)) })

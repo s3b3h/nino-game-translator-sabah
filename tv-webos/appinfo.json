@@ -1,6 +1,6 @@
 {
   "id": "com.couchsubs.tv",
-  "version": "0.9.31",
+  "version": "3.4.0",
   "vendor": "Nino (Yunus Demirbağ)",
   "type": "web",
   "main": "index.html",

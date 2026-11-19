@@ -6,6 +6,37 @@
 
   var KEYS = ['0', '1', '2', '3', '4', 'ColorF0Red', 'ColorF1Green', 'ColorF3Blue'];
 
+  // Nino: kurulu TV'lerin marka ve modeli panelde görünsün diye günde bir kez anonim bildirilir: rastgele bir kimlik,
+  // marka, model ve uygulama sürümü. Ad, adres ya da hesap gönderilmez. İnternet yoksa sessizce geçilir.
+  function reportTv(brand, model) {
+    try {
+      var store = window.localStorage;
+      if (!store || !model) return;
+      var now = new Date().getTime();
+      if (now - parseInt(store.getItem('ninoTvPing') || '0', 10) < 20 * 3600 * 1000) return;
+      var id = store.getItem('ninoTvId');
+      if (!id) {
+        id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          var r = Math.floor(Math.random() * 16);
+          return (c === 'x' ? r : (r & 3) | 8).toString(16);
+        });
+        store.setItem('ninoTvId', id);
+      }
+      store.setItem('ninoTvPing', String(now));
+      var label = document.getElementById('app-version');
+      var version = (((label && label.textContent) || '').match(/\d+(\.\d+)+/) || [''])[0];
+      new Image().src = 'https://nino-pool.y-demirbag2506.workers.dev/v1/tv?install=' + id + '&brand=' + brand +
+        '&model=' + encodeURIComponent(String(model).slice(0, 60)) + '&app=' + encodeURIComponent(version);
+    } catch (e) { /* bildirim isteğe bağlı */ }
+  }
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      try {
+        tizen.systeminfo.getPropertyValue('BUILD', function (build) { reportTv('samsung', build && build.model); }, function () {});
+      } catch (e) { /* model okunamadı */ }
+    }, 4000);
+  });
+
   function hdmiSources(callback) {
     try {
       tizen.systeminfo.getPropertyValue('VIDEOSOURCE', function (info) {

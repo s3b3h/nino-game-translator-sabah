@@ -174,6 +174,8 @@ internal sealed class FakeServices : IAppServices
     public IDubbingModel? Dubbing { get; set; }
     public IDubbingModel? FastDubbing { get; set; }
     public GamePackLibrary? GamePacks { get; set; }
+    /// <summary>Nino çeviri havuzu; verilmezse null (hiçbir şey sorulmaz).</summary>
+    public TranslationPool? Translations { get; set; }
     public FakeTranslation Translation { get; } = new();
     public IFirewall? Firewall { get; set; }
     ITranslationModel IAppServices.Translation => Translation;
@@ -359,6 +361,9 @@ internal sealed class FakeServices : IAppServices
         TvCalls++;
         return Task.FromResult(SamsungDevMode);
     }
+    /// <summary>Samsung TV'nin 8001 yanıtı ve TV'ye giden yolun bu bilgisayardaki adresi.</summary>
+    public SamsungPreflight SamsungCheck { get; set; } = new(null, null);
+    public Task<SamsungPreflight> CheckSamsungAsync(string host) => Task.FromResult(SamsungCheck);
     /// <summary>Samsung TV'de kurulu sürüm (sahte TV'nin vd_applist'i); null: uygulama yok.</summary>
     public string? SamsungOnTv { get; set; }
     public Task<(string Version, bool Installed)> InstallSamsungAppAsync(string host, BundledTvApp app, Action<TvInstallEvent> onEvent)
@@ -401,6 +406,48 @@ public class AppControllerTests
 
     [Fact]
     public void FreshInstallStartsAtWelcome() => Assert.Equal(OnboardingStep.Welcome, Make().Step);
+
+    /// <summary>Ağa hiç çıkmayan HTTP katmanı: her isteğe 404.</summary>
+    private sealed class NoNetwork : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.NotFound));
+    }
+
+    // Nino: ana ekrandaki TV'nin fonu (GTA 6'da gün batımı) tanınan oyun havuz öncelikliyse açılır.
+    [Fact]
+    public void LiveGamePoolFirstFollowsTheRecognisedGame()
+    {
+        var directory = Directory.CreateTempSubdirectory("couchsubs-pool-");
+        using var handler = new NoNetwork();
+        var pool = new TranslationPool(directory.FullName, new Uri("https://pool.invalid/"), "0.0.0", "windows", "tr", handler: handler);
+        try
+        {
+            var controller = Make(new FakeServices { Translations = pool });
+            var changed = new List<string?>();
+            controller.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+            // Oyun tanınmadı: sade fon.
+            Assert.False(controller.LiveGamePoolFirst);
+
+            controller.ChooseGame("Grand Theft Auto VI");
+            Assert.True(controller.LiveGamePoolFirst);
+            Assert.Contains(nameof(AppController.LiveGamePoolFirst), changed);
+
+            controller.ChooseGame("Red Dead Redemption 2");
+            Assert.False(controller.LiveGamePoolFirst);
+
+            // Havuz yoksa (bu derlemede sunucu yok) hiçbir oyunda açılmaz.
+            var without = Make();
+            without.ChooseGame("Grand Theft Auto VI");
+            Assert.False(without.LiveGamePoolFirst);
+        }
+        finally
+        {
+            pool.Dispose();
+            directory.Delete(recursive: true);
+        }
+    }
 
     [Fact]
     public async Task ReloadGamePacksRefreshesInstalledPacksAfterWritingAUserPack()
@@ -1740,6 +1787,61 @@ public class TvAppInstallTests
         await controller.RefreshTvAppAsync();
         Assert.Equal(DevModeError.Unreachable, controller.TvApp.Error);
         Assert.Equal("sdb: closed", controller.TvApp.Reason);
+    }
+
+    // #343: TV'deki Host PC IP başka bir adres; sdb denenmez, iki adres de söylenir.
+    [Fact]
+    public async Task SamsungWithAnotherHostPcIpSaysWhichAddressToTypeWithoutTryingSdb()
+    {
+        var services = new FakeServices
+        {
+            SamsungDevMode = true,
+            SamsungCheck = new SamsungPreflight(new SamsungDeveloperInfo(true, "192.168.1.50"), "192.168.1.34"),
+        };
+        services.Bundled[TvBrand.Samsung] = SamsungApp;
+        var controller = Make(services);
+        await controller.PairAsync(Samsung);
+        Assert.Equal(new TvAppState(TvAppKind.Failed, Error: DevModeError.HostPcMismatch, HostPcIp: "192.168.1.50",
+            ComputerAddress: "192.168.1.34"), controller.TvApp);
+        Assert.Empty(services.BrandInstalls);
+
+        var tr = TvAppMessages.Problem(controller.TvApp, TvBrand.Samsung, Localizer.ForLanguage("tr"), "x.log");
+        Assert.Contains("192.168.1.50", tr);
+        Assert.Contains("192.168.1.34", tr);
+        Assert.Contains("2 sn", tr);
+        var en = TvAppMessages.Problem(controller.TvApp, TvBrand.Samsung, Localizer.ForLanguage("en"), "x.log");
+        Assert.StartsWith("The TV's Host PC IP is 192.168.1.50, but this computer's address is 192.168.1.34.", en);
+
+        // Host PC IP düzeltilince kurulur.
+        services.SamsungCheck = new SamsungPreflight(new SamsungDeveloperInfo(true, "192.168.1.34"), "192.168.1.34");
+        await controller.RefreshTvAppAsync();
+        Assert.Equal(new TvAppState(TvAppKind.UpToDate, "0.7.0"), controller.TvApp);
+    }
+
+    [Fact]
+    public async Task SamsungSayingDeveloperModeIsOffShowsTheSteps()
+    {
+        // 26101 açık görünse de TV geliştirici modunun kapalı olduğunu söylüyorsa adımlar gösterilir.
+        var services = new FakeServices
+        {
+            SamsungDevMode = true,
+            SamsungCheck = new SamsungPreflight(new SamsungDeveloperInfo(false, null), "192.168.1.34"),
+        };
+        services.Bundled[TvBrand.Samsung] = SamsungApp;
+        var controller = Make(services);
+        await controller.PairAsync(Samsung);
+        Assert.Equal(TvAppKind.DevModeOff, controller.TvApp.Kind);
+        Assert.Empty(services.BrandInstalls);
+    }
+
+    [Fact]
+    public void SamsungUnreachableSaysThisComputersAddress()
+    {
+        var state = new TvAppState(TvAppKind.Failed, Error: DevModeError.Unreachable);
+        var text = TvAppMessages.Problem(state, TvBrand.Samsung, Localizer.ForLanguage("tr"), "x.log", "192.168.1.34");
+        Assert.Contains("192.168.1.34", text);
+        Assert.NotEqual(TvAppMessages.ComputerAddressLine, Localizer.ForLanguage("tr")[TvAppMessages.ComputerAddressLine]);
+        Assert.DoesNotContain("192.168.1.34", TvAppMessages.Problem(state, TvBrand.Lg, Localizer.ForLanguage("tr"), "x.log", "192.168.1.34"));
     }
 
     [Fact]

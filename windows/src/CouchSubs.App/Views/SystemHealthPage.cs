@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -27,6 +28,12 @@ public sealed class SystemHealthPage : UserControl
     private readonly System.Windows.Controls.TextBox details = new() { IsReadOnly = true, FontFamily = new FontFamily("Consolas"), FontSize = 12, Height = 260, TextWrapping = TextWrapping.NoWrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto };
     private readonly TextBlock exportError = new() { TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(2) };
+    /// <summary>Nino: "Cihaz bilgileri" kartının satırları; yalnız değerler değişince yeniden kurulur.</summary>
+    private readonly StackPanel deviceRows = new();
+    private readonly Button copyDevice = new() { HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 12, 0, 0) };
+    private string shownDevice = "";
+    private DateTime? deviceCopiedAt;
+    private static readonly string ThisVersion = AppVersion.Current(Assembly.GetEntryAssembly() ?? typeof(SystemHealthPage).Assembly);
 
     private static string T(string key) => Localizer.Current[key];
 
@@ -68,6 +75,32 @@ public sealed class SystemHealthPage : UserControl
         expander.Expanded += (_, _) => copy.Content = T("Copied") == (string)copy.Content ? T("Copy details") : copy.Content;
         var detailsCard = new Card { Content = expander };
 
+        // Nino: Cihaz bilgileri. Sorun Bildir ve Nino'ya Sor bildirimlerine eklenen özetin aynısı; kullanıcı ne gittiğini görür.
+        var deviceHint = new TextBlock
+        {
+            Text = T("Added to your problem reports so we can see what you use without asking. It contains no names, serial numbers or addresses."),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 12),
+        };
+        deviceHint.SetResourceReference(TextBlock.ForegroundProperty, "textSecondaryBrush");
+        copyDevice.Content = T("Copy device info");
+        copyDevice.Click += (_, _) =>
+        {
+            try
+            {
+                Clipboard.SetText(controller.DeviceSummary(ThisVersion));
+                copyDevice.Content = T("Copied");
+                deviceCopiedAt = DateTime.UtcNow;
+            }
+            catch (System.Runtime.InteropServices.COMException) { }
+        };
+        var deviceCard = new Card
+        {
+            Title = T("Device info"),
+            Content = new StackPanel { Children = { deviceHint, deviceRows, copyDevice } },
+            Margin = new Thickness(0, 16, 0, 0),
+        };
+
         Content = new StackPanel
         {
             Children =
@@ -76,6 +109,7 @@ public sealed class SystemHealthPage : UserControl
                 // TV uygulamasının kurulum adımları ve hatası ("Tekrar dene"); eskiden Hakkında'daydı (Mac ile aynı).
                 new Steps.TvAppCard { Margin = new Thickness(0, 0, 0, 16) },
                 detailsCard,
+                deviceCard,
             },
         };
         timer.Tick += (_, _) => Refresh();
@@ -125,6 +159,46 @@ public sealed class SystemHealthPage : UserControl
             T("The TV app is not connected. Open the Nino app on the TV and check that the TV is on the same network as this Mac."));
 
         if (!details.IsKeyboardFocusWithin) details.Text = Details(s, network);
+        RefreshDevice();
+    }
+
+    /// <summary>Satırın sabit adının ("app", "tv" …) ekrandaki karşılığı.</summary>
+    private static string DeviceLabel(string id) => T(id switch
+    {
+        "app" => "App version",
+        "device" => "Device model",
+        "system" => "Operating system",
+        "tv" => "TV",
+        "console" => "Console",
+        _ => "Current status",
+    });
+
+    /// <summary>Cihaz bilgileri: her değer bir satır (solda adı, sağda değeri). Değerler değişmediyse dokunulmaz.</summary>
+    private void RefreshDevice()
+    {
+        // "Kopyalandı" yazısı birkaç saniye sonra düğmenin adına döner.
+        if (deviceCopiedAt is { } at && DateTime.UtcNow - at > TimeSpan.FromSeconds(3))
+        {
+            deviceCopiedAt = null;
+            copyDevice.Content = T("Copy device info");
+        }
+        var list = controller.DeviceRows(ThisVersion);
+        var summary = DeviceInfo.Summary(list);
+        if (summary == shownDevice && deviceRows.Children.Count > 0) return;
+        shownDevice = summary;
+        deviceRows.Children.Clear();
+        foreach (var row in list)
+        {
+            if (deviceRows.Children.Count > 0) deviceRows.Children.Add(new Separator { Margin = new Thickness(0, 8, 0, 8) });
+            var line = new DockPanel();
+            var label = new TextBlock { Text = DeviceLabel(row.Id), FontWeight = FontWeights.SemiBold, Width = 190, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 12, 0) };
+            DockPanel.SetDock(label, Dock.Left);
+            line.Children.Add(label);
+            var value = new TextBlock { Text = row.Value, TextWrapping = TextWrapping.Wrap };
+            value.SetResourceReference(TextBlock.ForegroundProperty, "textSecondaryBrush");
+            line.Children.Add(value);
+            deviceRows.Children.Add(line);
+        }
     }
 
     /// <summary>Satır: nokta, ad, durum; sarı ya da kırmızıysa altında ne yapılacağı. (Mac'e özgü "Mac" sözcüğü PC olur.)</summary>
@@ -175,6 +249,7 @@ public sealed class SystemHealthPage : UserControl
         "ConsoleAsleep" => T("The PS5 is off or asleep. Turn it on, or turn on “Stay connected to the internet” in its rest mode settings."),
         "InUse" => T("Remote Play is being used on another device. Close it there."),
         "LoginPasscode" => T("The second account has a PS5 login passcode. Remove it on the PS5."),
+        "RemotePlayDisabled" => T("Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again."),
         "RegistrationInvalid" or "Refused" => T("The PS5 did not accept this Mac. Pair the PS5 again from Settings › About Nino › Set up again."),
         "NotFound" => T("The PS5 did not answer on the network. Check that it is on (or in rest mode) and on the same network as this Mac."),
         _ => T("The connection to the PS5 keeps dropping. Connect both the PS5 and this Mac to the modem with a cable."),

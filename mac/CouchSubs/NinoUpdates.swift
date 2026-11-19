@@ -25,6 +25,16 @@ enum AppUpdater {
 
     /// Çeviri durunca çağrılır: bekleyen güncelleme varsa şimdi kurulur.
     static func installIfReady() { delegate.installIfIdle() }
+
+    /// "Yeniden başlat"tan önce çağrılır (AppModel verir): çeviri sürüyorsa, yeniden açılınca kendiliğinden sürsün diye
+    /// işaret bırakır ve oturumu düzgün kapatır.
+    static var prepareForRestart: () -> Void = {}
+
+    /// Kullanıcı "Yeniden başlat"a bastı: inmiş güncelleme çeviri sürse de hemen kurulur ve Nino yeniden açılır.
+    static func installNow() {
+        prepareForRestart()
+        delegate.installNow()
+    }
 }
 
 /// İnmiş güncellemeyi uygulama kapanmayı beklemeden kurar (Sparkle "kapanınca kur" yerine hemen kur ve yeniden aç).
@@ -34,8 +44,21 @@ final class AutoInstallDelegate: NSObject, SPUUpdaterDelegate {
     func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
                  immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
         pending = immediateInstallHandler
-        DispatchQueue.main.async { MainActor.assumeIsolated { self.installIfIdle() } }
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                // Ana ekranda "Güncelleme hazır · Yeniden başlat" görünür; boştaysa beklemeden kurulur.
+                NinoUpdates.shared.markReady()
+                self.installIfIdle()
+            }
+        }
         return true
+    }
+
+    @MainActor
+    func installNow() {
+        guard let install = pending else { return }
+        pending = nil
+        install()
     }
 
     @MainActor
@@ -64,13 +87,22 @@ final class NinoUpdates: ObservableObject {
     @Published private(set) var available: Release?
     @Published private(set) var state: CheckState = .idle
     @Published private(set) var lastChecked: Date?
+    /// Yeni sürüm indi; kurulup Nino'nun yeniden açılmasını bekliyor (çeviri sürüyorsa bekler, kullanıcı tek tıkla başlatır).
+    @Published private(set) var ready = false
+    /// Yeni sürüm arka planda iniyor.
+    @Published private(set) var downloading = false
     private var checked = Date.distantPast
 
-    /// Kendiliğinden en çok altı saatte bir bakılır; `force` ile (Ayarlar'daki düğme) hemen. Ağ yoksa ana ekran sessiz kalır.
+    func markReady() {
+        ready = true
+        downloading = false
+    }
+
+    /// Kendiliğinden en çok saatte bir bakılır; `force` ile (yenile düğmesi) hemen. Ağ yoksa ana ekran sessiz kalır.
     func check(force: Bool = false) async {
         // Testlerde (README ekran görüntüleri dahil) ağa çıkılmaz; "yeni sürüm hazır" şeridi görüntülere girmez.
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
-        guard force || Date().timeIntervalSince(checked) > 6 * 3600 else { return }
+        guard force || Date().timeIntervalSince(checked) > 3600 else { return }
         checked = Date()
         state = .checking
         defer { if state == .checking { state = .failed } }
@@ -93,15 +125,41 @@ final class NinoUpdates: ObservableObject {
         }
         available = Release(version: version, page: page, download: download.flatMap(URL.init(string:)))
         state = .idle
+        // Yeni sürüm bulununca sorulmadan indirilir; inince ana ekranda "Yeniden başlat" çıkar (boştaysa kendiliğinden kurulur).
+        #if !APP_STORE
+        startDownload()
+        #endif
     }
 
+    #if !APP_STORE
+    /// Sparkle'a yeni sürümü arka planda indirtir. Sessizce indiremezse (ağ, izin) bir süre sonra Sparkle'ın kendi
+    /// penceresi açılır; kullanıcı "indiriliyor"da çıkışsız kalmaz.
+    private func startDownload() {
+        guard !ready, !downloading else { return }
+        downloading = true
+        AppUpdater.controller.updater.checkForUpdatesInBackground()
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(180))
+            guard let self, self.downloading, !self.ready else { return }
+            self.downloading = false
+        }
+    }
+    #endif
+
+    /// Güncelle / Yeniden başlat: sürüm indiyse hemen kurar ve Nino'yu yeniden açar; inmediyse indirir.
     func open() {
-        guard let available else { return }
+        guard available != nil || ready else { return }
         #if !APP_STORE
-        // Sparkle indirir, imzayı doğrular, kurar ve uygulamayı yeniden açar.
-        AppUpdater.controller.checkForUpdates(nil)
+        if ready {
+            AppUpdater.installNow()
+        } else if downloading {
+            // İndirme sürüyor; bitince "Yeniden başlat" görünür.
+        } else if available != nil {
+            // Arka planda indirilemedi: Sparkle'ın kendi penceresi indirir, imzayı doğrular, kurar ve yeniden açar.
+            AppUpdater.controller.checkForUpdates(nil)
+        }
         #else
-        NSWorkspace.shared.open(available.download ?? available.page)
+        if let available { NSWorkspace.shared.open(available.download ?? available.page) }
         #endif
     }
 

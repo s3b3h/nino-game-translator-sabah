@@ -162,45 +162,10 @@ body.band #subtitle-text, body.band #subtitle-prev-text, body.band #subtitle-pre
 /* Bantta örtü de ekranın iki kenarına uzanır; köşeleri yuvarlak kalınca ekran kenarında köşelerden oyun görünüyordu. */
 body.band #subtitle-cover { border-radius: 0; }
 
-/* Panel ve bekleme ekranı: design/tokens.json'un koyu tema renkleri (docs/TASARIM.md). Köşeler belirteç ölçeğinin
-   TV'deki iki katıdır: büyük kutular 32 (card), küçük notlar ve düğmeler 24 (control). En küçük arayüz yazısı 24 px.
+/* Bekleme ekranı ve köşedeki kutular: design/tokens.json'un koyu tema renkleri (docs/TASARIM.md). Köşeler belirteç
+   ölçeğinin TV'deki iki katıdır: büyük kutular 32 (card), küçük notlar ve düğmeler 24 (control).
    Köşedeki kutular TV'nin güvenli alanında durur (1080p'de üstte 54, yanlarda 96 piksel; Android TV'nin 27/48 dp'si):
-   kenarı taşan (overscan) TV'lerde kesilmesinler. */
-#panel {
-  position: absolute;
-  top: 54px;
-  left: 96px;
-  z-index: 20;
-  min-width: 640px;
-  max-width: 1100px;
-  padding: 28px 36px;
-  border-radius: 24px;
-  border: 2px solid #24335A;
-  background: rgba(20, 21, 24, 0.92);
-  color: #F2F5FB;
-  font-size: 26px;
-  line-height: 1.5;
-}
-
-#panel.hidden { display: none; }
-#panel .title {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-box-align: center;
-  -webkit-align-items: center;
-  align-items: center;
-  font-size: 32px;
-  font-weight: 600;
-  margin-bottom: 18px;
-}
-#panel .title .logo { width: 48px; height: 48px; border-radius: 11px; margin-right: 16px; }
-#panel .row { display: -webkit-box; display: -webkit-flex; display: flex; padding: 6px 0; }
-#panel .label { width: 200px; color: #9DA9C6; }
-#panel #app-version { margin-left: 12px; font-weight: 400; }
-#panel .keys { margin-top: 18px; padding-top: 16px; border-top: 2px solid #24335A; font-size: 24px; color: #9DA9C6; }
-#panel .keys .key { padding: 3px 0; }
-#panel .keys .key b { display: inline-block; min-width: 150px; color: #2D8CFF; font-weight: 600; }
+   kenarı taşan (overscan) TV'lerde kesilmesinler. Bilgi panelinin (#panel) kuralları aşağıda, kendi bölümünde. */
 .muted { color: #9DA9C6; }
 .ok { color: #5FD39A; }
 .bad { color: #F28B82; }
@@ -339,7 +304,7 @@ body.band #subtitle-cover { border-radius: 0; }
   -webkit-transform: scale(1.06); transform: scale(1.06);
 }
 
-#panel, #demo-badge, #source-tip {
+#demo-badge, #source-tip {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(10, 18, 42, 0.78);
   -webkit-backdrop-filter: blur(36px) saturate(160%);
@@ -348,15 +313,12 @@ body.band #subtitle-cover { border-radius: 0; }
   -webkit-animation: nino-rise 0.5s cubic-bezier(.2, .8, .2, 1) both;
   animation: nino-rise 0.5s cubic-bezier(.2, .8, .2, 1) both;
 }
-#panel { border-radius: 32px; padding: 32px 40px; }
-#panel .title .logo { width: 56px; height: 56px; border-radius: 0; }
-#panel .keys { border-top: 1px solid rgba(255, 255, 255, 0.12); }
 #demo-badge, #source-tip { border-radius: 24px; }
 #source-tip { border-color: rgba(45, 140, 255, 0.7); }
 
 @-webkit-keyframes nino-rise { from { opacity: 0; -webkit-transform: translate(-50%, -46%) scale(0.96); } to { opacity: 1; -webkit-transform: translate(-50%, -50%) scale(1); } }
 @keyframes nino-rise { from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-#panel, #demo-badge, #source-tip { -webkit-animation-name: nino-fade; animation-name: nino-fade; }
+#demo-badge, #source-tip { -webkit-animation-name: nino-fade; animation-name: nino-fade; }
 @-webkit-keyframes nino-fade { from { opacity: 0; -webkit-transform: translateY(-12px); } to { opacity: 1; -webkit-transform: none; } }
 @keyframes nino-fade { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
 @-webkit-keyframes nino-float { 0%, 100% { -webkit-transform: translateY(0); } 50% { -webkit-transform: translateY(-10px); } }
@@ -584,111 +546,88 @@ body.covering #subtitle-text, body.covering #subtitle-prev-text, body.covering #
 .btn-icon.dpad { border-radius: 0.3em; }
 .btn-icon.pad { min-width: 2.4em; height: 1.4em; background: repeating-linear-gradient(90deg, currentColor 0 0.12em, transparent 0.12em 0.42em); }
 
-/* ───────────── Nino bilgi paneli (OK tuşu): sağda boydan boya beyaz cam ───────────── */
-#panel { position: absolute; top: 54px; right: 96px; bottom: 54px; left: auto; width: 600px; min-width: 0; max-width: none;
-  box-sizing: border-box; padding: 34px 34px 22px; border-radius: 40px; overflow: hidden;
-  font-size: 22px; line-height: 1.35; color: #0B1530;
-  background: rgba(248, 250, 255, 0.86); border: 1px solid rgba(255, 255, 255, 0.9);
-  -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%);
-  box-shadow: 0 40px 120px rgba(0, 10, 40, 0.45), inset 0 1px 0 #fff;
-  display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column;
-  -webkit-animation: nino-slide 0.45s cubic-bezier(.2, .8, .2, 1) both; animation: nino-slide 0.45s cubic-bezier(.2, .8, .2, 1) both; }
+/* ───────────── Nino bilgi paneli (OK tuşu): sağ üstte küçük, sakin bir bildirim kartı ─────────────
+   TV'nin güvenli alanında durur (üstte 54, sağda 96 piksel), içeriği kadar yer kaplar: solda çizim, sağda durum,
+   altyazı geldiyse altında son altyazı. Kumanda tuşları ve teknik satır gösterilmez (tuşlar çalışmayı sürdürür).
+   Tek vurgu rengi bağlantı durumudur: yeşil = bağlı, kehribar = bekliyor, kırmızı = koptu (.hero[data-state],
+   app.js setStatus). Bulanıklık (backdrop-filter) bilerek yok: HDMI görüntüsü sayfanın altındaki ayrı katmandadır,
+   bulanıklaşacak bir şey olmaz; zemin kendi başına okunaklı olacak kadar koyudur. Yalnız transform ve opacity
+   canlanır. En küçük yazı 18 px (koltuktan okunsun). Boşluklar 8'lik ızgarada; küçük iç aralıklar 4'ün katı. */
+#panel { position: absolute; top: 54px; right: 96px; z-index: 20; width: 480px;
+  box-sizing: border-box; padding: 28px; border-radius: 36px; overflow: hidden;
+  font-size: 20px; line-height: 1.3; color: #F2F5FB;
+  background: rgba(10, 15, 32, 0.92);
+  background-image: -webkit-linear-gradient(top, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 160px);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 160px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.32);
+  -webkit-transform-origin: 100% 0; transform-origin: 100% 0;
+  -webkit-animation: nino-panel-in 0.35s cubic-bezier(.2, .8, .2, 1) both; animation: nino-panel-in 0.35s cubic-bezier(.2, .8, .2, 1) both; }
 #panel.hidden { display: none; }
-@-webkit-keyframes nino-slide { from { opacity: 0; -webkit-transform: translateX(60px); } to { opacity: 1; -webkit-transform: none; } }
-@keyframes nino-slide { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: none; } }
+/* Açılış: hafif belirme, 12 piksel kayma ve küçük büyüme. */
+@-webkit-keyframes nino-panel-in { from { opacity: 0; -webkit-transform: translateY(-12px) scale(0.97); } to { opacity: 1; -webkit-transform: none; } }
+@keyframes nino-panel-in { from { opacity: 0; transform: translateY(-12px) scale(0.97); } to { opacity: 1; transform: none; } }
 
-#panel .p-top { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
-#panel .p-top .logo { width: 58px; height: 58px; margin-right: 14px; border-radius: 0; }
-#panel .brand { -webkit-flex: 1; flex: 1; font-size: 38px; font-weight: 800; letter-spacing: 0.3px; color: #0B1530; }
-#panel .ver { padding: 5px 13px; border-radius: 999px; font-size: 17px; font-weight: 700; color: #0070D1; background: rgba(0, 112, 209, 0.1); }
+/* Üst bölüm: solda çizim, sağda durum. */
+#panel .hero { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; }
+#panel .hero-text { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; }
 
-/* Durum: büyük halka; renk bağlantının durumundan. */
-#panel .hero { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
-  margin-top: 26px; padding: 22px; border-radius: 28px; background: #fff; box-shadow: 0 10px 30px rgba(0, 30, 90, 0.08); }
-#panel .ring { -webkit-flex: none; flex: none; position: relative; width: 84px; height: 84px; margin-right: 20px; border-radius: 50%;
-  background: #FFB547; background: conic-gradient(#FFB547 0 70%, rgba(255, 181, 71, 0.18) 70% 100%); }
-#panel .ring i { position: absolute; top: 9px; left: 9px; right: 9px; bottom: 9px; border-radius: 50%; background: #fff; }
-#panel .ring i:after { content: '…'; position: absolute; left: 0; right: 0; top: 50%; margin-top: -24px; text-align: center;
-  font-size: 34px; font-weight: 800; line-height: 44px; color: #E09A2B; }
-#panel .hero[data-state="ok"] .ring { background: linear-gradient(135deg, #34D17F, #0FA864); }
-#panel .hero[data-state="ok"] .ring i:after { content: '✓'; color: #0FA864; }
-#panel .hero[data-state="bad"] .ring { background: linear-gradient(135deg, #FF7A6E, #E5483B); }
-#panel .hero[data-state="bad"] .ring i:after { content: '!'; color: #E5483B; }
-#panel .hero-text { min-width: 0; }
-#panel .h-title { font-size: 30px; font-weight: 800; color: #0B1530; }
-#panel .h-title span { display: none; }
-#panel .hero .s-wait { display: inline; }
+/* Çizim: "N" salıncağın direğidir; ipler N'nin iki ayağından iner, robot oturakta. Salınan parça (ipler, oturak,
+   robot) tek bir HTML kutusudur ve asıldığı noktanın çevresinde döner; eski TV tarayıcılarında canlandırma çalışmazsa
+   düz asılı durur. N iplerin üstünde çizilir: dönerken ip uçları harfin içinde kalır, kopuk görünmez. */
+#panel .p-art { -webkit-flex: none; flex: none; position: relative; width: 116px; height: 152px; margin-right: 16px; }
+#panel .p-art .n { position: absolute; top: 0; left: 16px; width: 84px; height: 60px; color: #F2F5FB; }
+#panel .swing { position: absolute; top: 46px; left: 2px; width: 112px; height: 106px;
+  -webkit-transform-origin: 50% 0; transform-origin: 50% 0; }
+#panel .swing .ropes { position: absolute; top: 0; left: 0; width: 112px; height: 104px; color: rgba(242, 245, 251, 0.55); }
+/* Robotun resmindeki yer gölgesi kırpılır: salıncakta havada durduğu için gölge yapışık görünürdü. */
+#panel .swing .bot { position: absolute; top: 14px; left: 4px; width: 104px; height: 87px; overflow: hidden; }
+#panel .swing .bot img { display: block; width: 104px; height: 104px; }
+#panel .swing .seat { position: absolute; left: 2px; top: 100px; width: 108px; height: 4px; border-radius: 2px; background: #F5AE62; }
+#panel .hero .swing { -webkit-animation: nino-sway 5s ease-in-out -2.5s infinite alternate; animation: nino-sway 5s ease-in-out -2.5s infinite alternate; }
+#panel .hero[data-state="ok"] .swing { -webkit-animation: nino-swing 3s ease-in-out -1.5s infinite alternate; animation: nino-swing 3s ease-in-out -1.5s infinite alternate; }
+#panel .hero[data-state="bad"] .swing { -webkit-animation: none; animation: none; }
+#panel .hero[data-state="bad"] .bot { opacity: 0.45; }
+#panel .hero[data-state="ok"] .seat { background: #5FD39A; }
+#panel .hero[data-state="bad"] .seat { background: #FF8A80; }
+@-webkit-keyframes nino-swing { from { -webkit-transform: rotate(-6deg); } to { -webkit-transform: rotate(6deg); } }
+@keyframes nino-swing { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@-webkit-keyframes nino-sway { from { -webkit-transform: rotate(-2.5deg); } to { -webkit-transform: rotate(2.5deg); } }
+@keyframes nino-sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+
+/* Durum yazıları: küçük ve sessiz ad, büyük sakin başlık (önünde durum noktası), altında tek ikincil satır.
+   Arapçada da yerleşim aynı kalır (i18n.js yalnız yazının yönünü çevirir); blok yazılar sola yaslı durur. */
+#panel .brand { font-size: 18px; font-weight: 500; letter-spacing: 0.4px; color: #8490AC; text-align: left; }
+/* Nokta başlığın solunda asılı durur: başlık iki satıra bölünürse ikinci satır yazının altından başlar. */
+#panel .h-title { position: relative; margin-top: 4px; padding-left: 22px; font-size: 34px; line-height: 1.2; font-weight: 600; letter-spacing: -0.3px; color: #FFFFFF; }
+#panel .h-title .dot { position: absolute; left: 0; top: 15px; width: 10px; height: 10px; border-radius: 50%; background: #F5AE62;
+  -webkit-animation: nino-breathe 1.2s ease-in-out infinite alternate; animation: nino-breathe 1.2s ease-in-out infinite alternate; }
+#panel .hero[data-state="ok"] .dot { background: #5FD39A; -webkit-animation: none; animation: none; }
+#panel .hero[data-state="bad"] .dot { background: #FF8A80; -webkit-animation: none; animation: none; }
+@-webkit-keyframes nino-breathe { from { opacity: 1; } to { opacity: 0.35; } }
+@keyframes nino-breathe { from { opacity: 1; } to { opacity: 0.35; } }
+/* Durum değişince yeni başlık yumuşakça belirir (görünür olan yazının canlandırması baştan başlar). */
+#panel .hero .s-ok, #panel .hero .s-bad { display: none; }
 #panel .hero[data-state="ok"] .s-wait, #panel .hero[data-state="bad"] .s-wait { display: none; }
 #panel .hero[data-state="ok"] .s-ok, #panel .hero[data-state="bad"] .s-bad { display: inline; }
-#panel .h-sub { margin-top: 3px; font-size: 18px; color: #5B6B8C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#panel .h-sub .bad, #panel .h-sub .muted, #panel .h-sub .ok { color: inherit; }
+#panel .h-title span { -webkit-animation: nino-text-in 0.3s ease-out both; animation: nino-text-in 0.3s ease-out both; }
+@-webkit-keyframes nino-text-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nino-text-in { from { opacity: 0; } to { opacity: 1; } }
+#panel .h-sub { margin-top: 8px; font-size: 20px; color: #9DA9C6; word-wrap: break-word; }
+#panel #st-hdmi.bad, #panel #st-video.bad { color: #FF8A80; }
+#panel #st-video.ok, #panel #st-video.muted { color: inherit; }
+#panel #st-video:before { content: ' · '; color: #9DA9C6; }
+#panel #st-video:empty { display: none; }
 
-/* Son altyazı, oyunun üstünde göründüğü gibi: küçük bir "ekran" içinde. */
-#panel .p-preview { margin-top: 18px; }
-#panel .p-label { font-size: 15px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #7A88A6; margin: 0 0 8px 4px; }
-#panel .screen { position: relative; height: 140px; border-radius: 22px; overflow: hidden;
-  background: radial-gradient(ellipse at 30% 20%, #3E5F8F 0%, #1A2A48 55%, #0B1324 100%);
-  display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end;
-  -webkit-justify-content: center; justify-content: center; padding-bottom: 18px; box-sizing: border-box; }
-#panel .screen .sub { max-width: 88%; padding: 4px 12px; border-radius: 6px; background: #000; color: #fff;
-  font-size: 20px; font-weight: 600; text-align: center; }
+/* Son altyazı: hafif içe gömük alan, ince etiket ve altında yazı. Altyazı gelmeden hiç görünmez. */
+#panel .p-preview { margin-top: 24px; padding: 12px 20px 16px; border-radius: 20px; background: rgba(255, 255, 255, 0.06);
+  -webkit-animation: nino-text-in 0.3s ease-out both; animation: nino-text-in 0.3s ease-out both; }
+#panel .p-preview.empty { display: none; }
+#panel .p-label { font-size: 18px; color: #8490AC; text-align: left; }
+#panel .p-preview .sub { margin-top: 4px; font-size: 22px; line-height: 1.3; font-weight: 600; color: #F2F5FB; text-align: left; word-wrap: break-word; }
 
-/* Kumanda: yön tuşları çizimi ve açıklamalar. */
-#panel .p-remote { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-top: 22px; }
-#panel .dpad { -webkit-flex: none; flex: none; position: relative; width: 150px; height: 150px; margin-right: 24px; border-radius: 50%;
-  background: linear-gradient(180deg, #FFFFFF, #E6ECF7); box-shadow: 0 8px 22px rgba(0, 30, 90, 0.16), inset 0 1px 0 #fff; }
-#panel .dpad b { position: absolute; font-size: 18px; color: #6C7A99; }
-#panel .dpad .u { top: 10px; left: 0; right: 0; text-align: center; }
-#panel .dpad .d { bottom: 10px; left: 0; right: 0; text-align: center; }
-#panel .dpad .l { left: 14px; top: 50%; margin-top: -13px; }
-#panel .dpad .r { right: 14px; top: 50%; margin-top: -13px; }
-#panel .dpad .ok { top: 50%; left: 50%; width: 62px; height: 62px; margin: -31px 0 0 -31px; border-radius: 50%; line-height: 62px;
-  text-align: center; font-size: 18px; font-weight: 800; color: #fff; background: linear-gradient(180deg, #2D8CFF, #0058B8);
-  box-shadow: 0 6px 16px rgba(0, 112, 209, 0.45); }
-#panel .r-list { min-width: 0; }
-#panel .r-list div { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
-  padding: 6px 0; font-size: 19px; color: #24314F; }
-#panel .r-list b { -webkit-flex: none; flex: none; width: 66px; margin-right: 10px; font-size: 17px; font-weight: 800; color: #0070D1; }
-
-#panel .p-colors { display: -webkit-box; display: -webkit-flex; display: flex; margin-top: 16px; }
-#panel .p-colors div { -webkit-flex: 1; flex: 1; margin-right: 10px; padding: 10px 12px; border-radius: 16px; background: #fff;
-  font-size: 17px; font-weight: 600; color: #24314F; box-shadow: 0 4px 14px rgba(0, 30, 90, 0.06);
-  display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
-#panel .p-colors div:last-child { margin-right: 0; }
-#panel .p-colors i { -webkit-flex: none; flex: none; width: 18px; height: 18px; margin-right: 10px; border-radius: 50%; }
-#panel .p-colors .red { background: #FF4D4D; } #panel .p-colors .green { background: #2FD07A; } #panel .p-colors .blue { background: #3D8BFF; }
-
-#panel .p-diag { margin-top: auto; padding-top: 12px; font-size: 13px; color: #9AA6C0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#panel .p-diag #st-diag { color: #9AA6C0; }
-/* TV sayfası ~720 piksel yüksek: panel sığsın diye sıkı ölçüler. */
-#panel { top: 22px; bottom: 22px; right: 26px; width: 540px; padding: 22px 26px 12px; border-radius: 34px; }
-#panel .p-top .logo { width: 44px; height: 44px; margin-right: 12px; }
-#panel .brand { font-size: 30px; }
-#panel .hero { margin-top: 14px; padding: 14px 16px; border-radius: 24px; }
-#panel .ring { width: 62px; height: 62px; margin-right: 16px; }
-#panel .ring i { top: 7px; left: 7px; right: 7px; bottom: 7px; }
-#panel .ring i:after { font-family: -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif; font-style: normal; font-size: 26px; margin-top: -18px; line-height: 36px; }
-#panel .h-title { font-size: 25px; }
-#panel .h-sub { font-size: 15px; }
-#panel .p-preview { margin-top: 12px; }
-#panel .p-label { font-size: 13px; margin-bottom: 6px; }
-#panel .screen { height: 92px; border-radius: 18px; padding-bottom: 12px; }
-#panel .screen .sub { font-size: 17px; }
-#panel .screen .sub.empty { background: transparent; color: rgba(255, 255, 255, 0.55); font-weight: 500; }
-#panel .p-remote { margin-top: 14px; }
-#panel .dpad { width: 118px; height: 118px; margin-right: 20px; }
-#panel .dpad b { font-size: 15px; }
-#panel .dpad .u { top: 7px; } #panel .dpad .d { bottom: 7px; }
-#panel .dpad .l { left: 10px; margin-top: -11px; } #panel .dpad .r { right: 10px; margin-top: -11px; }
-#panel .dpad .ok { width: 50px; height: 50px; margin: -25px 0 0 -25px; line-height: 50px; font-size: 15px; }
-#panel .r-list div { padding: 3px 0; font-size: 16px; }
-#panel .r-list b { width: 54px; font-size: 15px; }
-#panel .p-colors { margin-top: 12px; }
-#panel .p-colors div { padding: 8px 10px; border-radius: 14px; font-size: 15px; }
-#panel .p-colors i { width: 14px; height: 14px; margin-right: 8px; }
-#panel .p-diag { font-size: 11px; padding-top: 8px; }
-#panel { bottom: auto; }
-#panel .p-diag { margin-top: 12px; }
+/* Teknik bilgiler DOM'da kalır (app.js ve platform.js kullanır), ekranda gösterilmez. */
+#panel .p-diag { display: none; }
 
 /* Nino: Arapça çeviri (app.js'deki setDirection). Harf aralığı Arapçada harflerin birleşmesini bozar. */
 [dir="rtl"] { letter-spacing: 0 !important; unicode-bidi: embed; }

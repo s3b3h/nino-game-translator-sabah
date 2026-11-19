@@ -82,4 +82,75 @@ public class SubtitleBlockTests
     [InlineData("23m CESARE: It's here! Shoot him!", "CESARE: It's here! Shoot him!")]
     [InlineData("100 men came", "100 men came")]
     public void GaugeNumberStuckToLineIsDropped(string line, string clean) => Assert.Equal(clean, OcrNoise.Clean(line));
+
+    // --- Dev yazılar (tabela, reklam panosu) ---
+
+    private static readonly TextBox LowerHalf = new(0.06, 0.56, 0.98, 1);
+
+    [Fact]
+    public void NormalSubtitleLinesAreKept()
+    {
+        // Alanın %9'u × alan yüksekliği 0.44 ≈ karenin %4'ü: sıradan altyazı satırı.
+        var reading = new Reading([
+            new TextLine("I told you not to come here.", new TextBox(0.3, 0.60, 0.7, 0.69)),
+            new TextLine("You never listen.", new TextBox(0.38, 0.70, 0.62, 0.79)),
+        ]);
+        Assert.Equal(reading.Lines, reading.WithoutOversizedLines(LowerHalf).Lines);
+        Assert.False(reading.IsOversizedBlock(LowerHalf));
+    }
+
+    [Fact]
+    public void GiantSignLineIsDroppedButSubtitleStays()
+    {
+        // Tabela satırı alanın %30'u ≈ karenin %13'ü; altyazı yanında kalır.
+        var sign = new TextLine("Welcome to Leonida", new TextBox(0.1, 0.05, 0.9, 0.35));
+        var subtitle = new TextLine("Where are we going?", new TextBox(0.35, 0.80, 0.65, 0.88));
+        var reading = new Reading([sign, subtitle]).WithoutOversizedLines(LowerHalf);
+        Assert.Equal([subtitle], reading.Lines);
+    }
+
+    [Fact]
+    public void LineHeightIsMeasuredAgainstTheWholeFrame()
+    {
+        // Aynı satır dar bir alanda alanın yarısını kaplar ama karede %5'tir: atılmaz.
+        var narrow = new TextBox(0.2, 0.85, 0.8, 0.95);
+        var line = new TextLine("Stay close to me.", new TextBox(0.2, 0.2, 0.8, 0.7));
+        Assert.Equal([line], new Reading([line]).WithoutOversizedLines(narrow).Lines);
+        // Aynı oran bütün karede okunursa karenin yarısıdır: atılır.
+        var full = new TextBox(0, 0, 1, 1);
+        Assert.Empty(new Reading([line]).WithoutOversizedLines(full).Lines);
+    }
+
+    [Fact]
+    public void LinesWithoutBoxesAreNeverDropped()
+    {
+        var reading = new Reading([new TextLine("No position known.")]);
+        Assert.Equal(reading.Lines, reading.WithoutOversizedLines(LowerHalf).Lines);
+        Assert.False(reading.IsOversizedBlock(LowerHalf));
+    }
+
+    [Fact]
+    public void TallBlockIsNotASubtitle()
+    {
+        // Normal boyda ama üst üste yedi satır (afiş, not): blok karenin %26'sından yüksek ve 5 satırdan çok.
+        var lines = Enumerable.Range(0, 7).Select(index =>
+        {
+            var top = 0.05 + (index * 0.12);
+            return new TextLine($"Line number {index} of a poster.", new TextBox(0.3, top, 0.7, top + 0.09));
+        }).ToList();
+        Assert.True(new Reading(lines).IsOversizedBlock(LowerHalf));
+        // Üç satırlık uzun altyazı kalır.
+        Assert.False(new Reading(lines.Take(3)).IsOversizedBlock(LowerHalf));
+    }
+
+    [Fact]
+    public void FewLinesCoveringTooMuchHeightAreNotASubtitle()
+    {
+        // İki satır ama aralarında büyük boşluk: kutu karenin %30'u.
+        var reading = new Reading([
+            new TextLine("Top of a billboard", new TextBox(0.3, 0.05, 0.7, 0.15)),
+            new TextLine("bottom of a billboard", new TextBox(0.3, 0.65, 0.7, 0.75)),
+        ]);
+        Assert.True(reading.IsOversizedBlock(LowerHalf));
+    }
 }

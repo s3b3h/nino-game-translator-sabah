@@ -73,7 +73,7 @@ internal static class StartupGuard
         Log(message, error);
         if (renderFolder is null)
         {
-            MessageBox.Show(message, "CouchSubs", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(message, "Nino", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         else
         {
@@ -176,7 +176,7 @@ internal static class StartupGuard
     {
         try
         {
-            MessageBox.Show(message, "CouchSubs", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(message, "Nino", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         catch (Exception error)
         {

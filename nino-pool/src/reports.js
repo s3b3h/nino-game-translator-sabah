@@ -9,6 +9,7 @@ export const REPORT_LIMITS = {
   maxText: 4000,
   maxContact: 200,
   maxLog: 60000,
+  maxDevice: 600,
   maxImages: 3,
   maxImageBytes: 1500 * 1024,
   perInstallPerDay: 10,
@@ -56,9 +57,10 @@ export async function receiveReport(db, env, body, now) {
 
   const id = crypto.randomUUID();
   const statements = [
-    db.prepare("INSERT INTO reports (id, created, install, app, platform, language, text, contact, log, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    db.prepare("INSERT INTO reports (id, created, install, app, platform, language, text, contact, log, images, device) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
       .bind(id, now, hashed, clip(body.app, 40), platform, clip(body.language, 16), text,
-        clip(body.contact, REPORT_LIMITS.maxContact).trim(), clip(body.log, REPORT_LIMITS.maxLog), decoded.length),
+        clip(body.contact, REPORT_LIMITS.maxContact).trim(), clip(body.log, REPORT_LIMITS.maxLog), decoded.length,
+        cleanDevice(body.device)),
     ...decoded.map((image, idx) =>
       db.prepare("INSERT INTO report_images (report, idx, mime, data) VALUES (?, ?, ?, ?)").bind(id, idx, image.mime, image.bytes)),
   ];
@@ -66,19 +68,27 @@ export async function receiveReport(db, env, body, now) {
   return { status: 200, body: { ok: true, id } };
 }
 
+/**
+ * Cihaz bilgileri (uygulamaların DeviceInfo özeti: "app: 3.4.0 (19) | device: Mac16,1 | system: macOS 27.0 | tv: …").
+ * Tek satır, en çok 600 karakter; eski sürümler göndermez (boş kalır).
+ */
+export function cleanDevice(value) {
+  return clip(value, REPORT_LIMITS.maxDevice).replace(/[\u0000-\u001f\u007f]+/g, " ").trim();
+}
+
 /** En yeni bildirimler (günlük metni hariç, kısaltılmış). */
 export async function listReports(db, { limit = 50, before } = {}) {
   const max = Math.min(200, Math.max(1, Number.parseInt(limit, 10) || 50));
   const cursor = Number.parseInt(before, 10);
   const { results } = await db.prepare(
-    `SELECT id, created, app, platform, language, text, contact, images, status, length(log) AS log_length
+    `SELECT id, created, app, platform, language, text, contact, images, status, device, length(log) AS log_length
        FROM reports ${Number.isFinite(cursor) ? "WHERE created < ?" : ""} ORDER BY created DESC LIMIT ?`)
     .bind(...(Number.isFinite(cursor) ? [cursor, max] : [max])).all();
   return results;
 }
 
 export async function getReport(db, id) {
-  return db.prepare("SELECT id, created, app, platform, language, text, contact, log, images, status FROM reports WHERE id = ?")
+  return db.prepare("SELECT id, created, app, platform, language, text, contact, log, images, status, device FROM reports WHERE id = ?")
     .bind(id).first();
 }
 

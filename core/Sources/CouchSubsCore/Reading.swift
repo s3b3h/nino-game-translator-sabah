@@ -128,6 +128,33 @@ public struct Reading: Equatable, Sendable {
         })
     }
 
+    /// Nino: dev yazı altyazı değildir. Oyunun içindeki tabela, reklam panosu, dükkân adı ya da ekranı kaplayan başlık
+    /// altyazı sanılıp çevriliyor, TV'de de yazının kapladığı yer kadar kocaman siyah bir kutu çıkıyordu. Altyazı satırı
+    /// ekran yüksekliğinin yaklaşık %2,5-5'i kadardır (en büyük erişilebilirlik ayarında %6); bundan belirgin biçimde
+    /// büyük satır atılır. Ölçü karenin tamamına göredir (`area`: okunan alanın karedeki yeri), dar seçilmiş alanda
+    /// normal satır büyük görünmesin. Yeri bilinmeyen satıra dokunulmaz (Windows: Reading.WithoutOversizedLines,
+    /// Android: Reading.withoutOversizedLines).
+    public static let maxSubtitleLineHeight = 0.075
+    /// Altyazı bloğunun karede kaplayabileceği en çok yükseklik ve satır sayısı; aşan blok altyazı değildir (afiş,
+    /// not, belge, üst üste tabelalar).
+    public static let maxSubtitleBlockHeight = 0.26
+    public static let maxSubtitleLines = 5
+
+    public func withoutOversizedLines(in area: TextBox, limit: Double = Reading.maxSubtitleLineHeight) -> Reading {
+        let scale = area.bottom - area.top
+        return Reading(lines: lines.filter { line in
+            guard let box = line.box else { return true }
+            return (box.bottom - box.top) * scale <= limit
+        })
+    }
+
+    /// Blok bir altyazı için fazla mı yüksek ya da fazla mı satırlı (bkz. `maxSubtitleBlockHeight`).
+    public func isOversizedBlock(in area: TextBox) -> Bool {
+        if lines.count > Self.maxSubtitleLines { return true }
+        guard let box else { return false }
+        return (box.bottom - box.top) * (area.bottom - area.top) > Self.maxSubtitleBlockHeight
+    }
+
     public func withoutOcrNoise() -> Reading {
         Reading(lines: lines.map { TextLine(OcrNoise.clean($0.text), box: $0.box, confidence: $0.confidence) })
     }

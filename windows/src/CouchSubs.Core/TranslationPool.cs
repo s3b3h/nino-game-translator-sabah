@@ -85,6 +85,19 @@ public sealed class TranslationPool : IDisposable
         [JsonPropertyName("games")] public IReadOnlyList<string> Games { get; init; } = ["grand-theft-auto-vi", "gta-vi", "gta-6", "gta6"];
         [JsonPropertyName("deadlineMs")] public int DeadlineMs { get; init; } = 1500;
 
+        /// <summary>
+        /// Havuz önceliğin geçerli olduğu hedef diller (Claude yalnız bunlarda çevirir); öbür dillerde kullanıcının kendi
+        /// motoru kullanılır. "*" hepsi. Eski sunucu göndermez: Türkçe.
+        /// </summary>
+        [JsonPropertyName("langs")] public IReadOnlyList<string> Langs { get; init; } = ["tr"];
+
+        /// <summary>Hedef dil havuz öncelikli mi.</summary>
+        public bool Allows(string language)
+        {
+            var code = Code(language);
+            return Langs.Any(l => l == "*" || Code(l) == code);
+        }
+
         /// <summary>Oyun listede mi: kimlik (<see cref="NinoPool.GameId"/>) parçalardan birini içeriyorsa (sunucudaki kural).</summary>
         public bool Contains(string? rawGame)
         {
@@ -202,7 +215,7 @@ public sealed class TranslationPool : IDisposable
     {
         lock (gate)
         {
-            if (!(config.Enabled && endpoint is not null)) return false;
+            if (!(config.Enabled && endpoint is not null) || !poolFirst.Allows(language)) return false;
             if (poolFirst.Contains(rawGame)) return true;
             // Uygulama oyunu bilmiyor ya da yanlış biliyor (ör. benzer satırlı başka oyunun paketi): sunucu satırlardan
             // havuz öncelikli oyunu tanıdıysa o geçerli. Sunucu her cevapta oyunu yeniden söyler.

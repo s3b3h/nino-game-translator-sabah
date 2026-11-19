@@ -99635,6 +99635,3896 @@
           }
         }
       }
+    },
+    "The TV's Host PC IP is %1$@, but this computer's address is %2$@. In the TV's Developer Mode window, set Host PC IP to %2$@ and restart the TV fully (hold the power button for about 2 seconds)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The TV's Host PC IP is %1$@, but this computer's address is %2$@. In the TV's Developer Mode window, set Host PC IP to %2$@ and restart the TV fully (hold the power button for about 2 seconds)."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'deki Host PC IP %1$@, bu bilgisayarın adresi %2$@. TV'de Geliştirici modu penceresinde Host PC IP'yi %2$@ yapıp TV'yi tam yeniden başlatın (güç tuşunu 2 sn basılı tutun)."
+          }
+        }
+      }
+    },
+    "TV's IP address (on the TV under Settings › Network)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV's IP address (on the TV under Settings › Network)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'nin IP adresi (TV'de Ayarlar › Ağ'da yazar)"
+          }
+        }
+      }
+    },
+    "e.g. 192.168.1.100" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. 192.168.1.100"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "örn. 192.168.1.100"
+          }
+        }
+      }
+    },
+    "Not this phone's address. This phone's address: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not this phone's address. This phone's address: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu telefonun adresi değil. Bu telefonun adresi: %@"
+          }
+        }
+      }
+    },
+    "This address is this phone's; type the TV's address." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This address is this phone's; type the TV's address."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu adres bu telefonun; TV'nin adresini yazın."
+          }
+        }
+      }
+    },
+    "This computer's address (Host PC IP): %@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "عنوان هذا الكمبيوتر (Host PC IP): %@"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "এই কম্পিউটারের ঠিকানা (Host PC IP): %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This computer's address (Host PC IP): %@"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Address ng computer na ito (Host PC IP): %@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इस कंप्यूटर का एड्रेस (Host PC IP): %@"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alamat komputer ini (Host PC IP): %@"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alamat komputer ini (Host PC IP): %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adres van deze computer (Host PC IP): %@"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ที่อยู่ของคอมพิวเตอร์เครื่องนี้ (Host PC IP): %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu bilgisayarın adresi (Host PC IP): %@"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اس کمپیوٹر کا ایڈریس (Host PC IP): %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Địa chỉ của máy tính này (Host PC IP): %@"
+          }
+        }
+      }
+    },
+    "Up to date" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güncel"
+          }
+        }
+      }
+    },
+    "Host PC IP on the TV is %1$@, it must be %2$@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP على التلفاز هو %1$@، ويجب أن يكون %2$@"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV-তে Host PC IP হলো %1$@, এটি %2$@ হতে হবে"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP on the TV is %1$@, it must be %2$@"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ ang Host PC IP sa TV, dapat ay %2$@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV पर Host PC IP %1$@ है, यह %2$@ होना चाहिए"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP di TV adalah %1$@, seharusnya %2$@"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP pada TV ialah %1$@, sepatutnya %2$@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP op de TV is %1$@, dat moet %2$@ zijn"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP บน TV คือ %1$@ ต้องเป็น %2$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'de Host PC IP %1$@ yazıyor, %2$@ olmalı"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV پر Host PC IP %1$@ ہے، یہ %2$@ ہونا چاہیے"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP trên TV là %1$@, phải là %2$@"
+          }
+        }
+      }
+    },
+    "Host PC IP is this computer's address (%@)" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP هو عنوان هذا الكمبيوتر (%@)"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP এই কম্পিউটারের ঠিকানা (%@)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP is this computer's address (%@)"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ang Host PC IP ay ang address ng computer na ito (%@)"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP इस कंप्यूटर का एड्रेस है (%@)"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP adalah alamat komputer ini (%@)"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP ialah alamat komputer ini (%@)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP is het adres van deze computer (%@)"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP คือที่อยู่ของคอมพิวเตอร์เครื่องนี้ (%@)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP bu bilgisayarın adresi (%@)"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP اس کمپیوٹر کا ایڈریس ہے (%@)"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP là địa chỉ của máy tính này (%@)"
+          }
+        }
+      }
+    },
+    "The TV has restarted and accepts installs" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أُعيد تشغيل التلفاز وهو جاهز للتثبيت"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV রিস্টার্ট হয়েছে এবং ইনস্টলের জন্য প্রস্তুত"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The TV has restarted and accepts installs"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nag-restart na ang TV at handa na sa pag-install"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV रीस्टार्ट हो गया है और इंस्टॉल के लिए तैयार है"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV sudah dimulai ulang dan siap dipasangi aplikasi"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV telah dimulakan semula dan sedia untuk pemasangan"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De TV is opnieuw opgestart en klaar voor de installatie"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV รีสตาร์ตแล้วและพร้อมติดตั้ง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV yeniden başladı ve kuruluma hazır"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV دوبارہ شروع ہو چکا ہے اور انسٹال کے لیے تیار ہے"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV đã khởi động lại và sẵn sàng cài đặt"
+          }
+        }
+      }
+    },
+    "The TV has fully restarted after the change" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أُعيد تشغيل التلفاز بالكامل بعد التغيير"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "পরিবর্তনের পর TV পুরোপুরি রিস্টার্ট হয়েছে"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The TV has fully restarted after the change"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ganap na na-restart ang TV pagkatapos ng pagbabago"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बदलाव के बाद TV पूरी तरह रीस्टार्ट हुआ"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV dimulai ulang sepenuhnya setelah perubahan"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV dimulakan semula sepenuhnya selepas perubahan"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De TV is na de wijziging volledig opnieuw opgestart"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV รีสตาร์ตเต็มรูปแบบหลังเปลี่ยนการตั้งค่า"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayardan sonra TV tam olarak yeniden başlatıldı"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تبدیلی کے بعد TV مکمل طور پر دوبارہ شروع ہوا"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV đã khởi động lại hoàn toàn sau khi thay đổi"
+          }
+        }
+      }
+    },
+    "Waiting for the TV to answer…" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بانتظار استجابة التلفاز…"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV-র সাড়ার অপেক্ষায়…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for the TV to answer…"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinihintay ang sagot ng TV…"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV के जवाब का इंतज़ार है…"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menunggu jawaban dari TV…"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menunggu jawapan daripada TV…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachten op antwoord van de TV…"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำลังรอ TV ตอบกลับ…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'den yanıt bekleniyor…"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV کے جواب کا انتظار ہے…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang chờ TV phản hồi…"
+          }
+        }
+      }
+    },
+    "Make sure the TV is on and on the same network as this computer. This screen continues by itself." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تأكد من أن التلفاز يعمل ومتصل بالشبكة نفسها التي يتصل بها هذا الكمبيوتر. تتابع هذه الشاشة تلقائيًا."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV চালু আছে এবং এই কম্পিউটারের একই নেটওয়ার্কে আছে কিনা দেখুন। এই স্ক্রিন নিজে থেকেই এগিয়ে যাবে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make sure the TV is on and on the same network as this computer. This screen continues by itself."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiyaking naka-on ang TV at nasa parehong network ng computer na ito. Kusang magpapatuloy ang screen na ito."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पक्का करें कि TV चालू है और इस कंप्यूटर वाले नेटवर्क पर ही है। यह स्क्रीन अपने आप आगे बढ़ेगी।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pastikan TV menyala dan berada di jaringan yang sama dengan komputer ini. Layar ini lanjut dengan sendirinya."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pastikan TV dihidupkan dan berada pada rangkaian yang sama dengan komputer ini. Skrin ini diteruskan dengan sendirinya."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zorg dat de TV aan staat en op hetzelfde netwerk zit als deze computer. Dit scherm gaat vanzelf verder."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ตรวจสอบว่า TV เปิดอยู่และอยู่ในเครือข่ายเดียวกับคอมพิวเตอร์เครื่องนี้ หน้าจอนี้จะดำเนินการต่อเอง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'nin açık ve bu bilgisayarla aynı ağda olduğundan emin olun. Bu ekran kendiliğinden devam eder."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "یقینی بنائیں کہ TV آن ہے اور اسی نیٹ ورک پر ہے جس پر یہ کمپیوٹر ہے۔ یہ اسکرین خود بخود آگے بڑھے گی۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hãy chắc chắn TV đang bật và cùng mạng với máy tính này. Màn hình này sẽ tự tiếp tục."
+          }
+        }
+      }
+    },
+    "Nino installs the TV app once Developer Mode is on." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يثبّت Nino تطبيق التلفاز فور تفعيل وضع المطوّر."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer Mode চালু হলেই Nino TV অ্যাপটি ইনস্টল করে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino installs the TV app once Developer Mode is on."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ini-install ng Nino ang TV app kapag naka-on na ang Developer Mode."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer Mode चालू होते ही Nino TV ऐप इंस्टॉल कर देता है।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino memasang aplikasi TV begitu Developer Mode aktif."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino memasang aplikasi TV sebaik sahaja Developer Mode dihidupkan."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino installeert de TV-app zodra Developer Mode aan staat."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino จะติดตั้งแอป TV ทันทีที่เปิด Developer Mode"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geliştirici modu açılınca Nino TV uygulamasını kendisi kurar."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer Mode آن ہوتے ہی Nino TV ایپ انسٹال کر دیتا ہے۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino sẽ cài ứng dụng TV ngay khi Developer Mode được bật."
+          }
+        }
+      }
+    },
+    "The TV has another address as Host PC IP (%1$@), so it does not accept this computer. Change it to %2$@." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "على التلفاز عنوان آخر في Host PC IP (%1$@)، ولذلك لا يقبل هذا الكمبيوتر. غيّره إلى %2$@."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV-তে Host PC IP হিসেবে অন্য ঠিকানা আছে (%1$@), তাই এটি এই কম্পিউটারকে গ্রহণ করছে না। এটি বদলে %2$@ করুন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The TV has another address as Host PC IP (%1$@), so it does not accept this computer. Change it to %2$@."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ibang address ang nasa Host PC IP ng TV (%1$@), kaya hindi nito tinatanggap ang computer na ito. Palitan ito ng %2$@."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV में Host PC IP पर दूसरा एड्रेस है (%1$@), इसलिए वह इस कंप्यूटर को स्वीकार नहीं करता। इसे बदलकर %2$@ करें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV memakai alamat lain sebagai Host PC IP (%1$@), jadi TV tidak menerima komputer ini. Ubah menjadi %2$@."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV mempunyai alamat lain sebagai Host PC IP (%1$@), jadi ia tidak menerima komputer ini. Tukar kepada %2$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Op de TV staat een ander adres als Host PC IP (%1$@), daarom accepteert de TV deze computer niet. Wijzig het in %2$@."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV ตั้ง Host PC IP เป็นที่อยู่อื่น (%1$@) จึงไม่ยอมรับคอมพิวเตอร์เครื่องนี้ เปลี่ยนเป็น %2$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'de Host PC IP olarak başka bir adres yazıyor (%1$@); bu yüzden TV bu bilgisayarı kabul etmiyor. Adresi %2$@ yapın."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV میں Host PC IP پر کوئی اور ایڈریس ہے (%1$@)، اس لیے وہ اس کمپیوٹر کو قبول نہیں کرتا۔ اسے بدل کر %2$@ کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV đang đặt một địa chỉ khác làm Host PC IP (%1$@) nên không chấp nhận máy tính này. Hãy đổi thành %2$@."
+          }
+        }
+      }
+    },
+    "The address on the TV is typed with zeros in front (%1$@), so the TV does not accept this computer. Type it again without them: %2$@." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "العنوان على التلفاز مكتوب بأصفار في بدايته (%1$@)، ولذلك لا يقبل التلفاز هذا الكمبيوتر. اكتبه من جديد بدونها: %2$@."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV-তে ঠিকানাটি সামনে শূন্য দিয়ে লেখা আছে (%1$@), তাই TV এই কম্পিউটারকে গ্রহণ করছে না। শূন্য ছাড়া আবার লিখুন: %2$@।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The address on the TV is typed with zeros in front (%1$@), so the TV does not accept this computer. Type it again without them: %2$@."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "May mga zero sa unahan ang address sa TV (%1$@), kaya hindi tinatanggap ng TV ang computer na ito. I-type ulit nang wala ang mga iyon: %2$@."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV पर एड्रेस आगे शून्य लगाकर लिखा गया है (%1$@), इसलिए TV इस कंप्यूटर को स्वीकार नहीं करता। इसे बिना शून्य के दोबारा लिखें: %2$@।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alamat di TV diketik dengan nol di depan (%1$@), jadi TV tidak menerima komputer ini. Ketik lagi tanpa nol: %2$@."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alamat pada TV ditaip dengan sifar di hadapan (%1$@), jadi TV tidak menerima komputer ini. Taip semula tanpa sifar: %2$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het adres op de TV is met voorloopnullen getypt (%1$@), daarom accepteert de TV deze computer niet. Typ het opnieuw zonder nullen: %2$@."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ที่อยู่บน TV พิมพ์โดยมีเลขศูนย์นำหน้า (%1$@) TV จึงไม่ยอมรับคอมพิวเตอร์เครื่องนี้ พิมพ์ใหม่โดยไม่มีศูนย์: %2$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'deki adres başında sıfırlarla yazılmış (%1$@); bu yüzden TV bu bilgisayarı kabul etmiyor. Sıfırlar olmadan yeniden yazın: %2$@."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV پر ایڈریس شروع میں صفر لگا کر لکھا گیا ہے (%1$@)، اس لیے TV اس کمپیوٹر کو قبول نہیں کرتا۔ اسے صفر کے بغیر دوبارہ لکھیں: %2$@۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Địa chỉ trên TV được nhập có số 0 ở đầu (%1$@) nên TV không chấp nhận máy tính này. Hãy nhập lại không có số 0: %2$@."
+          }
+        }
+      }
+    },
+    "Host PC IP on the TV is 127.0.0.1. That setting is for installers that run on the TV itself; Nino installs from this computer. Change it to %@." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP على التلفاز هو 127.0.0.1. هذا الإعداد خاص بأدوات التثبيت التي تعمل على التلفاز نفسه؛ أما Nino فيثبّت من هذا الكمبيوتر. غيّره إلى %@."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV-তে Host PC IP হলো 127.0.0.1। এই সেটিং TV-র ভেতরেই চলা ইনস্টলারের জন্য; Nino এই কম্পিউটার থেকে ইনস্টল করে। এটি বদলে %@ করুন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP on the TV is 127.0.0.1. That setting is for installers that run on the TV itself; Nino installs from this computer. Change it to %@."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "127.0.0.1 ang Host PC IP sa TV. Para iyon sa mga installer na tumatakbo sa TV mismo; mula sa computer na ito nag-i-install ang Nino. Palitan ito ng %@."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV पर Host PC IP 127.0.0.1 है। यह सेटिंग TV के अंदर चलने वाले इंस्टॉलर के लिए है; Nino इस कंप्यूटर से इंस्टॉल करता है। इसे बदलकर %@ करें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP di TV adalah 127.0.0.1. Setelan itu untuk pemasang yang berjalan di TV itu sendiri; Nino memasang dari komputer ini. Ubah menjadi %@."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP pada TV ialah 127.0.0.1. Tetapan itu untuk pemasang yang berjalan pada TV itu sendiri; Nino memasang dari komputer ini. Tukar kepada %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP op de TV is 127.0.0.1. Die instelling is voor installatieprogramma's die op de TV zelf draaien; Nino installeert vanaf deze computer. Wijzig het in %@."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP บน TV คือ 127.0.0.1 ค่านี้ใช้กับตัวติดตั้งที่ทำงานบน TV เอง ส่วน Nino ติดตั้งจากคอมพิวเตอร์เครื่องนี้ เปลี่ยนเป็น %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'de Host PC IP 127.0.0.1 yazıyor. Bu ayar TV'nin kendi içinde çalışan kurucular içindir; Nino ise bu bilgisayardan kurar. Adresi %@ yapın."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV پر Host PC IP 127.0.0.1 ہے۔ یہ سیٹنگ ان انسٹالرز کے لیے ہے جو TV کے اندر چلتے ہیں؛ Nino اس کمپیوٹر سے انسٹال کرتا ہے۔ اسے بدل کر %@ کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host PC IP trên TV là 127.0.0.1. Thiết lập đó dành cho trình cài đặt chạy ngay trên TV; Nino cài từ máy tính này. Hãy đổi thành %@."
+          }
+        }
+      }
+    },
+    "Developer mode is on, but the TV has not fully restarted yet, so it does not accept installs." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "وضع المطوّر مفعّل، لكن التلفاز لم يُعَد تشغيله بالكامل بعد، ولذلك لا يقبل التثبيت."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer mode চালু আছে, কিন্তু TV এখনও পুরোপুরি রিস্টার্ট হয়নি, তাই এটি ইনস্টল গ্রহণ করছে না।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer mode is on, but the TV has not fully restarted yet, so it does not accept installs."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naka-on ang Developer mode, pero hindi pa ganap na na-restart ang TV kaya hindi pa ito tumatanggap ng install."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer mode चालू है, लेकिन TV अभी पूरी तरह रीस्टार्ट नहीं हुआ है, इसलिए वह इंस्टॉल स्वीकार नहीं करता।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer mode aktif, tetapi TV belum dimulai ulang sepenuhnya, jadi belum menerima pemasangan."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer mode dihidupkan, tetapi TV belum dimulakan semula sepenuhnya, jadi ia belum menerima pemasangan."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer mode staat aan, maar de TV is nog niet volledig opnieuw opgestart en accepteert daarom nog geen installaties."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer mode เปิดอยู่ แต่ TV ยังไม่ได้รีสตาร์ตเต็มรูปแบบ จึงยังไม่รับการติดตั้ง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geliştirici modu açık ama TV henüz tam olarak yeniden başlatılmamış; bu yüzden kurulumu kabul etmiyor."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer mode آن ہے، لیکن TV ابھی مکمل طور پر دوبارہ شروع نہیں ہوا، اس لیے وہ انسٹال قبول نہیں کرتا۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer mode đang bật, nhưng TV chưa khởi động lại hoàn toàn nên chưa chấp nhận cài đặt."
+          }
+        }
+      }
+    },
+    "Hold the power button on the remote until the Samsung logo appears, or unplug the TV for a minute. A short press only puts the TV on standby. This screen continues by itself." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط مطوّلًا على زر الطاقة في جهاز التحكم حتى يظهر شعار Samsung، أو افصل التلفاز عن الكهرباء لمدة دقيقة. الضغطة القصيرة تضع التلفاز في وضع الاستعداد فقط. تتابع هذه الشاشة تلقائيًا."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samsung লোগো না আসা পর্যন্ত রিমোটের পাওয়ার বোতাম চেপে ধরে রাখুন, অথবা TV-র প্লাগ এক মিনিটের জন্য খুলে রাখুন। অল্প চাপ দিলে TV শুধু স্ট্যান্ডবাইতে যায়। এই স্ক্রিন নিজে থেকেই এগিয়ে যাবে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold the power button on the remote until the Samsung logo appears, or unplug the TV for a minute. A short press only puts the TV on standby. This screen continues by itself."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pindutin nang matagal ang power button ng remote hanggang lumabas ang logo ng Samsung, o bunutin ang saksakan ng TV nang isang minuto. Kapag saglit lang ang pindot, standby lang ang TV. Kusang magpapatuloy ang screen na ito."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "रिमोट का पावर बटन तब तक दबाए रखें जब तक Samsung लोगो न दिखे, या TV का प्लग एक मिनट के लिए निकाल दें। हल्का दबाने पर TV सिर्फ़ स्टैंडबाय में जाता है। यह स्क्रीन अपने आप आगे बढ़ेगी।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tahan tombol daya di remote sampai logo Samsung muncul, atau cabut kabel listrik TV selama satu menit. Tekan sebentar hanya membuat TV siaga. Layar ini lanjut dengan sendirinya."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tahan butang kuasa pada alat kawalan jauh sehingga logo Samsung muncul, atau cabut palam TV selama seminit. Tekanan singkat hanya meletakkan TV dalam mod sedia. Skrin ini diteruskan dengan sendirinya."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd de aan/uit-knop op de afstandsbediening ingedrukt tot het Samsung-logo verschijnt, of haal de stekker van de TV een minuut uit het stopcontact. Kort drukken zet de TV alleen op stand-by. Dit scherm gaat vanzelf verder."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กดปุ่มเปิด/ปิดบนรีโมตค้างไว้จนโลโก้ Samsung ปรากฏ หรือถอดปลั๊ก TV หนึ่งนาที การกดสั้น ๆ จะทำให้ TV เข้าโหมดสแตนด์บายเท่านั้น หน้าจอนี้จะดำเนินการต่อเอง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kumandanın güç tuşunu Samsung logosu görünene kadar basılı tutun ya da TV'nin fişini bir dakikalığına çekin. Kısa basarsanız TV yalnızca bekleme moduna geçer. Bu ekran kendiliğinden devam eder."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ریموٹ کا پاور بٹن اس وقت تک دبائے رکھیں جب تک Samsung کا لوگو نظر نہ آئے، یا TV کا پلگ ایک منٹ کے لیے نکال دیں۔ ہلکا دبانے سے TV صرف اسٹینڈ بائی میں جاتا ہے۔ یہ اسکرین خود بخود آگے بڑھے گی۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giữ nút nguồn trên điều khiển cho đến khi logo Samsung hiện ra, hoặc rút điện TV trong một phút. Bấm nhanh chỉ đưa TV về chế độ chờ. Màn hình này sẽ tự tiếp tục."
+          }
+        }
+      }
+    },
+    "Checking the TV…" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جارٍ فحص التلفاز…"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV পরীক্ষা করা হচ্ছে…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking the TV…"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sinusuri ang TV…"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV जाँचा जा रहा है…"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memeriksa TV…"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memeriksa TV…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De TV wordt gecontroleerd…"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำลังตรวจสอบ TV…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV denetleniyor…"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV چیک کیا جا رہا ہے…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang kiểm tra TV…"
+          }
+        }
+      }
+    },
+    "The TV dropped the connection although its settings look right. Unplug the TV from the wall for a minute, plug it back in and wait a minute after it turns on. Nino tries again by itself when the TV is back." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "قطع التلفاز الاتصال مع أن إعداداته تبدو صحيحة. افصل التلفاز عن مقبس الكهرباء لمدة دقيقة، ثم أعد توصيله وانتظر دقيقة بعد تشغيله. يحاول Nino مجددًا تلقائيًا عند عودة التلفاز."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "সেটিং ঠিক দেখালেও TV সংযোগ কেটে দিয়েছে। TV-র প্লাগ এক মিনিটের জন্য খুলে রাখুন, আবার লাগান এবং TV চালু হওয়ার পর এক মিনিট অপেক্ষা করুন। TV ফিরে এলে Nino নিজে থেকেই আবার চেষ্টা করবে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The TV dropped the connection although its settings look right. Unplug the TV from the wall for a minute, plug it back in and wait a minute after it turns on. Nino tries again by itself when the TV is back."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinutol ng TV ang koneksyon kahit mukhang tama ang mga setting nito. Bunutin ang saksakan ng TV nang isang minuto, isaksak ulit at maghintay ng isang minuto pagkabukas nito. Kusang susubok ulit ang Nino pagbalik ng TV."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सेटिंग सही दिखने के बावजूद TV ने कनेक्शन काट दिया। TV का प्लग एक मिनट के लिए निकालें, फिर लगाएँ और TV चालू होने के बाद एक मिनट रुकें। TV वापस आने पर Nino अपने आप दोबारा कोशिश करेगा।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV memutus koneksi walaupun setelannya terlihat benar. Cabut kabel listrik TV dari stopkontak selama satu menit, pasang lagi, lalu tunggu satu menit setelah TV menyala. Nino mencoba lagi dengan sendirinya saat TV kembali."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV memutuskan sambungan walaupun tetapannya kelihatan betul. Cabut palam TV dari soket selama seminit, pasang semula dan tunggu seminit selepas ia dihidupkan. Nino mencuba lagi dengan sendirinya apabila TV kembali."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De TV verbrak de verbinding, hoewel de instellingen goed lijken. Haal de stekker van de TV een minuut uit het stopcontact, steek hem er weer in en wacht een minuut nadat de TV aan is. Nino probeert het vanzelf opnieuw zodra de TV terug is."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV ตัดการเชื่อมต่อทั้งที่การตั้งค่าดูถูกต้อง ถอดปลั๊ก TV หนึ่งนาที เสียบกลับ แล้วรอหนึ่งนาทีหลัง TV เปิด Nino จะลองใหม่เองเมื่อ TV กลับมา"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayarlar doğru görünmesine rağmen TV bağlantıyı kesti. TV'nin fişini prizden bir dakikalığına çekin, yeniden takın ve TV açıldıktan sonra bir dakika bekleyin. TV geri gelince Nino kendiliğinden yeniden dener."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سیٹنگز درست نظر آنے کے باوجود TV نے کنکشن کاٹ دیا۔ TV کا پلگ ایک منٹ کے لیے نکالیں، دوبارہ لگائیں اور TV آن ہونے کے بعد ایک منٹ انتظار کریں۔ TV واپس آنے پر Nino خود بخود دوبارہ کوشش کرے گا۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV đã ngắt kết nối dù thiết lập có vẻ đúng. Rút điện TV khỏi ổ cắm trong một phút, cắm lại và chờ một phút sau khi TV bật. Nino sẽ tự thử lại khi TV hoạt động trở lại."
+          }
+        }
+      }
+    },
+    "1. On the TV, open Apps, go to the very bottom of the page and select App Settings." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. على التلفاز، افتح التطبيقات (Apps)، وانزل إلى أسفل الصفحة تمامًا واختر إعدادات التطبيقات (App Settings)."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "১. TV-তে Apps খুলুন, পৃষ্ঠার একদম নিচে যান এবং App Settings বেছে নিন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. On the TV, open Apps, go to the very bottom of the page and select App Settings."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Sa TV, buksan ang Apps, pumunta sa pinakaibaba ng page at piliin ang App Settings."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. TV पर Apps खोलें, पेज में सबसे नीचे जाएँ और App Settings चुनें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Di TV, buka Apps, turun ke bagian paling bawah halaman, lalu pilih App Settings."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Pada TV, buka Apps, pergi ke bahagian paling bawah halaman dan pilih App Settings."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Open op de TV Apps, ga helemaal naar de onderkant van de pagina en kies App Settings."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. บน TV เปิด Apps เลื่อนลงไปล่างสุดของหน้า แล้วเลือก App Settings"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. TV'de Uygulamalar'ı açın, sayfanın en altına inin ve Uygulama Ayarları'nı seçin."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. TV پر Apps کھولیں، صفحے کے بالکل نیچے جائیں اور App Settings منتخب کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Trên TV, mở Apps, xuống cuối trang và chọn App Settings."
+          }
+        }
+      }
+    },
+    "1. On the TV, open Apps. If the page has App Settings at the very bottom, select it." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. على التلفاز، افتح التطبيقات (Apps). إن وُجدت إعدادات التطبيقات (App Settings) في أسفل الصفحة فاخترها."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "১. TV-তে Apps খুলুন। পৃষ্ঠার একদম নিচে App Settings থাকলে সেটি বেছে নিন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. On the TV, open Apps. If the page has App Settings at the very bottom, select it."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Sa TV, buksan ang Apps. Kung may App Settings sa pinakaibaba ng page, piliin ito."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. TV पर Apps खोलें। अगर पेज में सबसे नीचे App Settings है, तो उसे चुनें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Di TV, buka Apps. Jika ada App Settings di bagian paling bawah halaman, pilih itu."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Pada TV, buka Apps. Jika terdapat App Settings di bahagian paling bawah halaman, pilihnya."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Open op de TV Apps. Staat helemaal onderaan de pagina App Settings, kies dat dan."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. บน TV เปิด Apps หากล่างสุดของหน้ามี App Settings ให้เลือก"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. TV'de Uygulamalar'ı açın. Sayfanın en altında Uygulama Ayarları varsa onu seçin."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. TV پر Apps کھولیں۔ اگر صفحے کے بالکل نیچے App Settings ہو تو اسے منتخب کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Trên TV, mở Apps. Nếu cuối trang có App Settings, hãy chọn mục đó."
+          }
+        }
+      }
+    },
+    "2. Type 1 2 3 4 5. If the remote has no number buttons, press its 123 button and choose the numbers on the screen. The Developer Mode window opens after the fifth number." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. اكتب 1 2 3 4 5. إن لم تكن في جهاز التحكم أزرار أرقام، فاضغط زر 123 واختر الأرقام من الشاشة. تُفتح نافذة وضع المطوّر بعد الرقم الخامس."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "২. 1 2 3 4 5 লিখুন। রিমোটে নম্বর বোতাম না থাকলে 123 বোতাম চেপে স্ক্রিন থেকে সংখ্যাগুলো বেছে নিন। পঞ্চম সংখ্যার পর Developer Mode উইন্ডো খুলবে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Type 1 2 3 4 5. If the remote has no number buttons, press its 123 button and choose the numbers on the screen. The Developer Mode window opens after the fifth number."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. I-type ang 1 2 3 4 5. Kung walang number button ang remote, pindutin ang 123 button nito at piliin ang mga numero sa screen. Bubukas ang window ng Developer Mode pagkatapos ng ikalimang numero."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. 1 2 3 4 5 टाइप करें। अगर रिमोट में नंबर बटन नहीं हैं, तो उसका 123 बटन दबाकर स्क्रीन पर नंबर चुनें। पाँचवें नंबर के बाद Developer Mode विंडो खुल जाएगी।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Ketik 1 2 3 4 5. Jika remote tidak punya tombol angka, tekan tombol 123 lalu pilih angka di layar. Jendela Developer Mode terbuka setelah angka kelima."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Taip 1 2 3 4 5. Jika alat kawalan jauh tiada butang nombor, tekan butang 123 dan pilih nombor pada skrin. Tetingkap Developer Mode dibuka selepas nombor kelima."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Typ 1 2 3 4 5. Heeft de afstandsbediening geen cijfertoetsen, druk dan op de 123-knop en kies de cijfers op het scherm. Na het vijfde cijfer opent het venster Developer Mode."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. พิมพ์ 1 2 3 4 5 หากรีโมตไม่มีปุ่มตัวเลข ให้กดปุ่ม 123 แล้วเลือกตัวเลขบนหน้าจอ หน้าต่าง Developer Mode จะเปิดหลังตัวเลขตัวที่ห้า"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. 1 2 3 4 5 yazın. Kumandada rakam tuşu yoksa 123 tuşuna basıp rakamları ekrandan seçin. Beşinci rakamdan sonra Geliştirici modu penceresi açılır."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. 1 2 3 4 5 لکھیں۔ اگر ریموٹ پر نمبر بٹن نہیں ہیں تو اس کا 123 بٹن دبا کر اسکرین سے نمبر منتخب کریں۔ پانچویں نمبر کے بعد Developer Mode ونڈو کھل جائے گی۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Nhập 1 2 3 4 5. Nếu điều khiển không có phím số, hãy bấm nút 123 rồi chọn các số trên màn hình. Cửa sổ Developer Mode sẽ mở sau số thứ năm."
+          }
+        }
+      }
+    },
+    "3. Turn Developer mode On and type this computer's address as Host PC IP: %@. Type each part as it is, without zeros in front (1, not 001), then choose OK. If the address cannot be changed, press the 123 button first." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. شغّل Developer mode واكتب عنوان هذا الكمبيوتر في Host PC IP: %@. اكتب كل جزء كما هو، بدون أصفار في بدايته (1 وليس 001)، ثم اختر OK. إن تعذّر تغيير العنوان فاضغط زر 123 أولًا."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "৩. Developer mode চালু (On) করুন এবং Host PC IP-তে এই কম্পিউটারের ঠিকানা লিখুন: %@। প্রতিটি অংশ যেমন আছে তেমনই লিখুন, সামনে শূন্য ছাড়া (001 নয়, 1), তারপর OK বেছে নিন। ঠিকানা বদলানো না গেলে আগে 123 বোতাম চাপুন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. Turn Developer mode On and type this computer's address as Host PC IP: %@. Type each part as it is, without zeros in front (1, not 001), then choose OK. If the address cannot be changed, press the 123 button first."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. I-on ang Developer mode at i-type ang address ng computer na ito bilang Host PC IP: %@. I-type ang bawat bahagi kung ano ito, walang zero sa unahan (1, hindi 001), saka piliin ang OK. Kung hindi mabago ang address, pindutin muna ang 123 button."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. Developer mode को On करें और Host PC IP में इस कंप्यूटर का एड्रेस टाइप करें: %@। हर हिस्सा जैसा है वैसा ही लिखें, आगे शून्य लगाए बिना (001 नहीं, 1), फिर OK चुनें। अगर एड्रेस बदल नहीं रहा, तो पहले 123 बटन दबाएँ।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. Aktifkan Developer mode dan ketik alamat komputer ini sebagai Host PC IP: %@. Ketik tiap bagian apa adanya, tanpa nol di depan (1, bukan 001), lalu pilih OK. Jika alamat tidak bisa diubah, tekan tombol 123 dulu."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. Hidupkan Developer mode dan taip alamat komputer ini sebagai Host PC IP: %@. Taip setiap bahagian seadanya, tanpa sifar di hadapan (1, bukan 001), kemudian pilih OK. Jika alamat tidak boleh ditukar, tekan butang 123 dahulu."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. Zet Developer mode op On en typ het adres van deze computer als Host PC IP: %@. Typ elk deel zoals het is, zonder voorloopnullen (1, niet 001), en kies dan OK. Kan het adres niet worden gewijzigd, druk dan eerst op de 123-knop."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. เปิด Developer mode เป็น On แล้วพิมพ์ที่อยู่ของคอมพิวเตอร์เครื่องนี้ในช่อง Host PC IP: %@ พิมพ์แต่ละส่วนตามที่เป็น ไม่ต้องมีศูนย์นำหน้า (1 ไม่ใช่ 001) แล้วเลือก OK หากแก้ที่อยู่ไม่ได้ ให้กดปุ่ม 123 ก่อน"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. Developer mode'u On yapın ve Host PC IP alanına bu bilgisayarın adresini yazın: %@. Her bölümü olduğu gibi, başına sıfır koymadan yazın (001 değil 1), sonra OK'i seçin. Adres değiştirilemiyorsa önce 123 tuşuna basın."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. Developer mode آن کریں اور Host PC IP میں اس کمپیوٹر کا ایڈریس لکھیں: %@۔ ہر حصہ جیسا ہے ویسا ہی لکھیں، شروع میں صفر کے بغیر (001 نہیں، 1)، پھر OK منتخب کریں۔ اگر ایڈریس تبدیل نہ ہو تو پہلے 123 بٹن دبائیں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3. Bật Developer mode và nhập địa chỉ của máy tính này vào Host PC IP: %@. Nhập từng phần đúng như vậy, không thêm số 0 ở đầu (1, không phải 001), rồi chọn OK. Nếu không sửa được địa chỉ, hãy bấm nút 123 trước."
+          }
+        }
+      }
+    },
+    "4. Restart the TV: hold the power button on the remote until the Samsung logo appears, or unplug the TV for a minute. This screen continues by itself." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. أعد تشغيل التلفاز: اضغط مطوّلًا على زر الطاقة في جهاز التحكم حتى يظهر شعار Samsung، أو افصل التلفاز عن الكهرباء لمدة دقيقة. تتابع هذه الشاشة تلقائيًا."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "৪. TV রিস্টার্ট করুন: Samsung লোগো না আসা পর্যন্ত রিমোটের পাওয়ার বোতাম চেপে ধরে রাখুন, অথবা TV-র প্লাগ এক মিনিটের জন্য খুলে রাখুন। এই স্ক্রিন নিজে থেকেই এগিয়ে যাবে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. Restart the TV: hold the power button on the remote until the Samsung logo appears, or unplug the TV for a minute. This screen continues by itself."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. I-restart ang TV: pindutin nang matagal ang power button ng remote hanggang lumabas ang logo ng Samsung, o bunutin ang saksakan ng TV nang isang minuto. Kusang magpapatuloy ang screen na ito."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. TV रीस्टार्ट करें: रिमोट का पावर बटन तब तक दबाए रखें जब तक Samsung लोगो न दिखे, या TV का प्लग एक मिनट के लिए निकाल दें। यह स्क्रीन अपने आप आगे बढ़ेगी।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. Mulai ulang TV: tahan tombol daya di remote sampai logo Samsung muncul, atau cabut kabel listrik TV selama satu menit. Layar ini lanjut dengan sendirinya."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. Mulakan semula TV: tahan butang kuasa pada alat kawalan jauh sehingga logo Samsung muncul, atau cabut palam TV selama seminit. Skrin ini diteruskan dengan sendirinya."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. Start de TV opnieuw op: houd de aan/uit-knop op de afstandsbediening ingedrukt tot het Samsung-logo verschijnt, of haal de stekker een minuut uit het stopcontact. Dit scherm gaat vanzelf verder."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. รีสตาร์ต TV: กดปุ่มเปิด/ปิดบนรีโมตค้างไว้จนโลโก้ Samsung ปรากฏ หรือถอดปลั๊ก TV หนึ่งนาที หน้าจอนี้จะดำเนินการต่อเอง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. TV'yi yeniden başlatın: kumandanın güç tuşunu Samsung logosu görünene kadar basılı tutun ya da TV'nin fişini bir dakikalığına çekin. Bu ekran kendiliğinden devam eder."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. TV دوبارہ شروع کریں: ریموٹ کا پاور بٹن اس وقت تک دبائے رکھیں جب تک Samsung کا لوگو نظر نہ آئے، یا TV کا پلگ ایک منٹ کے لیے نکال دیں۔ یہ اسکرین خود بخود آگے بڑھے گی۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4. Khởi động lại TV: giữ nút nguồn trên điều khiển cho đến khi logo Samsung hiện ra, hoặc rút điện TV trong một phút. Màn hình này sẽ tự tiếp tục."
+          }
+        }
+      }
+    },
+    "• Type the numbers in App Settings at the very bottom of Apps. On 2022 and newer TVs they do nothing on the first page of Apps." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• اكتب الأرقام في إعدادات التطبيقات (App Settings) في أسفل صفحة التطبيقات. في تلفزيونات 2022 وما بعدها لا تفعل الأرقام شيئًا في الصفحة الأولى من التطبيقات."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• সংখ্যাগুলো Apps-এর একদম নিচের App Settings-এ লিখুন। 2022 ও পরের TV-তে Apps-এর প্রথম পৃষ্ঠায় এগুলো কিছুই করে না।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Type the numbers in App Settings at the very bottom of Apps. On 2022 and newer TVs they do nothing on the first page of Apps."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• I-type ang mga numero sa App Settings sa pinakaibaba ng Apps. Sa mga TV na 2022 at mas bago, walang nangyayari kapag sa unang page ng Apps ito ginawa."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• नंबर Apps में सबसे नीचे मौजूद App Settings में टाइप करें। 2022 और उसके बाद के TV में Apps के पहले पेज पर इनसे कुछ नहीं होता।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Ketik angkanya di App Settings di bagian paling bawah Apps. Di TV 2022 dan yang lebih baru, angka itu tidak berpengaruh di halaman pertama Apps."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Taip nombor itu dalam App Settings di bahagian paling bawah Apps. Pada TV 2022 dan lebih baharu, nombor itu tidak melakukan apa-apa pada halaman pertama Apps."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Typ de cijfers in App Settings helemaal onderaan Apps. Op TV's van 2022 en nieuwer doen ze niets op de eerste pagina van Apps."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• พิมพ์ตัวเลขใน App Settings ที่อยู่ล่างสุดของ Apps บน TV ปี 2022 ขึ้นไป การพิมพ์ในหน้าแรกของ Apps จะไม่เกิดอะไรขึ้น"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Rakamları Uygulamalar'ın en altındaki Uygulama Ayarları'nda yazın. 2022 ve sonrası TV'lerde rakamlar Uygulamalar'ın ilk sayfasında hiçbir şey yapmaz."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• نمبر Apps کے بالکل نیچے موجود App Settings میں لکھیں۔ 2022 اور اس کے بعد کے TV میں Apps کے پہلے صفحے پر ان سے کچھ نہیں ہوتا۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Nhập các số trong App Settings ở cuối trang Apps. Trên TV đời 2022 trở lên, nhập ở trang đầu của Apps sẽ không có tác dụng."
+          }
+        }
+      }
+    },
+    "• Restart the TV fully (hold the power button until the Samsung logo appears) and try again; on some TVs the window opens on the second or third try." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• أعد تشغيل التلفاز بالكامل (اضغط مطوّلًا على زر الطاقة حتى يظهر شعار Samsung) وحاول مجددًا؛ في بعض التلفزيونات تُفتح النافذة في المحاولة الثانية أو الثالثة."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• TV পুরোপুরি রিস্টার্ট করুন (Samsung লোগো না আসা পর্যন্ত পাওয়ার বোতাম চেপে ধরে রাখুন) এবং আবার চেষ্টা করুন; কিছু TV-তে দ্বিতীয় বা তৃতীয় চেষ্টায় উইন্ডো খোলে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Restart the TV fully (hold the power button until the Samsung logo appears) and try again; on some TVs the window opens on the second or third try."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• I-restart nang ganap ang TV (pindutin nang matagal ang power button hanggang lumabas ang logo ng Samsung) at subukang muli; sa ilang TV, bumubukas ang window sa ikalawa o ikatlong subok."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• TV को पूरी तरह रीस्टार्ट करें (पावर बटन तब तक दबाए रखें जब तक Samsung लोगो न दिखे) और फिर कोशिश करें; कुछ TV में विंडो दूसरी या तीसरी कोशिश में खुलती है।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Mulai ulang TV sepenuhnya (tahan tombol daya sampai logo Samsung muncul) lalu coba lagi; di beberapa TV jendelanya baru terbuka pada percobaan kedua atau ketiga."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Mulakan semula TV sepenuhnya (tahan butang kuasa sehingga logo Samsung muncul) dan cuba lagi; pada sesetengah TV tetingkap dibuka pada percubaan kedua atau ketiga."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Start de TV volledig opnieuw op (houd de aan/uit-knop ingedrukt tot het Samsung-logo verschijnt) en probeer het opnieuw; op sommige TV's opent het venster pas bij de tweede of derde poging."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• รีสตาร์ต TV เต็มรูปแบบ (กดปุ่มเปิด/ปิดค้างไว้จนโลโก้ Samsung ปรากฏ) แล้วลองใหม่ ใน TV บางรุ่นหน้าต่างจะเปิดในครั้งที่สองหรือสาม"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• TV'yi tam olarak yeniden başlatın (güç tuşunu Samsung logosu görünene kadar basılı tutun) ve yeniden deneyin; bazı TV'lerde pencere ikinci ya da üçüncü denemede açılır."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• TV کو مکمل طور پر دوبارہ شروع کریں (پاور بٹن اس وقت تک دبائے رکھیں جب تک Samsung کا لوگو نظر نہ آئے) اور دوبارہ کوشش کریں؛ کچھ TV میں ونڈو دوسری یا تیسری کوشش میں کھلتی ہے۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Khởi động lại TV hoàn toàn (giữ nút nguồn cho đến khi logo Samsung hiện ra) rồi thử lại; trên một số TV, cửa sổ chỉ mở ở lần thử thứ hai hoặc thứ ba."
+          }
+        }
+      }
+    },
+    "• Plug a USB keyboard into the TV and type 12345 with it. The number buttons of the SmartThings app on your phone work on some TVs." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• صِل لوحة مفاتيح USB بالتلفاز واكتب بها 12345. أزرار الأرقام في تطبيق SmartThings على هاتفك تعمل في بعض التلفزيونات."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• TV-তে একটি USB কিবোর্ড লাগিয়ে 12345 লিখুন। ফোনের SmartThings অ্যাপের নম্বর বোতাম কিছু TV-তে কাজ করে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Plug a USB keyboard into the TV and type 12345 with it. The number buttons of the SmartThings app on your phone work on some TVs."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Magsaksak ng USB keyboard sa TV at i-type doon ang 12345. Gumagana sa ilang TV ang mga number button ng SmartThings app sa phone mo."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• TV में USB कीबोर्ड लगाकर उससे 12345 टाइप करें। फ़ोन के SmartThings ऐप के नंबर बटन कुछ TV पर काम करते हैं।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Colokkan keyboard USB ke TV lalu ketik 12345. Tombol angka di aplikasi SmartThings di ponsel berfungsi di beberapa TV."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Pasangkan papan kekunci USB pada TV dan taip 12345 dengannya. Butang nombor dalam aplikasi SmartThings pada telefon anda berfungsi pada sesetengah TV."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Sluit een USB-toetsenbord aan op de TV en typ daarmee 12345. De cijfertoetsen van de SmartThings-app op je telefoon werken op sommige TV's."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• เสียบคีย์บอร์ด USB เข้ากับ TV แล้วพิมพ์ 12345 ปุ่มตัวเลขในแอป SmartThings บนโทรศัพท์ใช้ได้กับ TV บางรุ่น"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• TV'ye USB klavye takıp 12345 yazın. Telefondaki SmartThings uygulamasının rakam tuşları da bazı TV'lerde işe yarar."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• TV میں USB کی بورڈ لگا کر اس سے 12345 لکھیں۔ فون پر SmartThings ایپ کے نمبر بٹن کچھ TV پر کام کرتے ہیں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Cắm bàn phím USB vào TV và nhập 12345. Các phím số của ứng dụng SmartThings trên điện thoại hoạt động trên một số TV."
+          }
+        }
+      }
+    },
+    "• Or let Nino type it: open App Settings on the TV, then press the button below. The TV may first ask you to allow Nino. This works on some TVs only." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• أو دع Nino يكتبه: افتح إعدادات التطبيقات (App Settings) على التلفاز ثم اضغط الزر أدناه. قد يطلب التلفاز أولًا السماح لـ Nino. تعمل هذه الطريقة في بعض التلفزيونات فقط."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• অথবা Nino-কে লিখতে দিন: TV-তে App Settings খুলুন, তারপর নিচের বোতামটি চাপুন। TV আগে Nino-কে অনুমতি দিতে বলতে পারে। এটি শুধু কিছু TV-তে কাজ করে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Or let Nino type it: open App Settings on the TV, then press the button below. The TV may first ask you to allow Nino. This works on some TVs only."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• O hayaang ang Nino ang mag-type: buksan ang App Settings sa TV, saka pindutin ang button sa ibaba. Maaaring hingin muna ng TV na payagan ang Nino. Sa ilang TV lang ito gumagana."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• या Nino से टाइप करवाएँ: TV पर App Settings खोलें, फिर नीचे का बटन दबाएँ। TV पहले Nino को अनुमति देने के लिए कह सकता है। यह सिर्फ़ कुछ TV पर काम करता है।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Atau biarkan Nino yang mengetik: buka App Settings di TV, lalu tekan tombol di bawah. TV mungkin meminta izin untuk Nino lebih dulu. Cara ini hanya berfungsi di beberapa TV."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Atau biarkan Nino menaipnya: buka App Settings pada TV, kemudian tekan butang di bawah. TV mungkin meminta anda membenarkan Nino dahulu. Cara ini berfungsi pada sesetengah TV sahaja."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Of laat Nino het typen: open App Settings op de TV en druk daarna op de knop hieronder. De TV kan eerst vragen om Nino toe te staan. Dit werkt alleen op sommige TV's."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• หรือให้ Nino พิมพ์ให้: เปิด App Settings บน TV แล้วกดปุ่มด้านล่าง TV อาจขอให้อนุญาต Nino ก่อน วิธีนี้ใช้ได้กับ TV บางรุ่นเท่านั้น"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Ya da kodu Nino yazsın: TV'de Uygulama Ayarları'nı açın, sonra aşağıdaki düğmeye basın. TV önce Nino'ya izin vermenizi isteyebilir. Bu yol yalnızca bazı TV'lerde çalışır."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• یا Nino کو لکھنے دیں: TV پر App Settings کھولیں، پھر نیچے والا بٹن دبائیں۔ TV پہلے Nino کو اجازت دینے کا کہہ سکتا ہے۔ یہ صرف کچھ TV پر کام کرتا ہے۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Hoặc để Nino nhập giúp: mở App Settings trên TV, rồi bấm nút bên dưới. TV có thể hỏi cho phép Nino trước. Cách này chỉ hoạt động trên một số TV."
+          }
+        }
+      }
+    },
+    "Type 1 2 3 4 5 on the TV" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اكتب 1 2 3 4 5 على التلفاز"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV-তে 1 2 3 4 5 লিখুন"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type 1 2 3 4 5 on the TV"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I-type ang 1 2 3 4 5 sa TV"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV पर 1 2 3 4 5 टाइप करें"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketik 1 2 3 4 5 di TV"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taip 1 2 3 4 5 pada TV"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typ 1 2 3 4 5 op de TV"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "พิมพ์ 1 2 3 4 5 บน TV"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'ye 1 2 3 4 5 yaz"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV پر 1 2 3 4 5 لکھیں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhập 1 2 3 4 5 trên TV"
+          }
+        }
+      }
+    },
+    "Sent. If the window did not open on the TV, try one of the other ways." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم الإرسال. إن لم تُفتح النافذة على التلفاز فجرّب إحدى الطرق الأخرى."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "পাঠানো হয়েছে। TV-তে উইন্ডো না খুললে অন্য উপায়গুলোর একটি চেষ্টা করুন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent. If the window did not open on the TV, try one of the other ways."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naipadala na. Kung hindi bumukas ang window sa TV, subukan ang isa sa iba pang paraan."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "भेज दिया गया। अगर TV पर विंडो नहीं खुली, तो दूसरे तरीक़ों में से कोई आज़माएँ।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terkirim. Jika jendelanya tidak terbuka di TV, coba salah satu cara lain."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dihantar. Jika tetingkap tidak dibuka pada TV, cuba salah satu cara lain."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verzonden. Opende het venster niet op de TV, probeer dan een van de andere manieren."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ส่งแล้ว หากหน้าต่างไม่เปิดบน TV ให้ลองวิธีอื่น"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gönderildi. TV'de pencere açılmadıysa diğer yollardan birini deneyin."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بھیج دیا گیا۔ اگر TV پر ونڈو نہیں کھلی تو دوسرے طریقوں میں سے کوئی آزمائیں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã gửi. Nếu cửa sổ không mở trên TV, hãy thử một trong các cách khác."
+          }
+        }
+      }
+    },
+    "Could not reach the TV. Make sure it is on and try again." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تعذّر الوصول إلى التلفاز. تأكد من أنه يعمل وحاول مجددًا."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV-তে পৌঁছানো যায়নি। এটি চালু আছে কিনা দেখে আবার চেষ্টা করুন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not reach the TV. Make sure it is on and try again."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hindi maabot ang TV. Tiyaking naka-on ito at subukang muli."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV तक नहीं पहुँचा जा सका। पक्का करें कि वह चालू है और फिर कोशिश करें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV tidak dapat dijangkau. Pastikan TV menyala lalu coba lagi."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV tidak dapat dicapai. Pastikan ia dihidupkan dan cuba lagi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De TV is niet bereikbaar. Zorg dat hij aan staat en probeer het opnieuw."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ติดต่อ TV ไม่ได้ ตรวจสอบว่าเปิดอยู่แล้วลองอีกครั้ง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV'ye ulaşılamadı. Açık olduğundan emin olup yeniden deneyin."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV تک رسائی نہیں ہو سکی۔ یقینی بنائیں کہ وہ آن ہے اور دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không kết nối được với TV. Hãy chắc chắn TV đang bật rồi thử lại."
+          }
+        }
+      }
+    },
+    "The window does not open?" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "النافذة لا تُفتح؟"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "উইন্ডো খুলছে না?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The window does not open?"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hindi bumubukas ang window?"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "विंडो नहीं खुल रही?"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jendelanya tidak terbuka?"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tetingkap tidak dibuka?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opent het venster niet?"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "หน้าต่างไม่เปิดใช่ไหม"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pencere açılmıyor mu?"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ونڈو نہیں کھل رہی؟"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cửa sổ không mở?"
+          }
+        }
+      }
+    },
+    "Try anyway" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جرّب على أي حال"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "তবুও চেষ্টা করুন"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try anyway"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subukan pa rin"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "फिर भी आज़माएँ"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tetap coba"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuba juga"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toch proberen"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ลองต่อไป"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yine de dene"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "پھر بھی کوشش کریں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vẫn thử"
+          }
+        }
+      }
+    },
+    "The TV saved the address backwards (%1$@). This happens when the TV's language is written from right to left. Turn Developer mode Off and On again, then type the address backwards so the TV saves it as %2$@." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حفظ التلفاز العنوان معكوسًا (%1$@). يحدث هذا عندما تكون لغة التلفاز تُكتب من اليمين إلى اليسار. أوقف Developer mode ثم شغّله من جديد، واكتب العنوان معكوسًا ليحفظه التلفاز هكذا: %2$@."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV ঠিকানাটি উল্টো করে সংরক্ষণ করেছে (%1$@)। TV-র ভাষা ডান থেকে বামে লেখা হলে এমন হয়। Developer mode বন্ধ (Off) করে আবার চালু (On) করুন, তারপর ঠিকানাটি উল্টো করে লিখুন যাতে TV এটিকে %2$@ হিসেবে সংরক্ষণ করে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The TV saved the address backwards (%1$@). This happens when the TV's language is written from right to left. Turn Developer mode Off and On again, then type the address backwards so the TV saves it as %2$@."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pabaligtad na na-save ng TV ang address (%1$@). Nangyayari ito kapag mula kanan pakaliwa ang sulat ng wika ng TV. I-off at i-on muli ang Developer mode, saka i-type nang pabaligtad ang address para ma-save ito ng TV bilang %2$@."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV ने एड्रेस उल्टा सेव किया है (%1$@)। ऐसा तब होता है जब TV की भाषा दाएँ से बाएँ लिखी जाती है। Developer mode को Off करके फिर On करें, फिर एड्रेस उल्टा टाइप करें ताकि TV उसे %2$@ के रूप में सेव करे।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV menyimpan alamat secara terbalik (%1$@). Ini terjadi jika bahasa TV ditulis dari kanan ke kiri. Matikan Developer mode lalu aktifkan lagi, kemudian ketik alamatnya secara terbalik agar TV menyimpannya sebagai %2$@."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV menyimpan alamat secara terbalik (%1$@). Ini berlaku apabila bahasa TV ditulis dari kanan ke kiri. Matikan Developer mode dan hidupkan semula, kemudian taip alamat secara terbalik supaya TV menyimpannya sebagai %2$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De TV heeft het adres achterstevoren opgeslagen (%1$@). Dat gebeurt als de taal van de TV van rechts naar links wordt geschreven. Zet Developer mode op Off en weer op On en typ het adres achterstevoren, zodat de TV het opslaat als %2$@."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV บันทึกที่อยู่กลับด้าน (%1$@) ซึ่งเกิดขึ้นเมื่อภาษาของ TV เขียนจากขวาไปซ้าย ปิด Developer mode แล้วเปิดใหม่ จากนั้นพิมพ์ที่อยู่แบบกลับด้านเพื่อให้ TV บันทึกเป็น %2$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV adresi ters kaydetmiş (%1$@). TV'nin dili sağdan sola yazılan bir dilse böyle olur. Developer mode'u Off yapıp yeniden On yapın, sonra adresi tersten yazın; böylece TV onu %2$@ olarak kaydeder."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV نے ایڈریس الٹا محفوظ کیا ہے (%1$@)۔ ایسا تب ہوتا ہے جب TV کی زبان دائیں سے بائیں لکھی جاتی ہو۔ Developer mode کو Off کر کے دوبارہ On کریں، پھر ایڈریس الٹا لکھیں تاکہ TV اسے %2$@ کے طور پر محفوظ کرے۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV đã lưu địa chỉ theo thứ tự ngược (%1$@). Điều này xảy ra khi ngôn ngữ của TV được viết từ phải sang trái. Tắt Developer mode rồi bật lại, sau đó nhập địa chỉ theo thứ tự ngược để TV lưu thành %2$@."
+          }
+        }
+      }
+    },
+    "Update ready · Restart" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التحديث جاهز · أعد التشغيل"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "আপডেট প্রস্তুত · রিস্টার্ট করুন"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update ready · Restart"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Handa na ang update · I-restart"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अपडेट तैयार है · रीस्टार्ट करें"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pembaruan siap · Mulai ulang"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kemas kini sedia · Mulakan semula"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update klaar · Opnieuw starten"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "อัปเดตพร้อมแล้ว · รีสตาร์ต"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güncelleme hazır · Yeniden başlat"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اپ ڈیٹ تیار ہے · دوبارہ شروع کریں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bản cập nhật đã sẵn sàng · Khởi động lại"
+          }
+        }
+      }
+    },
+    "Downloading %@…" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جارٍ تنزيل %@…"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ডাউনলোড হচ্ছে…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading %@…"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina-download ang %@…"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ डाउनलोड हो रहा है…"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mengunduh %@…"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memuat turun %@…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ wordt gedownload…"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำลังดาวน์โหลด %@…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ indiriliyor…"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ڈاؤن لوڈ ہو رہا ہے…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang tải %@…"
+          }
+        }
+      }
+    },
+    "New version %@ · Update" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إصدار جديد %@ · حدّث"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "নতুন সংস্করণ %@ · আপডেট করুন"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New version %@ · Update"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bagong bersyon %@ · I-update"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नया संस्करण %@ · अपडेट करें"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versi baru %@ · Perbarui"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versi baharu %@ · Kemas kini"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe versie %@ · Bijwerken"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เวอร์ชันใหม่ %@ · อัปเดต"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni sürüm %@ · Güncelle"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نیا ورژن %@ · اپ ڈیٹ کریں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phiên bản mới %@ · Cập nhật"
+          }
+        }
+      }
+    },
+    "Nino translates it, automatically" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino يترجمها تلقائيًا"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino নিজে থেকেই অনুবাদ করে"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino translates it, automatically"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ang Nino ang nagsasalin, awtomatiko"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino अपने आप अनुवाद करता है"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino menerjemahkannya, otomatis"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino menterjemahkannya, secara automatik"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino vertaalt het, automatisch"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino แปลให้โดยอัตโนมัติ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino çeviriyor, kendiliğinden"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino خود بخود ترجمہ کرتا ہے"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino tự động dịch"
+          }
+        }
+      }
+    },
+    "In GTA 6 the Turkish subtitles come from Nino's shared translation: every line is translated once by a strong AI and everyone gets the same result. You do not choose anything or enter a key, and it is free." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "في GTA 6 تأتي الترجمة التركية من ترجمة Nino المشتركة: يُترجم كل سطر مرة واحدة بذكاء اصطناعي قوي ويحصل الجميع على النتيجة نفسها. لا تحتاج إلى اختيار شيء أو إدخال مفتاح، وهي مجانية."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GTA 6-এ তুর্কি সাবটাইটেল Nino-র যৌথ অনুবাদ থেকে আসে: প্রতিটি লাইন শক্তিশালী AI দিয়ে একবার অনুবাদ হয় এবং সবাই একই ফল পায়। আপনাকে কিছু বেছে নিতে বা কী দিতে হয় না, এবং এটি বিনামূল্যে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In GTA 6 the Turkish subtitles come from Nino's shared translation: every line is translated once by a strong AI and everyone gets the same result. You do not choose anything or enter a key, and it is free."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sa GTA 6, galing sa shared translation ng Nino ang Turkish subtitle: isang beses isinasalin ng malakas na AI ang bawat linya at pareho ang nakukuha ng lahat. Wala kang pipiliin o ilalagay na key, at libre ito."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GTA 6 में तुर्की सबटाइटल Nino के साझा अनुवाद से आते हैं: हर लाइन एक बार मज़बूत AI से अनुवाद होती है और सबको वही नतीजा मिलता है। आपको कुछ चुनना या कोई की डालनी नहीं पड़ती, और यह मुफ़्त है।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di GTA 6, subtitle bahasa Turki berasal dari terjemahan bersama Nino: setiap baris diterjemahkan sekali oleh AI yang kuat dan semua orang mendapat hasil yang sama. Anda tidak perlu memilih apa pun atau memasukkan kunci, dan ini gratis."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dalam GTA 6, sari kata bahasa Turki datang daripada terjemahan kongsi Nino: setiap baris diterjemahkan sekali oleh AI yang kuat dan semua orang mendapat hasil yang sama. Anda tidak perlu memilih apa-apa atau memasukkan kunci, dan ia percuma."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In GTA 6 komen de Turkse ondertitels uit de gedeelde vertaling van Nino: elke regel wordt één keer vertaald door een sterke AI en iedereen krijgt hetzelfde resultaat. Je hoeft niets te kiezen of een sleutel in te voeren, en het is gratis."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใน GTA 6 คำบรรยายภาษาตุรกีมาจากคำแปลร่วมของ Nino: แต่ละบรรทัดถูกแปลหนึ่งครั้งด้วย AI ที่มีความสามารถสูงและทุกคนได้ผลลัพธ์เดียวกัน คุณไม่ต้องเลือกอะไรหรือใส่คีย์ และใช้ได้ฟรี"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GTA 6'da Türkçe altyazı Nino'nun ortak çevirisinden gelir: her satır güçlü bir yapay zekâyla bir kez çevrilir ve herkese aynı çeviri gider. Bir şey seçmenize ya da anahtar girmenize gerek yok; ücretsizdir."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GTA 6 میں ترکی سب ٹائٹل Nino کے مشترکہ ترجمے سے آتے ہیں: ہر سطر ایک بار مضبوط AI سے ترجمہ ہوتی ہے اور سب کو ایک ہی نتیجہ ملتا ہے۔ آپ کو کچھ منتخب کرنے یا کوئی کی ڈالنے کی ضرورت نہیں، اور یہ مفت ہے۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trong GTA 6, phụ đề tiếng Thổ Nhĩ Kỳ đến từ bản dịch chung của Nino: mỗi dòng được một AI mạnh dịch một lần và mọi người nhận cùng một kết quả. Bạn không cần chọn gì hay nhập khóa, và hoàn toàn miễn phí."
+          }
+        }
+      }
+    },
+    "Other games" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الألعاب الأخرى"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "অন্যান্য গেম"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other games"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iba pang laro"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दूसरे गेम"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Game lain"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permainan lain"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere games"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เกมอื่น ๆ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diğer oyunlar"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "دوسرے گیمز"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trò chơi khác"
+          }
+        }
+      }
+    },
+    "Nothing to set up. Translated on this Mac." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا يحتاج إلى إعداد. تتم الترجمة على هذا الـ Mac."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "কিছু সেট আপ করতে হয় না। এই Mac-এই অনুবাদ হয়।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to set up. Translated on this Mac."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walang ise-set up. Isinasalin sa Mac na ito."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कुछ सेट अप नहीं करना। इसी Mac पर अनुवाद होता है।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidak perlu disiapkan. Diterjemahkan di Mac ini."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiada apa-apa untuk disediakan. Diterjemahkan pada Mac ini."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niets in te stellen. Wordt op deze Mac vertaald."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่ต้องตั้งค่าอะไร แปลบน Mac เครื่องนี้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurulacak bir şey yok. Bu Mac'te çevrilir."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "کچھ سیٹ اپ نہیں کرنا۔ اسی Mac پر ترجمہ ہوتا ہے۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không cần thiết lập gì. Dịch ngay trên máy Mac này."
+          }
+        }
+      }
+    },
+    "More natural translation. Needs a free Google key." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ترجمة أكثر طبيعية. تحتاج إلى مفتاح Google مجاني."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "আরও স্বাভাবিক অনুবাদ। একটি বিনামূল্যের Google কী লাগে।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More natural translation. Needs a free Google key."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mas natural na salin. Kailangan ng libreng Google key."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ज़्यादा स्वाभाविक अनुवाद। एक मुफ़्त Google की चाहिए।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terjemahan lebih alami. Perlu kunci Google gratis."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terjemahan lebih semula jadi. Memerlukan kunci Google percuma."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Natuurlijkere vertaling. Vereist een gratis Google-sleutel."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "คำแปลเป็นธรรมชาติกว่า ต้องใช้คีย์ Google ฟรี"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha doğal çeviri. Ücretsiz bir Google anahtarı gerekir."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "زیادہ قدرتی ترجمہ۔ ایک مفت Google کی درکار ہے۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bản dịch tự nhiên hơn. Cần một khóa Google miễn phí."
+          }
+        }
+      }
+    },
+    "Other translation engines" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "محركات ترجمة أخرى"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "অন্যান্য অনুবাদ ইঞ্জিন"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other translation engines"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iba pang translation engine"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "दूसरे अनुवाद इंजन"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mesin terjemahan lain"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enjin terjemahan lain"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere vertaalmotoren"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เอนจินแปลอื่น ๆ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diğer çeviri motorları"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "دوسرے ترجمہ انجن"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Công cụ dịch khác"
+          }
+        }
+      }
+    },
+    "Nino · GTA 6 active" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 مفعّل"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 সক্রিয়"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 active"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · aktibo ang GTA 6"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 सक्रिय"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 aktif"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 aktif"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 actief"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 ใช้งานอยู่"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 Aktif"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 فعال"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nino · GTA 6 đang bật"
+          }
+        }
+      }
+    },
+    "Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ميزة اللعب عن بُعد متوقفة على PS5. على PS5، افتح الإعدادات › النظام › اللعب عن بُعد وفعّل «تفعيل اللعب عن بُعد»، ثم ابدأ من جديد."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5-এ Remote Play বন্ধ আছে। PS5-এ Settings › System › Remote Play খুলে Enable Remote Play চালু করুন, তারপর আবার শুরু করুন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naka-off ang Remote Play sa PS5. Sa PS5, buksan ang Settings › System › Remote Play at i-on ang Enable Remote Play, saka magsimulang muli."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 पर Remote Play बंद है। PS5 पर Settings › System › Remote Play खोलकर Enable Remote Play चालू करें, फिर दोबारा शुरू करें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote Play dimatikan di PS5. Di PS5, buka Settings › System › Remote Play dan aktifkan Enable Remote Play, lalu mulai lagi."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote Play dimatikan pada PS5. Pada PS5, buka Settings › System › Remote Play dan hidupkan Enable Remote Play, kemudian mulakan semula."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote Play staat uit op de PS5. Open op de PS5 Instellingen › Systeem › Remote Play en zet Remote Play inschakelen aan, en start dan opnieuw."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote Play บน PS5 ปิดอยู่ บน PS5 ให้เปิด Settings › System › Remote Play แล้วเปิด Enable Remote Play จากนั้นเริ่มใหม่"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5'te Uzaktan Oynama kapalı. PS5'te Ayarlar › Sistem › Uzaktan Oynama'ya girip Uzaktan Oynamayı Etkinleştir'i açın, sonra yeniden başlatın."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PS5 پر Remote Play بند ہے۔ PS5 پر Settings › System › Remote Play کھول کر Enable Remote Play آن کریں، پھر دوبارہ شروع کریں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote Play đang tắt trên PS5. Trên PS5, mở Settings › System › Remote Play và bật Enable Remote Play, rồi bắt đầu lại."
+          }
+        }
+      }
+    },
+    "Choose your TV in the list above or type its address first." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اختر تلفازك من القائمة أعلاه أو اكتب عنوانه أولًا."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "আগে উপরের তালিকা থেকে আপনার TV বেছে নিন বা তার ঠিকানা লিখুন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your TV in the list above or type its address first."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piliin muna ang TV mo sa listahan sa itaas o i-type ang address nito."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पहले ऊपर की सूची से अपना TV चुनें या उसका एड्रेस लिखें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pilih dulu TV Anda di daftar di atas atau ketik alamatnya."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pilih TV anda dalam senarai di atas atau taip alamatnya dahulu."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies eerst je TV in de lijst hierboven of typ het adres."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เลือก TV ของคุณจากรายการด้านบนหรือพิมพ์ที่อยู่ก่อน"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önce yukarıdaki listeden TV'nizi seçin ya da adresini yazın."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "پہلے اوپر کی فہرست سے اپنا TV منتخب کریں یا اس کا ایڈریس لکھیں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trước tiên hãy chọn TV trong danh sách phía trên hoặc nhập địa chỉ của TV."
+          }
+        }
+      }
+    },
+    "Type the 6-character passphrase shown on the TV first." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اكتب أولًا كلمة المرور المكوّنة من 6 أحرف الظاهرة على التلفاز."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "আগে TV-তে দেখানো ৬ অক্ষরের পাসফ্রেজটি লিখুন।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type the 6-character passphrase shown on the TV first."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I-type muna ang 6-character na passphrase na nasa TV."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पहले TV पर दिख रहा 6 अक्षरों का पासफ़्रेज़ लिखें।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketik dulu passphrase 6 karakter yang tampil di TV."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taip dahulu frasa laluan 6 aksara yang dipaparkan pada TV."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typ eerst de wachtwoordzin van 6 tekens die op de TV staat."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "พิมพ์รหัสผ่าน 6 ตัวอักษรที่แสดงบน TV ก่อน"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önce TV ekranında görünen 6 karakterli parolayı yazın."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "پہلے TV پر دکھایا گیا 6 حروف کا پاس فریز لکھیں۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trước tiên hãy nhập cụm mật khẩu 6 ký tự hiển thị trên TV."
+          }
+        }
+      }
+    },
+    "Device info" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "معلومات الجهاز"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ডিভাইসের তথ্য"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device info"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impormasyon ng device"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "डिवाइस की जानकारी"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Info perangkat"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maklumat peranti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apparaatgegevens"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ข้อมูลอุปกรณ์"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cihaz bilgileri"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ڈیوائس کی معلومات"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thông tin thiết bị"
+          }
+        }
+      }
+    },
+    "Added to your problem reports so we can see what you use without asking. It contains no names, serial numbers or addresses." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تُضاف إلى بلاغات المشكلات لنعرف ما تستخدمه دون أن نسأل. لا تحتوي على أسماء أو أرقام تسلسلية أو عناوين."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "সমস্যা জানালে এটি যুক্ত হয়, যাতে না জিজ্ঞেস করেই বুঝতে পারি আপনি কী ব্যবহার করছেন। এতে কোনো নাম, সিরিয়াল নম্বর বা ঠিকানা নেই।"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added to your problem reports so we can see what you use without asking. It contains no names, serial numbers or addresses."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idinaragdag sa mga ulat mo ng problema para makita namin ang gamit mo nang hindi nagtatanong. Walang pangalan, serial number o address."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "समस्या की रिपोर्ट में जुड़ता है ताकि बिना पूछे पता चले कि आप क्या इस्तेमाल करते हैं। इसमें कोई नाम, सीरियल नंबर या पता नहीं होता।"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ditambahkan ke laporan masalah Anda agar kami tahu apa yang Anda pakai tanpa bertanya. Tidak berisi nama, nomor seri, atau alamat."
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ditambah pada laporan masalah anda supaya kami tahu apa yang anda gunakan tanpa bertanya. Tiada nama, nombor siri atau alamat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wordt aan je probleemmeldingen toegevoegd, zodat we zonder te vragen zien wat je gebruikt. Bevat geen namen, serienummers of adressen."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แนบไปกับรายงานปัญหาของคุณ เพื่อให้เราเห็นว่าคุณใช้อะไรโดยไม่ต้องถาม ไม่มีชื่อ หมายเลขซีเรียล หรือที่อยู่"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorun bildirdiğinizde eklenir; ne kullandığınızı sormadan görürüz. Ad, seri numarası ya da adres içermez."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مسئلے کی رپورٹ کے ساتھ شامل ہوتی ہیں تاکہ بغیر پوچھے معلوم ہو کہ آپ کیا استعمال کرتے ہیں۔ ان میں کوئی نام، سیریل نمبر یا پتا نہیں ہوتا۔"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Được thêm vào báo cáo sự cố để chúng tôi biết bạn dùng gì mà không cần hỏi. Không chứa tên, số sê-ri hay địa chỉ."
+          }
+        }
+      }
+    },
+    "Operating system" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نظام التشغيل"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "অপারেটিং সিস্টেম"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Operating system"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Operating system"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ऑपरेटिंग सिस्टम"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem operasi"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem pengendalian"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Besturingssysteem"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ระบบปฏิบัติการ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İşletim sistemi"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "آپریٹنگ سسٹم"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hệ điều hành"
+          }
+        }
+      }
+    },
+    "App version" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إصدار التطبيق"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "অ্যাপের সংস্করণ"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App version"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bersyon ng app"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ऐप का संस्करण"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versi aplikasi"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versi aplikasi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appversie"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เวอร์ชันแอป"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uygulama sürümü"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ایپ کا ورژن"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phiên bản ứng dụng"
+          }
+        }
+      }
+    },
+    "Device model" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "طراز الجهاز"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ডিভাইসের মডেল"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device model"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelo ng device"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "डिवाइस मॉडल"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model perangkat"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model peranti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apparaatmodel"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "รุ่นอุปกรณ์"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cihaz modeli"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ڈیوائس ماڈل"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kiểu thiết bị"
+          }
+        }
+      }
+    },
+    "Current status" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الحالة الحالية"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "বর্তমান অবস্থা"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current status"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kasalukuyang status"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मौजूदा स्थिति"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status saat ini"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status semasa"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Huidige status"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "สถานะปัจจุบัน"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu anki durum"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "موجودہ حالت"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trạng thái hiện tại"
+          }
+        }
+      }
+    },
+    "Copy device info" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نسخ معلومات الجهاز"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ডিভাইসের তথ্য কপি করুন"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy device info"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopyahin ang impormasyon ng device"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "डिवाइस की जानकारी कॉपी करें"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salin info perangkat"
+          }
+        },
+        "ms" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salin maklumat peranti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apparaatgegevens kopiëren"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "คัดลอกข้อมูลอุปกรณ์"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cihaz bilgilerini kopyala"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ڈیوائس کی معلومات کاپی کریں"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sao chép thông tin thiết bị"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

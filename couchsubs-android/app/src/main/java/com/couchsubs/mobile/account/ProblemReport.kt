@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.couchsubs.mobile.account
 
+import com.couchsubs.mobile.core.DeviceInfo
 import com.couchsubs.mobile.core.NinoPool
 import com.couchsubs.mobile.translation.Http
 import org.json.JSONArray
@@ -33,8 +34,13 @@ object ProblemReport {
 
     enum class Outcome { SENT, INVALID, TOO_LARGE, RATE_LIMITED, FAILED }
 
-    /** Sunucuya giden JSON gövdesi; alanlar sunucunun sınırlarına göre kırpılır, boş iletişim ve günlük gönderilmez. */
-    fun body(install: String, app: String, language: String, text: String, contact: String?, log: String?, images: List<ByteArray>): String {
+    /**
+     * Sunucuya giden JSON gövdesi; alanlar sunucunun sınırlarına göre kırpılır, boş iletişim ve günlük gönderilmez.
+     * [device]: cihaz bilgileri ([DeviceInfo.summary]: uygulama, cihaz modeli, sistem, TV, konsol; kişisel bilgi içermez);
+     * boşsa alan hiç gönderilmez.
+     */
+    fun body(install: String, app: String, language: String, text: String, contact: String?, log: String?, images: List<ByteArray>,
+             device: String? = null): String {
         val json = JSONObject()
             .put("v", 1)
             .put("install", install)
@@ -44,6 +50,7 @@ object ProblemReport {
             .put("text", text.trim().take(MAX_TEXT))
         contact?.trim()?.take(MAX_CONTACT)?.takeIf { it.isNotEmpty() }?.let { json.put("contact", it) }
         log?.takeIf { it.isNotBlank() }?.let { json.put("log", it.takeLast(MAX_LOG)) }
+        device?.trim()?.take(DeviceInfo.MAX_LENGTH)?.takeIf { it.isNotEmpty() }?.let { json.put("device", it) }
         val list = JSONArray()
         images.take(MAX_IMAGES).forEach { bytes ->
             list.put(JSONObject().put("mime", "image/jpeg").put("data", Base64.getEncoder().encodeToString(bytes)))

@@ -167,7 +167,8 @@ public class SubtitlePipelineTests
     public async Task SubtitleBoxIsSentInFrameCoordinates()
     {
         var sender = new FakeSender();
-        var reading = new Reading([new TextLine("Hold the gate.", new TextBox(0.25, 0.5, 0.75, 1))]);
+        // Satır karenin %4'ü kadar yüksek (alanın %10'u × 0.4): daha yükseği dev yazı sayılır (Reading.MaxSubtitleLineHeight).
+        var reading = new Reading([new TextLine("Hold the gate.", new TextBox(0.25, 0.5, 0.75, 0.6))]);
         var pipeline = new SubtitlePipeline(new LinesReader(reading), new FakeTranslator(), sender);
         await pipeline.ProcessAsync(Image, new CropRegion(Top: 0.6, Bottom: 1.0, Left: 0.1, Right: 0.9));
         await pipeline.WaitForTranslationsAsync();
@@ -175,7 +176,26 @@ public class SubtitlePipelineTests
         Assert.Equal(0.3, box.Left, 9);
         Assert.Equal(0.8, box.Top, 9);
         Assert.Equal(0.7, box.Right, 9);
-        Assert.Equal(1.0, box.Bottom, 9);
+        Assert.Equal(0.84, box.Bottom, 9);
+    }
+
+    /// <summary>Nino: dev yazı (tabela) çevrilmez ve günlüğe bir kez yazılır; yanındaki altyazı çevrilir.</summary>
+    [Fact]
+    public async Task OversizedSignIsNotTranslatedAndIsLoggedOnce()
+    {
+        var sender = new FakeSender();
+        var reading = new Reading([
+            new TextLine("Welcome to Leonida", new TextBox(0.1, 0.05, 0.9, 0.45)),
+            new TextLine("Hold the gate.", new TextBox(0.25, 0.8, 0.75, 0.9)),
+        ]);
+        var log = new List<string>();
+        var pipeline = new SubtitlePipeline(new LinesReader(reading), new FakeTranslator(), sender) { Log = log.Add };
+        var region = new CropRegion(Top: 0.6, Bottom: 1.0, Left: 0.1, Right: 0.9);
+        for (var i = 0; i < 3; i++) await pipeline.ProcessAsync(Image, region);
+        await pipeline.WaitForTranslationsAsync();
+        Assert.NotEmpty(sender.Sent);
+        Assert.DoesNotContain(sender.Sent, text => text.Contains("Leonida"));
+        Assert.Single(log, line => line.StartsWith("dev yazı:", StringComparison.Ordinal) && line.Contains("Welcome to Leonida"));
     }
 
     [Fact]
@@ -558,8 +578,8 @@ public class SubtitlePipelineTests
 /// </summary>
 public class BrightBackgroundPipelineTests
 {
-    /// <summary>Altyazının bölgedeki yeri (bölgenin kenarlarına oranla).</summary>
-    private static readonly TextBox SubtitleBox = new(0.3, 0.6, 0.7, 0.85);
+    /// <summary>Altyazının bölgedeki yeri (bölgenin kenarlarına oranla); karenin %7'si kadar yüksek (dev yazı sınırının altında).</summary>
+    private static readonly TextBox SubtitleBox = new(0.3, 0.6, 0.7, 0.8);
 
     /// <summary>Parlak sahne; <paramref name="subtitle"/> ise altyazının yerinde siyah-beyaz harf deseni, <paramref name="upper"/> bölgenin üst yarısının parlaklığı (sahnede kıpırdayan şey).</summary>
     private static Frame Scene(bool subtitle, byte upper = 230)

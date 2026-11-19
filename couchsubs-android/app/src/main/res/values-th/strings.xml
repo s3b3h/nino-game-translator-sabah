@@ -23,6 +23,7 @@
     <string name="phase_rejected_code">PS5 ปฏิเสธการเชื่อมต่อ (รหัส %1$s) อาจมีแอป Remote Play อื่น (PS Remote Play) เปิดอยู่ หรือ PS5 อาจอยู่ในเซสชันอื่น ปิด PS Remote Play รีสตาร์ต PS5 แล้วลองอีกครั้ง</string>
     <string name="phase_rejected">PS5 ไม่ได้เริ่มเซสชัน อาจมีแอป Remote Play อื่น (PS Remote Play) เปิดอยู่ หรือ PS5 อาจอยู่ในเซสชันอื่น ปิด PS Remote Play รีสตาร์ต PS5 แล้วลองอีกครั้ง</string>
     <string name="phase_registration_invalid">PS5 ไม่ยอมรับการจับคู่นี้ จับคู่ PS5 อีกครั้งด้วยบัญชีที่สองในการตั้งค่า</string>
+    <string name="phase_remote_play_disabled">Remote Play บน PS5 ปิดอยู่ บน PS5 ให้เปิด Settings › System › Remote Play แล้วเปิด Enable Remote Play จากนั้นเริ่มใหม่</string>
     <string name="phase_no_picture">ไม่มีภาพจาก PS5 Remote Play ปิดอยู่ หรือ PS5 อยู่ในโหมดพักหรือไม่ ตรวจสอบแล้วเริ่มแปลอีกครั้ง</string>
     <string name="phase_not_found">ไม่พบ PS5 ในเครือข่าย โทรศัพท์และ PS5 อยู่ในเครือข่ายเดียวกันไหม</string>
     <string name="phase_asleep">PS5 ไม่ตื่นจากโหมดพัก</string>
@@ -653,4 +654,23 @@
     <string name="assistant_invalid">เราส่งข้อความนี้ไม่ได้ ลองแก้นิดหน่อยแล้วส่งใหม่นะ</string>
     <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
     <string name="translation_started_notice">Nino: เริ่มแปลคำบรรยายแล้ว ขอให้สนุกกับเกม!</string>
+    <!-- Nino: Cihaz bilgileri, Ayarlar'da GTA 6 kartı ve Güncelleme satırı -->
+    <string name="device_info_title">ข้อมูลอุปกรณ์</string>
+    <string name="device_info_note">ระบบจะแนบข้อมูลนี้ไปกับรายงานปัญหาของคุณ เพื่อให้เราเห็นว่าคุณใช้อะไรอยู่โดยไม่ต้องถาม ไม่มีชื่อ หมายเลขซีเรียล หรือที่อยู่</string>
+    <string name="device_info_app">เวอร์ชันแอป</string>
+    <string name="device_info_device">รุ่นอุปกรณ์</string>
+    <string name="device_info_system">ระบบปฏิบัติการ</string>
+    <string name="device_info_tv">ทีวี</string>
+    <string name="device_info_console">คอนโซล</string>
+    <string name="device_info_status">สถานะปัจจุบัน</string>
+    <string name="device_info_copy">คัดลอกข้อมูลอุปกรณ์</string>
+    <string name="nino_gta6_active">Nino · GTA 6 ใช้งานอยู่</string>
+    <string name="nino_gta6_note">ใน GTA 6 คำบรรยายภาษาตุรกีมาจากคำแปลที่ใช้ร่วมกันของ Nino แต่ละบรรทัดจะถูกแปลเพียงครั้งเดียวด้วย AI ประสิทธิภาพสูง และทุกคนจะได้ผลลัพธ์เดียวกัน คุณไม่ต้องเลือกอะไรหรือใส่คีย์ และใช้ได้ฟรี</string>
+    <string name="settings_engine_other_games">เกมอื่นๆ</string>
+    <string name="update_row_title">อัปเดต</string>
+    <string name="update_row_newer">มีเวอร์ชันใหม่: %1$s</string>
+    <string name="update_row_download">ดาวน์โหลด</string>
+    <string name="update_row_current">เป็นเวอร์ชันล่าสุดแล้ว</string>
+    <string name="update_row_check">ตรวจสอบตอนนี้</string>
+    <string name="update_row_checking">กำลังตรวจสอบ…</string>
 </resources>

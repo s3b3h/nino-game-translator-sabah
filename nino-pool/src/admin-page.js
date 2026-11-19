@@ -1,88 +1,461 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Nino paneli (GET /panel). Sayfa veri içermez; anahtarla /v1/stats'tan çeker, 15 saniyede bir yeniler.
+// Dikkat: sayfa bir şablon dizgisinin içinde durur; içinde ters eğik çizgi, ters tırnak ya da dolar-süslü parantez
+// kullanma. Grafikler elle çizilen satır içi SVG'dir (CSP dışarıdan hiçbir şey yüklemeye izin vermez).
 export const ADMIN_PAGE = `<!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>Nino Panel</title>
 <style>
-:root{--bg:#F3F6FB;--card:#fff;--ink:#0A1430;--soft:#5B6782;--line:#E3E9F3;--blue:#1E6FE8;--green:#1FA971;--red:#E5484D}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
-main{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
-header{display:flex;align-items:center;gap:14px;margin-bottom:22px}
-header h1{font-size:26px;letter-spacing:-.4px;margin:0}header .sub{color:var(--soft);font-size:13px}
-header .right{margin-left:auto;display:flex;gap:10px;align-items:center;color:var(--soft);font-size:13px}
-.logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#0A1430,#1E6FE8);display:grid;place-items:center;color:#fff;font-weight:800}
-.hero{background:linear-gradient(135deg,#0A1430 0%,#13285A 60%,#1E6FE8 140%);color:#fff;border-radius:24px;padding:28px 30px;display:grid;grid-template-columns:1.2fr 1fr;gap:24px;box-shadow:0 18px 40px rgba(10,20,48,.18)}
-.hero .label{opacity:.75;font-size:14px;display:flex;align-items:center;gap:8px}
-.hero .big{font-size:84px;font-weight:800;letter-spacing:-3px;line-height:1;margin:10px 0 6px}
-.dot{width:10px;height:10px;border-radius:50%;background:#35E39B;box-shadow:0 0 0 0 rgba(53,227,155,.7);animation:p 1.8s infinite}
-@keyframes p{70%{box-shadow:0 0 0 12px rgba(53,227,155,0)}100%{box-shadow:0 0 0 0 rgba(53,227,155,0)}}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.chip{background:rgba(255,255,255,.12);border-radius:999px;padding:5px 12px;font-size:13px}
-.hero h3{margin:0 0 10px;font-size:14px;opacity:.75;font-weight:600}
-.games div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px 18px 16px;box-shadow:0 6px 18px rgba(10,20,48,.05)}
-.card .k{color:var(--soft);font-size:13px;font-weight:600}.card .v{font-size:34px;font-weight:800;letter-spacing:-1px;margin-top:6px}
-.card .s{color:var(--soft);font-size:12.5px;margin-top:4px}
-.wide{grid-column:span 2}.rows div{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
-.rows div:last-child{border:0}.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:var(--blue)}
-svg{width:100%;height:90px;margin-top:10px}
-#gate{max-width:420px;margin:12vh auto;background:#fff;border:1px solid var(--line);border-radius:22px;padding:28px;text-align:center}
-#gate input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:15px;margin:14px 0}
-button{background:var(--ink);color:#fff;border:0;border-radius:999px;padding:11px 22px;font-weight:600;font-size:14px;cursor:pointer}
-@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.hero{grid-template-columns:1fr}.hero .big{font-size:64px}}
-@media(max-width:520px){.grid{grid-template-columns:1fr}.wide{grid-column:span 1}}
-</style></head><body>
-<div id="gate" hidden><div class="logo" style="margin:0 auto">N</div><h2>Nino Panel</h2><p class="sub" style="color:#5B6782">Panel anahtarını gir (bu cihazda hatırlanır).</p>
-<input id="key" type="password" placeholder="Anahtar" autocomplete="off"><button id="go">Aç</button></div>
-<main id="app" hidden>
-<header><div class="logo">N</div><div><h1>Nino Panel</h1><div class="sub">Canlı · 15 saniyede bir yenilenir</div></div>
-<div class="right"><span id="when"></span><button id="out" style="background:#E3E9F3;color:#0A1430">Çıkış</button></div></header>
-<section class="hero"><div><div class="label"><span class="dot"></span>Şu an oynayan</div><div class="big" id="now">–</div>
-<div class="chips" id="nowPlat"></div></div><div class="games"><h3>Şu an oynanan oyunlar</h3><div id="games"></div></div></section>
-<section class="grid">
-<div class="card"><div class="k">Son 24 saatte açan</div><div class="v" id="a24">–</div><div class="s">Farklı kurulum</div></div>
-<div class="card"><div class="k">Toplam kurulum</div><div class="v" id="inst">–</div><div class="s" id="instNew"></div></div>
-<div class="card"><div class="k">İndirme (GitHub)</div><div class="v" id="dl">–</div><div class="s" id="dlBy"></div></div>
-<div class="card"><div class="k">Çevrilen satır</div><div class="v" id="lines">–</div><div class="s" id="words"></div></div>
-<div class="card wide"><div class="k">Son 24 saatte saatlik çeviri</div><svg id="spark" viewBox="0 0 480 90" preserveAspectRatio="none"></svg><div class="s" id="today"></div></div>
-<div class="card"><div class="k">Bugünkü çeviri harcaması</div><div class="v" id="spend">–</div><div class="bar"><i id="spendBar" style="width:0"></i></div><div class="s" id="spendCap"></div></div>
-<div class="card"><div class="k">Gözden geçirilen</div><div class="v" id="rev">–</div><div class="s">Bağlamla düzeltilip onaylanan</div></div>
-<div class="card"><div class="k">Toplanan İngilizce satır</div><div class="v" id="pool">–</div><div class="s" id="poolSeen"></div></div>
-<div class="card"><div class="k">Nino'ya Sor (bugün)</div><div class="v" id="ask">–</div><div class="s" id="askCost"></div></div>
-<div class="card"><div class="k">Sorun bildirimi</div><div class="v" id="rep">–</div><div class="s" id="repNew"></div></div>
-<div class="card"><div class="k">En yeni sürüm</div><div class="v" id="latest" style="font-size:26px">–</div><div class="s">GitHub</div></div>
-<div class="card wide rows"><div class="k" style="border:0">Kurulumlar (platform)</div><div id="plat"></div></div>
-<div class="card wide rows"><div class="k" style="border:0">Diller (çeviri)</div><div id="langs"></div></div>
-</section></main>
-<script>
-const $=id=>document.getElementById(id);const fmt=n=>(n??0).toLocaleString('tr-TR');
-const NAMES={mac:'Mac',windows:'Windows',android:'Android',ios:'iPhone / iPad',tv:'TV',linux:'Linux','':'Bilinmiyor (eski sürüm)'};
-const LANGS={tr:'🇹🇷 Türkçe',ar:'🇸🇦 Arapça',hi:'🇮🇳 Hintçe',id:'🇮🇩 Endonezce',th:'🇹🇭 Tayca',vi:'🇻🇳 Vietnamca',ur:'🇵🇰 Urduca',bn:'🇧🇩 Bengalce',ms:'🇲🇾 Malayca',tl:'🇵🇭 Filipince',nl:'🇳🇱 Felemenkçe'};
-let key='';try{key=localStorage.getItem('ninoPanelKey')||''}catch{}
-function gate(show){$('gate').hidden=!show;$('app').hidden=show}
-$('go').onclick=()=>{key=$('key').value.trim();try{localStorage.setItem('ninoPanelKey',key)}catch{};load()};
-$('out').onclick=()=>{try{localStorage.removeItem('ninoPanelKey')}catch{};key='';gate(true)};
-function rows(el,list,name,value){el.innerHTML=list.length?list.map(r=>'<div><span>'+name(r)+'</span><b>'+value(r)+'</b></div>').join(''):'<div><span style="color:#5B6782">Henüz yok</span></div>'}
-async function load(){if(!key){gate(true);return}
- const r=await fetch('/v1/stats',{headers:{authorization:'Bearer '+key}}).catch(()=>null);
- if(!r||r.status===401){gate(true);return} if(!r.ok)return; const d=await r.json(); gate(false);
- const p=d.players;$('now').textContent=fmt(p.now);
- $('nowPlat').innerHTML=p.byPlatform.map(x=>'<span class="chip">'+(NAMES[x.platform]||x.platform)+' · '+x.n+'</span>').join('')||'<span class="chip">Şu an kimse oynamıyor</span>';
- $('games').innerHTML=p.games.length?p.games.map(g=>'<div><span>'+(g.game||'Oyun bilinmiyor')+'</span><b>'+g.n+'</b></div>').join(''):'<div><span>—</span></div>';
- $('a24').textContent=fmt(p.active24h);$('inst').textContent=fmt(p.installs);$('instNew').textContent='Bugün yeni: '+fmt(p.newToday);
- const dl=d.downloads;$('dl').textContent=dl?fmt(dl.total):'–';$('dlBy').textContent=dl?'Mac '+fmt(dl.mac)+' · Windows '+fmt(dl.windows)+' · Android '+fmt(dl.android)+' · TV '+fmt(dl.tv):'';
- $('latest').textContent=dl&&dl.latest||'–';
- const t=d.translations;$('lines').textContent=fmt(t.lines);$('words').textContent=fmt(t.words)+' kelime · bugün '+fmt(t.today)+' satır';
- $('rev').textContent=fmt(t.reviewed);$('today').textContent='Bugün '+fmt(t.today)+' satır, '+fmt(t.wordsToday)+' kelime çevrildi';
- const hours=[];const base=Math.floor(d.now/3600)*3600;const map=new Map(t.hourly.map(h=>[h.hour,h.n]));for(let i=23;i>=0;i--)hours.push(map.get(base-i*3600)||0);
- const max=Math.max(1,...hours);$('spark').innerHTML=hours.map((n,i)=>{const h=Math.max(2,n/max*80);return '<rect x="'+(i*20+3)+'" y="'+(88-h)+'" width="14" height="'+h+'" rx="4" fill="'+(i===23?'#1E6FE8':'#BFD3F6')+'"><title>'+n+'</title></rect>'}).join('');
- const s=d.spend;$('spend').textContent='$'+s.translateToday.toFixed(2);$('spendCap').textContent='Günlük sınır $'+s.translateCap;$('spendBar').style.width=Math.min(100,s.translateToday/s.translateCap*100)+'%';
- $('pool').textContent=fmt(d.pool.lines);$('poolSeen').textContent=fmt(d.pool.seen)+' kez görüldü';
- $('ask').textContent=fmt(d.assistant.questionsToday);$('askCost').textContent='Harcama $'+s.assistantToday.toFixed(2);
- $('rep').textContent=fmt(d.reports.total);$('repNew').textContent='Okunmamış: '+fmt(d.reports.fresh);
- rows($('plat'),p.installsByPlatform,r=>NAMES[r.platform]||r.platform,r=>fmt(r.n));
- rows($('langs'),t.byLang,r=>LANGS[r.lang]||r.lang,r=>fmt(r.n)+' satır');
- $('when').textContent=new Date(d.now*1000).toLocaleTimeString('tr-TR');
+:root{--bg:#F3F5FA;--card:#FFFFFF;--ink:#0A1430;--soft:#566180;--line:#E2E7F0;--grid:#ECEFF5;--accent:#1E6FE8;--accent-ink:#FFFFFF;
+--series:#2a78d6;--series-hi:#0F4A9C;--track:#E4EBF7;--quiet:#E8EDF5;--warn:#A65F00;--bad:#C4262C;--tip:#0A1430;--tip-ink:#FFFFFF;--hero-line:transparent}
+@media (prefers-color-scheme: dark){:root{--bg:#0A0F1E;--card:#121930;--ink:#EDF1FA;--soft:#A5B0C8;--line:#232C47;--grid:#1B2440;--accent:#3D83EA;--accent-ink:#FFFFFF;
+--series:#3987e5;--series-hi:#9CC6F7;--track:#1E2947;--quiet:#1E2742;--warn:#E3A541;--bad:#F2777A;--tip:#EDF1FA;--tip-ink:#0A1430;--hero-line:rgba(255,255,255,.10)}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p{margin:0}
+main{max-width:1200px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+header{display:flex;align-items:center;gap:12px}
+header h1{font-size:20px;letter-spacing:-.3px;line-height:1.2}
+header .sub{color:var(--soft);font-size:12.5px}
+header .sub.warn{color:var(--warn)}
+header .grow{flex:1;min-width:0}
+.logo{flex:none;width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#0A1430,#1E6FE8);display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:0;border-radius:12px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;background:var(--quiet);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn:focus-visible,input:focus-visible,.chart:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sec{font-size:15px;font-weight:700;letter-spacing:-.1px;margin:28px 2px 10px}
+.stack{display:grid;gap:12px}
+.stack>*,.tiles>*,.cols>*,.minis>*,.split>*,.hero>*{min-width:0}
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(148px,1fr))}
+.cols{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.minis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.split{display:grid;gap:12px;grid-template-columns:2fr 1fr}
+.split.rev{grid-template-columns:1fr 2fr}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.k{color:var(--soft);font-size:13px;font-weight:600}
+.v{font-size:clamp(22px,6.4vw,30px);font-weight:750;letter-spacing:-.6px;line-height:1.15;margin-top:6px;overflow-wrap:anywhere}
+.s{color:var(--soft);font-size:12.5px;margin-top:4px}
+.card .btn{margin-top:12px}
+.head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.head .now{font-size:20px;font-weight:750;letter-spacing:-.3px;white-space:nowrap}
+.head .now small{font-size:12px;font-weight:500;color:var(--soft);margin-left:5px;letter-spacing:0}
+.note{color:var(--soft);font-size:12.5px;margin-top:8px}
+.note:empty{display:none}
+
+.hero{background:linear-gradient(135deg,#0A1430 0%,#12265A 62%,#1B4FAE 135%);color:#fff;border:1px solid var(--hero-line);border-radius:20px;padding:22px;display:grid;gap:0 28px;grid-template-columns:1fr 1.15fr 1fr}
+.hero h3{font-size:13px;font-weight:600;color:rgba(255,255,255,.72);margin-bottom:10px}
+.hero .label{display:flex;align-items:center;gap:8px;font-size:14px;color:rgba(255,255,255,.78)}
+.hero .big{font-size:clamp(60px,19vw,92px);font-weight:800;letter-spacing:-.04em;line-height:1;margin:8px 0 10px}
+.dot{flex:none;width:10px;height:10px;border-radius:50%;background:#35E39B;animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(53,227,155,.7)}70%{box-shadow:0 0 0 12px rgba(53,227,155,0)}100%{box-shadow:0 0 0 0 rgba(53,227,155,0)}}
+@media (prefers-reduced-motion: reduce){.dot{animation:none}}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:rgba(255,255,255,.13);border-radius:999px;padding:4px 11px;font-size:13px}
+.hero .part{border-left:1px solid rgba(255,255,255,.14);padding-left:28px}
+.pk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pk b{display:block;font-size:clamp(28px,8.4vw,40px);font-weight:750;letter-spacing:-.03em;line-height:1.1}
+.pk span{display:block;font-size:12.5px;color:rgba(255,255,255,.72);margin-top:2px}
+.hero p{font-size:12.5px;color:rgba(255,255,255,.72);margin-top:10px}
+.hero p+p{margin-top:2px}
+.games>div>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:14px}
+.games>div>div:last-child{border-bottom:0}
+.games span{min-width:0;overflow-wrap:anywhere}
+
+.chart{position:relative;overflow:hidden;margin-top:10px;border-radius:6px;cursor:crosshair;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
+.chart svg{position:absolute;left:0;top:0;display:block}
+.chart .g{stroke:var(--grid);stroke-width:1}
+.chart .base{stroke:var(--line);stroke-width:1}
+.chart .ref{stroke:var(--soft);stroke-width:1}
+.chart .ax{fill:var(--soft);font-size:11px}
+.chart .val{fill:var(--ink);font-size:12px;font-weight:700;paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round}
+.chart .b{fill:var(--series)}
+.chart .b.z{opacity:.45}
+.chart .b.hi,.chart .b.on{fill:var(--series-hi)}
+.chart .band{fill:var(--grid);opacity:0}
+.chart .band.on{opacity:1}
+.empty{display:grid;place-items:center;text-align:center;min-height:96px;margin-top:10px;padding:14px;border:1px dashed var(--line);border-radius:12px;color:var(--soft);font-size:13px}
+#tip{position:absolute;z-index:20;left:0;top:0;pointer-events:none;background:var(--tip);color:var(--tip-ink);border-radius:10px;padding:7px 10px;font-size:12.5px;line-height:1.35;max-width:230px;box-shadow:0 4px 14px rgba(10,20,48,.16)}
+#tip b{display:block;font-size:14px}
+#tip span{opacity:.82}
+
+.list{margin-top:6px}
+.row{padding:8px 0 0}
+.rt{display:flex;align-items:baseline;gap:8px;font-size:14px}
+.rt span{flex:1;min-width:0;overflow-wrap:anywhere}
+.rt em{font-style:normal;font-size:11px;font-weight:600;color:var(--soft);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:6px;white-space:nowrap}
+.rt b{font-weight:650;white-space:nowrap}
+.rt i{font-style:normal;color:var(--soft);font-size:12.5px;min-width:34px;text-align:right;white-space:nowrap}
+.track{height:6px;border-radius:99px;background:var(--track);overflow:hidden;margin-top:6px}
+.track span{display:block;height:100%;border-radius:99px;background:var(--series)}
+.none{color:var(--soft);font-size:13px;padding-top:10px}
+.meter{height:10px;border-radius:99px;background:var(--track);overflow:hidden;margin-top:12px}
+.meter i{display:block;height:100%;width:0;border-radius:99px;background:var(--series);transition:width .4s}
+.meter.warn i{background:var(--warn)}
+.meter.bad i{background:var(--bad)}
+.flag{font-weight:650}
+.flag.warn{color:var(--warn)}
+.flag.bad{color:var(--bad)}
+
+#gate{max-width:400px;margin:12vh auto 0;padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+#gate .card{padding:26px 22px;text-align:center}
+#gate .logo{margin:0 auto 12px}
+#gate h1{font-size:22px;letter-spacing:-.3px}
+#gate p{color:var(--soft);font-size:14px;margin-top:6px}
+#gate input{width:100%;min-height:48px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font:inherit;font-size:16px;margin:16px 0 0;background:var(--bg);color:var(--ink)}
+#gate .msg{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+#gate .btn{width:100%;margin-top:8px}
+
+@media (max-width:900px){
+ .hero{grid-template-columns:1fr;padding:20px 18px}
+ .hero .part{border-left:0;padding-left:0;border-top:1px solid rgba(255,255,255,.14);margin-top:18px;padding-top:16px}
+ .split,.split.rev{grid-template-columns:1fr}
 }
+@media (max-width:520px){.tiles>:last-child:nth-child(odd){grid-column:1/-1}}
+@media (min-width:901px){main{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right));padding-top:max(24px,env(safe-area-inset-top))}header h1{font-size:22px}.card{padding:18px}}
+</style></head><body>
+<div id="gate" hidden><div class="card"><div class="logo" aria-hidden="true">N</div><h1>Nino Panel</h1><p>Panel anahtarını gir (bu cihazda hatırlanır).</p>
+<input id="key" type="password" placeholder="Anahtar" aria-label="Panel anahtarı" autocomplete="off" autocapitalize="off" spellcheck="false">
+<div class="msg" id="gateMsg" role="alert"></div><button id="go" class="btn primary" type="button">Aç</button></div></div>
+
+<main id="app" hidden>
+<header><div class="logo" aria-hidden="true">N</div><div class="grow"><h1>Nino Panel</h1><div class="sub" id="when">Canlı · 15 saniyede bir yenilenir</div></div>
+<button id="out" class="btn" type="button">Çıkış</button></header>
+
+<h2 class="sec">Canlı</h2>
+<section class="hero">
+ <div><div class="label"><span class="dot" aria-hidden="true"></span>Şu an oynayan</div><div class="big" id="now">–</div><div class="chips" id="nowPlat"></div></div>
+ <div class="part"><h3>En çok aynı anda oynayan</h3>
+  <div class="pk"><div><b id="pkToday">–</b><span>Bugün</span></div><div><b id="pkWeek">–</b><span>Son 7 gün</span></div><div><b id="pkAll">–</b><span>Rekor</span></div></div>
+  <p id="pkWhen"></p><p id="pkSince"></p></div>
+ <div class="part games"><h3>Şu an oynanan oyunlar</h3><div id="games"></div></div>
+</section>
+
+<h2 class="sec">Oyuncular</h2>
+<section class="stack">
+ <div class="card"><div class="k">Aynı anda oynayan (son 48 saat)</div><div class="s">Her saatin en yüksek oyuncu sayısı</div><div id="cHours"></div><div class="note" id="cHoursNote"></div></div>
+ <div class="minis">
+  <div class="card"><div class="head"><div class="k">Günlük açan</div><div class="now" id="vActive"></div></div><div class="s">O gün uygulamayı açan farklı kurulum</div><div id="cActive"></div><div class="note" id="cActiveNote"></div></div>
+  <div class="card"><div class="head"><div class="k">Günlük oynayan</div><div class="now" id="vPlayed"></div></div><div class="s">O gün çeviri yapan farklı kurulum</div><div id="cPlayed"></div><div class="note" id="cPlayedNote"></div></div>
+  <div class="card"><div class="head"><div class="k">Yeni kurulum</div><div class="now" id="vFresh"></div></div><div class="s">O gün ilk kez açılan kurulum</div><div id="cFresh"></div><div class="note" id="cFreshNote"></div></div>
+  <div class="card"><div class="head"><div class="k">Günün en yükseği</div><div class="now" id="vPeak"></div></div><div class="s">O gün aynı anda en çok oynayan</div><div id="cPeak"></div><div class="note" id="cPeakNote"></div></div>
+ </div>
+</section>
+
+<h2 class="sec">Kurulumlar</h2>
+<section class="stack">
+ <div class="tiles">
+  <div class="card"><div class="k">Toplam kurulum</div><div class="v" id="inst">–</div><div class="s" id="instNew"></div></div>
+  <div class="card"><div class="k">Son 24 saatte açan</div><div class="v" id="a24">–</div><div class="s">Farklı kurulum</div></div>
+  <div class="card"><div class="k">İndirme (GitHub)</div><div class="v" id="dl">–</div><div class="s" id="dlBy"></div></div>
+  <div class="card"><div class="k">En yeni sürüm</div><div class="v" id="latest">–</div><div class="s">GitHub</div></div>
+ </div>
+ <div class="cols">
+  <div class="card"><div class="k">Kurulumlar (platform)</div><div class="list" id="plat"></div></div>
+  <div class="card"><div class="k">Sürümler (son 7 gün)</div><div class="s" id="verNote">Son 7 günde açılan kurulumların sürümü</div><div class="list" id="vers"></div></div>
+  <div class="card"><div class="k">Kullanıcı dilleri</div><div class="s">Uygulamada seçilen dil</div><div class="list" id="ulangs"></div></div>
+  <div class="card"><div class="k">İndirmeler (dosyaya göre)</div><div class="s">GitHub sürüm dosyaları</div><div class="list" id="dlList"></div></div>
+ </div>
+</section>
+
+<h2 class="sec">TV'ler</h2>
+<section class="stack">
+ <div class="tiles">
+  <div class="card"><div class="k">Nino kurulu TV</div><div class="v" id="tvTotal">–</div><div class="s" id="tvNote">TV uygulamasının bildirdiği farklı TV</div></div>
+  <div class="card"><div class="k">Android TV / Google TV</div><div class="v" id="tvA">–</div><div class="s">TV</div></div>
+  <div class="card"><div class="k">Samsung</div><div class="v" id="tvS">–</div><div class="s">TV ve akıllı monitör</div></div>
+  <div class="card"><div class="k">LG</div><div class="v" id="tvL">–</div><div class="s">TV</div></div>
+ </div>
+ <div class="cols">
+  <div class="card"><div class="k">Android TV / Google TV modelleri</div><div class="list" id="tvModelsA"></div></div>
+  <div class="card"><div class="k">Samsung modelleri</div><div class="list" id="tvModelsS"></div></div>
+  <div class="card"><div class="k">LG modelleri</div><div class="list" id="tvModelsL"></div></div>
+  <div class="card"><div class="k">TV uygulaması sürümleri</div><div class="list" id="tvVers"></div></div>
+ </div>
+</section>
+
+<h2 class="sec">Çeviri</h2>
+<section class="stack">
+ <div class="tiles">
+  <div class="card"><div class="k">Çevrilen satır</div><div class="v" id="lines">–</div><div class="s" id="words"></div></div>
+  <div class="card"><div class="k">Gözden geçirilen</div><div class="v" id="rev">–</div><div class="s">Bağlamla düzeltilip onaylanan</div></div>
+  <div class="card"><div class="k">Toplanan İngilizce satır</div><div class="v" id="pool">–</div><div class="s" id="poolSeen"></div></div>
+ </div>
+ <div class="split">
+  <div class="card"><div class="k">Saatlik çeviri (son 24 saat)</div><div class="s" id="today"></div><div id="cTr"></div></div>
+  <div class="card"><div class="k">Diller (çeviri)</div><div class="list" id="langs"></div></div>
+ </div>
+</section>
+
+<h2 class="sec">Maliyet</h2>
+<section class="split rev">
+ <div class="card"><div class="k">Bugünkü çeviri harcaması</div><div class="v" id="spend">–</div><div class="meter" id="spendMeter"><i id="spendBar"></i></div><div class="s" id="spendCap"></div><div class="s" id="spendAsk"></div></div>
+ <div class="card"><div class="k">Çeviri harcaması (son 7 gün)</div><div class="s" id="weekSum"></div><div id="cWeek"></div></div>
+</section>
+
+<h2 class="sec">Destek</h2>
+<section class="cols">
+ <div class="card"><div class="k">Sorun bildirimi</div><div class="v" id="rep">–</div><div class="s" id="repNew"></div><a class="btn" href="/reports">Bildirimleri aç</a></div>
+ <div class="card"><div class="k">Nino'ya Sor (bugün)</div><div class="v" id="ask">–</div><div class="s" id="askCost"></div></div>
+</section>
+</main>
+<div id="tip" hidden><b id="tipV"></b><span id="tipL"></span></div>
+<script>
+var $=function(id){return document.getElementById(id)};
+function num(v){v=Number(v);return isFinite(v)?v:0}
+function fmt(v){return num(v).toLocaleString('tr-TR')}
+function usd(v){return '$'+num(v).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function esc(s){return String(s==null?'':s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;').split("'").join('&#39;')}
+function arr(v){return Array.isArray(v)?v:[]}
+function obj(v){return v&&typeof v==='object'?v:{}}
+function set(id,text){var e=$(id);if(e)e.textContent=text}
+function r2(v){return Math.round(v*100)/100}
+function D(t){return new Date(t*1000)}
+function hm(t){return D(t).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}
+function dShort(t){return D(t).toLocaleDateString('tr-TR',{day:'numeric',month:'short'})}
+function dLong(t){return D(t).toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long'})}
+var NAMES={mac:'Mac',windows:'Windows',android:'Android',ios:'iPhone / iPad',tv:'TV',linux:'Linux','':'Bilinmiyor (eski sürüm)'};
+var LANGS={tr:'🇹🇷 Türkçe',ar:'🇸🇦 Arapça',hi:'🇮🇳 Hintçe',id:'🇮🇩 Endonezce',th:'🇹🇭 Tayca',vi:'🇻🇳 Vietnamca',ur:'🇵🇰 Urduca',bn:'🇧🇩 Bengalce',ms:'🇲🇾 Malayca',tl:'🇵🇭 Filipince',nl:'🇳🇱 Felemenkçe',en:'🇬🇧 İngilizce',de:'🇩🇪 Almanca',fr:'🇫🇷 Fransızca',es:'🇪🇸 İspanyolca',it:'🇮🇹 İtalyanca',pt:'🇵🇹 Portekizce',ru:'🇷🇺 Rusça',pl:'🇵🇱 Lehçe',fa:'🇮🇷 Farsça',az:'🇦🇿 Azerice',ja:'🇯🇵 Japonca',ko:'🇰🇷 Korece',zh:'🇨🇳 Çince'};
+var MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+var FROM=['tan','tan','tan','dan','tan','dan','dan','tan','den','den','dan','tan'];
+var EARLY='Kayıt yeni başladı; grafik doldukça burada görünecek.';
+function platName(p){p=p==null?'':String(p);return esc(NAMES[p]||p)}
+function langName(l){l=String(l==null?'':l);return esc(LANGS[l]||LANGS[l.split('-')[0]]||l||'Bilinmiyor')}
+function sinceText(t){var d=D(t),m=d.getMonth();
+ if(d.getFullYear()!==new Date().getFullYear())return 'Kayıt başlangıcı: '+d.getDate()+' '+MONTHS[m]+' '+d.getFullYear();
+ return 'Kayıt '+d.getDate()+' '+MONTHS[m]+"'"+FROM[m]+' beri tutuluyor'}
+
+/* ---------- Giriş ---------- */
+var key='';try{key=localStorage.getItem('ninoPanelKey')||''}catch(e){}
+function gate(show,msg){$('gate').hidden=!show;$('app').hidden=show;if(show){set('gateMsg',msg||'');hideTip()}}
+function enter(){key=$('key').value.trim();if(!key){gate(true,'Önce anahtarı yaz.');return}try{localStorage.setItem('ninoPanelKey',key)}catch(e){}load()}
+$('go').onclick=enter;
+$('key').addEventListener('keydown',function(e){if(e.key==='Enter')enter()});
+$('out').onclick=function(){try{localStorage.removeItem('ninoPanelKey')}catch(e){}key='';$('key').value='';gate(true,'')};
+function status(text,warn){var e=$('when');if(!e)return;e.textContent=text;e.className=warn?'sub warn':'sub'}
+
+/* ---------- Grafik: tek seri, çubuk ---------- */
+var REG={},TIP={id:null,i:-1};
+function scale(mx,target,dec){
+ if(!(mx>0))mx=1;
+ var raw=mx/target,p=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10)),m=raw/p;
+ var step=(m<=1?1:m<=2?2:m<=5?5:10)*p;if(!dec&&step<1)step=1;
+ var count=Math.max(1,Math.ceil(mx/step-1e-9)),ticks=[];
+ for(var i=0;i<=count;i++)ticks.push(r2(i*step));
+ return {top:count*step,ticks:ticks}}
+function barPath(x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h));var b=r2(y+h),x1=r2(x+w);x=r2(x);y=r2(y);
+ return 'M'+x+' '+b+'V'+r2(y+r)+'Q'+x+' '+y+' '+r2(x+r)+' '+y+'H'+r2(x1-r)+'Q'+x1+' '+y+' '+x1+' '+r2(y+r)+'V'+b+'Z'}
+function anchorAt(cx,w,W){if(cx-w/2<0)return {x:0,a:'start'};if(cx+w/2>W)return {x:W,a:'end'};return {x:r2(cx),a:'middle'}}
+function describe(title,slots,tv){
+ var lo=null,hi=null,last=null;
+ slots.forEach(function(s){if(s.v==null)return;if(!lo||s.v<lo.v)lo=s;if(!hi||s.v>=hi.v)hi=s;last=s});
+ if(!last)return title+': henüz kayıt yok.';
+ return title+'. En düşük '+tv(lo.v)+', en yüksek '+tv(hi.v)+' ('+hi.t+'), son değer '+tv(last.v)+' ('+last.t+').'}
+/* slots: [{v: sayı ya da null (kayıt yok), t: ipucu yazısı, x: eksen yazısı, lv: önem 1-3, d: tarih (ikinci satır)}] */
+function chart(id,slots,opts){
+ var host=$(id);if(!host)return;
+ REG[id]={slots:slots,opts:opts,geo:null};
+ host.className='chart';host.setAttribute('role','img');host.setAttribute('tabindex','0');
+ host.setAttribute('aria-label',describe(opts.title,slots,opts.tipVal||fmt));
+ draw(id)}
+function placeholder(id,text){var host=$(id);if(!host)return;delete REG[id];if(TIP.id===id)hideTip();
+ host.className='empty';host.removeAttribute('role');host.removeAttribute('tabindex');host.removeAttribute('aria-label');host.style.height='';host.textContent=text}
+function draw(id){
+ var c=REG[id],host=$(id);if(!c||!host)return;
+ var slots=c.slots,o=c.opts,n=slots.length,i;
+ var W=Math.max(200,Math.floor(host.clientWidth)||320),H=o.h||150;
+ var mx=0;for(i=0;i<n;i++)if(slots[i].v!=null&&slots[i].v>mx)mx=slots[i].v;
+ if(o.ref>mx)mx=o.ref;
+ var sc=scale(mx,o.ticks||3,o.dec),tf=o.tick||fmt,cw=6.3,lw=1;
+ for(i=0;i<sc.ticks.length;i++)lw=Math.max(lw,String(tf(sc.ticks[i])).length);
+ var padL=Math.ceil(lw*cw)+10,padR=4,padT=22,padB=o.two?36:22;
+ var pw=W-padL-padR,ph=H-padT-padB,sw=pw/n,bw=Math.max(1,Math.min(24,sw-2)),y0=padT+ph,tops=[],mark=-1;
+ if(o.mark==='last'){if(n&&slots[n-1].v!=null)mark=n-1}
+ else if(o.mark==='max'){var best=0;for(i=0;i<n;i++)if(slots[i].v!=null&&slots[i].v>0&&slots[i].v>=best){best=slots[i].v;mark=i}}
+ var s='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" aria-hidden="true" focusable="false">';
+ for(i=0;i<sc.ticks.length;i++){var ty=r2(y0-ph*sc.ticks[i]/sc.top);
+  s+='<line class="'+(i?'g':'base')+'" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+ty+'" y2="'+ty+'"/>';
+  s+='<text class="ax" x="'+(padL-6)+'" y="'+r2(ty+3.5)+'" text-anchor="end">'+esc(tf(sc.ticks[i]))+'</text>'}
+ s+='<rect class="band" id="'+id+'-band" x="0" y="'+padT+'" width="0" height="'+ph+'" rx="3"/>';
+ for(i=0;i<n;i++){var v=slots[i].v;if(v==null){tops.push(y0-28);continue}
+  var bh=v>0?Math.max(2,ph*v/sc.top):2,bx=padL+i*sw+(sw-bw)/2,by=y0-bh;tops.push(by);
+  s+='<path class="b'+(v>0?'':' z')+(i===mark?' hi':'')+'" data-i="'+i+'" d="'+barPath(bx,by,bw,bh,4)+'"/>'}
+ if(o.ref>0){var ry=r2(y0-ph*o.ref/sc.top);
+  s+='<line class="ref" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+ry+'" y2="'+ry+'"/>';
+  if(o.refLabel)s+='<text class="ax" x="'+(padL+4)+'" y="'+r2(ry-5)+'">'+esc(o.refLabel)+'</text>'}
+ if(mark>=0&&o.label!==false){var txt=(o.markVal||o.tipVal||fmt)(slots[mark].v),ma=anchorAt(padL+(mark+.5)*sw,txt.length*7+4,W);
+  s+='<text class="val" x="'+ma.x+'" y="'+r2(tops[mark]-6)+'" text-anchor="'+ma.a+'">'+esc(txt)+'</text>'}
+ var xw=0;for(i=0;i<n;i++)if(slots[i].x)xw=Math.max(xw,String(slots[i].x).length*cw,String(slots[i].d||'').length*cw);
+ var level=1;for(var L=3;L>=1;L--){var prev=-1,fits=true;
+  for(i=0;i<n;i++){if(!slots[i].x||(slots[i].lv||1)>L)continue;if(prev>=0&&(i-prev)*sw<xw+8){fits=false;break}prev=i}
+  if(fits){level=L;break}}
+ var lastD=null;
+ for(i=0;i<n;i++){var sl=slots[i];if(!sl.x||(sl.lv||1)>level)continue;
+  var xa=anchorAt(padL+(i+.5)*sw,xw,W);
+  s+='<text class="ax" x="'+xa.x+'" y="'+(y0+15)+'" text-anchor="'+xa.a+'">'+esc(sl.x)+'</text>';
+  if(o.two&&sl.d&&sl.d!==lastD)s+='<text class="ax" x="'+xa.x+'" y="'+(y0+29)+'" text-anchor="'+xa.a+'">'+esc(sl.d)+'</text>';
+  if(sl.d)lastD=sl.d}
+ s+='</svg>';
+ host.style.height=H+'px';host.innerHTML=s;
+ c.geo={padL:padL,sw:sw,n:n,y0:y0,tops:tops,mark:mark}}
+
+/* ---------- İpucu kutusu: fareyle üzerine gelince, dokunmatikte dokununca ---------- */
+function clearOn(){var on=document.querySelectorAll('.chart .on');for(var i=0;i<on.length;i++)on[i].classList.remove('on')}
+function hideTip(){clearOn();TIP.id=null;TIP.i=-1;var t=$('tip');if(t)t.hidden=true}
+function showTip(id,i){
+ var c=REG[id],host=$(id),tip=$('tip');if(!c||!c.geo||!host||!tip){hideTip();return}
+ var g=c.geo;i=Math.max(0,Math.min(g.n-1,i));var sl=c.slots[i];
+ clearOn();TIP.id=id;TIP.i=i;
+ var band=$(id+'-band');if(band){var bwid=Math.max(6,g.sw);band.setAttribute('x',r2(g.padL+(i+.5)*g.sw-bwid/2));band.setAttribute('width',r2(bwid));band.classList.add('on')}
+ var bar=host.querySelector('[data-i="'+i+'"]');if(bar)bar.classList.add('on');
+ set('tipV',sl.v==null?'Kayıt yok':(c.opts.tipVal||fmt)(sl.v));set('tipL',sl.t||'');
+ tip.hidden=false;
+ var rc=host.getBoundingClientRect(),tw=tip.offsetWidth,th=tip.offsetHeight,vw=document.documentElement.clientWidth;
+ var left=Math.max(8,Math.min(vw-tw-8,rc.left+g.padL+(i+.5)*g.sw-tw/2)),top=rc.top-th+14;
+ if(top<4)top=rc.top+g.y0+8;
+ tip.style.left=Math.round(left+window.pageXOffset)+'px';tip.style.top=Math.round(top+window.pageYOffset)+'px'}
+function chartOf(node){var h=node&&node.closest?node.closest('.chart'):null;return h&&REG[h.id]&&REG[h.id].geo?h:null}
+function slotAt(host,clientX){var g=REG[host.id].geo;return Math.floor((clientX-host.getBoundingClientRect().left-g.padL)/g.sw)}
+document.addEventListener('click',function(e){var h=chartOf(e.target);if(h)showTip(h.id,slotAt(h,e.clientX));else hideTip()});
+document.addEventListener('pointermove',function(e){if(e.pointerType!=='mouse')return;var h=chartOf(e.target);
+ if(h){var i=Math.max(0,Math.min(REG[h.id].geo.n-1,slotAt(h,e.clientX)));if(TIP.id!==h.id||TIP.i!==i)showTip(h.id,i)}else if(TIP.id)hideTip()});
+document.addEventListener('keydown',function(e){
+ if(e.key==='Escape'){hideTip();return}
+ var h=chartOf(document.activeElement);if(!h)return;
+ var g=REG[h.id].geo,fresh=TIP.id!==h.id,i=fresh?(g.mark>=0?g.mark:g.n-1):TIP.i;
+ if(e.key==='ArrowLeft'){if(!fresh)i--}else if(e.key==='ArrowRight'){if(!fresh)i++}else if(e.key!=='Enter'&&e.key!==' ')return;
+ e.preventDefault();showTip(h.id,i)});
+document.addEventListener('focusout',function(e){if(e.target&&e.target.classList&&e.target.classList.contains('chart'))hideTip()});
+var resizeTimer=0;
+window.addEventListener('resize',function(){clearTimeout(resizeTimer);resizeTimer=setTimeout(function(){hideTip();for(var id in REG)draw(id)},120)});
+
+/* ---------- Çubuklu liste ---------- */
+function barList(id,list,name,value,unit,emptyText){
+ var el=$(id);if(!el)return;
+ if(!list.length){el.innerHTML='<div class="none">'+esc(emptyText||'Henüz yok')+'</div>';return}
+ var mx=0,tot=0;list.forEach(function(r){var v=num(value(r));tot+=v;if(v>mx)mx=v});
+ el.innerHTML=list.map(function(r){var v=num(value(r)),w=mx>0?Math.max(1.5,v/mx*100):0;
+  return '<div class="row"><div class="rt"><span>'+name(r)+'</span><b>'+fmt(v)+(unit?' '+unit:'')+'</b><i>%'+(tot>0?Math.round(v/tot*100):0)+'</i></div><div class="track"><span style="width:'+w.toFixed(1)+'%"></span></div></div>'}).join('')}
+
+/* ---------- Bölümler ---------- */
+function hourSlot(t,v){var d=D(t),h=d.getHours(),s={v:v,t:dShort(t)+', '+hm(t)+'–'+hm(t+3600)};
+ if(h%6===0){s.x=hm(t);s.lv=h===0?1:h%12===0?2:3;s.d=dShort(t)}return s}
+function people(v){return fmt(v)+' kişi'}
+function installs(v){return fmt(v)+' kurulum'}
+
+function renderLive(p){
+ set('now',fmt(p.now));
+ var plats=arr(p.byPlatform);
+ $('nowPlat').innerHTML=plats.length?plats.map(function(x){return '<span class="chip">'+platName(x.platform)+' · '+fmt(x.n)+'</span>'}).join(''):'<span class="chip">Şu an kimse oynamıyor</span>';
+ var games=arr(p.games);
+ $('games').innerHTML=games.length?games.map(function(g){return '<div><span>'+esc(g.game||'Oyun bilinmiyor')+'</span><b>'+fmt(g.n)+'</b></div>'}).join(''):'<div><span>Şu an oynanan oyun yok</span></div>';
+ var pk=p.peak;
+ if(!pk||typeof pk!=='object'){set('pkToday','–');set('pkWeek','–');set('pkAll','–');set('pkWhen','Geçmiş kaydı henüz yok.');set('pkSince','');return}
+ set('pkToday',fmt(pk.today));set('pkWeek',fmt(pk.week));set('pkAll',fmt(pk.allTime));
+ if(pk.allTimeHour==null&&pk.since==null){set('pkWhen','Geçmiş kaydı henüz başlamadı; şimdilik şu anki sayı gösteriliyor.');set('pkSince','');return}
+ set('pkWhen',pk.allTimeHour!=null&&num(pk.allTime)>0?'Rekor: '+dLong(num(pk.allTimeHour))+', '+hm(num(pk.allTimeHour))+'–'+hm(num(pk.allTimeHour)+3600)+' arası':'');
+ set('pkSince',pk.since!=null?sinceText(num(pk.since)):'')}
+
+function renderHours(p,now){
+ var list=arr(p.hourly),base=Math.floor(now/3600)*3600,map={},first=null,last=null,count=0,slots=[],i;
+ list.forEach(function(r){if(!r||r.hour==null)return;var h=num(r.hour);map[h]=num(r.peak);if(first==null||h<first)first=h;if(last==null||h>last)last=h});
+ for(i=47;i>=0;i--){var t=base-i*3600,v=null;
+  if(map[t]!=null){v=map[t];count++}else if(first!=null&&t>first&&t<last)v=0;
+  slots.push(hourSlot(t,v))}
+ if(!count){placeholder('cHours',EARLY);set('cHoursNote','');return}
+ chart('cHours',slots,{title:'Aynı anda oynayan, son 48 saat',h:190,ticks:4,two:true,mark:'max',tipVal:people,markVal:fmt});
+ set('cHoursNote',count<6?EARLY:'')}
+
+function renderDaily(p){
+ var list=arr(p.daily),n=list.length;
+ [['cActive','vActive','active','Günlük açan, son 14 gün',installs],['cPlayed','vPlayed','played','Günlük oynayan, son 14 gün',installs],
+  ['cFresh','vFresh','fresh','Yeni kurulum, son 14 gün',installs],['cPeak','vPeak','peak','Günün en yükseği, son 14 gün',people]].forEach(function(def){
+  var known=0,slots=list.map(function(r,i){r=obj(r);var t=num(r.day)+43200,v=r[def[2]]==null?null:num(r[def[2]]);if(v!=null)known++;
+   var s={v:v,t:dLong(t)};if(i===0||((n-1-i)%4===0&&i>2)){s.x=dShort(t);s.lv=i===0||i===n-1?1:2}return s});
+  var now=n?slots[n-1].v:null,head=$(def[1]);
+  if(head)head.innerHTML=now==null?'':fmt(now)+'<small>bugün</small>';
+  if(!known){placeholder(def[0],EARLY);set(def[0]+'Note','');return}
+  chart(def[0],slots,{title:def[3],h:132,ticks:2,mark:'last',label:false,tipVal:def[4]});
+  set(def[0]+'Note',known<3?EARLY:known<n?'Boş günlerde henüz kayıt tutulmuyordu.':'')})}
+
+function renderInstalls(p,dl){
+ set('inst',fmt(p.installs));set('instNew','Bugün yeni: '+fmt(p.newToday));set('a24',fmt(p.active24h));
+ set('dl',dl?fmt(dl.total):'–');
+ set('dlBy',dl?'Mac '+fmt(dl.mac)+' · Windows '+fmt(dl.windows)+' · Android '+fmt(dl.android)+' · TV '+fmt(dl.tv):'GitHub sayıları şu an alınamadı');
+ set('latest',dl&&dl.latest||'–');
+ barList('plat',arr(p.installsByPlatform),function(r){return platName(r.platform)},function(r){return r.n});
+ var latest=String(dl&&dl.latest||'');if(latest.charAt(0)==='v'||latest.charAt(0)==='V')latest=latest.slice(1);
+ var vers=arr(p.versions),onLatest=null;
+ vers.forEach(function(r){if(latest&&String(r.app)===latest)onLatest=num(r.n)});
+ barList('vers',vers,function(r){return esc(r.app)+(latest&&String(r.app)===latest?'<em>en yeni</em>':'')},function(r){return r.n},'','Henüz sürüm bilgisi yok');
+ set('verNote',onLatest!=null?'En yeni sürümü ('+latest+') kullanan: '+fmt(onLatest)+' kurulum':'Son 7 günde açılan kurulumların sürümü');
+ barList('ulangs',arr(p.langs),function(r){return langName(r.lang)},function(r){return r.n},'','Henüz dil bilgisi yok');
+ barList('dlList',dl?[['Mac',dl.mac],['Windows',dl.windows],['Android',dl.android],['TV',dl.tv]]:[],function(r){return r[0]},function(r){return r[1]},'','GitHub sayıları şu an alınamadı')}
+
+function renderTranslations(t,pool,now){
+ set('lines',fmt(t.lines));set('words',fmt(t.words)+' kelime · bugün '+fmt(t.today)+' satır');
+ set('rev',fmt(t.reviewed));set('today','Bugün '+fmt(t.today)+' satır, '+fmt(t.wordsToday)+' kelime çevrildi');
+ set('pool',fmt(pool.lines));set('poolSeen',fmt(pool.seen)+' kez görüldü');
+ barList('langs',arr(t.byLang),function(r){return langName(r.lang)},function(r){return r.n},'satır');
+ var base=Math.floor(now/3600)*3600,map={},slots=[];
+ arr(t.hourly).forEach(function(h){if(h&&h.hour!=null)map[num(h.hour)]=num(h.n)});
+ for(var i=23;i>=0;i--){var ts=base-i*3600;slots.push(hourSlot(ts,map[ts]||0))}
+ chart('cTr',slots,{title:'Saatlik çeviri, son 24 saat',h:200,ticks:3,two:true,mark:'max',tipVal:function(v){return fmt(v)+' satır'},markVal:fmt})}
+
+function renderSpend(s,now){
+ var spent=num(s.translateToday),cap=num(s.translateCap),part=cap>0?spent/cap:0;
+ set('spend',usd(spent));
+ $('spendBar').style.width=Math.min(100,part*100).toFixed(1)+'%';
+ $('spendMeter').className='meter'+(part>=1?' bad':part>=.8?' warn':'');
+ var capEl=$('spendCap');capEl.textContent='Günlük sınır: '+usd(cap)+' · kullanılan: %'+Math.round(part*100);
+ if(part>=.8){var f=document.createElement('span');f.className='flag '+(part>=1?'bad':'warn');f.textContent=part>=1?' · Sınıra ulaşıldı':' · Sınıra yaklaşıyor';capEl.appendChild(f)}
+ set('spendAsk',"Nino'ya Sor harcaması: "+usd(s.assistantToday));
+ var map={},slots=[],sum=0;
+ arr(s.week).forEach(function(c){if(c&&c.day!=null)map[String(c.day)]=num(c.usd)});
+ for(var i=6;i>=0;i--){var d=new Date((now-i*86400)*1000),k=d.toISOString().slice(0,10),v=map[k]||0;sum+=v;
+  slots.push({v:v,t:d.toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long',timeZone:'UTC'}),x:d.toLocaleDateString('tr-TR',{weekday:'short',timeZone:'UTC'}),lv:1})}
+ set('weekSum','7 günde toplam '+usd(sum));
+ chart('cWeek',slots,{title:'Çeviri harcaması, son 7 gün',h:170,ticks:3,dec:true,mark:'last',ref:cap>0?cap:0,refLabel:cap>0?'Günlük sınır '+usd(cap):'',tipVal:usd,
+  tick:function(v){return '$'+num(v).toLocaleString('tr-TR',{maximumFractionDigits:2})}})}
+
+function renderSupport(d,s){
+ var rep=obj(d.reports);set('rep',fmt(rep.total));set('repNew','Okunmamış: '+fmt(rep.fresh));
+ set('ask',fmt(obj(d.assistant).questionsToday)+' soru');set('askCost','Harcama '+usd(s.assistantToday))}
+
+function renderTvs(t){
+ var EMPTY='TV uygulamasının yeni sürümü (V3.4) kuruldukça burada görünecek';
+ var count={androidtv:0,samsung:0,lg:0},models={androidtv:[],samsung:[],lg:[]};
+ arr(t.byBrand).forEach(function(r){if(count[r.brand]!=null)count[r.brand]=num(r.n)});
+ arr(t.models).forEach(function(r){if(models[r.brand]&&models[r.brand].length<20)models[r.brand].push(r)});
+ set('tvTotal',fmt(t.total));set('tvA',fmt(count.androidtv));set('tvS',fmt(count.samsung));set('tvL',fmt(count.lg));
+ [['tvModelsA','androidtv'],['tvModelsS','samsung'],['tvModelsL','lg']].forEach(function(d){
+  barList(d[0],models[d[1]],function(r){return esc(r.model)},function(r){return r.n},'',count[d[1]]?'Model bilgisi yok':EMPTY)});
+ barList('tvVers',arr(t.versions),function(r){return esc(r.app)},function(r){return r.n},'',EMPTY)}
+
+function part(fn){try{fn()}catch(e){if(window.console)console.error(e)}}
+function render(d){
+ d=obj(d);var now=num(d.now)||Math.floor(Date.now()/1000),p=obj(d.players),s=obj(d.spend),open=TIP.id,openI=TIP.i;
+ part(function(){renderLive(p)});
+ part(function(){renderHours(p,now)});
+ part(function(){renderDaily(p)});
+ part(function(){renderInstalls(p,d.downloads&&typeof d.downloads==='object'?d.downloads:null)});
+ part(function(){renderTvs(obj(d.tvs))});
+ part(function(){renderTranslations(obj(d.translations),obj(d.pool),now)});
+ part(function(){renderSpend(s,now)});
+ part(function(){renderSupport(d,s)});
+ status('Canlı · son yenileme '+D(now).toLocaleTimeString('tr-TR'),false);
+ if(open&&REG[open])showTip(open,openI)}
+
+async function load(){
+ if(!key){gate(true,'');return}
+ var r=null;try{r=await fetch('/v1/stats',{headers:{authorization:'Bearer '+key}})}catch(e){r=null}
+ var first=$('app').hidden;
+ if(!r){if(first)gate(true,'Sunucuya ulaşılamadı. Bağlantını kontrol edip yeniden dene.');else status('Bağlantı kesildi; yeniden deneniyor',true);return}
+ if(r.status===401){gate(true,'Anahtar kabul edilmedi.');return}
+ var d=null;if(r.ok){try{d=await r.json()}catch(e){d=null}}
+ if(!d){if(first)gate(true,'Sunucu şu an yanıt vermiyor ('+r.status+'). Biraz sonra yeniden dene.');else status('Sunucu yanıt vermedi; yeniden deneniyor',true);return}
+ gate(false);render(d)}
 load();setInterval(load,15000);
 </script></body></html>`;

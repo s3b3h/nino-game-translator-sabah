@@ -23,6 +23,7 @@
     <string name="phase_rejected_code">PS5 সংযোগটি প্রত্যাখ্যান করেছে (কোড %1$s)। হয়তো অন্য একটি Remote Play অ্যাপ (PS Remote Play) খোলা আছে, অথবা PS5 অন্য সেশনে আছে। PS Remote Play বন্ধ করুন, PS5 রিস্টার্ট করুন, তারপর আবার চেষ্টা করুন।</string>
     <string name="phase_rejected">PS5 সেশনটি শুরু করেনি। হয়তো অন্য একটি Remote Play অ্যাপ (PS Remote Play) খোলা আছে, অথবা PS5 অন্য সেশনে আছে। PS Remote Play বন্ধ করুন, PS5 রিস্টার্ট করুন, তারপর আবার চেষ্টা করুন।</string>
     <string name="phase_registration_invalid">PS5 এই পেয়ারিং গ্রহণ করেনি। সেটিংসে দ্বিতীয় অ্যাকাউন্ট দিয়ে PS5 আবার পেয়ার করুন।</string>
+    <string name="phase_remote_play_disabled">PS5-এ Remote Play বন্ধ আছে। PS5-এ Settings › System › Remote Play খুলে Enable Remote Play চালু করুন, তারপর আবার শুরু করুন।</string>
     <string name="phase_no_picture">PS5 থেকে কোনো ছবি আসছে না। Remote Play কি বন্ধ, নাকি PS5 রেস্ট মোডে আছে? দেখে নিয়ে আবার অনুবাদ শুরু করুন।</string>
     <string name="phase_not_found">নেটওয়ার্কে PS5 পাওয়া যায়নি। ফোন ও PS5 কি একই নেটওয়ার্কে আছে?</string>
     <string name="phase_asleep">PS5 রেস্ট মোড থেকে জাগেনি।</string>
@@ -653,4 +654,23 @@
     <string name="assistant_invalid">এই মেসেজটা পাঠাতে পারিনি। একটু বদলে আবার চেষ্টা করুন।</string>
     <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
     <string name="translation_started_notice">নিনো: সাবটাইটেল অনুবাদ শুরু হয়েছে। খেলা উপভোগ করুন!</string>
+    <!-- Nino: Cihaz bilgileri, Ayarlar'da GTA 6 kartı ve Güncelleme satırı -->
+    <string name="device_info_title">ডিভাইসের তথ্য</string>
+    <string name="device_info_note">সমস্যা জানালে এটি সঙ্গে যোগ হয়, যাতে জিজ্ঞেস না করেই আমরা দেখতে পারি আপনি কী ব্যবহার করছেন। এতে কোনো নাম, সিরিয়াল নম্বর বা ঠিকানা থাকে না।</string>
+    <string name="device_info_app">অ্যাপের সংস্করণ</string>
+    <string name="device_info_device">ডিভাইসের মডেল</string>
+    <string name="device_info_system">অপারেটিং সিস্টেম</string>
+    <string name="device_info_tv">টিভি</string>
+    <string name="device_info_console">কনসোল</string>
+    <string name="device_info_status">বর্তমান অবস্থা</string>
+    <string name="device_info_copy">ডিভাইসের তথ্য কপি করুন</string>
+    <string name="nino_gta6_active">Nino · GTA 6 সক্রিয়</string>
+    <string name="nino_gta6_note">GTA 6-এ তুর্কি সাবটাইটেল আসে Nino-র যৌথ অনুবাদ থেকে: প্রতিটি লাইন একটি শক্তিশালী এআই দিয়ে একবারই অনুবাদ হয় এবং সবাই একই ফল পায়। আপনাকে কিছু বেছে নিতে বা কোনো কী দিতে হয় না, আর এটি বিনামূল্যে।</string>
+    <string name="settings_engine_other_games">অন্যান্য গেম</string>
+    <string name="update_row_title">আপডেট</string>
+    <string name="update_row_newer">নতুন সংস্করণ আছে: %1$s</string>
+    <string name="update_row_download">ডাউনলোড</string>
+    <string name="update_row_current">হালনাগাদ আছে</string>
+    <string name="update_row_check">এখনই দেখুন</string>
+    <string name="update_row_checking">দেখা হচ্ছে…</string>
 </resources>

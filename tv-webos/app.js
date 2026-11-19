@@ -6,9 +6,9 @@
   'use strict';
 
   // TV uygulamasının sürümü: appinfo.json, tv-tizen/config.xml ve tv-android/app/build.gradle ile aynı tutulur.
-  var APP_VERSION = '0.9.31';
+  var APP_VERSION = '3.4.0';
   // Nino: herkesin göreceği sürüm adı (bütün uygulamalarda aynı: V3.2). Teknik numara parantez içinde.
-  var APP_LABEL = 'V3.2';
+  var APP_LABEL = 'V3.4';
   var t = window.t;
   var config = window.COUCHSUBS_CONFIG || {};
   var platform = window.COUCHSUBS_PLATFORM;
@@ -96,13 +96,16 @@
   function setStatus(id, text, cls) {
     var el = $(id);
     el.textContent = text;
-    // Nino: panel kutucuklarında yazının kendi sınıfı korunur; durum rengi kutucuğun noktasına geçer.
+    // Nino: yazının kendi sınıfı korunur, durum sınıfı yanına eklenir.
     var base = el.getAttribute('data-base');
     if (base === null) { base = el.className || ''; el.setAttribute('data-base', base); }
     el.className = (base + ' ' + (cls || '')).trim();
-    var node = el.parentNode;
-    while (node && node.className !== undefined && String(node.className).indexOf('tile') !== 0) node = node.parentNode;
-    if (node && node.setAttribute && String(node.className).indexOf('tile') === 0) node.setAttribute('data-state', cls || '');
+    // Panelin durumu (renk, başlık, salıncak) yalnız bağlantıdan gelir: 'ok', 'bad', başka her şey = bekliyor.
+    // Eskiden HDMI satırı da aynı niteliği yazıyordu; bağlantı koptuğu hâlde görüntü gelince "hazır" görünüyordu.
+    if (id === 'st-conn') {
+      var hero = document.querySelector('#panel .hero');
+      if (hero) hero.setAttribute('data-state', cls || '');
+    }
   }
 
   // --- Başlatma parametreleri ---
@@ -419,6 +422,14 @@
     startedTimer = setTimeout(function () { el.className = ''; }, 7000);
   }
 
+  // Nino: paneldeki "son altyazı" yalnız bilgisayardan ya da telefondan gelen gerçek altyazıdır; demo satırları, deneme
+  // yazısı ve yer önizlemesi buraya yazılmaz. Alan ilk altyazıyla birlikte görünür (o zamana kadar boş kutu gösterilmez).
+  function notePanelSubtitle(text) {
+    setStatus('st-last', text.length > 60 ? text.slice(0, 60) + '…' : text);
+    var preview = $('st-preview');
+    if (preview) preview.className = 'p-preview';
+  }
+
   function showSubtitle(text, duration, box, paragraphs, replaces) {
     var now = Date.now();
     var current = rawText('subtitle-text');
@@ -441,8 +452,6 @@
     $('subtitle-text').style.textAlign = paragraphs ? 'start' : '';
     $('subtitle').className = '';
     layout();
-    setStatus('st-last', text.length > 60 ? text.slice(0, 60) + '…' : text);
-    $('st-last').className = 'sub';
     notePlace();
     clearTimeout(hideTimer);
     // Geçersiz ya da çok kısa süre yazıyı gösterir göstermez kaldırmasın.
@@ -1009,7 +1018,10 @@
     onEvent('subtitle', function (data) {
       diag.subtitles++;
       renderDiag();
-      if (data.text) showSubtitle(data.text, data.duration, data.box, data.paragraphs === true, data.replace === true);
+      if (data.text) {
+        showSubtitle(data.text, data.duration, data.box, data.paragraphs === true, data.replace === true);
+        notePanelSubtitle(data.text);
+      }
     });
     // Nino: bilgisayarda çeviri başladı; 7 sn sol üstte robot ve balon.
     onEvent('started', function () { showStartedNotice(); });

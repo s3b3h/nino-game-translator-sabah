@@ -23,6 +23,7 @@
     <string name="phase_rejected_code">De PS5 weigerde de verbinding (code %1$s). Er is misschien een andere Remote Play-app (PS Remote Play) open, of de PS5 zit in een andere sessie. Sluit PS Remote Play, herstart de PS5 en probeer het opnieuw.</string>
     <string name="phase_rejected">De PS5 heeft de sessie niet gestart. Er is misschien een andere Remote Play-app (PS Remote Play) open, of de PS5 zit in een andere sessie. Sluit PS Remote Play, herstart de PS5 en probeer het opnieuw.</string>
     <string name="phase_registration_invalid">De PS5 accepteerde deze koppeling niet. Koppel de PS5 opnieuw met het tweede account in Instellingen.</string>
+    <string name="phase_remote_play_disabled">Remote Play staat uit op de PS5. Open op de PS5 Instellingen › Systeem › Remote Play en zet Remote Play inschakelen aan, en start dan opnieuw.</string>
     <string name="phase_no_picture">Geen beeld van de PS5. Staat Remote Play uit, of staat de PS5 in de rustmodus? Controleer het en start het vertalen opnieuw.</string>
     <string name="phase_not_found">PS5 niet gevonden op het netwerk. Zitten de telefoon en de PS5 op hetzelfde netwerk?</string>
     <string name="phase_asleep">De PS5 is niet ontwaakt uit de rustmodus.</string>
@@ -653,4 +654,23 @@
     <string name="assistant_invalid">Ik kon dat bericht niet versturen. Pas het wat aan en probeer het opnieuw.</string>
     <!-- Nino: çeviri başlayınca robotun yanında 7 sn görünen balon (Mac ile aynı metin) -->
     <string name="translation_started_notice">Nino: Ondertitelvertaling Gestart. Veel Speelplezier!</string>
+    <!-- Nino: Cihaz bilgileri, Ayarlar'da GTA 6 kartı ve Güncelleme satırı -->
+    <string name="device_info_title">Apparaatgegevens</string>
+    <string name="device_info_note">Wordt toegevoegd aan je probleemmeldingen, zodat we zonder te vragen zien wat je gebruikt. Bevat geen namen, serienummers of adressen.</string>
+    <string name="device_info_app">App-versie</string>
+    <string name="device_info_device">Apparaatmodel</string>
+    <string name="device_info_system">Besturingssysteem</string>
+    <string name="device_info_tv">Tv</string>
+    <string name="device_info_console">Console</string>
+    <string name="device_info_status">Huidige status</string>
+    <string name="device_info_copy">Apparaatgegevens kopiëren</string>
+    <string name="nino_gta6_active">Nino · GTA 6 actief</string>
+    <string name="nino_gta6_note">In GTA 6 komen de Turkse ondertitels uit de gedeelde vertaling van Nino: elke regel wordt één keer vertaald door een sterke AI en iedereen krijgt hetzelfde resultaat. Je hoeft niets te kiezen of een sleutel in te voeren, en het is gratis.</string>
+    <string name="settings_engine_other_games">Andere games</string>
+    <string name="update_row_title">Update</string>
+    <string name="update_row_newer">Nieuwe versie beschikbaar: %1$s</string>
+    <string name="update_row_download">Downloaden</string>
+    <string name="update_row_current">Up-to-date</string>
+    <string name="update_row_check">Nu controleren</string>
+    <string name="update_row_checking">Controleren…</string>
 </resources>

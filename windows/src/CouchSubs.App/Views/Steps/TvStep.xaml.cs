@@ -82,5 +82,5 @@ public partial class TvStep : UserControl
     private async void OnAndroidTv(object sender, RoutedEventArgs e) => await PairAsync(new LgTv("Android TV", "", TvBrand.AndroidTv));
 
     private void OnGuide(object sender, RoutedEventArgs e) =>
-        Process.Start(new ProcessStartInfo("https://github.com/yorulmazsinan/couchsubs/blob/main/docs/tv-kurulum.md") { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo("https://github.com/yunusdemirbag/nino-game-translator/blob/main/docs/KURULUM.md#5-tv-uygulamas%C4%B1n%C4%B1-kurma") { UseShellExecute = true });
 }

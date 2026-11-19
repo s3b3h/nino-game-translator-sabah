@@ -54,6 +54,8 @@ public static class NinoAssistant
         [JsonPropertyName("platform")] public string Platform { get; set; } = ProblemReport.Platform;
         [JsonPropertyName("language")] public string Language { get; set; } = "";
         [JsonPropertyName("messages")] public List<Message> Messages { get; set; } = [];
+        /// <summary>Cihaz bilgileri (<see cref="DeviceInfo.Summary"/>); yardımcı bildirim açarsa bildirime eklenir. Bilinmiyorsa gönderilmez.</summary>
+        [JsonPropertyName("device")] public string? Device { get; set; }
     }
 
     public enum Outcome
@@ -91,8 +93,10 @@ public static class NinoAssistant
     /// kullanıcınınki olmalıdır (değilse <see cref="ArgumentException"/>). Fotoğraflar yalnız fotoğraflı en yeni
     /// <see cref="ImageMessages"/> kullanıcı mesajında (her birinde en çok 3) gider; eskilerin metnine "[screenshot]"
     /// eklenir. Gövde <paramref name="maxBodyBytes"/>'ı aşarsa en eski fotoğraflı mesaj da metne indirilir.
+    /// <paramref name="device"/> cihaz bilgileridir (<see cref="DeviceInfo.Summary"/>); boşsa alan hiç gönderilmez.
     /// </summary>
-    public static Payload Build(string install, string app, string language, IReadOnlyList<Turn> turns, long maxBodyBytes = MaxBodyBytes)
+    public static Payload Build(string install, string app, string language, IReadOnlyList<Turn> turns, long maxBodyBytes = MaxBodyBytes,
+                                string? device = null)
     {
         var kept = turns.Where(turn => !string.IsNullOrWhiteSpace(turn.Text) || (turn.Role == Role.User && turn.Images.Count > 0)).ToList();
         if (kept.Count == 0 || kept[^1].Role != Role.User) throw new ArgumentException("Son mesaj kullanıcınınki olmalı.", nameof(turns));
@@ -111,6 +115,7 @@ public static class NinoAssistant
                 Install = install,
                 App = app.Length > 40 ? app[..40] : app,
                 Language = language,
+                Device = DeviceInfo.ForPayload(device),
             };
             for (var i = 0; i < kept.Count; i++)
             {

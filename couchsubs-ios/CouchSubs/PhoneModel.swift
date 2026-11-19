@@ -192,6 +192,74 @@ final class PhoneModel: ObservableObject {
     func reportInstallID() async -> String { await pool.installID }
     /// Oynanan oyun: PS5'in bildirdiği, kullanıcının seçtiği ya da paketten tanınan (havuza giden satırlar bu oyunla gider).
     let gameChoice: GameChoice
+    /// Nino: tanınan oyun havuz öncelikli mi (şimdilik GTA 6). Ana ekrandaki sahnenin fonu buna göre seçilir (Mac'teki
+    /// `liveGamePoolFirst` ile aynı).
+    var liveGamePoolFirst: Bool {
+        guard let name = gameChoice.sense.current?.name else { return false }
+        return translations.isPoolFirst(translations.poolGame(name, packs.searchScope))
+    }
+    /// Nino: Ayarlar'daki "GTA 6" kartı (Mac'teki `ninoPoolActive` ile aynı). Hedef dil havuzun çevirdiği dillerdense
+    /// (şimdilik Türkçe) ve tanınan oyun havuz öncelikliyse ya da henüz oyun tanınmadıysa evet; başka bir oyun tanınınca
+    /// kart kalkar ve seçili motor geçerlidir.
+    var ninoPoolActive: Bool {
+        guard translations.poolFirst.allows(language: settings.targetLanguage) else { return false }
+        guard let name = gameChoice.sense.current?.name else { return true }
+        return translations.isPoolFirst(translations.poolGame(name, packs.searchScope))
+    }
+
+    // MARK: - Cihaz bilgileri
+
+    /// Nino: "Cihaz bilgileri" (Ayarlar'ın altındaki kart; Sorun Bildir ve Nino'ya Sor bildirimlerine eklenir). Yalnız
+    /// sürüm, model, marka ve durum: cihazın, TV'nin ya da konsolun adı, hesap adı ve IP adresi hiçbir satıra girmez.
+    var deviceInfoRows: [DeviceInfo.Row] {
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        return DeviceInfo.rows(app: build.isEmpty ? AppIdentity.version : "\(AppIdentity.version) (\(build))",
+                               tv: deviceInfoTV, console: deviceInfoConsole, status: deviceInfoStatus)
+    }
+
+    var deviceInfoSummary: String { DeviceInfo.summary(deviceInfoRows) }
+
+    /// TV'nin markası ve (biliniyorsa) TV uygulamasının sürümü. Telefon TV'nin modelini saklamaz; adı (`tv.name`) bilerek
+    /// kullanılmaz, kullanıcının verdiği ad olabilir.
+    private var deviceInfoTV: String? {
+        guard let brand = installedTVApp?.brand ?? (hasTV ? tv?.brand : nil) else { return nil }
+        let name = switch brand {
+        case .lg: "LG"
+        case .samsung: "Samsung"
+        case .androidTV: "Android TV"
+        }
+        guard let version = installedTVApp?.version, !version.isEmpty else { return name }
+        return "\(name) · TV uygulaması \(version)"
+    }
+
+    /// Konsol ve bağlantı yolu; eşlenmemişse nil. Konsolun adı kullanılmaz (Xbox'ta yalnız türü, ör. "XboxSeriesX").
+    private var deviceInfoConsole: String? {
+        if isXbox {
+            guard let xboxConsole else { return nil }
+            return xboxConsole.model.isEmpty ? "Xbox" : "Xbox · \(xboxConsole.model)"
+        }
+        return console == nil ? nil : "PS5 · Remote Play"
+    }
+
+    /// Çeviri sürerken bağlantının durumu; sürmüyorsa nil. Adres ya da serbest metin taşıyan nedenler (`notFound` adresi,
+    /// Xbox'ın hata metni) burada sabit metne çevrilir; `ps5StatusText` yalnız içine değer girmeyen nedenlerde kullanılır.
+    private var deviceInfoStatus: String? {
+        guard isRunning else { return nil }
+        switch sessionState {
+        case .streaming: return String(localized: "Connected")
+        case .connecting: return String(localized: "Connecting…")
+        case .disconnected(let reason):
+            switch reason {
+            case .rejected(let code?): return String(format: "0x%08x", code)
+            case .notFound, .network: return String(localized: "Can't reach the PS5. Reconnecting…")
+            case .other, .stopped: return String(localized: "Reconnecting…")
+            case .consoleAsleep, .inUse, .refused, .loginPasscode, .loginPasscodeIncorrect, .registrationInvalid,
+                 .remotePlayDisabled, .noPicture, .rejected(nil):
+                return ps5StatusText
+            }
+        }
+    }
+
     /// Bağlıyken birkaç dakikada bir PS5'e çalışan oyunu sorar (havuza giden satırlar oyunla gider). Testlerde kapalı.
     private var gameProbe: Task<Void, Never>?
     private let probesGame: Bool
@@ -257,6 +325,8 @@ final class PhoneModel: ObservableObject {
         reloadPackList()
         // Nino: NinoPool oyunu her satırla birlikte alır (paket kimliği, `offer(_:game:)`); ayrıca ayarlanmaz.
         gameChoice.onChange = { [weak self] game in
+            // Nino: ana ekrandaki sahnenin fonu oyuna göre değişir (`liveGamePoolFirst`); ekran hemen yenilensin.
+            self?.objectWillChange.send()
             // Bu oyunun (havuzdan otomatik) paketi sunucuda yeni çıkmış olabilir.
             if game != nil { self?.onGameStarted() }
             // Nino: yeni oyunun havuzdaki çevirileri hemen iner.
@@ -1182,6 +1252,7 @@ final class PhoneModel: ObservableObject {
             case .loginPasscodeIncorrect:
                 return String(localized: "The PS5 didn't accept the login passcode in Settings. Correct it, or turn off this account's login passcode on the PS5.")
             case .registrationInvalid: return String(localized: "The PS5 didn't accept this pairing. Pair the PS5 again with the second account in Settings.")
+            case .remotePlayDisabled: return String(localized: "Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again.")
             case .noPicture: return String(localized: "No picture from the PS5. Is Remote Play turned off, or is the PS5 in rest mode? Check, then start again.")
             case .notFound(let host):
                 return String(format: String(localized: "PS5 not found at %@. Make sure it is on and on the same network. Reconnecting…"), host)

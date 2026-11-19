@@ -141,6 +141,9 @@ public enum DisconnectReason: Equatable, Sendable {
     /// PS5 oturum isteğinde kaydı kabul etmedi (0x80108b09 kayıt geçersiz, 0x80108b02 hesap tanınmıyor). Yeniden denemek
     /// aynı yere çıkar; PS5 ikinci hesapla yeniden eşlenmelidir.
     case registrationInvalid
+    /// PS5'te Uzaktan Oynama kapalı (0x80108b12): eşleme durur ama PS5 oturum açmaz. Kullanıcı PS5'te Ayarlar › Sistem ›
+    /// Uzaktan Oynama'dan açmalıdır; yeniden denemek aynı yere çıkar (CouchSubs #9'da kullanıcı doğruladı).
+    case remotePlayDisabled
     /// Bağlantı kuruluyor ama art arda `PictureWatchdog.maxNoPictureSessions` oturumda PS5'ten hiç görüntü gelmedi;
     /// yeniden bağlanma bırakıldı (eskiden sonsuza kadar "Yeniden bağlanılıyor…").
     case noPicture
@@ -170,14 +173,19 @@ public enum DisconnectReason: Equatable, Sendable {
             let token = line[marker.upperBound...].drop { $0 == " " }.prefix { !$0.isWhitespace }.lowercased()
             let hex = token.hasPrefix("0x") ? String(token.dropFirst(2)) : token
             guard let code = UInt32(hex, radix: 16) else { return nil }
+            if code == remotePlayDisabledCode { return .remotePlayDisabled }
             return registrationRejectedCodes.contains(code) ? .registrationInvalid : .rejected(code)
         }
         // PS5'e bağlanılamadı ya da yanıt gelmedi: PS5 dinlenmeden yeni uyandıysa ilk denemelerde olağandır.
         return unreachableLines.contains(where: line.contains) ? .network : nil
     }
 
-    /// CHIAKI_RP_APPLICATION_REASON_REGIST_FAILED ve _INVALID_PSN_ID.
-    static let registrationRejectedCodes: Set<UInt32> = [0x80108b09, 0x80108b02]
+    /// CHIAKI_RP_APPLICATION_REASON_REGIST_FAILED ve _INVALID_PSN_ID; 0x80108b26: PS5 eşleme anahtarını kendi kayıtlarında
+    /// bulamadı (eşleme PS5'te silinmiş ya da başka hesapla yapılmış). libchiaki bu kodu tanımaz; yeniden başlatmak
+    /// düzeltmez, PS5 yeniden eşlenmelidir (panelde 9 bildirim, 19 Kasım 2026).
+    static let registrationRejectedCodes: Set<UInt32> = [0x80108b09, 0x80108b02, 0x80108b26]
+    /// PS5'te Uzaktan Oynama kapalıyken dönen kod.
+    static let remotePlayDisabledCode: UInt32 = 0x80108b12
     private static let unreachableLines = [
         "Session request connect failed eventually",
         "Failed to send session request",
@@ -579,10 +587,11 @@ public final class StreamSession: @unchecked Sendable {
                 guard let self, self.box?.generation == eventGeneration else { return }
                 self.closeBox()
                 self.policy.ended()
-                if reason == .registrationInvalid {
-                    // Kayıt geçersiz: yeniden denemek aynı yere çıkar (eskiden sonsuza kadar "Yeniden bağlanılıyor…").
+                if reason == .registrationInvalid || reason == .remotePlayDisabled {
+                    // Kayıt geçersiz ya da Uzaktan Oynama kapalı: yeniden denemek aynı yere çıkar (eskiden sonsuza kadar
+                    // "Yeniden bağlanılıyor…").
                     _ = self.bump(running: false)
-                    return self.emit(.disconnected(.registrationInvalid))
+                    return self.emit(.disconnected(reason))
                 }
                 self.scheduleReconnect(eventGeneration, reason: reason)
             }

@@ -39,6 +39,7 @@ struct SystemHealthPage: View {
                 HealthChecksCard(snapshot: snapshot, network: network.kind)
                 // TV uygulamasının kurulum adımları ve hatası ("Tekrar dene"); eskiden TV ve Ekran sayfasındaydı.
                 TVAppCard()
+                DeviceInfoCard()
                 HealthDetailsCard(snapshot: snapshot, network: network.kind)
             }
         }
@@ -166,6 +167,7 @@ private struct HealthChecksCard: View {
         case "consoleAsleep": String(localized: "The PS5 is off or asleep. Turn it on, or turn on “Stay connected to the internet” in its rest mode settings.")
         case "inUse": String(localized: "Remote Play is being used on another device. Close it there.")
         case "loginPasscode": String(localized: "The second account has a PS5 login passcode. Remove it on the PS5.")
+        case "remotePlayDisabled": String(localized: "Remote Play is turned off on the PS5. On the PS5, open Settings › System › Remote Play and turn on Enable Remote Play, then start again.")
         case "registrationInvalid", "refused": String(localized: "The PS5 did not accept this Mac. Pair the PS5 again from Settings › About Nino › Set up again.")
         case "notFound": String(localized: "The PS5 did not answer on the network. Check that it is on (or in rest mode) and on the same network as this Mac.")
         default: String(localized: "The connection to the PS5 keeps dropping. Connect both the PS5 and this Mac to the modem with a cable.")
@@ -215,6 +217,53 @@ private struct HealthChecksCard: View {
                     String(localized: "Turn on developer mode on the TV (Settings › TV and screen shows how)."))
         case .failed(let error, let reason):
             return (.problem, String(localized: "Could not be installed"), TVAppCard.message(for: error, brand: brand, reason: reason))
+        case .hostPcMismatch(let tvIp, let computer):
+            return (.warning, String(localized: "Not installed"),
+                    String(format: String(localized: "The TV has another address as Host PC IP (%1$@), so it does not accept this computer. Change it to %2$@."), tvIp, computer))
+        }
+    }
+}
+
+/// Nino: "Cihaz bilgileri". Kullanıcının ne kullandığı (uygulama, Mac modeli, sistem, TV, konsol); aynı özet Sorun
+/// Bildir ve Nino'ya Sor bildirimlerine eklenir.
+private struct DeviceInfoCard: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var copied = false
+
+    var body: some View {
+        Card(title: "Device info") {
+            VStack(alignment: .leading, spacing: Theme.space("s")) {
+                ForEach(model.deviceRows) { row in
+                    HStack(alignment: .firstTextBaseline, spacing: Theme.space("m")) {
+                        Text(Self.label(row.id)).font(.csBody).foregroundStyle(Color.csSecondary)
+                            .frame(width: 150, alignment: .leading)
+                        Text(verbatim: row.value).font(.csBody).textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                HStack(spacing: Theme.space("s")) {
+                    Button(copied ? LocalizedStringKey("Copied") : LocalizedStringKey("Copy device info")) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(model.deviceSummary, forType: .string)
+                        copied = true
+                    }
+                    .buttonStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.top, Theme.space("s"))
+                HintText(text: "Added to your problem reports so we can see what you use without asking. It contains no names, serial numbers or addresses.")
+            }
+        }
+    }
+
+    static func label(_ id: String) -> LocalizedStringKey {
+        switch id {
+        case "app": "App version"
+        case "device": "Device model"
+        case "system": "Operating system"
+        case "tv": "TV"
+        case "console": "Console"
+        default: "Current status"
         }
     }
 }
@@ -277,15 +326,19 @@ private struct HealthDetailsCard: View {
         case .failed(let error, let reason): tvApp = "hata \(error)" + (reason.map { " (\($0))" } ?? "")
         case .signIn: tvApp = "Samsung girişi bekleniyor"
         case .approveOnTV: tvApp = "TV'de onay bekleniyor"
+        case .hostPcMismatch(let tvIp, let computer): tvApp = "Host PC IP uyuşmuyor (TV'de \(tvIp), bu Mac \(computer))"
         }
         // Ayrıntılar destek içindir, Türkçe ve sabit kalır (ekran dili değişse de).
         let running = model.isRunning ? Self.runningText : Self.stoppedText
-        return [
+        let lines: [String?] = [
             "Nino \(AppIdentity.version), macOS \(ProcessInfo.processInfo.operatingSystemVersionString), \(Self.chip), "
                 + "\(ProcessInfo.processInfo.physicalMemory / 1_073_741_824) GB",
             "motor: \(model.onlineTranslationActive ? model.settings.onlineEngine.rawValue : "ücretsiz"), "
                 + "çeviri: \(running), PS5: \(model.sessionState)",
             "TV: \(model.tv.map { "\($0.brand)" } ?? "yok"), bağlı TV uygulaması \(model.tvClients), TV uygulaması: \(tvApp)",
+            model.samsungSetup.map { "Samsung denetimi: geliştirici modu \($0.info?.developerMode.map { $0 ? "açık" : "kapalı" } ?? "?"), "
+                + "TV'deki Host PC IP \($0.info?.developerIp ?? "?"), bu Mac \($0.computer ?? "?"), "
+                + "kurulum kapısı \($0.portOpen ? "açık" : "kapalı"), eksik adım: \($0.problem.map { "\($0)" } ?? "yok")" },
             HealthReport.summary(snapshot, network: network),
             "",
             "— altyazi.log (son satırlar) —",
@@ -293,7 +346,8 @@ private struct HealthDetailsCard: View {
             "",
             "— tvinstall.log (son satırlar) —",
             Self.tail(of: TVInstallLog.file, lines: 8),
-        ].joined(separator: "\n")
+        ]
+        return lines.compactMap { $0 }.joined(separator: "\n")
     }
 
     private static let runningText = "sürüyor"

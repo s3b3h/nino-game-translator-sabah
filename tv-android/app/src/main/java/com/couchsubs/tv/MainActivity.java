@@ -2,6 +2,7 @@
 package com.couchsubs.tv;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -9,6 +10,7 @@ import android.graphics.drawable.StateListDrawable;
 import android.media.tv.TvContract;
 import android.media.tv.TvInputManager;
 import android.media.tv.TvView;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -66,6 +68,13 @@ public class MainActivity extends Activity implements TvPage.Host {
     private boolean resumed;
     private final Runnable watchTick = this::checkFallback;
     private final Runnable hideHelpTask = this::hideHelp;
+    /** Nino: gösterilen sade ekran ("home", "permission") ya da null (HDMI görünümü ya da hiçbiri). */
+    private String shownHome;
+    /** İzin ekranı açıkken iznin sonradan verilip verilmediğine bakar (bilgisayar/telefon adb ile ya da kullanıcı ayarlardan). */
+    private final Runnable permissionTick = this::checkPermissionGranted;
+    private static final long PERMISSION_CHECK_MS = 2000;
+    /** Kullanıcı "İzin vermeden devam et"i seçti: sonraki açılışlarda izin ekranı sorulmaz, oyun Nino'nun içinde gösterilir. */
+    private static final String KEY_IN_APP = "ninoInApp";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,22 +127,93 @@ public class MainActivity extends Activity implements TvPage.Host {
                 finish();
                 return;
             }
-            if (page == null) showHome("home");
+            // İzin ekranı ya da izinsiz HDMI görünümü açıkken izin verildiyse ana ekrana geçilir; eskiden izin verildikten
+            // sonra da "onay gerekiyor" yazısı ekranda kalıyordu.
+            if (page == null || !"home".equals(shownHome)) showHome("home");
+        } else if (inAppChosen()) {
+            // Kullanıcı izinsiz devam etmeyi seçmişti: oyun Nino'nun içinde gösterilir, altyazı üstüne çizilir.
+            if (page == null || shownHome != null) showInAppWithoutPermission();
+            else if (!launchParams.isEmpty()) page.relaunch(launchParams);
         } else if (page == null) {
             showHome("permission");
         }
+    }
+
+    private android.content.SharedPreferences prefs() { return getSharedPreferences("couchsubs", MODE_PRIVATE); }
+
+    private boolean inAppChosen() { return prefs().getBoolean(KEY_IN_APP, false); }
+
+    /** İzin ekranından: oyunu Nino'nun içinde gösterir (katman izni gerekmez). Seçim hatırlanır. */
+    private void showInAppWithoutPermission() {
+        handler.removeCallbacks(permissionTick);
+        shownHome = null;
+        TvPage old = page;
+        page = null;
+        showInApp();
+        if (old != null) old.destroy();
+    }
+
+    /** İzin ekranı ya da izinsiz görünüm açıkken izin verildiyse katman başlar ve ana ekran gösterilir. */
+    private void checkPermissionGranted() {
+        handler.removeCallbacks(permissionTick);
+        if (!BuildConfig.OVERLAY_MODE || isFinishing()) return;
+        if (!"permission".equals(shownHome)) return;
+        if (overlayAllowed()) {
+            if (!OverlayService.running || !launchParams.isEmpty()) OverlayService.start(this, launchParams);
+            showHome("home");
+            return;
+        }
+        handler.postDelayed(permissionTick, PERMISSION_CHECK_MS);
+    }
+
+    @Override
+    public void openOverlaySettings() {
+        // TV'nin "Diğer uygulamaların üzerinde göster" ekranı; bazı TV'lerde yok, o zaman uygulamanın ayar sayfası denenir.
+        Uri app = Uri.parse("package:" + getPackageName());
+        Intent[] tries = {
+            new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, app),
+            new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION),
+            new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, app),
+        };
+        for (Intent settings : tries) {
+            try {
+                startActivity(settings);
+                return;
+            } catch (ActivityNotFoundException | SecurityException missing) {
+                // sıradaki denenir
+            }
+        }
+        Toast.makeText(this, R.string.overlay_settings_missing, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void continueInApp() {
+        prefs().edit().putBoolean(KEY_IN_APP, true).apply();
+        showInAppWithoutPermission();
     }
 
     /** Nino'nun sade ekranı: HDMI görüntüsü yok (TvView açılmaz), yalnız sayfa. */
     private void showHome(String mode) {
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
+        // Önceki sayfa (izin ekranı ya da izinsiz HDMI görünümü) yenisi ekrana konduktan sonra bırakılır.
+        TvPage old = page;
+        if (tvView != null) {
+            stopWatching();
+            tvView.reset();
+            tvView = null;
+            tunedInput = null;
+        }
+        shownHome = mode;
         page = new TvPage(this, this, launchParams, false);
         page.setHomeMode(mode);
         root.addView(page.webView);
         setContentView(root);
         page.load();
         page.webView.requestFocus();
+        if (old != null) old.destroy();
+        handler.removeCallbacks(permissionTick);
+        if ("permission".equals(mode)) handler.postDelayed(permissionTick, PERMISSION_CHECK_MS);
     }
 
     /** Katman açılabilir mi: bu derlemede var (Play paketinde yok) ve "Diğer uygulamaların üzerinde göster" izni verilmiş. */
@@ -548,6 +628,8 @@ public class MainActivity extends Activity implements TvPage.Host {
         super.onResume();
         resumed = true;
         if (tvView != null && tunedInput != null) tune(tunedInput);
+        // Ayarlardan dönüldü: izin verildiyse izin ekranı kendiliğinden ilerler.
+        if ("permission".equals(shownHome)) checkPermissionGranted();
     }
 
     /** Uygulamadan çıkılınca (Ana ekran, başka uygulama) Türkçe dublaj susar; altyazı bağlantısı sürer (TV-NP). */

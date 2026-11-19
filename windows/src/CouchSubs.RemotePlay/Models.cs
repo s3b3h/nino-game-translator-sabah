@@ -54,6 +54,9 @@ public enum DisconnectKind
     /// "Unknown Session Request Error" diye verir (GitHub #33, #202). Ayrıntı: PS5'in "Reported Application Reason" kodu
     /// (ör. 0x80108bff; günlükte kod yoksa null).</summary>
     Rejected,
+    /// <summary>PS5'te Uzaktan Oynama kapalı (0x80108b12): eşleme durur ama PS5 oturum açmaz; kullanıcı PS5'te Ayarlar ›
+    /// Sistem › Uzaktan Oynama'dan açmalıdır. Yeniden denemek aynı yere çıkar.</summary>
+    RemotePlayDisabled,
 }
 
 /// <summary>PS5 oturum giriş şifresi (4 hane). PS5 ikinci hesapta şifre isterse Ayarlar'da kayıtlı şifre gönderilir.</summary>

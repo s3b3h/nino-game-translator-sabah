@@ -86,8 +86,13 @@ internal static class DisconnectReasons
     /// <summary>libchiaki'nin CHIAKI_QUIT_REASON_SESSION_REQUEST_UNKNOWN metni (yerel kütüphane CS_QUIT_OTHER ile verir).</summary>
     internal const string UnknownSessionRequest = "Unknown Session Request Error";
 
-    /// <summary>CHIAKI_RP_APPLICATION_REASON_REGIST_FAILED ve _INVALID_PSN_ID.</summary>
-    internal static readonly uint[] RegistrationRejectedCodes = [0x80108b09, 0x80108b02];
+    /// <summary>CHIAKI_RP_APPLICATION_REASON_REGIST_FAILED ve _INVALID_PSN_ID; 0x80108b26: PS5 eşleme anahtarını kendi
+    /// kayıtlarında bulamadı (eşleme PS5'te silinmiş ya da başka hesapla yapılmış). Yeniden başlatmak düzeltmez, PS5
+    /// yeniden eşlenmelidir.</summary>
+    internal static readonly uint[] RegistrationRejectedCodes = [0x80108b09, 0x80108b02, 0x80108b26];
+
+    /// <summary>PS5'te Uzaktan Oynama kapalıyken dönen kod.</summary>
+    internal const uint RemotePlayDisabledCode = 0x80108b12;
 
     private static readonly string[] UnreachableLines =
     [
@@ -109,6 +114,7 @@ internal static class DisconnectReasons
             var token = line[(at + marker.Length)..].TrimStart().Split(' ', 2)[0];
             if (token.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) token = token[2..];
             if (!uint.TryParse(token, System.Globalization.NumberStyles.HexNumber, null, out var code)) return null;
+            if (code == RemotePlayDisabledCode) return new(DisconnectKind.RemotePlayDisabled);
             return RegistrationRejectedCodes.Contains(code)
                 ? new(DisconnectKind.RegistrationInvalid)
                 : new(DisconnectKind.Rejected, $"0x{code:x8}");
@@ -395,9 +401,9 @@ public sealed class StreamSession : IStreamSession
                     // Eski bir oturumun (ör. ReconnectNow ile kapatılanın) kapanma olayı yeni oturumu etkilemez.
                     if (box?.Generation != eventGeneration || !IsCurrent(eventGeneration)) return;
                     CloseBox();
-                    if (reason.Kind == DisconnectKind.RegistrationInvalid)
+                    if (reason.Kind is DisconnectKind.RegistrationInvalid or DisconnectKind.RemotePlayDisabled)
                     {
-                        // Kayıt geçersiz: yeniden denemek aynı yere çıkar (eskiden sonsuza kadar "Yeniden bağlanılıyor…").
+                        // Kayıt geçersiz ya da Uzaktan Oynama kapalı: yeniden denemek aynı yere çıkar (eskiden sonsuza kadar "Yeniden bağlanılıyor…").
                         Bump(running: false);
                         Emit(new SessionState(SessionPhase.Disconnected, reason));
                         return;

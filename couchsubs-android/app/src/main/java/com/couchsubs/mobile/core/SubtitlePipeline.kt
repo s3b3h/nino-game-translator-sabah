@@ -57,6 +57,8 @@ class SubtitlePipeline(
         /** Bu kadar süredir aynı duran satır, yanında yeni bir yazı varken altyazı sayılmaz. */
         const val STALE_MS = 9000L
         private const val REMEMBERED_PAIRS = 8
+        /** Günlüğe yazıldığı hatırlanan dev yazı sayısı (bkz. [noteOversized]). */
+        private const val OVERSIZED_REMEMBERED = 32
         /**
          * Bozuk okunan (OCR izi taşıyan) ve pakette bulunmayan satır en çok bu kadar bekletilir: aynı satırın düzgün
          * okuması gelirse o çevrilir (Windows: PackWaitMs).
@@ -157,6 +159,28 @@ class SubtitlePipeline(
      */
     @Volatile var hudTop: Double? = SubtitleLayout.FALLBACK_HUD_TOP
 
+    /** Nino: günlük için (atlanan dev yazılar); telefon uygulaması logcat'e yazar. */
+    @Volatile var log: ((String) -> Unit)? = null
+    /**
+     * Günlüğe yazılmış son dev yazılar (en çok [OVERSIZED_REMEMBERED]); ekranda duran tabela her karede yeniden
+     * yazılmasın. Tek bir "son yazı" yetmez: başlığı dev, gövdesi çok satırlı bir afiş aynı karede iki ayrı satır
+     * yazdırır, yazı tanıma da aynı tabelayı iki okuma arasında gidip gelerek okuyabilir.
+     */
+    private val loggedOversized = LinkedHashSet<String>()
+
+    /** Atlanan dev yazıyı günlüğe yazar; aynı yazı bir kez yazılır. */
+    private fun noteOversized(text: String, message: () -> String) {
+        if (!loggedOversized.add(text)) return
+        if (loggedOversized.size > OVERSIZED_REMEMBERED) loggedOversized.remove(loggedOversized.first())
+        log?.invoke(message())
+    }
+
+    /** Günlükte kısa alıntı: tek satır, en çok 120 karakter, tırnak içinde (Mac: SubtitleLog.excerpt). */
+    private fun excerpt(text: String, limit: Int = 120): String {
+        val flat = text.lines().map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" / ")
+        return "\"" + (if (flat.length > limit) flat.take(limit - 1) + "…" else flat) + "\""
+    }
+
     /** Satırın (yazısıyla) ilk görüldüğü an; görev ve öğretici yazıları uzun süre aynı kalır. */
     private var lineSince = mutableMapOf<String, Long>()
 
@@ -193,8 +217,20 @@ class SubtitlePipeline(
                     area.top + box.top * (area.bottom - area.top) < limit)
         })
         visible = synchronized(lock) { withoutStaleLines(visible, now()) }
+        // Nino: dev yazılar (tabela, reklam panosu) altyazı değildir; çevrilmez, TV'de kocaman siyah kutu da çıkmaz.
+        val sized = visible.withoutOversizedLines(area)
+        if (sized.lines.size != visible.lines.size) {
+            val dropped = visible.lines.filter { it !in sized.lines }.joinToString(" / ") { it.text }
+            noteOversized(dropped) { "dev yazı: ${excerpt(dropped)} altyazı için fazla büyük, atlandı" }
+            visible = sized
+        }
         // Kumanda ipuçları ve yazı tanıma çöpleri çevrilmez; yalnız altyazı bloğu çevrilir.
-        val reading = visible.withoutButtonPrompts().withoutOcrNoise().joiningRows().subtitleBlock(area)
+        val block = visible.withoutButtonPrompts().withoutOcrNoise().joiningRows().subtitleBlock(area)
+        // Normal boyda ama çok satırlı ya da çok yer kaplayan blok da altyazı değildir (afiş, not, üst üste tabelalar).
+        val reading = if (block.isOversizedBlock(area)) {
+            noteOversized(block.text) { "dev blok: ${excerpt(block.text)} altyazı için fazla yer kaplıyor (${block.lines.size} satır), atlandı" }
+            Reading.Empty
+        } else block
         var flushed: (() -> Unit)? = null
         val after: (() -> Unit)? = synchronized(lock) {
             var action = stabilizer.feed(reading.text, signature, reading.box)

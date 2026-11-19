@@ -54,6 +54,10 @@ enum SettingsSection: CaseIterable, Identifiable {
 }
 
 extension SettingsSection {
+    /// Nino: Ayarlar'da gösterilmeyen bölümler. Dublaj şimdilik kapalı; Arayüz gereksiz bulundu (varsayılan ana ekran
+    /// kalır); Dil, Çeviri sayfasının içinde; oyun paketleri kendiliğinden çalışır. Bölümlerin kodu durur, geri açmak için buradan çıkarmak yeter.
+    static let hidden: Set<SettingsSection> = [.dubbing, .interface, .language, .packs, .area]
+
     /// Sistem Ayarları'ndaki gibi her bölümün kendi renkli simge kutusu.
     var tint: Color {
         switch self {
@@ -149,8 +153,12 @@ private struct SettingsList: View {
     private let groups: [[SettingsSection]] = [
         // Nino: "Bağlantı": oyun görüntüsünün nereden geldiği (PS5, Remote Play penceresi, Capture Card) ve altyazının yeri.
         [.connection, .ps5],
-        [.interface, .appearance, .translation, .language],
-        [.packs, .dubbing, .area, .obs],
+        // Nino: "Arayüz" kaldırıldı (varsayılan ana ekran yeter); "Dil" ayrı bölüm değil, Çeviri sayfasının en üstünde.
+        [.appearance, .translation],
+        // Nino: Türkçe dublaj şimdilik kaldırıldı (bkz. AppModel.dubbingAvailable).
+        // Oyun paketleri de gizli: kendiliğinden çalışır, kullanıcının görmesi gerekmez.
+        // Altyazı alanı da gizli: alan oyuna göre kendiliğinden ayarlanır.
+        [.obs],
         // Nino: Sorun Bildir, Hakkında'nın hemen üstünde.
         [.health, .updates, .assistant, .report, .about],
         // Nino: sıfırlama ayrı ve en altta (Hakkında'nın içinde değil).
@@ -218,7 +226,7 @@ private struct SettingsSidebar: View {
                 .font(.csTitle)
                 .padding(.horizontal, Theme.space("m"))
                 .padding(.bottom, Theme.space("s"))
-            ForEach(SettingsSection.allCases) { item in
+            ForEach(SettingsSection.allCases.filter { !SettingsSection.hidden.contains($0) }) { item in
                 SidebarRow(title: item.title, symbol: item.symbol, selected: item == section, tint: item.tint) {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { section = item }
                 }
@@ -1099,40 +1107,66 @@ struct TranslationCard: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.openURL) private var openURL
 
+    /// Diğer motorlar (DeepL, OpenAI, Claude, yerel model) ve gelişmiş ayar kapalı durur; çoğu kullanıcıya gerekmez.
+    @State private var showOthers = false
+    @State private var showAdvanced = false
+    private static let others: [TranslationEngine] = [.deepL, .openAI, .claude, .local]
+
     var body: some View {
         let engine = model.settings.translationEngine
-        Card(title: "Translation engine") {
-            EngineTiles(engine: $model.settings.translationEngine)
-            HintText(text: Self.explanation(engine))
-            if engine != .free, model.settings.sourceLanguage != "en" {
-                HintText(text: "Online engines translate English games only. For other game languages the free translation is used.")
+        let turkish = TargetLanguage.isTurkish(model.settings.targetLanguage)
+        // Nino: sayfa sade. GTA 6'da (Türkçe) çeviri Nino'nun havuzundan gelir, seçilecek bir şey yoktur; bu en üstte
+        // açıkça yazar. Diğer oyunlar için iki seçenek yeter: Ücretsiz ya da Gemini.
+        // Oyunun dili ve çeviri dili: eskiden ayrı "Dil" bölümüydü; iki satır için koca sayfa gerekmez.
+        LanguageCard()
+        if turkish {
+            Card(title: "GTA 6") {
+                DoneLabel(text: String(localized: "Nino translates it, automatically"))
+                HintText(text: "In GTA 6 the Turkish subtitles come from Nino's shared translation: every line is translated once by a strong AI and everyone gets the same result. You do not choose anything or enter a key, and it is free.")
             }
-            switch engine {
-            case .free:
-                // Ücretsiz çeviri zayıf kalıyor; ücretsiz Gemini anahtarı en kolay iyileştirme.
-                HStack(spacing: Theme.space("m")) {
-                    Text("For better translation, get a free Gemini key.")
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer()
-                    Button("Get a free key") {
-                        model.chooseFreeGemini()
-                        openURL(AIProvider.gemini.keyPage)
-                    }
-                    .buttonStyle(.secondary)
-                }
-            case .deepL: DeepLKeySection()
-            case .gemini, .openAI, .claude:
-                if let provider = engine.aiProvider { AIKeySection(provider: provider).id(provider) }
-            case .local: LocalAISection()
-            }
+        }
+        Card(title: turkish ? "Other games" : "Translation engine") {
+            EngineChoice(title: String(localized: "Free"), caption: "Nothing to set up. Translated on this Mac.",
+                         recommended: false, selected: engine == .free) { model.settings.translationEngine = .free }
+            EngineChoice(title: TranslationEngine.gemini.displayName, caption: "More natural translation. Needs a free Google key.",
+                         recommended: true, selected: engine == .gemini) { model.settings.translationEngine = .gemini }
             if engine == .gemini {
+                AIKeySection(provider: .gemini).id(AIProvider.gemini)
                 HintText(text: FreeGemini.privacy)
                 HintText(text: FreeGemini.limit)
             }
+            if engine != .free, model.settings.sourceLanguage != "en" {
+                HintText(text: "Online engines translate English games only. For other game languages the free translation is used.")
+            }
+            DisclosureGroup(isExpanded: Binding(get: { showOthers || Self.others.contains(engine) }, set: { showOthers = $0 })) {
+                VStack(alignment: .leading, spacing: Theme.space("m")) {
+                    EngineTiles(engine: $model.settings.translationEngine, options: Self.others)
+                    if Self.others.contains(engine) {
+                        HintText(text: Self.explanation(engine))
+                        switch engine {
+                        case .deepL: DeepLKeySection()
+                        case .openAI, .claude:
+                            if let provider = engine.aiProvider { AIKeySection(provider: provider).id(provider) }
+                        case .local: LocalAISection()
+                        default: EmptyView()
+                        }
+                    }
+                }
+                .padding(.top, Theme.space("s"))
+            } label: {
+                Text("Other translation engines").font(.csCallout).foregroundStyle(Color.csSecondary)
+            }
         }
-        Card(title: "Advanced") {
-            SwitchRow(title: "Check unchanged subtitle areas more often", isOn: $model.settings.fastSubtitleDetection)
-            HintText(text: "When the subtitle area looks unchanged, read it again after 2 frames instead of 20. Uses more CPU.")
+        Card {
+            DisclosureGroup(isExpanded: $showAdvanced) {
+                VStack(alignment: .leading, spacing: Theme.space("s")) {
+                    SwitchRow(title: "Check unchanged subtitle areas more often", isOn: $model.settings.fastSubtitleDetection)
+                    HintText(text: "When the subtitle area looks unchanged, read it again after 2 frames instead of 20. Uses more CPU.")
+                }
+                .padding(.top, Theme.space("s"))
+            } label: {
+                Text("Advanced").font(.csCallout).foregroundStyle(Color.csSecondary)
+            }
         }
     }
 
@@ -1202,15 +1236,56 @@ struct TranslationCard: View {
 }
 
 /// Çeviri motoru seçimi: altı karo (iki sıra), seçili olan sarı çerçeveli ve parlak.
+/// Ayarlar › Çeviri'deki iki ana seçenek (Ücretsiz, Gemini): tek satır, soldaki daire seçimi gösterir.
+private struct EngineChoice: View {
+    let title: String
+    let caption: LocalizedStringKey
+    let recommended: Bool
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Theme.space("m")) {
+                Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(selected ? Color.csAccent : Color.csSecondary)
+                VStack(alignment: .leading, spacing: Theme.space("hair")) {
+                    HStack(spacing: Theme.space("s")) {
+                        Text(verbatim: title).font(.csHeadline).foregroundStyle(Color.csText)
+                        if recommended {
+                            Text("Recommended")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 8).padding(.vertical, 3)
+                                .background(Capsule().fill(Color.csAccent))
+                        }
+                    }
+                    Text(caption).font(.csCaption).foregroundStyle(Color.csSecondary).fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .tile(selected ? .active : .plain, padding: Theme.space("m"))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
 private struct EngineTiles: View {
     @Binding var engine: TranslationEngine
+    var options: [TranslationEngine] = EngineTiles.order
     static let order: [TranslationEngine] = [.gemini] + TranslationEngine.allCases.filter { $0 != .gemini }
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: Theme.space("m"), alignment: .top), count: 3)
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: Theme.space("m"), alignment: .top), count: options.count == 4 ? 2 : 3)
+    }
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: Theme.space("m")) {
             // Nino: önerilen Gemini başta (en iyi çeviri, ücretsiz anahtar, kurması kolay).
-            ForEach(Self.order, id: \.self) { option in
+            ForEach(options, id: \.self) { option in
                 EngineTile(option: option, selected: option == engine) { engine = option }
             }
         }

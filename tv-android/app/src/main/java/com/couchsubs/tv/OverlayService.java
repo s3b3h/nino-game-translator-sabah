@@ -114,6 +114,13 @@ public class OverlayService extends Service implements TvPage.Host {
     @Override
     public void exit() { stopSelf(); }
 
+    // İzin ekranı yalnız MainActivity'de gösterilir; katmanda bu düğmeler yoktur.
+    @Override
+    public void openOverlaySettings() { }
+
+    @Override
+    public void continueInApp() { }
+
     /** Bilgisayarda "Uygulama içinde" seçildi: katman kapanır, CouchSubs öne gelir. */
     @Override
     public void displayModeChanged(String mode) {

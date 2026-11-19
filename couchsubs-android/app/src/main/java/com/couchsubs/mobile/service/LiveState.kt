@@ -41,6 +41,12 @@ data class LiveStatus(
     val demo: Boolean = false,
     /** Oynanan oyun (PS5'in bildirdiği, paketten tanınan ya da seçilen; bkz. [PlayedGame]); bilinmiyorsa null. */
     val game: String? = null,
+    /**
+     * Nino: tanınan oyun havuz öncelikli mi (şimdilik GTA 6; hizmetin çeviriyi havuza yönlendirirken kullandığı karar,
+     * oyun tanınmışsa). Ana ekrandaki sahnenin (salondaki TV, cam düğmeli arayüzün sahnesi) fonu buna göre seçilir
+     * (Mac: liveGamePoolFirst). Demo ve klipte hep false.
+     */
+    val poolFirstGame: Boolean = false,
     /** "Hangi oyunu oynuyorsunuz?" kartı açık. */
     val askingGame: Boolean = false,
     /** Nino: çevirinin başladığı an (TV'ye "started" gönderildi; duvar saati, ms); telefonda 7 sn "Çeviri başladı" balonu. 0: yok. */
@@ -51,6 +57,17 @@ data class LiveStatus(
      * (`replaces`) öncekinin yerine geçer, üste yığılmaz (TV ve iPhone ile aynı). Temizlenince ekran boşalır.
      */
     enum class ScreenState { IDLE, WORKING, SHOWN }
+
+    /**
+     * Nino: Ayarlar'daki "GTA 6" kartı (Mac: ninoPoolActive). GTA 6 (havuz öncelikli oyun) için Nino'nun kendi çevirisi
+     * geçerli mi: hedef dil havuzun çevirdiği dillerdense (şimdilik Türkçe) ve tanınan oyun havuz öncelikliyse ya da
+     * henüz oyun tanınmadıysa evet; kullanıcı varsayılanın açık olduğunu görür. Çeviri sürerken başka bir oyun tanınınca
+     * hayır (o oyunda seçili motor çevirir). [game] durunca silinmediği için yalnız çeviri sürerken dikkate alınır.
+     * [poolFirst]: sunucunun listesi hizmetin içindedir; burada varsayılanı (Türkçe) kullanılır.
+     */
+    fun ninoPoolActive(targetLanguage: String,
+                       poolFirst: com.couchsubs.mobile.core.TranslationPool.PoolFirstConfig = com.couchsubs.mobile.core.TranslationPool.PoolFirstConfig()): Boolean =
+        poolFirst.allows(targetLanguage) && (!running || game == null || poolFirstGame)
 
     fun phoneEvent(event: com.couchsubs.mobile.core.SubtitleEvent): LiveStatus = when (event) {
         is com.couchsubs.mobile.core.SubtitleEvent.Subtitle ->

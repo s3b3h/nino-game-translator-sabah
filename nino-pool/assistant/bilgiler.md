@@ -54,10 +54,35 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   ya da TV'den) alın; yayın yapıyorsanız OBS yolunu kullanın.
 - TV'ye kurulumda en kolayı telefondaki ya da bilgisayardaki Nino'dur; TV'de geliştirici modu (USB hata ayıklama)
   açıkken uygulamayı kendisi kurar ve günceller.
-- Güncel sürüm: Mac, Windows, Android telefon ve iPhone uygulamaları Nino V3.3 (teknik numara 0.2.5); TV uygulaması
-  Nino V3.2 (0.9.31). TV'deki sürümü görmek için TV'de Nino'yu açıp kumandada OK'e (ya da menü tuşuna) bas;
-  açılan panelin üstünde "V3.2 (0.9.31)" yazar. V3.2 yazmıyorsa (ör. yalnız 0.9.22 gibi bir sayı) TV uygulaması eskidir: telefondaki ya da bilgisayardaki Nino'da "TV'ye kur"a yeniden bas. Geliştirici modu
-  (USB hata ayıklama) açık kalırsa güncellemeyi Nino bundan sonra kendisi yapar; bu yüzden kurulumu hep bu yolla öner.
+- Güncel sürüm: bütün uygulamalar aynı adı ve aynı numarayı taşır: Nino V3.4 (3.4.0). Mac, Windows, Android telefon,
+  Android TV / Google TV ve Samsung TV uygulamalarının hepsi 3.4.0'dır. Tek istisna LG: LG TV uygulaması 0.9.18'dir ve
+  bu NORMALDİR, kullanıcıya "eski, yeniden kur" deme. TV'deki sürüm, telefondaki ya da bilgisayardaki Nino'nun TV
+  kurulum ekranında yazar. Android TV ya da Samsung'da 3.4.0'dan küçük bir sayı görünüyorsa telefondaki ya da
+  bilgisayardaki Nino'da "TV'ye kur"a yeniden basılır. Geliştirici modu (USB hata ayıklama) açık kalırsa güncellemeyi
+  Nino bundan sonra kendisi yapar; bu yüzden kurulumu hep bu yolla öner. Eski numaralar (0.2.x uygulamalar, 0.9.x TV)
+  V3.3 ve öncesine aittir.
+- iPhone'da sürüm: iPhone güncellemeleri TestFlight'tan gelir ve her yeni sürüm önce Apple'ın onayını bekler; bu bir
+  iki gün sürebilir. iPhone'da 0.2.2 gibi eski bir sayı görünüyorsa ve TestFlight'ta güncelleme yoksa bu normaldir, kullanıcı bir şeyi
+  yanlış yapmamıştır; onay gelince TestFlight kendiliğinden günceller.
+- iPhone TV uygulamasını KURABİLİR: iPhone'daki Nino'da Ayarlar › TV uygulaması › "TV uygulamasını bu telefondan kur"
+  ile Android TV, Samsung ve LG TV'ye kurulur. "iPhone kuramaz, bilgisayar ya da Android telefon gerekir" deme.
+  LG'de iPhone'dan kurulumda "Kur ve aç" tepki vermiyorsa bu bilinen bir hatadır; o zaman Mac/Windows'taki Nino'dan
+  kurulmasını öner ve hatayı bildir.
+- Android TV'de "Bir kerelik izin gerekiyor" ekranı: TV uygulaması V3.4'te bu ekranda iki düğme vardır. "İzni TV'den
+  ver" TV'nin "Diğer uygulamaların üzerinde göster" ayarını açar; orada Nino açılınca ekran kendiliğinden ilerler.
+  "İzin vermeden devam et" oyunu Nino'nun içinde gösterir (bazı TV'lerde görüntü siyah kalabilir; o zaman izin
+  gerekir). Geliştirici seçeneği olmayan TV'lerde (Onvo, Vestel, bazı kutular) bu iki yoldan biri kullanılır. TV'de
+  USB hata ayıklama açıksa izin, çeviri telefondan/bilgisayardan başlatılınca kendiliğinden verilir.
+- Samsung'da geliştirici modu penceresi açılmıyorsa: 2022 ve sonrası modellerde 1 2 3 4 5, Uygulamalar sayfasının EN
+  ALTINDAKİ Uygulama Ayarları'nda yazılır (ilk sayfada hiçbir şey olmaz). Kumandada rakam yoksa 123 tuşuyla ekran tuş
+  takımı açılır; Host PC IP alanı değişmiyorsa da önce 123 tuşuna basılır. Adres başına sıfır konmadan yazılır (001
+  değil 1). Sonra TV, güç tuşu Samsung logosu görünene kadar basılı tutularak ya da fişi bir dakika çekilerek tam
+  yeniden başlatılır. Mac'teki Nino (V3.4) hangi adımın eksik olduğunu kendisi gösterir.
+- Xbox'ta bağlantı sürekli kopuyorsa ("uzaktan yürütmeyi durdurdu"): Xbox'ta Ayarlar › Genel › TV ve ekran
+  seçenekleri'nden çözünürlüğü 1080p yapmak bazı kullanıcılarda sorunu çözdü.
+- TV uygulamasını elle indirme adresi: is.gd/ninotvapk (eski is.gd/ninoapk bağlantısı çalışmaz).
+- Windows'ta Nino açılırken "beklenmeyen bir hata" penceresi çıkıyorsa kullanıcıdan
+  %LOCALAPPDATA%\CouchSubs\hata.log dosyasını Sorun Bildir ile ya da GitHub'dan göndermesini iste.
 - Üçüncü parti indirme uygulamaları (ör. "Downloader") önerilmez.
 - iPhone ve iPad: App Store'da yayınlanana kadar TestFlight ile kurulur. Önce App Store'dan ücretsiz TestFlight
   uygulamasını indir, sonra bu bağlantıyı aç: https://testflight.apple.com/join/1K3Q1KXp
@@ -72,6 +97,14 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   parlaklığı kısar. Telefonu kilitlemeyin, başka uygulamaya geçmeyin; şarja takılı bırakmak en
   iyisi. Ekranın hiç açık kalmasını istemeyenler bilgisayardaki (Mac/Windows) ya da Android telefondaki Nino'yu
   kullanabilir; Android'de Nino arka planda da çalışır.
+- Oyundaki tabela, reklam panosu ya da dev yazı çevriliyor, ekranda kocaman siyah kutu çıkıyor: V3.4'te düzeltildi,
+  altyazı için fazla büyük yazılar artık çevrilmez. Hâlâ oluyorsa uygulamayı V3.4'e güncelleyin; Ayarlar › Altyazı
+  görünümü'nde arka planı %0 yaparsanız siyah kutu tamamen kalkar.
+- Android telefonda güncelleme: yeni sürüm çıkınca ana ekranda "Güncelle" kartı çıkar, basınca yeni APK iner; Ayarlar'daki
+  Güncelleme satırından "Şimdi denetle" ile de bakılır. Play Store'dan kurulduysa Play günceller.
+- Cihaz bilgileri (V3.4): Ayarlar › Sistem sağlığı'nda (iPhone'da Ayarlar'ın altında) uygulama sürümü, cihaz modeli,
+  sistem, TV ve konsol yazar; Sorun Bildir ve bu sohbetten açılan bildirimlere kendiliğinden eklenir. Kullanıcıdan
+  cihazlarını yine sor, ama "kopyala" düğmesiyle buraya yapıştırabileceğini söyle.
 - Mac "doğrulanamadı" diyor: Sistem Ayarları › Gizlilik ve Güvenlik › Yine de Aç. Windows "bilgisayarınızı korudu":
   Ek bilgi › Yine de çalıştır.
 - Mac PS5'i bulamıyor: Sistem Ayarları › Gizlilik ve Güvenlik › Yerel Ağ'da Nino'ya izin verin.

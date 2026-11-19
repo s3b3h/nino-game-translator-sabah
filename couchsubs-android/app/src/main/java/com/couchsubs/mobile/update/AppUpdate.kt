@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Nino: telefon uygulamasının yeni sürüm bildirimi. GitHub'daki son sürüme en çok 12 saatte bir bakar; yeni sürüm
-// varsa ana ekranda sakin bir kart gösterir. Google Play'den kurulan kopyada hiç bakılmaz (Play kendisi günceller).
+// Nino: telefon uygulamasının yeni sürüm bildirimi. GitHub'daki son sürüme en çok 3 saatte bir bakar; yeni sürüm
+// varsa ana ekranda sakin bir kart ve Ayarlar'da "Güncelleme" satırı gösterir. Google Play'den kurulan kopyada hiç
+// bakılmaz (Play kendisi günceller).
 // Based on CouchSubs by Sinan Yorulmaz (https://github.com/yorulmazsinan/couchsubs), modified on 2026-11-18.
 package com.couchsubs.mobile.update
 
@@ -17,7 +18,8 @@ import java.net.URL
 
 /** Android'e dokunmayan kısım (JVM testleri bunu sınar): sürüm karşılaştırma, etiket okuma, bakma zamanı. */
 object AppVersions {
-    const val CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000L
+    /** Nino: 12 saatten 3 saate indi; yeni sürüm çıktığı gün görülsün (GitHub'ın saatlik 60 istek sınırının çok altında). */
+    const val CHECK_INTERVAL_MS = 3 * 60 * 60 * 1000L
 
     private data class Parsed(val core: List<Int>, val pre: List<String>)
 
@@ -72,13 +74,16 @@ object AppVersions {
         null
     }
 
-    /** Son bakıştan 12 saat geçtiyse (ya da saat geri alındıysa) yeniden bakılır. */
+    /** Son bakıştan 3 saat geçtiyse (ya da saat geri alındıysa) yeniden bakılır. */
     fun isCheckDue(now: Long, lastCheckedAt: Long): Boolean =
         lastCheckedAt <= 0L || lastCheckedAt > now || now - lastCheckedAt >= CHECK_INTERVAL_MS
 
     /** Kartta gösterilecek sürüm: kayıtlı son sürüm bu sürümden yeniyse ve kullanıcı onu kapatmadıysa. */
     fun versionToShow(latest: String?, current: String, dismissed: String?): String? =
         latest?.takeIf { isNewer(it, current) && it != dismissed }
+
+    /** Ayarlar'daki "Güncelleme" satırı: kart ✕ ile kapatılmış olsa da bu sürümden yeni olan kayıtlı son sürüm. */
+    fun newerVersion(latest: String?, current: String): String? = versionToShow(latest, current, null)
 }
 
 object AppUpdate {
@@ -95,30 +100,47 @@ object AppUpdate {
     /** Ana ekranda gösterilecek yeni sürüm (ör. "0.2.0"); yoksa null. */
     val available: StateFlow<String?> = state
 
-    /** Uygulama açılınca: önce kayıtlı sonuç gösterilir, 12 saat geçtiyse GitHub'a sessizce yeniden bakılır. */
-    suspend fun check(context: Context) = withContext(Dispatchers.IO) {
+    private val newerState = MutableStateFlow<String?>(null)
+
+    /** Ayarlar'daki "Güncelleme" satırı için: bilinen yeni sürüm; ana ekrandaki kart ✕ ile kapatılsa da kalır. */
+    val newer: StateFlow<String?> = newerState
+
+    /**
+     * Uygulama açılınca: önce kayıtlı sonuç gösterilir, 3 saat geçtiyse GitHub'a sessizce yeniden bakılır.
+     * [force] (Ayarlar › "Şimdi denetle"): süre beklenmez. GitHub bu çağrıda cevap verdiyse (200) true döner; süre
+     * dolmadığı için bakılmadıysa, Play kopyasında ya da ağ hatasında false.
+     */
+    suspend fun check(context: Context, force: Boolean = false): Boolean = withContext(Dispatchers.IO) {
         try {
             if (installedFromPlay(context)) {
                 state.value = null
-                return@withContext
+                newerState.value = null
+                return@withContext false
             }
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             fun publish() {
-                state.value = AppVersions.versionToShow(prefs.getString(KEY_LATEST, null), BuildConfig.VERSION_NAME, prefs.getString(KEY_DISMISSED, null))
+                val latest = prefs.getString(KEY_LATEST, null)
+                state.value = AppVersions.versionToShow(latest, BuildConfig.VERSION_NAME, prefs.getString(KEY_DISMISSED, null))
+                newerState.value = AppVersions.newerVersion(latest, BuildConfig.VERSION_NAME)
             }
             publish()
             val now = System.currentTimeMillis()
-            if (!AppVersions.isCheckDue(now, prefs.getLong(KEY_CHECKED_AT, 0L))) return@withContext
-            val (code, body) = fetch() ?: return@withContext
-            // Yanıt geldiyse (403/oran sınırı dahil) 12 saat beklenir; ağ hatasında bir dahaki açılışta yine denenir.
+            if (!force && !AppVersions.isCheckDue(now, prefs.getLong(KEY_CHECKED_AT, 0L))) return@withContext false
+            val (code, body) = fetch() ?: return@withContext false
+            // Yanıt geldiyse (403/oran sınırı dahil) 3 saat beklenir; ağ hatasında bir dahaki açılışta yine denenir.
             val edit = prefs.edit().putLong(KEY_CHECKED_AT, now)
             if (code == HttpURLConnection.HTTP_OK) AppVersions.latestVersion(body)?.let { edit.putString(KEY_LATEST, it) }
             edit.apply()
             publish()
+            code == HttpURLConnection.HTTP_OK
         } catch (error: Exception) {
             // Sessiz: güncelleme denetimi hiçbir zaman kullanıcıyı rahatsız etmez.
+            false
         }
     }
+
+    /** Uygulamayı Play mi güncelliyor (Play'den kurulan kopya): kart ve Ayarlar satırı gösterilmez. */
+    fun managedByPlay(context: Context): Boolean = installedFromPlay(context)
 
     /** Karttaki ✕: bu sürüm bir daha gösterilmez (daha yenisi çıkınca kart yine gelir). */
     fun dismiss(context: Context, version: String) {
