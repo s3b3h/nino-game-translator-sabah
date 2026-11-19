@@ -318,8 +318,9 @@ struct PS5PairScreen: View {
                                 .frame(maxWidth: .infinity, minHeight: Mobile.Control.field)
                                 .background(Mobile.Palette.surface2, in: RoundedRectangle(cornerRadius: Mobile.Radius.inner))
                                 .overlay(RoundedRectangle(cornerRadius: Mobile.Radius.inner)
-                                    .strokeBorder(index == digits.count && codeFocused ? Mobile.Palette.accent : Mobile.Palette.border,
-                                                  lineWidth: index == digits.count && codeFocused ? 2 : 1))
+                                    // Kutular belli olsun: beyaz kenar açık zeminde görünmüyordu (Mac'te de aynı şikâyet vardı).
+                                    .strokeBorder(index == digits.count && codeFocused ? Mobile.Palette.accent : Mobile.Palette.secondary.opacity(0.4),
+                                                  lineWidth: index == digits.count && codeFocused ? 2 : 1.5))
                         }
                     }
                     .allowsHitTesting(false)

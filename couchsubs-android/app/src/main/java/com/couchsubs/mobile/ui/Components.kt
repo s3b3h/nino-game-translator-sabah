@@ -184,7 +184,9 @@ fun CodeCells(code: String, length: Int = 8) {
             val digit = code.getOrNull(index)?.toString() ?: ""
             Box(
                 Modifier.weight(1f).height(48.dp).background(Tokens.Color.surface2, RoundedCornerShape(Tokens.Radius.inner))
-                    .border(1.dp, if (index == code.length) Tokens.Color.accent else Tokens.Color.borderStrong, RoundedCornerShape(Tokens.Radius.inner)),
+                    // Kutular belli olsun: açık kenar açık zeminde görünmüyordu (Mac'te de aynı şikâyet vardı).
+                    .border(if (index == code.length) 2.dp else 1.5.dp,
+                        if (index == code.length) Tokens.Color.accent else Tokens.Color.secondary.copy(alpha = 0.4f), RoundedCornerShape(Tokens.Radius.inner)),
                 contentAlignment = Alignment.Center,
             ) { Text(digit, style = Tokens.Type.title, color = Tokens.Color.text) }
         }

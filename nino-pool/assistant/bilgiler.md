@@ -54,11 +54,10 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   ya da TV'den) alın; yayın yapıyorsanız OBS yolunu kullanın.
 - TV'ye kurulumda en kolayı telefondaki ya da bilgisayardaki Nino'dur; TV'de geliştirici modu (USB hata ayıklama)
   açıkken uygulamayı kendisi kurar ve günceller.
-- Güncel sürüm: bütün uygulamalar aynı adı taşır: Nino V3.4. Mac, Windows, Android telefon ve iPhone uygulamaları
-  3.4.1'dir (3.4.0'ın küçük düzeltmesi; 3.4.0 görünüyorsa güncellemesini söyle). Android TV / Google TV ve Samsung TV
-  uygulamaları 3.4.0'dır, bu doğrudur. Tek istisna LG: LG TV uygulaması 0.9.18'dir ve
+- Güncel sürüm: bütün uygulamalar aynı adı ve numarayı taşır: Nino V3.5 (3.5.0): Mac, Windows, Android telefon,
+  iPhone, Android TV / Google TV ve Samsung TV. Daha küçük bir numara görünüyorsa güncellemesini söyle. Tek istisna LG: LG TV uygulaması 0.9.18'dir ve
   bu NORMALDİR, kullanıcıya "eski, yeniden kur" deme. TV'deki sürüm, telefondaki ya da bilgisayardaki Nino'nun TV
-  kurulum ekranında yazar. Android TV ya da Samsung'da 3.4.0'dan küçük bir sayı görünüyorsa telefondaki ya da
+  kurulum ekranında yazar. Android TV ya da Samsung'da 3.5.0'dan küçük bir sayı görünüyorsa telefondaki ya da
   bilgisayardaki Nino'da "TV'ye kur"a yeniden basılır. Geliştirici modu (USB hata ayıklama) açık kalırsa güncellemeyi
   Nino bundan sonra kendisi yapar; bu yüzden kurulumu hep bu yolla öner. Eski numaralar (0.2.x uygulamalar, 0.9.x TV)
   V3.3 ve öncesine aittir.
@@ -83,7 +82,8 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   seçenekleri'nden çözünürlüğü 1080p yapmak bazı kullanıcılarda sorunu çözdü.
 - TV uygulamasını elle indirme adresi: is.gd/ninotvapk (eski is.gd/ninoapk bağlantısı çalışmaz).
 - Windows'ta Nino açılırken "beklenmeyen bir hata" penceresi çıkıyorsa kullanıcıdan
-  %LOCALAPPDATA%\CouchSubs\hata.log dosyasını Sorun Bildir ile ya da GitHub'dan göndermesini iste.
+  %LOCALAPPDATA%\Nino\hata.log dosyasını (V3.5'ten önceki sürümlerde %LOCALAPPDATA%\CouchSubs\hata.log) Sorun
+  Bildir ile ya da GitHub'dan göndermesini iste. Pencerenin kendisi dosyanın tam yolunu yazar.
 - Üçüncü parti indirme uygulamaları (ör. "Downloader") önerilmez.
 - iPhone ve iPad: App Store'da yayınlanana kadar TestFlight ile kurulur. Önce App Store'dan ücretsiz TestFlight
   uygulamasını indir, sonra bu bağlantıyı aç: https://testflight.apple.com/join/1K3Q1KXp
@@ -103,6 +103,14 @@ Kurulum rehberiyle çelişirse kurulum rehberi doğrudur.
   görünümü'nde arka planı %0 yaparsanız siyah kutu tamamen kalkar.
 - Android telefonda güncelleme: yeni sürüm çıkınca ana ekranda "Güncelle" kartı çıkar, basınca yeni APK iner; Ayarlar'daki
   Güncelleme satırından "Şimdi denetle" ile de bakılır. Play Store'dan kurulduysa Play günceller.
+- V3.5'te yeni: iPhone ve Android telefonda PS5'e bağlanılamıyorsa ana ekranda "Bağlanıyor" yerine nedeni yazar (PS5
+  kapalı, Uzaktan Oynama kapalı, başka oturum açık, yeniden eşleştirme gerekli); kullanıcıya ekranda ne yazdığını sor.
+  iPhone ve iPad'de sol üstteki ipucu, görev kartı ve oyundaki telefon mesajı kendiliğinden çevrilir. Yol tarifi
+  satırları ("Turn Right 405 ft") bilerek çevrilmez ve gösterilmez. Mac ve Windows'ta ayar ve günlük klasörü artık
+  "Nino" adını taşır (ilk açılışta kendiliğinden taşınır). Ana ekrandaki TV'nin sağ üstünde toplam indirme sayısı
+  yazar; fiş takılı değilken ortada "Çalıştırmak için fişi prize sürükleyiniz" yazar ve priz yanıp söner.
+- Android telefonda "Yeni sürüm hazır" kartı: düğmeye basınca yeni APK iner, açıp kurmak yeter; eski sürümü silmeye gerek
+  yoktur (üstüne kurulur, ayarlar kalır). Kurulmazsa eski sürüm silinip yeniden kurulur.
 - Cihaz bilgileri (V3.4): Ayarlar › Sistem sağlığı'nda (iPhone'da Ayarlar'ın altında) uygulama sürümü, cihaz modeli,
   sistem, TV ve konsol yazar; Sorun Bildir ve bu sohbetten açılan bildirimlere kendiliğinden eklenir. Kullanıcıdan
   cihazlarını yine sor, ama "kopyala" düğmesiyle buraya yapıştırabileceğini söyle.

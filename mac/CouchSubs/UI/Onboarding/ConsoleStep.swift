@@ -247,9 +247,11 @@ private struct CodeBoxes: View {
                 Text(verbatim: i < digits.count ? String(digits[i]) : "")
                     .font(.system(size: 26, weight: .semibold, design: .rounded).monospacedDigit())
                     .frame(width: 44, height: 56)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(0.06)))
+                    // Kutular açık temada da belli olsun: eskiden beyaz zeminde beyaz dolgu ve cam kenarı vardı, yalnız
+                    // sıradaki kutu görünüyordu (kullanıcı: "kod yazılacak kısım görünmüyor").
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.csSecondary.opacity(0.10)))
                     .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(active ? Color.csAccent : Color.ninoGlassEdge, lineWidth: active ? 2 : 1))
+                        .strokeBorder(active ? Color.csAccent : Color.csSecondary.opacity(0.45), lineWidth: active ? 2 : 1.5))
                 if i == 3 { Text(verbatim: "–").foregroundStyle(Color.csSecondary) }
             }
         }
