@@ -132,6 +132,8 @@ function startTv({ saved, alive, localIp, hasLocalAddress }) {
       return elements.get(id);
     },
     querySelectorAll: () => [],
+    // Panelin durum kartı (#panel .hero) sahte sayfada yoktur.
+    querySelector: () => null,
     createElement: element,
     createTextNode: () => ({}),
     addEventListener() {}
