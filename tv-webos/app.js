@@ -1169,6 +1169,19 @@
     });
   }
 
+  // Nino: sol alttaki rozet yalnız çeviri gerçekten sürerken görünür (bilgisayarda/telefonda fiş takılı, oyundan
+  // yazı geliyor). Bağlı olmak yetmez: TV başka uygulamaya (YouTube) ya da başka HDMI'ya geçince, oyundan çıkınca ya da
+  // fiş çekilince kaybolur. "started" ve her altyazı/ekran olayı rozeti açar; "stopped" ya da bağlantı kopması kapatır;
+  // BADGE_IDLE_MS boyunca oyundan hiç yazı gelmezse de kapanır (eski bilgisayar sürümleri "stopped" göndermez).
+  var BADGE_IDLE_MS = 90000;
+  var badgeTimer = null;
+  function setBadge(on) {
+    clearTimeout(badgeTimer);
+    badgeTimer = null;
+    $('nino-badge').className = on ? '' : 'hidden';
+    if (on) badgeTimer = setTimeout(function () { setBadge(false); }, BADGE_IDLE_MS);
+  }
+
   function connect(address) {
     if (demoRunning()) stopDemo();
     if (eventSource) eventSource.close();
@@ -1190,7 +1203,6 @@
       clearTimeout(dropTimer);
       dropTimer = null;
       setStatus('st-conn', t('connected'), 'ok');
-      $('nino-badge').className = '';
     };
     eventSource.onerror = function () {
       // Bağlantı kısa süre içinde geri gelmezse eski altyazı ekranda asılı kalmasın. Bir anlık kopma yazıyı silmez.
@@ -1202,7 +1214,7 @@
           hideSubtitle('drop');
           hideScreen();
           hideRegions();
-          $('nino-badge').className = 'hidden';
+          setBadge(false);
         }, DROP_HIDE_MS);
       }
       setStatus('st-conn', t('reconnecting'), 'bad');
@@ -1221,13 +1233,15 @@
         if (typeof data.light === 'number') applySceneLight(data.light);
         applyCoverImage(typeof data.cover === 'string' ? data.cover : '');
         showSubtitle(data.text, data.duration, data.box, data.paragraphs === true, data.replace === true);
+        setBadge(true);
         notePanelSubtitle(data.text);
       }
     });
     // Nino: bilgisayarda çeviri başladı; 7 sn sol üstte robot ve balon.
-    onEvent('started', function () { showStartedNotice(); });
+    onEvent('started', function () { showStartedNotice(); setBadge(true); });
+    onEvent('stopped', function () { setBadge(false); hideSubtitle('drop'); hideScreen(); hideRegions(); });
     onEvent('clear', onClear);
-    onEvent('screen', function (data) { showScreen(data.items, data.duration, data.overlay); });
+    onEvent('screen', function (data) { showScreen(data.items, data.duration, data.overlay); if (data.items && data.items.length) setBadge(true); });
     onEvent('screen-clear', hideScreen);
     onEvent('region', showRegion);
     onEvent('region-clear', hideRegions);

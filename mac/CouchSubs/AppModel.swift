@@ -3434,6 +3434,8 @@ final class AppModel: ObservableObject {
 
     func stop() {
         resetCorners()
+        // Nino: TV'deki rozet ve yazılar fiş çekilince hemen kaybolsun.
+        server.sendStopped()
         session?.stop()
         session = nil
         updateGameProbe(connected: false)
@@ -3511,6 +3513,7 @@ final class AppModel: ObservableObject {
             pipeline?.reset()
             regionWatcher?.reset()
             server.clear()
+            server.sendStopped()
             dubber?.stop()
         }
     }

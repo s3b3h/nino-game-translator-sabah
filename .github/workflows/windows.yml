@@ -183,7 +183,7 @@ jobs:
           if [ -d android-apk ]; then ./scripts/bundle-android-apk.sh "$(ls android-apk/*.apk | head -1)"; fi
           # Nino: TV APK'sı ayrıca derlenmediyse son Nino sürümündekini göm (Windows TV uygulamasını kendisi kursun).
           if [ ! -d android-apk ]; then
-            curl -fsSL -o nino-tv.apk https://yunusdemirbag.github.io/nino-game-translator/tv-0.9.22.apk \
+            curl -fsSL -o nino-tv.apk https://yunusdemirbag.github.io/nino-game-translator/tv.apk \
               && ./scripts/bundle-android-apk.sh nino-tv.apk || echo "Nino TV APK'sı indirilemedi; gömülmeden devam."
           fi
 

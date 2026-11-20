@@ -301,6 +301,13 @@ public final class SubtitleServer: @unchecked Sendable {
         broadcast(event: "started", json: [:])
     }
 
+    /// Nino: çeviri durdu (fiş çekildi ya da PS5 bağlantısı koptu); TV rozeti ve ekrandaki yazıları hemen kaldırır.
+    /// Eski TV sürümleri bu olayı yok sayar.
+    public func sendStopped() {
+        queue.async { self.startedAt = nil }
+        broadcast(event: "stopped", json: [:])
+    }
+
     public func clear() {
         broadcast(event: "clear", json: [:])
         onEvent?(.clear)
