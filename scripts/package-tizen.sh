@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 OUT=dist/tv-tizen/app
 rm -rf dist/tv-tizen
 mkdir -p "$OUT"
-cp tv-webos/app.js tv-webos/i18n.js tv-webos/config.js tv-webos/index.html tv-webos/style.css tv-webos/largeIcon.png tv-webos/logo.png tv-webos/nino-bot.png "$OUT/"
+cp tv-webos/app.js tv-webos/i18n.js tv-webos/config.js tv-webos/index.html tv-webos/style.css tv-webos/largeIcon.png tv-webos/logo.png tv-webos/nino-bot.png tv-webos/nino-badge.png "$OUT/"
 # Nino: altyazı yazı tipleri.
 cp -R tv-webos/fonts "$OUT/"
 cp tv-webos/icon.png "$OUT/panel-icon.png"

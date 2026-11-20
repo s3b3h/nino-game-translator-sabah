@@ -135,6 +135,8 @@
     <string name="settings_key">คีย์</string>
     <string name="settings_packs">แพ็กเกม</string>
     <string name="settings_text_size">ลักษณะคำบรรยาย</string>
+    <string name="settings_auto_size">ปรับให้ตรงกับขนาดคำบรรยายของเกมบนทีวี</string>
+    <string name="settings_auto_size_note">เมื่อเปิดอยู่ ทีวีจะปรับขนาดตัวอักษรตามบรรทัดภาษาอังกฤษของเกม การเปลี่ยนขนาดด้านล่างจะปิดตัวเลือกนี้</string>
     <string name="settings_pool">ร่วมส่งข้อมูลเข้าคลังกลาง</string>
     <string name="settings_stack_previous">แสดงบรรทัดก่อนหน้าไว้ด้านบนเมื่อบทพูดเร็ว</string>
     <string name="settings_stack_previous_note">เมื่อปิด บรรทัดใหม่แต่ละบรรทัดจะแทนที่บรรทัดก่อนหน้า ต้องใช้แอป TV 0.9.16 ขึ้นไป</string>

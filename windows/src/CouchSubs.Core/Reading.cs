@@ -98,10 +98,18 @@ public sealed class Reading
         @"(\d+(?:[.,]\d+)?|[Oo])\s*(ft|mi|yd|km|m)\b",
         System.Text.RegularExpressions.RegexOptions.CultureInvariant | System.Text.RegularExpressions.RegexOptions.Compiled);
 
+    // Nino (@GreatRival, 20 Kasım 2026): mesafesiz tek komutluk tarif satırları da ("Turn left", "Keep right",
+    // "Make a U-turn") tarif sayılır. Arkasında söz olan cümle ("Turn left at the lights") altyazı kalır.
+    private static readonly System.Text.RegularExpressions.Regex NavigationCommand = new(
+        @"^[\s\-–—'""‘’.,·•]*(make\s+an?\s+)?(u-?\s?turn|turn|keep|bear)(\s+(left|right))?(\s+(\d+(?:[.,]\d+)?|[Oo])\s*(ft|mi|yd|km|m)\b)*\s*[.!]?$",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant
+        | System.Text.RegularExpressions.RegexOptions.Compiled);
+
     /// <summary>Yalnız yön + mesafelerden oluşan satır. Arkasında söz olan cümle ("Turn right at the lights, okay?") altyazıdır.</summary>
     public static bool IsNavigationHint(string raw)
     {
         var text = raw.Trim();
+        if (NavigationCommand.IsMatch(text)) return true;
         var move = NavigationMove.Match(text);
         if (!move.Success) return false;
         var rest = text[move.Length..];
@@ -292,8 +300,16 @@ public static class ButtonPrompts
     private static readonly char[] Separators = [' ', '\t', '+', '/'];
     private static readonly char[] Brackets = ['(', ')', '[', ']', '{', '}', '<', '>', '「', '」'];
 
+    // Nino: GTA 6 etkileşim ipucu "△ ⋮ DRINKS": simgeler harf okunuyor ("A e DRINKS"). Başta 1-2 karakterlik bir-üç
+    // kırıntı, ardından noktalamasız BÜYÜK HARFLİ 1-3 sözcük ipucudur, altyazı değildir (Mac: ButtonPrompts.isPrompt).
+    // Büyük/küçük harf ayrımı bilerek açık: "I am SHAKING" altyazı kalır.
+    private static readonly System.Text.RegularExpressions.Regex GlyphPrompt = new(
+        @"^\s*(\S\s+){1,3}[A-Z][A-Z']{2,}(\s+[A-Z][A-Z']{1,}){0,2}\s*$",
+        System.Text.RegularExpressions.RegexOptions.CultureInvariant | System.Text.RegularExpressions.RegexOptions.Compiled);
+
     public static bool IsPrompt(string line)
     {
+        if (GlyphPrompt.IsMatch(line)) return true;
         var tokens = line.Split(Separators, StringSplitOptions.RemoveEmptyEntries)
             .Select(token => token.Trim(Brackets))
             .Where(token => token.Length > 0)

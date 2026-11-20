@@ -135,6 +135,8 @@
     <string name="settings_key">कुंजी</string>
     <string name="settings_packs">गेम पैक</string>
     <string name="settings_text_size">सबटाइटल का रूप</string>
+    <string name="settings_auto_size">टीवी पर गेम के सबटाइटल के आकार से मिलाएँ</string>
+    <string name="settings_auto_size_note">चालू रहने पर टीवी गेम की अंग्रेज़ी पंक्ति के अनुसार टेक्स्ट का आकार तय करता है; नीचे आकार बदलने पर यह बंद हो जाता है।</string>
     <string name="settings_pool">साझा पूल में योगदान दें</string>
     <string name="settings_stack_previous">तेज़ बातचीत में पिछली लाइनें ऊपर रखें</string>
     <string name="settings_stack_previous_note">बंद होने पर हर नई लाइन पिछली की जगह ले लेती है। TV ऐप 0.9.16 या बाद का चाहिए।</string>

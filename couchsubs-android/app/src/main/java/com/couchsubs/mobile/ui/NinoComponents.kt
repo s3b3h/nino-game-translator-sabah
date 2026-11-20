@@ -203,20 +203,6 @@ fun SlideToTranslate(
     }
 }
 
-/** Ana ekrandaki tek satır kısayol kapsülü: simge, ad, değer, ok. */
-@Composable
-fun QuickLink(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String?, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    androidx.compose.foundation.layout.Row(
-        modifier.background(Color.White.copy(alpha = 0.85f), RoundedCornerShape(50)).border(1.dp, Tokens.Color.borderStrong, RoundedCornerShape(50))
-            .clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        Icon(icon, null, tint = Tokens.Color.accentText, modifier = Modifier.size(15.dp))
-        Text(title, style = Tokens.Type.caption, color = Tokens.Color.secondary, maxLines = 1)
-        if (value != null) Text(value, style = Tokens.Type.caption.copy(fontWeight = FontWeight.SemiBold), color = Tokens.Color.text, maxLines = 1)
-    }
-}
-
 /** Oyun sahnesi gibi koyu bir kart; içinde TV demosundaki gibi önce İngilizce, sonra üstüne Türkçe altyazı akar. */
 @Composable
 fun DemoScene(

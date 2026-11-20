@@ -135,6 +135,8 @@
     <string name="settings_key">Kunci</string>
     <string name="settings_packs">Pek permainan</string>
     <string name="settings_text_size">Rupa sari kata</string>
+    <string name="settings_auto_size">Padankan saiz sari kata permainan di TV</string>
+    <string name="settings_auto_size_note">Apabila hidup, TV melaraskan saiz teks mengikut baris Inggeris permainan; menukar saiz di bawah akan mematikannya.</string>
     <string name="settings_pool">Menyumbang kepada kumpulan kongsi</string>
     <string name="settings_stack_previous">Kekalkan baris sebelumnya di atas dalam dialog pantas</string>
     <string name="settings_stack_previous_note">Apabila dimatikan, setiap baris baharu menggantikan baris sebelumnya. Memerlukan apl TV 0.9.16 atau lebih baharu.</string>

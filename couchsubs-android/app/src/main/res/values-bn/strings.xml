@@ -135,6 +135,8 @@
     <string name="settings_key">কী</string>
     <string name="settings_packs">গেম প্যাক</string>
     <string name="settings_text_size">সাবটাইটেলের চেহারা</string>
+    <string name="settings_auto_size">টিভিতে গেমের সাবটাইটেলের আকারে মেলান</string>
+    <string name="settings_auto_size_note">চালু থাকলে টিভি গেমের ইংরেজি লাইন অনুযায়ী লেখার আকার ঠিক করে; নিচে আকার বদলালে এটি বন্ধ হয়।</string>
     <string name="settings_pool">শেয়ার্ড পুলে অবদান রাখুন</string>
     <string name="settings_stack_previous">দ্রুত ডায়লগে আগের লাইনগুলো ওপরে রাখুন</string>
     <string name="settings_stack_previous_note">বন্ধ থাকলে প্রতিটি নতুন লাইন আগেরটির জায়গা নেয়। TV অ্যাপ 0.9.16 বা পরের সংস্করণ লাগবে।</string>

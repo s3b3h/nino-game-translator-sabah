@@ -2,6 +2,9 @@
 // Nino: Claude'a gönderilmeden önce satır süzgeci. Ekran okumasından gelen tabela, menü, kırıntı ve zaten Türkçe
 // yazılar para harcatmasın; bu satırlar uygulamada ücretsiz çeviriyle gösterilir, İngilizcesi yine havuza yazılır.
 
+import { garbleRatio, GARBLE_MIN } from "./garble.js";
+import { VOCAB } from "./vocab.js";
+
 const LETTER = /\p{L}/gu;
 const LOWER = /\p{Ll}/u;
 const WORD = /[\p{L}\p{N}'’]+/gu;
@@ -20,7 +23,7 @@ const ENGLISH_WORDS = new Set([
 ]);
 
 /**
- * Satır Claude'a gitmemeli mi; gitmemeliyse kısa sebep ("kırıntı", "büyük harf", "türkçe", "bozuk"), yoksa "".
+ * Satır Claude'a gitmemeli mi; gitmemeliyse kısa sebep ("kırıntı", "büyük harf", "türkçe", "bozuk", "anlamsız"), yoksa "".
  * Bağırılan altyazılar ("GET DOWN!", "WHAT?!") büyük harf olsa da çevrilir.
  */
 export function junkReason(raw) {
@@ -46,5 +49,7 @@ export function junkReason(raw) {
   // Bozuk okuma: sözcüklerin çoğu harf-rakam karışık ya da içinde büyük harf ("WAlhat", "pwnge(", "I1").
   const broken = words.filter((w) => /\p{L}/u.test(w) && (/\p{L}\p{N}|\p{N}\p{L}/u.test(w) || /\p{Ll}\p{Lu}/u.test(w)));
   if (words.length >= 2 && broken.length * 2 > words.length) return "bozuk";
+  // Sözcüklerin çoğu havuzun hiç görmediği yazılışlar: ekran okuması bozmuş ("searcfiing the wre:ck").
+  if (garbleRatio(text, VOCAB) >= GARBLE_MIN) return "anlamsız";
   return "";
 }

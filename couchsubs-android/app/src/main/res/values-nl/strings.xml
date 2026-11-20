@@ -135,6 +135,8 @@
     <string name="settings_key">Sleutel</string>
     <string name="settings_packs">Gamepakketten</string>
     <string name="settings_text_size">Weergave van ondertitels</string>
+    <string name="settings_auto_size">Grootte van de game-ondertitel volgen op de tv</string>
+    <string name="settings_auto_size_note">Als dit aan staat, past de tv de tekstgrootte aan de Engelse regel van de game aan; de grootte hieronder wijzigen zet dit uit.</string>
     <string name="settings_pool">Bijdragen aan de gedeelde pool</string>
     <string name="settings_stack_previous">Vorige regels erboven houden bij snelle dialogen</string>
     <string name="settings_stack_previous_note">Als dit uit staat, vervangt elke nieuwe regel de vorige. Vereist TV-app 0.9.16 of later.</string>

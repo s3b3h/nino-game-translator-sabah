@@ -53,6 +53,8 @@ function element() {
     appendChild(child) { el.children.push(child); },
     removeChild(child) { el.children = el.children.filter((c) => c !== child); },
     addEventListener() {}, setAttribute() {}, getAttribute: () => null,
+    // Ekran katmanı kendi içinde öğe arar (telefon paneli görünüyor mu); sahte sayfada içerik yoktur.
+    querySelector: () => null, querySelectorAll: () => [],
     getBoundingClientRect: () => ({ top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 })
   };
   return el;

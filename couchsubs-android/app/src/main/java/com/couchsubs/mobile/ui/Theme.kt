@@ -53,6 +53,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -247,6 +248,8 @@ fun IconSquare(label: String, modifier: Modifier = Modifier, onClick: () -> Unit
     Box(
         modifier.size(Tokens.Control.icon).background(Tokens.Color.raised, CircleShape)
             .border(1.dp, Tokens.Color.borderStrong, CircleShape)
+            // Basma ve odak ışığı da yuvarlak kalsın (kırpılmazsa köşeli gri kare görünüyordu).
+            .clip(CircleShape)
             .clickable(onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { content() }

@@ -21,6 +21,17 @@ class SubtitleLayout(private val file: File?) {
         const val FALLBACK_HUD_TOP = 0.895
         /** Bundan yukarıda biten kutu örnek sayılmaz (ayarlar menüsündeki açıklamalar altyazının yerini unutturuyordu). */
         const val LOWEST_USEFUL_BOTTOM = 0.80
+        /** Okunan şeridin, öğrenilen şeridin üstüne bırakılan payı (Mac: SubtitleLayout.readMargin). */
+        const val READ_MARGIN = 0.05
+        /** Daraltılan alan en az bu yükseklikte kalır; yoksa ayarlardaki alan okunur (Mac: AppModel.readRegion). */
+        const val MIN_READ_HEIGHT = 0.06
+
+        /**
+         * Okunan altyazı alanı: altyazının yeri öğrenildiyse ([readTop]) ayarlardaki alanın üstü o şeride indirilir.
+         * Yalnız alanı daraltır, genişletmez; geriye çok ince bir şerit kalacaksa alan olduğu gibi okunur.
+         */
+        fun readRegion(region: CropRegion, readTop: Double?): CropRegion =
+            if (readTop != null && readTop > region.top && readTop < region.bottom - MIN_READ_HEIGHT) region.copy(top = readTop) else region
 
         fun quantile(sorted: List<Double>, q: Double): Double {
             if (sorted.isEmpty()) return 0.0
@@ -76,6 +87,13 @@ class SubtitleLayout(private val file: File?) {
         val line = band.second + maxOf(0.012, quantile(heights, 0.5))
         return if (line >= 0.97) null else maxOf(line, band.first + 0.03, FALLBACK_HUD_TOP)
     }
+
+    /**
+     * Nino (kullanıcı, 20 Kasım 2026): altyazının yeri öğrenildiyse yalnız o şerit okunur; şeridin [READ_MARGIN] kadar
+     * üstünden başlanır (üç satırlık altyazı da sığsın). Geniş alan okununca telefondaki mesaj, tabela ve menü yazıları
+     * altyazı sanılıyordu. Öğrenilmemişse null (ayarlardaki alan okunur). Mac: SubtitleLayout.readTop.
+     */
+    fun readTop(game: String): Double? = band(game)?.let { it.first - READ_MARGIN }
 
     private fun save() {
         val target = file ?: return

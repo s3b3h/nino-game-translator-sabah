@@ -524,7 +524,7 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eşlenmedi"
+            "value": "Bağlı Değil"
           }
         },
         "ur": {
@@ -755,7 +755,7 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "PS5'inizi Eşleyin"
+            "value": "PS5'inizi Bağlayın"
           }
         },
         "ur": {
@@ -4297,7 +4297,7 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "PS5'inizi Eşleyin"
+            "value": "PS5'inizi Bağlayın"
           }
         },
         "ur": {
@@ -4836,7 +4836,7 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eşle"
+            "value": "Bağlan"
           }
         },
         "ur": {
@@ -4913,7 +4913,7 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eşleme Kodu"
+            "value": "8 Haneli Kod"
           }
         },
         "ur": {
@@ -5619,6 +5619,699 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đóng"
+          }
+        }
+      }
+    },
+    "scene.plug": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط على القابس أو اسحبه إلى المقبس"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্লাগে চাপুন বা সকেটে টেনে আনুন"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the Plug or Drag It Into the Socket"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-tap ang plug o i-drag ito sa saksakan"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्लग पर टैप करें या उसे सॉकेट में खींचें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk steker atau seret ke stopkontak"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketik palam atau seret ke soket"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik op de stekker of sleep hem naar het stopcontact"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะปลั๊กหรือลากไปที่เต้ารับ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fişe Dokunun ya da Prize Sürükleyin"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "پلگ پر ٹیپ کریں یا اسے ساکٹ میں لے جائیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm vào phích cắm hoặc kéo vào ổ điện"
+          }
+        }
+      }
+    },
+    "scene.unplug": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط على القابس للإيقاف"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "থামাতে প্লাগে চাপুন"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the Plug to Stop"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-tap ang plug para huminto"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रोकने के लिए प्लग पर टैप करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk steker untuk berhenti"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketik palam untuk berhenti"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik op de stekker om te stoppen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะปลั๊กเพื่อหยุด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durdurmak İçin Fişi Çekin"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "روکنے کے لیے پلگ پر ٹیپ کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm vào phích cắm để dừng"
+          }
+        }
+      }
+    },
+    "scene.downloads": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إجمالي التنزيلات"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মোট ডাউনলোড"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total downloads"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kabuuang download"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कुल डाउनलोड"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total unduhan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jumlah muat turun"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Totaal downloads"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ดาวน์โหลดทั้งหมด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toplam indirme"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کل ڈاؤن لوڈز"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tổng lượt tải"
+          }
+        }
+      }
+    },
+    "scene.start": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابدأ الترجمة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অনুবাদ শুরু করুন"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Translating"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulan ang pagsasalin"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अनुवाद शुरू करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mulai menerjemahkan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mula menterjemah"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begin met vertalen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เริ่มแปล"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çeviriyi Başlat"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترجمہ شروع کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu dịch"
+          }
+        }
+      }
+    },
+    "scene.stop": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أوقف الترجمة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অনুবাদ বন্ধ করুন"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Translating"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ihinto ang pagsasalin"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अनुवाद रोकें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hentikan terjemahan"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hentikan terjemahan"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop met vertalen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หยุดแปล"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çeviriyi Durdur"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترجمہ روکیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng dịch"
+          }
+        }
+      }
+    },
+    "oldios.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترجمة Apple المجانية تتطلب iOS 26"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple-এর বিনামূল্যের অনুবাদে iOS 26 লাগে"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free Translation Needs iOS 26"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kailangan ng iOS 26 ang libreng salin ng Apple"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple के मुफ़्त अनुवाद के लिए iOS 26 चाहिए"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terjemahan gratis Apple butuh iOS 26"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terjemahan percuma Apple memerlukan iOS 26"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gratis vertaling van Apple vereist iOS 26"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การแปลฟรีของ Apple ต้องใช้ iOS 26"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz Apple Çevirisi iOS 26 İstiyor"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple کے مفت ترجمے کے لیے iOS 26 درکار ہے"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản dịch miễn phí của Apple cần iOS 26"
+          }
+        }
+      }
+    },
+    "oldios.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا الـ iPhone يعمل بنظام iOS %@. ترجمة Apple المجانية على الجهاز تعمل فقط على iOS 26 وما بعده. لعبة GTA 6 تعمل مع ذلك: ترجماتها تأتي مجانًا من ترجمة Nino المشتركة. للألعاب الأخرى، أضف مفتاح Gemini مجانيًا (الإعدادات › محرك الترجمة › Gemini). الحصول على المفتاح من Google يستغرق دقيقة تقريبًا وهو مجاني."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই iPhone-এ iOS %@ আছে। Apple-এর বিনামূল্যের অন-ডিভাইস অনুবাদ শুধু iOS 26 ও তার পরের সংস্করণে কাজ করে। GTA 6 তবুও কাজ করে: এর সাবটাইটেল Nino-র শেয়ার করা অনুবাদ থেকে বিনামূল্যে আসে। অন্য গেমের জন্য একটি বিনামূল্যের Gemini কী যোগ করুন (সেটিংস › অনুবাদ ইঞ্জিন › Gemini)। Google থেকে কী নিতে প্রায় এক মিনিট লাগে, কোনো খরচ নেই।"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This iPhone has iOS %@. Apple's free on-device translation only works on iOS 26 and later. GTA 6 still works: its subtitles come free from Nino's shared translation. For other games, add a free Gemini key (Settings › Translation engine › Gemini). Getting the key from Google takes about a minute and costs nothing."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "May iOS %@ ang iPhone na ito. Gumagana lang ang libreng on-device na salin ng Apple sa iOS 26 pataas. Gumagana pa rin ang GTA 6: libre ang subtitle nito mula sa shared na salin ng Nino. Para sa ibang laro, magdagdag ng libreng Gemini key (Mga Setting › Translation engine › Gemini). Mga isang minuto lang ang pagkuha ng key sa Google at libre ito."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस iPhone में iOS %@ है। Apple का मुफ़्त ऑन-डिवाइस अनुवाद सिर्फ़ iOS 26 और उसके बाद काम करता है। GTA 6 फिर भी चलता है: इसके सबटाइटल Nino के साझा अनुवाद से मुफ़्त आते हैं। दूसरे गेम के लिए एक मुफ़्त Gemini कुंजी जोड़ें (सेटिंग्स › अनुवाद इंजन › Gemini)। Google से कुंजी लेने में लगभग एक मिनट लगता है और कोई शुल्क नहीं है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone ini memakai iOS %@. Terjemahan gratis Apple di perangkat hanya berjalan di iOS 26 dan yang lebih baru. GTA 6 tetap berjalan: subtitelnya datang gratis dari terjemahan bersama Nino. Untuk game lain, tambahkan kunci Gemini gratis (Pengaturan › Mesin terjemahan › Gemini). Mengambil kunci dari Google hanya sekitar satu menit dan gratis."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone ini menggunakan iOS %@. Terjemahan percuma Apple pada peranti hanya berfungsi pada iOS 26 dan lebih baharu. GTA 6 tetap berfungsi: sarikata datang percuma daripada terjemahan kongsi Nino. Untuk permainan lain, tambah kunci Gemini percuma (Tetapan › Enjin terjemahan › Gemini). Mendapatkan kunci daripada Google mengambil kira-kira seminit dan percuma."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze iPhone heeft iOS %@. De gratis vertaling van Apple op het apparaat werkt alleen op iOS 26 en nieuwer. GTA 6 werkt wel: de ondertitels komen gratis uit de gedeelde vertaling van Nino. Voeg voor andere games een gratis Gemini-sleutel toe (Instellingen › Vertaalmachine › Gemini). Een sleutel bij Google halen duurt ongeveer een minuut en is gratis."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone เครื่องนี้ใช้ iOS %@ การแปลฟรีในเครื่องของ Apple ใช้ได้เฉพาะ iOS 26 ขึ้นไป GTA 6 ยังใช้ได้: คำบรรยายมาจากคำแปลที่ใช้ร่วมกันของ Nino ฟรี สำหรับเกมอื่น ให้เพิ่มคีย์ Gemini ฟรี (การตั้งค่า › เอนจินแปล › Gemini) การขอคีย์จาก Google ใช้เวลาประมาณหนึ่งนาทีและไม่มีค่าใช้จ่าย"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu iPhone'da iOS %@ var. Apple'ın cihaz içi ücretsiz çevirisi yalnız iOS 26 ve sonrasında çalışır. GTA 6 yine çalışır: altyazıları Nino'nun ortak çevirisinden ücretsiz gelir. Diğer oyunlar için ücretsiz bir Gemini anahtarı ekleyin (Ayarlar › Çeviri motoru › Gemini). Anahtarı Google'dan almak bir dakika kadar sürer ve hiçbir ücreti yoktur."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اس iPhone میں iOS %@ ہے۔ Apple کا مفت آن ڈیوائس ترجمہ صرف iOS 26 اور اس کے بعد کام کرتا ہے۔ GTA 6 پھر بھی چلتا ہے: اس کے سب ٹائٹل Nino کے مشترکہ ترجمے سے مفت آتے ہیں۔ دوسرے گیمز کے لیے ایک مفت Gemini کلید شامل کریں (سیٹنگز › ترجمہ انجن › Gemini)۔ Google سے کلید لینے میں تقریباً ایک منٹ لگتا ہے اور یہ مفت ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone này đang dùng iOS %@. Bản dịch miễn phí trên máy của Apple chỉ chạy trên iOS 26 trở lên. GTA 6 vẫn chạy: phụ đề đến miễn phí từ bản dịch chung của Nino. Với các game khác, hãy thêm khóa Gemini miễn phí (Cài đặt › Công cụ dịch › Gemini). Lấy khóa từ Google mất khoảng một phút và không tốn phí."
+          }
+        }
+      }
+    },
+    "oldios.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أضف مفتاح Gemini مجانيًا"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "বিনামূল্যের Gemini কী যোগ করুন"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a Free Gemini Key"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magdagdag ng libreng Gemini key"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुफ़्त Gemini कुंजी जोड़ें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tambah kunci Gemini gratis"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tambah kunci Gemini percuma"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gratis Gemini-sleutel toevoegen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เพิ่มคีย์ Gemini ฟรี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz Gemini Anahtarı Ekle"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مفت Gemini کلید شامل کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm khóa Gemini miễn phí"
+          }
+        }
+      }
+    },
+    "oldios.get": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "احصل على المفتاح من Google"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google থেকে কী নিন"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get the Key From Google"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunin ang key sa Google"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google से कुंजी लें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ambil kunci dari Google"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dapatkan kunci daripada Google"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleutel ophalen bij Google"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รับคีย์จาก Google"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anahtarı Google'dan Al"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google سے کلید لیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lấy khóa từ Google"
           }
         }
       }

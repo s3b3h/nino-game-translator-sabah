@@ -271,9 +271,17 @@ public final class SubtitleServer: @unchecked Sendable {
     /// `box`: oyundaki İngilizce altyazının ekrandaki yeri (kenarlara oranla); TV çeviriyi buna göre yerleştirir.
     /// `replaces`: çeviri, az önce gösterilen satırın uzamış ya da düzelmiş bir okumasından gelir (`TextMatch.isRevision`);
     /// TV onu öncekinin üstüne yığmaz, yerine koyar (`replace` alanı; eski TV uygulamaları yok sayar).
+    /// Nino (akıllı koyuluk): altyazının arkasındaki sahnenin aydınlığı (0 karanlık – 1 aydınlık); TV zemini buna göre
+    /// koyulaştırır ya da açar. Bilinmiyorsa gönderilmez.
+    public var sceneLight: Double?
+    /// Nino (buzlu zemin): altyazının arkasındaki sahnenin bulanık hali (base64 JPEG, bkz. CoverBlur); TV örtünün zemini yapar.
+    public var coverImage: String?
+
     public func sendSubtitle(_ text: String, durationMs: Int = 15000, box: TextBox? = nil, replaces: Bool = false) {
         let at = Int(Date().timeIntervalSince1970 * 1000)
         var json: [String: Any] = ["text": text, "duration": durationMs, "at": at]
+        if let sceneLight { json["light"] = (sceneLight * 100).rounded() / 100 }
+        if let coverImage { json["cover"] = coverImage }
         if let box { json["box"] = Self.json(box) }
         if replaces { json["replace"] = true }
         broadcast(event: "subtitle", json: json)
@@ -308,6 +316,13 @@ public final class SubtitleServer: @unchecked Sendable {
             if item.paragraphs { json["paragraphs"] = true }
             if item.plain { json["plain"] = true }
             if item.italic { json["italic"] = true }
+            if let fill = item.fill { json["fill"] = fill }
+            if let ink = item.ink { json["ink"] = ink }
+            if let angle = item.angle, abs(angle) >= 0.3 { json["angle"] = Decimal(Int((angle * 10).rounded())) / 10 }
+            if let alpha = item.alpha { json["alpha"] = Decimal(Int((max(0, min(1, alpha)) * 100).rounded())) / 100 }
+            if item.side { json["side"] = true }
+            if item.backdrop { json["backdrop"] = true }
+            if item.card { json["card"] = true }
             return json
         }
         var payload: [String: Any] = ["duration": durationMs, "items": list]

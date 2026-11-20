@@ -73,7 +73,12 @@ struct LivingRoomScene: View {
     private var layout: Layout { model.settings.gameConsole == .xbox ? .xbox : .ps5 }
 
     /// Fiş prizde mi: çeviri açık ya da açılıyor. Başlatma başarısız olursa fiş kendiliğinden geri düşer.
-    private var plugged: Bool { model.isRunning || model.isStarting || DebugPreview.state != nil }
+    private var plugged: Bool { (model.isRunning || model.isStarting || DebugPreview.state != nil) && !introHold }
+    /// Nino (kullanıcı isteği, 21 Kasım 2026): açılışta fiş bir an çekik görünür, sonra yaylanarak prize takılır (çeviri
+    /// kendiliğinden başlasa da). Ardından toplam indirme sayacı 1, 2, 3 diye başlayıp hızlanarak toplam sayıya fırlar.
+    @State private var introHold = !LivingRoomScene.introPlayed
+    /// Açılış gösterisi uygulama her açıldığında bir kez oynar (ayarlardan dönünce yeniden oynamaz).
+    private static var introPlayed = false
 
     var body: some View {
         let scale = min(1, available.width / Self.canvas.width, available.height / Self.canvas.height)
@@ -113,7 +118,13 @@ struct LivingRoomScene: View {
             // Her takışta açılış animasyonu baştan oynar.
             if now { splashDone = false; splashID = UUID() }
         }
-        .onAppear { if DebugPreview.state == "live" || model.isRunning { splashDone = true } }
+        .onAppear { if DebugPreview.state == "live" || (Self.introPlayed && model.isRunning) { splashDone = true } }
+        .task {
+            guard !Self.introPlayed else { return }
+            Self.introPlayed = true
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 0 : 900))
+            withAnimation(reduceMotion ? nil : .spring(response: 0.55, dampingFraction: 0.7)) { introHold = false }
+        }
         .task {
             // Toplam indirme: açılışta ve sonra aralıklarla yenilenir (alınamazsa son bilinen sayı kalır).
             while !Task.isCancelled {
@@ -140,7 +151,8 @@ struct LivingRoomScene: View {
     @ViewBuilder
     private func screenContent(size: CGSize) -> some View {
         if !plugged {
-            TVStandbyScreen(downloads: downloads.total)
+            // Açılış gösterisinde sayı fiş takılınca sayılarak çıkar; önce görünmez.
+            TVStandbyScreen(downloads: introHold ? nil : downloads.total)
         } else if !splashDone {
             // Uygulamanın kendi açılış animasyonu, TV ekranına sığacak kadar küçültülmüş.
             let window = CGSize(width: 1040, height: 586)
@@ -175,7 +187,7 @@ struct LivingRoomScene: View {
                     .background(Capsule().fill(Color.black.opacity(0.4)))
                     Spacer()
                     // Nino: toplam indirme, fiş takılı değilkenki yerinde (sağ üst) kalır.
-                    if let total = downloads.total { DownloadHUD(total: total) }
+                    if let total = downloads.total { DownloadHUD(total: total, countsUp: true) }
                 }
                 Spacer()
                 Group {
@@ -453,15 +465,46 @@ struct TVStandbyScreen: View {
 /// logosu ya da yazı tipi kullanılmaz.
 struct DownloadHUD: View {
     let total: Int
+    /// Nino (kullanıcı isteği, 21 Kasım 2026): fiş takılınca sayı 1, 2, 3 diye yavaş başlar, hızlanıp toplam sayıya fırlar;
+    /// sonda oyunun "görev tamam" yazısı gibi büyüyüp parlayarak yerine oturur.
+    var countsUp = false
 
     private static let green = Color(red: 0.48, green: 0.91, blue: 0.48)
+    @State private var shown: Int?
+    @State private var punch = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let arabic = TargetLanguage.containsArabic(String(localized: "Total downloads"))
+        let value = shown ?? total
         VStack(alignment: .trailing, spacing: 1) {
             outlined(Text("Total downloads").tracking(arabic ? 0 : 0.8), size: 11, color: .white, weight: 1)
                 .textCase(.uppercase)
-            outlined(Text(verbatim: total.formatted(.number.grouping(.automatic))), size: 27, color: Self.green, weight: 1.5)
+            outlined(Text(verbatim: value.formatted(.number.grouping(.automatic))), size: 27, color: Self.green, weight: 1.5)
+                .monospacedDigit()
+                .scaleEffect(punch ? 1.32 : 1, anchor: .trailing)
+                .shadow(color: Self.green.opacity(punch ? 0.95 : 0), radius: punch ? 14 : 0)
+        }
+        .task(id: countsUp) {
+            guard countsUp, !reduceMotion, total > 3 else { shown = nil; return }
+            shown = 0
+            // İlk üç sayı tek tek görünür, sonra hız katlanarak artar (toplam ~2,4 sn).
+            for step in 1...3 {
+                shown = step
+                try? await Task.sleep(for: .milliseconds(280))
+                if Task.isCancelled { return }
+            }
+            let start = Date(), duration = 1.55
+            while !Task.isCancelled {
+                let p = min(1, Date().timeIntervalSince(start) / duration)
+                shown = max(3, Int((pow(p, 2.6) * Double(total)).rounded()))
+                if p >= 1 { break }
+                try? await Task.sleep(for: .milliseconds(16))
+            }
+            shown = total
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.45)) { punch = true }
+            try? await Task.sleep(for: .milliseconds(260))
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) { punch = false }
         }
         // Hafif eğim (Arapçada harfleri bozmasın diye yok).
         .transformEffect(arabic ? .identity : CGAffineTransform(a: 1, b: 0, c: -0.12, d: 1, tx: 3, ty: 0))

@@ -2,6 +2,13 @@
 // Ana ekran (tuval: Telefon-Ana, -Calisiyor, -Tur) ve oyun paketleri (-Paketler). Uygulama ve paketler ücretsiz.
 package com.couchsubs.mobile.ui
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
@@ -21,15 +28,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Smartphone
@@ -162,7 +169,7 @@ fun MainScreen(
     val topBar: @Composable () -> Unit = {
         TopBar {
             // iPhone'daki gibi: geçmiş, ayarlar, profil.
-            IconAction(Icons.Filled.DateRange, stringResource(R.string.history), onHistory)
+            IconAction(Icons.Filled.History, stringResource(R.string.history), onHistory)
             SettingsAction(onSettings)
             Box(mark(TourStep.PROFILE)) { ProfileAction(onProfile) }
         }
@@ -177,12 +184,33 @@ fun MainScreen(
             // Nino: GitHub'da telefon uygulamasının yeni sürümü varsa sakin bir öneri (Play kopyasında gösterilmez).
             if (!status.running) AppUpdateCard()
             if (settings.homeStyle == HomeStyle.LIVING_ROOM) {
-                Spacer(Modifier.height(8.dp))
-                // Nino: sahne ve cam düğme Arapça arayüzde aynalanmaz (sürükleme ve görsel soldan sağa).
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    LivingRoomScene(status, paired, mark(TourStep.START), onStart = onStart, onStop = onStop, onLocked = onSourceTap)
+                // Nino V4 (iPhone'daki HomeScreen ile aynı düzen): durum + başlık, salon, ipucu satırı (canlıyken sağında
+                // Tam Ekran), eşlenmemişken "PS5'siz Deneyin", altta üç büyük kısa yol. Aralıklar elle verilir.
+                Column(Modifier.fillMaxWidth()) {
+                    LivingRoomHeader(status, paired, sourceName, onTv, consoleLabel)
+                    Spacer(Modifier.height(14.dp))
+                    // Nino: sahne Arapça arayüzde aynalanmaz (sürükleme ve görsel soldan sağa).
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        LivingRoomScene(status, paired, mark(TourStep.START), onStart = onStart, onStop = onStop, onLocked = onSourceTap)
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Row(Modifier.fillMaxWidth().heightIn(min = 36.dp), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        LivingRoomHint(status.running, paired, Modifier.weight(1f))
+                        // Nino: altyazı TV'ye gitse de telefonda tam ekran açılabilsin.
+                        androidx.compose.animation.AnimatedVisibility(status.running,
+                            enter = androidx.compose.animation.fadeIn(), exit = androidx.compose.animation.fadeOut()) {
+                            FullScreenPill(openPhoneView)
+                        }
+                    }
+                    // PS5'i olmayanlar ve mağaza incelemesi için örnek altyazılarla deneme.
+                    if (!paired && !status.running) TryWithoutConsole({ com.couchsubs.mobile.service.DemoSession.start() }, Modifier.padding(top = 14.dp))
+                    if (status.running && phoneOutput) Box(Modifier.padding(top = 14.dp)) { RotateHint() }
+                    Spacer(Modifier.height(if (!paired && !status.running) 18.dp else 22.dp))
+                    HomeShortcuts(consoleLabel, sourceName, onTv,
+                        if (onTv) (if (status.connectedTvs > 0) stringResource(R.string.nino_tv_connected) else "TV") else stringResource(R.string.nino_phone),
+                        settings.packsEnabled, mark(TourStep.TARGET), mark(TourStep.PACKS), onSourceTap, onTarget, onPacks)
                 }
-                LivingRoomHint(status.running, paired)
             } else {
                 // Nino: telefonun sade ana ekranı (durum, başlık, sahne, kaydırma, üç kısa yol).
                 PremiumHome(status, paired, sourceName, onTv, settings.packsEnabled,
@@ -190,16 +218,6 @@ fun MainScreen(
                     onStart = onStart, onStop = onStop, onPairing = onSourceTap, onTarget = onTarget, onPacks = onPacks,
                     onFullScreen = openPhoneView, onDemo = { com.couchsubs.mobile.service.DemoSession.start() }, consoleLabel = consoleLabel)
             }
-            if (settings.homeStyle == HomeStyle.LIVING_ROOM) androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickLink(Icons.Filled.SportsEsports, consoleLabel, sourceName ?: stringResource(R.string.profile_not_paired), onClick = onSourceTap)
-                QuickLink(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, stringResource(R.string.nino_output),
-                    if (onTv) (if (status.connectedTvs > 0) stringResource(R.string.nino_tv_connected) else "TV") else stringResource(R.string.nino_phone), mark(TourStep.TARGET), onClick = onTarget)
-                QuickLink(Icons.Filled.Inventory2, stringResource(R.string.nino_packs), if (settings.packsEnabled) stringResource(R.string.packs_free) else null, mark(TourStep.PACKS), onClick = onPacks)
-                QuickLink(Icons.Filled.Translate, stringResource(R.string.nino_translation), status.engineLabel.ifEmpty { engineName(context) }, onClick = onSettings)
-            }
-            // Nino: cam arayüzde tam ekran sahne kartının üstündedir; salonda ayrı düğme kalır.
-            if (status.running && !onTv && settings.homeStyle != HomeStyle.TOGGLE) SecondaryButton(stringResource(R.string.main_phone_view), onClick = onPhoneView)
             status.error?.let { NoteTile(it) }
         }
         tour?.let { step ->

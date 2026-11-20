@@ -181,6 +181,10 @@ struct SettingsScreen: View {
                                   selection: Binding(get: { model.settings.translationEngine == .claude ? .claude : .openAI },
                                                      set: { model.settings.translationEngine = $0 }))
                 }
+                // Nino: iOS 26'dan eskide "Ücretsiz" seçiliyken Apple çevirisi çalışmaz; ne yapılacağı açıkça yazar.
+                if choice == .free && OldIOSTranslationNotice.applies(model) {
+                    OldIOSTranslationNotice { setChoice(.gemini) }
+                }
                 let engine = model.settings.translationEngine
                 if engine != .free {
                     HStack(spacing: Mobile.Space.inline) {

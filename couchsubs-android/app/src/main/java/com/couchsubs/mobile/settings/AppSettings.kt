@@ -286,7 +286,16 @@ class AppSettings(private val appContext: Context) : com.couchsubs.mobile.core.D
             bottomPercent = tvBottomPercent,
             // Nino: örtme kipinde saydam kutu İngilizce yazıyı gizleyemez (iki yazı karışır); bu kipte kutu hep koyu.
             background = SubtitleStyle.effectiveBackground(tvPlacement, tvBackground), backgroundShape = tvBackgroundShape, textColor = textColor, stackPrevious = stackPrevious,
-            displayMode = tvDisplayMode, font = subtitleFont)
+            displayMode = tvDisplayMode, font = subtitleFont, autoSize = tvAutoSize)
+
+    /**
+     * Nino: TV yazı boyunu oyunun altyazısına uydursun mu (Mac: "Match the game's subtitle size", varsayılan açık). Açıkken
+     * TV, Yazı boyu ölçeğini yok sayar; ölçek değiştirilince kapanır ([subtitleScale]). Kaydı olmayan eski kurulumda boyu
+     * daha önce değiştirmiş kullanıcı için kapalı başlar (seçtiği boy TV'de görünsün).
+     */
+    var tvAutoSize: Boolean
+        get() = if (prefs.contains("tvAutoSize")) prefs.getBoolean("tvAutoSize", true) else subtitleScale == 100 && tvFontSize == 46
+        set(value) = prefs.edit().putBoolean("tvAutoSize", value).apply()
 
     /** Altyazının arandığı bölge (Ayarlar › Altyazı alanı; iPhone ile aynı hazır seçimler ve Özel). */
     var region: com.couchsubs.mobile.core.CropRegion
@@ -351,7 +360,7 @@ class AppSettings(private val appContext: Context) : com.couchsubs.mobile.core.D
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "subtitleScale" || key == "textColor" || key == "subtitleFont" || key == "tvFontSize" ||
                 key == "tvBackground" || key == "tvBackgroundShape" || key == "stackPrevious" || key == "tvDisplayMode" ||
-                key == "tvPlacement" || key == "tvBottomPercent") action()
+                key == "tvPlacement" || key == "tvBottomPercent" || key == "tvAutoSize") action()
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
         return listener
@@ -453,6 +462,14 @@ class AppSettings(private val appContext: Context) : com.couchsubs.mobile.core.D
         get() = prefs.getLong("lastExitReportAt", 0)
         set(value) = prefs.edit().putLong("lastExitReportAt", value).apply()
 
+    /**
+     * Nino: son tanınan oyun havuz öncelikli miydi (GTA 6). Yeni oturumda oyun tanınana kadar ana ekrandaki tema buna göre
+     * seçilir (Mac: UserDefaults "ninoLastGamePoolFirst").
+     */
+    var lastGamePoolFirst: Boolean
+        get() = prefs.getBoolean("ninoLastGamePoolFirst", false)
+        set(value) = prefs.edit().putBoolean("ninoLastGamePoolFirst", value).apply()
+
     /** Altyazı yazı ölçeği, yüzde (40–160; tasarım: Ayarlar › Altyazı görünümü). */
     var subtitleScale: Int
         get() = prefs.getInt("subtitleScale", 100).coerceIn(MIN_SUBTITLE_SCALE, MAX_SUBTITLE_SCALE)
@@ -474,9 +491,10 @@ class AppSettings(private val appContext: Context) : com.couchsubs.mobile.core.D
 
     /** Nino: ana ekran arayüzü; varsayılan Salon (Mac'teki gibi). */
     var homeStyle: HomeStyle
-        // Nino: telefonda varsayılan cam düğme (küçük ekranda fişi prize takmak zor); salon Ayarlar › Arayüz'de seçilir.
-        get() = enumOr(prefs.getString("homeStyle", null), HomeStyle.TOGGLE)
-        set(value) = prefs.edit().putString("homeStyle", value.name).apply()
+        // Nino V4: bütün uygulamalarda ortak tasarım salon (fişi prize takmak). V4'ten önce kaydedilen seçim
+        // ("homeStyle") yok sayılır, herkes bir kez salona geçer; sonra Ayarlar › Arayüz'den cam düğme seçilebilir.
+        get() = enumOr(prefs.getString("homeStyleV4", null), HomeStyle.LIVING_ROOM)
+        set(value) = prefs.edit().putString("homeStyleV4", value.name).apply()
 
     /** Bildirim tercihleri: bağlantı koptuğunda ve yeni paket geldiğinde. */
     var notifyDisconnect: Boolean

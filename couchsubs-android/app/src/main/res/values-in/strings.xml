@@ -135,6 +135,8 @@
     <string name="settings_key">Kunci</string>
     <string name="settings_packs">Paket game</string>
     <string name="settings_text_size">Tampilan subtitle</string>
+    <string name="settings_auto_size">Samakan dengan ukuran subtitle game di TV</string>
+    <string name="settings_auto_size_note">Saat aktif, TV menyesuaikan ukuran teks dengan baris bahasa Inggris game; mengubah ukuran di bawah akan mematikannya.</string>
     <string name="settings_pool">Berkontribusi ke kumpulan bersama</string>
     <string name="settings_stack_previous">Pertahankan baris sebelumnya di atas saat dialog cepat</string>
     <string name="settings_stack_previous_note">Jika nonaktif, setiap baris baru menggantikan baris sebelumnya. Memerlukan aplikasi TV 0.9.16 atau yang lebih baru.</string>

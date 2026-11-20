@@ -143,7 +143,7 @@ final class NavigationHintTests: XCTestCase {
                      "-turn Right 67 ft 82 ft", "Turn Right i 100 ft 103 ft", "Keep Right 3.9 km"] {
             XCTAssertTrue(Reading.isNavigationHint(hint), hint)
         }
-        for subtitle in ["Turn right at the lights, okay?", "Turn Right", "Keep left and you'll be fine, 20 ft or so",
+        for subtitle in ["Turn right at the lights, okay?", "Keep left and you'll be fine, 20 ft or so",
                          "Keep it down!", "I said turn left, 50 ft back there you idiot."] {
             XCTAssertFalse(Reading.isNavigationHint(subtitle), subtitle)
         }

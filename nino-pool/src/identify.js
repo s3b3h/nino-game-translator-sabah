@@ -63,7 +63,7 @@ export async function handleIdentify(db, env, body, now, ask = askIdentify, addC
   if (!body || body.v !== 1 || typeof body.install !== "string" || !UUID.test(body.install) || typeof body.image !== "string") {
     return { status: 400, body: { ok: false, error: "bad_request" } };
   }
-  if (!env.ANTHROPIC_API_KEY || env.TRANSLATE_ENABLED === "0") return { status: 503, body: { ok: false, error: "disabled" } };
+  if (!env.ANTHROPIC_API_KEY || env.CLAUDE_ENABLED === "0" || env.TRANSLATE_ENABLED === "0") return { status: 503, body: { ok: false, error: "disabled" } };
   const bytes = Math.floor(body.image.length * 0.75);
   if (bytes > IDENTIFY_LIMITS.maxImageBytes) return { status: 413, body: { ok: false, error: "too_large" } };
   const mime = body.image.startsWith("iVBOR") ? "image/png" : "image/jpeg";

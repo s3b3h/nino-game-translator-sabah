@@ -342,6 +342,9 @@ public final class StreamSession: @unchecked Sendable {
     public var onFrame: ((CGImage) -> Void)?
     /// Nino: PS5'in sesi, 16 kHz tek kanal örnekler (yalnız `wantsAudio` açıkken; bağlanmadan önce ayarlanır).
     public var onAudio: (([Float]) -> Void)?
+    /// Nino (geliştirici video kaydı): PS5'in sesi tam kalitede, 48 kHz iki kanal sıralı örnekler.
+    public var onFullAudio: (([Float]) -> Void)?
+    private var fullDecoder: OpusAudioDecoder?
     public var wantsAudio = false
     private let audioQueue = DispatchQueue(label: "nino.stream-audio")
     private var audioDecoder: OpusAudioDecoder?
@@ -678,6 +681,9 @@ public final class StreamSession: @unchecked Sendable {
     fileprivate func audioHeader(channels: Int, rate: Int, frameSize: Int) {
         audioQueue.async { [weak self] in
             self?.audioDecoder = OpusAudioDecoder(channels: channels, rate: rate, frameSize: frameSize)
+            if self?.onFullAudio != nil {
+                self?.fullDecoder = OpusAudioDecoder(channels: channels, rate: rate, frameSize: frameSize, outputRate: 48_000, outputChannels: 2)
+            }
             RemotePlayLog.write("ses: \(channels) kanal, \(rate) Hz, \(frameSize) örnek/paket\(self?.audioDecoder == nil ? " (çözücü açılamadı)" : "")")
         }
     }
@@ -686,6 +692,10 @@ public final class StreamSession: @unchecked Sendable {
         audioQueue.async { [weak self] in
             guard let self, let decoder = self.audioDecoder else { return }
             let samples = decoder.decode(packet)
+            if let full = self.fullDecoder, let sink = self.onFullAudio {
+                let stereo = full.decode(packet)
+                if !stereo.isEmpty { sink(stereo) }
+            }
             // Nino: 10 sn'de bir ses özeti (gelen paket, çözülen örnek, ortalama güç) günlüğe yazılır.
             self.audioPackets += 1
             self.audioSamples += samples.count

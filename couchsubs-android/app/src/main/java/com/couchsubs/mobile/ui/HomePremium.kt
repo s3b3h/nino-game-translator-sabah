@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -43,7 +44,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.ScreenRotation
@@ -113,6 +116,30 @@ private fun homeState(status: LiveStatus, paired: Boolean) = when {
 private fun stageProblem(status: LiveStatus, state: HomeState): String? =
     status.problem?.takeIf { state == HomeState.CONNECTING && it.isNotBlank() && it != status.error }
 
+/**
+ * Nino V4: salon ana ekranının başlığı (iPhone'daki gibi): durum satırı + büyük başlık. Cam düğmeli ekranla aynı yazılar.
+ */
+@Composable
+fun LivingRoomHeader(status: LiveStatus, paired: Boolean, consoleName: String?, onTv: Boolean, consoleLabel: String) {
+    val state = homeState(status, paired)
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        StatusLine(state, if (status.demo) stringResource(R.string.demo_name) else consoleName ?: consoleLabel, onTv,
+            warning = stageProblem(status, state) != null)
+        Spacer(Modifier.height(6.dp))
+        AnimatedContent(state, Modifier.fillMaxWidth(), transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) }, label = "title") { s ->
+            Text(
+                when (s) {
+                    HomeState.NOT_PAIRED -> stringResource(if (consoleLabel == "Xbox") R.string.xbox_home_title_pair else R.string.home_title_pair)
+                    HomeState.LIVE -> stringResource(R.string.home_title_live)
+                    else -> stringResource(R.string.home_title_ready, targetLanguageName())
+                },
+                style = TextStyle(fontSize = 34.sp, lineHeight = 40.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp),
+                color = Ink,
+            )
+        }
+    }
+}
+
 @Composable
 fun PremiumHome(
     status: LiveStatus,
@@ -156,10 +183,7 @@ fun PremiumHome(
         Spacer(Modifier.height(22.dp))
         SlideControl(state, startMarker, onStart, onStop, onPairing)
         // PS5'i olmayanlar ve mağaza incelemesi için: örnek altyazılarla deneme.
-        if (state == HomeState.NOT_PAIRED) Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.Center) {
-            Text(stringResource(R.string.demo_try), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Tokens.Color.accentText,
-                modifier = Modifier.clip(RoundedCornerShape(50)).clickable(onClick = onDemo).padding(horizontal = 14.dp, vertical = 8.dp))
-        }
+        if (state == HomeState.NOT_PAIRED) TryWithoutConsole(onDemo, Modifier.padding(top = 12.dp))
         // Altta yalnız ipucu: yan çevirince tam ekran açılır (düğme sahnenin üstünde).
         AnimatedVisibility(state == HomeState.LIVE && !onTv) {
             Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.Center,
@@ -169,14 +193,54 @@ fun PremiumHome(
             }
         }
         Spacer(Modifier.height(28.dp))
-        // Üç kısa yol; çeviri motoru Ayarlar'da.
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Shortcut(Icons.Filled.SportsEsports, consoleLabel, consoleName ?: stringResource(R.string.profile_not_paired), Modifier.weight(1f), onPairing)
-            Shortcut(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, stringResource(R.string.nino_output),
-                if (onTv) "TV" else stringResource(R.string.nino_phone), Modifier.weight(1f).then(targetMarker), onTarget)
-            Shortcut(Icons.Filled.Inventory2, stringResource(R.string.nino_packs),
-                if (packsEnabled) stringResource(R.string.packs_free) else "—", Modifier.weight(1f).then(packsMarker), onPacks)
+        HomeShortcuts(consoleLabel, consoleName, onTv, if (onTv) "TV" else stringResource(R.string.nino_phone), packsEnabled,
+            targetMarker, packsMarker, onPairing, onTarget, onPacks)
+    }
+}
+
+/** Üç büyük beyaz kısa yol (konsol, çıkış, paketler); iki ana ekran da kullanır. Çeviri motoru Ayarlar'da. */
+@Composable
+fun HomeShortcuts(consoleLabel: String, consoleName: String?, onTv: Boolean, outputValue: String, packsEnabled: Boolean,
+                  targetMarker: Modifier, packsMarker: Modifier, onPairing: () -> Unit, onTarget: () -> Unit, onPacks: () -> Unit) {
+    Row(Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Shortcut(Icons.Filled.SportsEsports, consoleLabel, consoleName ?: stringResource(R.string.profile_not_paired), Modifier.weight(1f), onPairing)
+        Shortcut(if (onTv) Icons.Filled.Tv else Icons.Filled.Smartphone, stringResource(R.string.nino_output),
+            outputValue, Modifier.weight(1f).then(targetMarker), onTarget)
+        Shortcut(Icons.Filled.Inventory2, stringResource(R.string.nino_packs),
+            if (packsEnabled) stringResource(R.string.packs_free) else "—", Modifier.weight(1f).then(packsMarker), onPacks)
+    }
+}
+
+/** "PS5'siz Deneyin": ışıltı simgeli, ortalı hayalet düğme (iPhone'daki TryWithoutPS5Button). */
+@Composable
+fun TryWithoutConsole(onDemo: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        Row(Modifier.clip(RoundedCornerShape(50)).clickable(onClick = onDemo).heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Filled.AutoAwesome, null, tint = Tokens.Color.accentText, modifier = Modifier.size(20.dp))
+            Text(stringResource(R.string.demo_try), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Tokens.Color.accentText, maxLines = 1)
         }
+    }
+}
+
+/** Canlıyken sahnenin altındaki küçük "Tam Ekran" hapı (iPhone'daki gibi ipucu satırının sağında). */
+@Composable
+fun FullScreenPill(onClick: () -> Unit) {
+    Row(Modifier.clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.72f))
+        .border(1.dp, Color.White, RoundedCornerShape(50)).clickable(onClick = onClick)
+        .heightIn(min = 36.dp).padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(Icons.Filled.OpenInFull, null, tint = Tokens.Color.accent, modifier = Modifier.size(16.dp))
+        Text(stringResource(R.string.home_full_screen), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Tokens.Color.accent, maxLines = 1)
+    }
+}
+
+/** Canlıyken altyazı telefondaysa: yan çevirince tam ekran açılır. */
+@Composable
+fun RotateHint() {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Filled.ScreenRotation, null, tint = InkSoft, modifier = Modifier.size(18.dp))
+        Text(stringResource(R.string.home_rotate_hint), fontSize = 14.sp, color = InkSoft, modifier = Modifier.padding(start = 8.dp))
     }
 }
 
@@ -331,7 +395,7 @@ private fun SlideControl(state: HomeState, marker: Modifier, onStart: () -> Unit
 
 @Composable
 private fun Shortcut(icon: ImageVector, title: String, value: String, modifier: Modifier, onClick: () -> Unit) {
-    Column(modifier.clip(RoundedCornerShape(20.dp)).background(Color.White.copy(alpha = 0.72f))
+    Column(modifier.fillMaxHeight().clip(RoundedCornerShape(20.dp)).background(Color.White.copy(alpha = 0.72f))
         .border(1.dp, Color.White, RoundedCornerShape(20.dp)).clickable(onClick = onClick)
         .padding(horizontal = 12.dp, vertical = 14.dp)) {
         Icon(icon, null, tint = Tokens.Color.accent, modifier = Modifier.size(22.dp))

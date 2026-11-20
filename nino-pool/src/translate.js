@@ -12,6 +12,8 @@ import { lineKey, saltedDigest } from "./key.js";
 import { junkReason } from "./filter.js";
 import { navTranslation } from "./nav.js";
 import { blocks, bestMatch } from "./fuzzy.js";
+import { splitLine, joinParts } from "./compose.js";
+import { askFree, freeEnabled } from "./free.js";
 
 export const TRANSLATE_LIMITS = Object.freeze({
   maxBodyBytes: 64 * 1024,
@@ -85,6 +87,23 @@ const LANGUAGE_NOTES = {
   nl: "Use informal \"je/jij\" unless clearly formal.",
 };
 
+/**
+ * Kısa çeviri talimatı (~250 jeton): jeton sınırlı ücretsiz servisler (Groq, OpenRouter, NVIDIA) için. Uzun talimatın
+ * özü: anlam ve ton, küfür aynı şiddette, adlar aynen, OCR bozukluğunu düzelt, yalnız çeviri.
+ */
+export function compactInstructions(lang) {
+  const name = LANGUAGES[lang];
+  return [
+    `Translate English subtitles of an 18+ video game into natural spoken ${name}, short like official game subtitles.`,
+    "Translate meaning and tone, not word by word. Swearing and slang at exactly the same intensity: never soften, censor or add any.",
+    "Keep names of people, places, brands and missions as they are. Keep numbers. Fix obvious OCR misreads; keep speaker labels like \"Amy:\".",
+    "Controller buttons are PlayStation 5: LB → L1, RB → R1, LT → L2, RT → R2 (OCR \"LI\" = L1, \"RI\" = R1).",
+    lang === "tr" ? "Turkish: role labels in Turkish (Local: → Yerli:, Locals: → Yerliler:, Stranger: → Yabancı:, Cop: → Polis:, Tourist: → Turist:, Clerk: → Tezgâhtar:), name labels unchanged; informal \"sen\"; street slang where the English is slangy (bro → kanka, dude → lan/abi); \"Fuck!\" → \"Siktir!\", \"What the fuck?\" → \"Ne halt?\", \"motherfucker\" → \"orospu çocuğu\", \"shit\" → \"bok\"; \"fuck around\" = dalga geçmek." : "",
+    lang === "ar" ? "Arabic: Modern Standard Arabic (فصحى) for every line, never a dialect (no Egyptian/Levantine words like ده، دايمًا، عايز). Address Lucia with feminine forms. \"nigga\" → يا صاح / الرجل, never a racial word." : "",
+    "Output only the translations.",
+  ].filter(Boolean).join("\n");
+}
+
 /** Çeviri talimatı. Sansürsüz: kurgu diyaloğu, yaş sınırlı oyun. */
 export function instructions(lang, { review = false } = {}) {
   const name = LANGUAGES[lang];
@@ -99,7 +118,9 @@ export function instructions(lang, { review = false } = {}) {
     `- Words or short phrases in Spanish or any other language inside the English dialogue ("Mañana", "Gracias", "Vámonos") are translated into ${name} too; only names stay as they are.`,
     "- Keep sentence structure natural in the target language: e.g. \"the only one that's not a complete piece of shit\" is about the listener being the only decent one, not \"the only complete piece of shit\".",
     "- If a line is a UI prompt or objective (\"Go to\", \"Press\", \"Lose the cops\"), translate it as the game would show it.",
-    "- The English comes from screen reading (OCR): fix obvious misreads (\"Youlre\" = \"You're\", \"Donlt\" = \"Don't\", \"Ihäd\" = \"I had\") and drop stray HUD fragments or single stray letters around the dialogue. A speaker label like \"Amy:\" stays as \"Amy:\". If the whole line is unreadable garbage, return it unchanged.",
+    "- The player uses a PlayStation 5 controller: write buttons as L1, R1, L2, R2 (Xbox LB → L1, RB → R1, LT → L2, RT → R2; OCR \"LI\" = L1, \"RI\" = R1). Never write LB/RB/LT/RT.",
+    ...(lang === "ar" ? ["- Arabic: write Modern Standard Arabic (فصحى) for every line, never a dialect (no Egyptian or Levantine words like ده، دايمًا، عايز، لازم). Address Lucia with feminine forms. Role labels in Arabic (Local: → محلي:, Cop: → شرطي:). \"nigga\" → يا صاح / الرجل, never a racial word."] : []),
+    "- The English comes from screen reading (OCR): fix obvious misreads (\"Youlre\" = \"You're\", \"Donlt\" = \"Don't\", \"Ihäd\" = \"I had\") and drop stray HUD fragments or single stray letters around the dialogue. A speaker label like \"Amy:\" stays as \"Amy:\". Role labels (\"Local:\", \"Stranger:\", \"Cop:\", \"Tourist:\", \"Clerk:\") are translated as a short role word followed by a colon. If the whole line is unreadable garbage, return it unchanged.",
     "- A controller button icon in a prompt is often misread as a stray character (\"Press 7 to open the map\", \"Press [1] to open the map\", \"Press do to open the index\"): treat it as a button and leave it out (\"Haritayı açmak için tuşa bas\").",
     "- Output only translations. No quotes, notes, explanations or alternatives.",
     LANGUAGE_NOTES[lang] ? `- ${LANGUAGE_NOTES[lang]}` : "",
@@ -254,9 +275,13 @@ async function spentToday(db, now) {
   return (await db.prepare("SELECT micro_usd FROM translate_cost WHERE day = ?").bind(day(now)).first("micro_usd")) ?? 0;
 }
 
-export async function addCost(db, now, micro) {
-  await db.prepare("INSERT INTO translate_cost (day, micro_usd) VALUES (?, ?) ON CONFLICT(day) DO UPDATE SET micro_usd = micro_usd + excluded.micro_usd")
-    .bind(day(now), Math.max(0, Math.round(micro))).run();
+/** Günlük masrafa ekler; `review` ise gözden geçirme payına da yazılır (toplam micro_usd'nin içindedir). */
+export async function addCost(db, now, micro, review = false) {
+  const value = Math.max(0, Math.round(micro));
+  await db.prepare(
+    `INSERT INTO translate_cost (day, micro_usd, review_micro_usd) VALUES (?1, ?2, ?3)
+     ON CONFLICT(day) DO UPDATE SET micro_usd = micro_usd + excluded.micro_usd, review_micro_usd = review_micro_usd + excluded.review_micro_usd`,
+  ).bind(day(now), value, review ? value : 0).run();
 }
 
 /**
@@ -285,7 +310,7 @@ export function langAllowed(env, lang) {
 }
 
 /** Çevirinin benzer satır parçalarını yazar (src/fuzzy.js). */
-async function indexBlocks(db, lang, rows) {
+export async function indexBlocks(db, lang, rows) {
   const entries = rows.flatMap((r) => blocks(r.s).map((b) => ({ b, k: r.k })));
   if (entries.length === 0) return;
   await db.prepare(
@@ -324,8 +349,14 @@ export function detectGame(texts) {
   return "";
 }
 
+/** Claude (anında çeviri, gözden geçirme, ekrandan oyun tanıma) açık mı: anahtar var ve CLAUDE_ENABLED "0" değil. */
+export function claudeEnabled(env) {
+  return env.CLAUDE_ENABLED !== "0" && Boolean(env.ANTHROPIC_API_KEY);
+}
+
+/** Yeni satır çevrilebilir mi: ücretsiz zincir (TRANSLATE_ENGINE="free") ya da Claude. */
 export function translateEnabled(env) {
-  return env.TRANSLATE_ENABLED !== "0" && Boolean(env.ANTHROPIC_API_KEY);
+  return env.TRANSLATE_ENABLED !== "0" && (freeEnabled(env) || claudeEnabled(env));
 }
 
 function clean(text) {
@@ -361,14 +392,51 @@ async function fromSeeds(db, lang, game, missing, now) {
     rows.push({ k: m.key, s: m.text, t: m.result, r: 1 });
   }
   if (rows.length > 0) {
+    // copy_of 'seed': hazır çeviri Opus'a gönderilmez (para harcamasın).
     await db.prepare(
-      `INSERT OR IGNORE INTO translations (key, lang, game, source, text, tier, created, updated)
-       SELECT json_extract(value, '$.k'), ?, ?, json_extract(value, '$.s'), json_extract(value, '$.t'), json_extract(value, '$.r'), ?, ?
+      `INSERT OR IGNORE INTO translations (key, lang, game, source, text, tier, created, updated, copy_of)
+       SELECT json_extract(value, '$.k'), ?, ?, json_extract(value, '$.s'), json_extract(value, '$.t'), json_extract(value, '$.r'), ?, ?, 'seed'
        FROM json_each(?)`,
     ).bind(lang, game, now, now, JSON.stringify(rows)).run().catch((error) => console.error("tohum satırı yazılamadı", error));
     await indexBlocks(db, lang, rows).catch(() => {});
   }
   return rest;
+}
+
+/**
+ * Birleşik satır ("Cümle A. Cümle B." ya da "Lucia: Cümle") cümlelerinin hepsi havuzda ya da tohumda varsa çevirisi
+ * cümlelerden kurulur (Claude'a sorulmaz). Havuza yazılmaz: cümleler gözden geçirildikçe sonraki istekte o da düzelir.
+ * Dönüş: hâlâ çevirisi olmayanlar.
+ */
+async function fromPieces(db, lang, missing) {
+  const split = [];
+  for (const m of missing) {
+    const parts = splitLine(m.text);
+    if (!parts) continue;
+    for (const part of parts) if (part.text) part.key = await lineKey(part.text);
+    split.push({ m, parts });
+  }
+  if (split.length === 0) return missing;
+  const keys = [...new Set(split.flatMap((s) => s.parts.map((p) => p.key).filter(Boolean)))];
+  const found = new Map();
+  const { results: own } = await db.prepare(
+    `SELECT key, text, tier FROM translations WHERE lang = ? AND text <> '' AND key IN (SELECT value FROM json_each(?))`,
+  ).bind(lang, JSON.stringify(keys)).all().catch(() => ({ results: [] }));
+  for (const r of own) found.set(r.key, { text: r.text, tier: r.tier });
+  const { results: seeded } = await db.prepare(`SELECT key, text FROM seeds WHERE lang = ? AND key IN (SELECT value FROM json_each(?))`)
+    .bind(lang, JSON.stringify(keys.filter((k) => !found.has(k)))).all().catch(() => ({ results: [] }));
+  for (const r of seeded) found.set(r.key, { text: r.text, tier: 1 });
+  const done = new Set();
+  for (const { m, parts } of split) {
+    const byText = new Map(parts.filter((p) => p.text).map((p) => [p.text, found.get(p.key)]));
+    const text = joinParts(parts, (t) => byText.get(t)?.text);
+    if (!text || !usable(m.text, text)) continue;
+    m.result = clean(text);
+    m.tier = Math.min(...[...byText.values()].map((v) => v.tier));
+    m.composed = true;
+    done.add(m);
+  }
+  return missing.filter((m) => !done.has(m));
 }
 
 /**
@@ -379,7 +447,7 @@ async function fromSimilar(db, lang, game, missing, now) {
   const wanted = [...new Set(missing.flatMap((m) => blocks(m.text)))];
   if (wanted.length === 0) return missing;
   const { results } = await db.prepare(
-    `SELECT t.key, t.source, t.text, t.tier FROM translation_blocks b JOIN translations t ON t.lang = b.lang AND t.key = b.key
+    `SELECT t.key, t.source, t.text, t.tier, t.copy_of FROM translation_blocks b JOIN translations t ON t.lang = b.lang AND t.key = b.key
      WHERE b.lang = ? AND b.block IN (SELECT value FROM json_each(?)) AND t.text <> '' LIMIT 400`,
   ).bind(lang, JSON.stringify(wanted)).all().catch(() => ({ results: [] }));
   if (results.length === 0) return missing;
@@ -391,12 +459,14 @@ async function fromSimilar(db, lang, game, missing, now) {
     m.result = match.text;
     m.tier = match.tier;
     m.similar = true;
-    rows.push({ k: m.key, s: m.text, t: match.text, r: match.tier });
+    rows.push({ k: m.key, s: m.text, t: match.text, r: match.tier, c: match.copy_of || match.key });
   }
   if (rows.length > 0) {
+    // copy_of: aslının anahtarı. Kopya ayrıca gözden geçirilmez; aslı gözden geçirilince onun metnini alır.
     await db.prepare(
-      `INSERT OR IGNORE INTO translations (key, lang, game, source, text, tier, created, updated)
-       SELECT json_extract(value, '$.k'), ?, ?, json_extract(value, '$.s'), json_extract(value, '$.t'), json_extract(value, '$.r'), ?, ?
+      `INSERT OR IGNORE INTO translations (key, lang, game, source, text, tier, created, updated, copy_of)
+       SELECT json_extract(value, '$.k'), ?, ?, json_extract(value, '$.s'), json_extract(value, '$.t'), json_extract(value, '$.r'), ?, ?,
+              json_extract(value, '$.c')
        FROM json_each(?)`,
     ).bind(lang, game, now, now, JSON.stringify(rows)).run().catch((error) => console.error("benzer satır yazılamadı", error));
   }
@@ -412,6 +482,9 @@ const installHits = new Map();
  * → { ok, translations:[{ text: string|null, tier }] } (sıra aynı; çevrilemeyen null, uygulama kendi çevirisini kullanır)
  */
 export async function handleTranslate(db, env, body, now, live = askLive) {
+  // Ücretsiz zincir açıksa Claude yerine o kullanılır (testler kendi taklidini verir).
+  const free = live === askLive && freeEnabled(env);
+  if (free) live = (e, lang, lines, context) => askFree(e, lang, lines, context, { db, now });
   if (!body || typeof body !== "object" || body.v !== 1) return { status: 400, body: { ok: false, error: "bad_request" } };
   if (typeof body.install !== "string" || !UUID.test(body.install)) return { status: 400, body: { ok: false, error: "bad_install" } };
   const lang = typeof body.lang === "string" ? body.lang.toLowerCase().split(/[-_]/)[0] : "";
@@ -498,6 +571,7 @@ export async function handleTranslate(db, env, body, now, live = askLive) {
   }
   // Hazır çeviri tohumu: para harcamaz, dil kısıtına ve günlük sınıra takılmaz.
   if (missing.length > 0) missing = await fromSeeds(db, lang, game, missing, now);
+  if (missing.length > 0) missing = await fromPieces(db, lang, missing);
   if (missing.length > 0 && !langAllowed(env, lang)) { skipped.push(...missing); missing = []; }
   if (missing.length > 0) missing = await fromSimilar(db, lang, game, missing, now);
   if (skipped.length > 0) await rememberEnglish(db, game, skipped, now);
@@ -506,7 +580,7 @@ export async function handleTranslate(db, env, body, now, live = askLive) {
   if (missing.length > 0) {
     if (!translateEnabled(env)) limited = "disabled";
     else if (!gameAllowed(env, game)) limited = "game";
-    else if ((await spentToday(db, now)) >= capMicro(env)) limited = "daily_cap";
+    else if (!free && (await spentToday(db, now)) >= capMicro(env)) limited = "daily_cap";
     else {
       const install = await saltedDigest(body.install.toLowerCase(), env.INSTALL_SALT ?? "");
       const hour = Math.floor(now / 3600);
@@ -614,7 +688,7 @@ const BATCH_FORGET_SECONDS = 26 * 3600;
 async function nextChunk(db, env, now, delay, exclude) {
   for (let guard = 0; guard < 20; guard++) {
     const group = await db.prepare(
-      `SELECT lang, game FROM translations t WHERE tier = 1 AND text <> '' AND created < ?
+      `SELECT lang, game FROM translations t WHERE tier = 1 AND text <> '' AND created < ? AND copy_of IS NULL
          AND NOT EXISTS (SELECT 1 FROM review_pending p WHERE p.lang = t.lang AND p.key = t.key)
          AND key NOT IN (SELECT value FROM json_each(?))
        GROUP BY lang, game ORDER BY MIN(created) LIMIT 1`,
@@ -629,7 +703,7 @@ async function nextChunk(db, env, now, delay, exclude) {
       `SELECT t.key, t.source, t.text,
               COALESCE((SELECT MIN(l.first_seen) FROM lines l WHERE l.key = t.key AND (l.game = t.game OR t.game = '')), t.created) AS seen
        FROM translations t
-       WHERE t.tier = 1 AND t.text <> '' AND t.lang = ? AND t.game = ? AND t.created < ?
+       WHERE t.tier = 1 AND t.text <> '' AND t.lang = ? AND t.game = ? AND t.created < ? AND t.copy_of IS NULL
          AND NOT EXISTS (SELECT 1 FROM review_pending p WHERE p.lang = t.lang AND p.key = t.key)
          AND t.key NOT IN (SELECT value FROM json_each(?))
        ORDER BY seen, t.key LIMIT ${TRANSLATE_LIMITS.reviewChunk}`,
@@ -667,6 +741,15 @@ async function applyReview(db, lang, rows, texts, now) {
                       THEN ?2 ELSE updated END
      WHERE lang = ?3 AND key IN (SELECT json_extract(value, '$.k') FROM json_each(?1))`,
   ).bind(JSON.stringify(out), now, lang).run();
+  // Bozuk kopyalar aslının gözden geçirilmiş metnini alır (ayrıca ücretlendirilmez).
+  await db.prepare(
+    `UPDATE translations SET
+       tier = 2,
+       updated = CASE WHEN text IS (SELECT json_extract(value, '$.t') FROM json_each(?1) WHERE json_extract(value, '$.k') = translations.copy_of)
+                      THEN updated ELSE ?2 END,
+       text = (SELECT json_extract(value, '$.t') FROM json_each(?1) WHERE json_extract(value, '$.k') = translations.copy_of)
+     WHERE lang = ?3 AND copy_of IN (SELECT json_extract(value, '$.k') FROM json_each(?1))`,
+  ).bind(JSON.stringify(out), now, lang).run().catch((error) => console.error("kopyalar güncellenemedi", error));
   return changed;
 }
 
@@ -676,7 +759,8 @@ async function applyReview(db, lang, rows, texts, now) {
  * env.REVIEW_BATCH = "0" ise eskisi gibi anında. Değişen çevirinin `updated`i yenilenir; uygulamalar sonraki çekişte alır.
  */
 export async function reviewTranslations(db, env, now, review = undefined, delay = TRANSLATE_LIMITS.reviewDelay, batches = undefined) {
-  if (!translateEnabled(env)) return { reviewed: 0, changed: 0, cost: 0 };
+  // Gözden geçirme yalnız Claude ile (Opus); ücretsiz düzende kapalı.
+  if (!translateEnabled(env) || !claudeEnabled(env)) return { reviewed: 0, changed: 0, cost: 0 };
   if (review || env.REVIEW_BATCH === "0") return reviewNow(db, env, now, review ?? askReview, delay);
   return reviewInBatches(db, env, now, delay, batches ?? anthropicBatches(env));
 }
@@ -697,7 +781,7 @@ async function reviewNow(db, env, now, review, delay) {
     } catch (error) {
       console.error("gözden geçirme hatası", error);
     }
-    if (answer.cost) { await addCost(db, now, answer.cost); cost += answer.cost; }
+    if (answer.cost) { await addCost(db, now, answer.cost, true); cost += answer.cost; }
     if (!answer.texts) failed++;
     else reviewed += chunk.rows.length;
     changed += await applyReview(db, chunk.lang, chunk.rows, answer.texts, now);
@@ -748,7 +832,7 @@ async function reviewInBatches(db, env, now, delay, batches) {
       const ordered = chunk.keys.map((k) => rows.find((r) => r.key === k)).filter(Boolean);
       if (result?.type === "succeeded") {
         const micro = Math.ceil(translateCost(batch.model, result.message.usage) / 2);
-        await addCost(db, now, micro);
+        await addCost(db, now, micro, true);
         cost += micro;
         let texts = null;
         try {

@@ -79,6 +79,22 @@ final class SubtitleServerTests: XCTestCase {
             && $0.contains("\"line\":0.04,\"text\":\"Kapıyı aç.\"}") })
     }
 
+    /// Nino: telefon balonunun üstüne konan çeviri balonun rengini (`fill`) ve yazı rengini (`ink`) taşır.
+    func testScreenItemCarriesBubbleColours() async throws {
+        let server = SubtitleServer(port: 0)
+        let port = try await server.start()
+        defer { server.stop() }
+        let (bytes, _) = try await URLSession.shared.bytes(from: URL(string: "http://127.0.0.1:\(port)/events")!)
+        try await waitUntil { server.connectedClients == 1 }
+        var item = ScreenTranslation.Item(source: "On my way", translation: "Geliyorum", box: TextBox(left: 0.6, top: 0.5, right: 0.75, bottom: 0.53), lineHeight: 0.02)
+        item.fill = "#e9e9ec"
+        item.ink = "#1c1c1e"
+        server.sendScreen([item], durationMs: 1000, overlay: true)
+        server.clearScreen()
+        let lines = try await readLines(bytes, until: "event: screen-clear")
+        XCTAssertTrue(lines.contains { $0.contains("\"fill\":\"#e9e9ec\"") && $0.contains("\"ink\":\"#1c1c1e\"") }, "\(lines)")
+    }
+
     /// Ek alanın çevirisi kendi olayıyla gider (eski TV uygulamaları tanımadığı olayı yok sayar).
     func testStreamsRegionTranslationsAndTheirClear() async throws {
         let server = SubtitleServer(port: 0)

@@ -155,6 +155,7 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
     var keyRejected by remember(engine) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var scale by remember { mutableStateOf(settings.subtitleScale.toFloat()) }
+    var autoSize by remember { mutableStateOf(settings.tvAutoSize) }
     var color by remember { mutableStateOf(settings.textColor) }
     var font by remember { mutableStateOf(settings.subtitleFont) }
     var background by remember { mutableStateOf(settings.tvBackground.toFloat()) }
@@ -285,7 +286,18 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
                 Text("%${Math.round(scale)}", style = Tokens.Type.headline, color = Tokens.Color.text)
             }
             // %10 adımlarla %40–160 (iPhone ile aynı): 13 değer, aradaki 11 durak.
-            Slider(scale, { scale = it; settings.subtitleScale = Math.round(it) },
+            // Nino: TV yazı boyunu oyunun İngilizce satırına uydurur (Mac ile aynı, varsayılan açık). Açıkken TV ölçeği yok
+            // sayar; LG'de "boyu değiştiriyorum, TV'de değişmiyor" şikâyeti buydu. Ölçeği değiştirmek otomatik boyu kapatır.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.settings_auto_size), style = Tokens.Type.body, color = Tokens.Color.text, modifier = Modifier.weight(1f))
+                Switch(autoSize, { autoSize = it; settings.tvAutoSize = it })
+            }
+            if (autoSize) Text(stringResource(R.string.settings_auto_size_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
+            Slider(scale, {
+                scale = it
+                if (autoSize) { autoSize = false; settings.tvAutoSize = false }
+                settings.subtitleScale = Math.round(it)
+            },
                 valueRange = AppSettings.MIN_SUBTITLE_SCALE.toFloat()..AppSettings.MAX_SUBTITLE_SCALE.toFloat(),
                 steps = (AppSettings.MAX_SUBTITLE_SCALE - AppSettings.MIN_SUBTITLE_SCALE) / 10 - 1,
                 colors = SliderDefaults.colors(thumbColor = Tokens.Color.text, activeTrackColor = Tokens.Color.accent,

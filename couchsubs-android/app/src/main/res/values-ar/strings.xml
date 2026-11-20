@@ -98,6 +98,8 @@
     <string name="settings_key">المفتاح</string>
     <string name="settings_packs">حزم الألعاب</string>
     <string name="settings_text_size">مظهر الترجمة</string>
+    <string name="settings_auto_size">طابق حجم ترجمة اللعبة على التلفاز</string>
+    <string name="settings_auto_size_note">عند التفعيل يضبط التلفاز حجم النص حسب سطر اللعبة الإنجليزي؛ تغيير الحجم أدناه يوقفه.</string>
     <string name="settings_pool">المساهمة في المستودع المشترك</string>
     <string name="settings_screen_on">إبقاء الشاشة مضاءة</string>
     <string name="close">إغلاق</string>

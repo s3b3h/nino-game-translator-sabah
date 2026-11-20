@@ -135,6 +135,8 @@
     <string name="settings_key">Khóa</string>
     <string name="settings_packs">Gói game</string>
     <string name="settings_text_size">Giao diện phụ đề</string>
+    <string name="settings_auto_size">Khớp cỡ phụ đề của trò chơi trên TV</string>
+    <string name="settings_auto_size_note">Khi bật, TV chỉnh cỡ chữ theo dòng tiếng Anh của trò chơi; đổi cỡ chữ bên dưới sẽ tắt tùy chọn này.</string>
     <string name="settings_pool">Đóng góp vào kho chung</string>
     <string name="settings_stack_previous">Giữ các câu trước ở trên khi hội thoại nhanh</string>
     <string name="settings_stack_previous_note">Khi tắt, mỗi câu mới sẽ thay câu trước. Cần ứng dụng TV 0.9.16 trở lên.</string>

@@ -135,6 +135,8 @@
     <string name="settings_key">Key</string>
     <string name="settings_packs">Mga game pack</string>
     <string name="settings_text_size">Hitsura ng subtitle</string>
+    <string name="settings_auto_size">Itugma sa laki ng subtitle ng laro sa TV</string>
+    <string name="settings_auto_size_note">Habang naka-on, sinusukat ng TV ang teksto ayon sa English na linya ng laro; ang pagbago ng laki sa ibaba ay mag-o-off nito.</string>
     <string name="settings_pool">Mag-ambag sa shared pool</string>
     <string name="settings_stack_previous">Panatilihin sa itaas ang mga naunang linya sa mabilis na usapan</string>
     <string name="settings_stack_previous_note">Kapag naka-off, pinapalitan ng bawat bagong linya ang nauna. Kailangan ng TV app 0.9.16 o mas bago.</string>

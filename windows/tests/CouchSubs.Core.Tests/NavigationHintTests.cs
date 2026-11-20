@@ -16,11 +16,20 @@ public class NavigationHintTests
     [InlineData("-turn Right 67 ft 82 ft")]
     [InlineData("Turn Right i 100 ft 103 ft")]
     [InlineData("Keep Right 3.9 km")]
+    // Nino: mesafesiz tek komutluk tarifler de (kullanıcı bildirimi: "Turn left" hâlâ çevriliyordu).
+    [InlineData("Turn left")]
+    [InlineData("Turn Right")]
+    [InlineData("Keep left")]
+    [InlineData("Make a U-turn")]
+    [InlineData("U-Turn Left")]
+    [InlineData("Keep Right.")]
     public void TurnByTurnLinesAreNotSubtitles(string hint) => Assert.True(Reading.IsNavigationHint(hint), hint);
 
     [Theory]
     [InlineData("Turn right at the lights, okay?")]
-    [InlineData("Turn Right")]
+    [InlineData("Turn left at the lights, okay?")]
+    [InlineData("Keep going, we're almost there.")]
+    [InlineData("Turn it down!")]
     [InlineData("Keep left and you'll be fine, 20 ft or so")]
     [InlineData("Keep it down!")]
     [InlineData("I said turn left, 50 ft back there you idiot.")]

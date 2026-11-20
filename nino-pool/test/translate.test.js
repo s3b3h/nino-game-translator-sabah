@@ -393,3 +393,54 @@ test("uzaktan ayar: saklanan toplam indirme verilir; yoksa alan gönderilmez", a
   assert.equal(body.downloads, 65);
   assert.equal(body.ok, true);
 });
+
+test("birleşik satır havuzdaki cümlelerinden kurulur, Claude'a sorulmaz, havuza yazılmaz", async () => {
+  const { env, post, calls } = setup();
+  await post(req(["Okay, let me get back to the guys.", "Not too far now."]));
+  await env.DB.prepare("INSERT INTO seeds (lang, key, text) VALUES ('tr', ?, 'Kapa çeneni!')").bind(await lineKey("Shut up!")).run();
+  const body = await (await post(req(["Okay, let me get back to the guys. Not too far now.", "Lucia: Shut up!", "Lucia: Where is the boat?"]))).json();
+  assert.equal(body.translations[0].text, "TR:Okay, let me get back to the guys. TR:Not too far now.");
+  assert.equal(body.translations[1].text, "Lucia: Kapa çeneni!");
+  // Bir cümlesi eksik olan Claude'a gider.
+  assert.deepEqual(calls.at(-1).lines, ["Lucia: Where is the boat?"]);
+  const n = env.DB.raw.prepare("SELECT COUNT(*) n FROM translations WHERE source LIKE '%Not too far now.%' AND source LIKE 'Okay%'").get().n;
+  assert.equal(n, 0);
+});
+
+test("anlamsız okunmuş satır Claude'a gitmez; tek nadir sözcük satırı düşürmez", async () => {
+  const { post, calls } = setup();
+  const body = await (await post(req(["Okay, lopkin gont yo wannaa startann the engine?", "Grab the duffel bag."]))).json();
+  assert.equal(body.translations[0].text, null);
+  assert.deepEqual(calls.map((c) => c.lines), [["Grab the duffel bag."]]);
+});
+
+test("bozuk kopyalar ve hazır tohum ayrıca gözden geçirilmez; kopya aslının yeni metnini alır", async () => {
+  const { post, env } = setup();
+  await post(req(["Looks like I'm gonna need to come back when I have a little more cash."]), NOW);
+  await post(req(["Looks Iike lI'm gonna need to come back when I have a little more cash."]), NOW + 1);
+  await env.DB.prepare("INSERT INTO seeds (lang, key, text) VALUES ('tr', ?, 'Kasabaya dön.')").bind(await lineKey("Head back to town.")).run();
+  await post(req(["Head back to town."]), NOW + 2);
+  const created = [];
+  const fake = {
+    async create(requests) { created.push(requests); return { id: "b1" }; },
+    async retrieve() { return { processing_status: "ended" }; },
+    async results() {
+      const content = JSON.stringify({ lines: [{ n: 1, text: "Biraz daha param olunca gelmem lazım galiba." }] });
+      return [{ custom_id: "c0", result: { type: "succeeded", message: { stop_reason: "end_turn", content: [{ type: "text", text: content }],
+        usage: { input_tokens: 1000, output_tokens: 1000 } } } }];
+    },
+  };
+  await reviewTranslations(env.DB, env, NOW + 3600, undefined, undefined, fake);
+  assert.equal(created.length, 1);
+  assert.match(created[0][0].params.messages[0].content, /Review these 1 subtitle/);
+  await reviewTranslations(env.DB, env, NOW + 7200, undefined, undefined, fake);
+  const rows = env.DB.raw.prepare("SELECT source, text, tier FROM translations ORDER BY source").all().map((r) => [r.source, r.text, r.tier]);
+  assert.deepEqual(rows, [
+    ["Head back to town.", "Kasabaya dön.", 1],
+    ["Looks Iike lI'm gonna need to come back when I have a little more cash.", "Biraz daha param olunca gelmem lazım galiba.", 2],
+    ["Looks like I'm gonna need to come back when I have a little more cash.", "Biraz daha param olunca gelmem lazım galiba.", 2],
+  ]);
+  const cost = env.DB.raw.prepare("SELECT micro_usd, review_micro_usd FROM translate_cost").get();
+  assert.equal(cost.review_micro_usd, Math.ceil(translateCost("claude-opus-5-5", { input_tokens: 1000, output_tokens: 1000 }) / 2));
+  assert.ok(cost.micro_usd > cost.review_micro_usd);
+});

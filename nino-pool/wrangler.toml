@@ -10,20 +10,46 @@ database_name = "nino-pool"
 database_id = "2d7c0031-0899-4f72-ad6a-802580e34369"
 migrations_dir = "migrations"
 
+# Cloudflare Workers AI (ücretsiz çeviri zincirinin anahtarsız yedeği, src/free.js).
+[ai]
+binding = "AI"
+
 [vars]
 # Günde kabul edilen en çok satır (18 Kasım 2026'dan beri Workers Paid: ayda 50 milyon yazma dahil).
 # Aşılınca sunucu 429 ile ertesi güne kadar beklemesini söyler; satırlar cihazlarda kuyrukta bekler, kaybolmaz.
 DAILY_LINE_BUDGET = "300000"
 # Bir kurulumun saatte gönderebileceği en çok parça.
 INSTALL_HOURLY_BATCHES = "60"
-# Nino yardımcısı: Claude Haiku 5.5. Anahtar sır olarak durur (wrangler secret put ANTHROPIC_API_KEY); yoksa yardımcı kapalıdır.
-ASSISTANT_PROVIDER = "anthropic"
+# Nino yardımcısı: 20 Kasım 2026'dan beri ücretsiz Gemini (Claude kapalı). Gemini cevabında masraf bilgisi olmadığı için her istek
+# 0,005 dolar sayılır: ASSISTANT_DAILY_USD ("2") günde ~400 isteğe izin verir (Gemini hakkını korur), gerçek fatura yok.
+ASSISTANT_PROVIDER = "gemini"
+ASSISTANT_MODEL = "gemini-3.5-flash-lite"
 # Günlük en çok harcama (dolar). Aynı ilk sorular hazır cevaptan ücretsiz verilir.
 ASSISTANT_DAILY_USD = "2"
 
+# Ücretsiz çeviri (src/free.js, 20 Kasım 2026'dan beri): Claude yerine ücretsiz servisler kalite sırasıyla denenir; hakkı dolan
+# 10 dk atlanır, hepsi doluysa uygulama cihazın ücretsiz çevirisini gösterir. Anahtarlar sır: GEMINI_API_KEY (faturalandırma kapalı).
+TRANSLATE_ENGINE = "free"
+# "servis:model" sırası. Gemini ücretsiz plan (20 Kasım ölçümü): flash-lite modelleri dakikada 15 istek; 3.5-flash ve 3.6-flash günde yalnız 20 istek (zincirde yok). Hak doldu cevabındaki bekleme (retryDelay) kadar atlanır. Kıyas: Gemini 3.1-flash-lite ~1,5 sn ve en iyi Türkçe; 3.5-flash daha yavaş (~3 sn); 3.8-flash
+# çok yavaş. DeepL Free (DEEPL_API_KEY) ~0,5 sn, akıcı ama küfrü yumuşatır; ayda 1 milyon karakter. Groq (GROQ_API_KEY) yedek: gpt-oss-120b ~2 sn, qwen3.8-27b ~0,5 sn; Türkçeleri biraz zayıf. OpenRouter (OPENROUTER_API_KEY, kredisiz: günde 50 istek) ernie-5.5-flash ~4 sn iyi Türkçe, gemma-4 çoğu zaman meşgul. Her Gemini/Groq modelinin günlük hakkı ayrı (ek modeller ek hak). Workers AI m2m100 (kod hazır) zincirde değil: Türkçesi çok kötü ("weed" → "çürük"); eklenirse ücretli planda 10.000 nöron/gün üstü para yazdığı için WORKERS_AI_DAILY_NEURONS (8.000) dolunca o gün kullanılmaz. NVIDIA (NVIDIA_API_KEY) en son: ücretsiz katman yavaş (minimax ~6 sn), nadiren yetişir. Mistral'ın ücretsiz API'si yok.
+# Gemini'nin ücretsiz sınırı istek başına: canlı tek satırlara değil, yarım saatlik toplu çeviriye (istekte 50 satır) ayrıldı.
+FREE_CHAIN = "groq:openai/gpt-oss-120b,groq:qwen/qwen3.8-27b,groq:openai/gpt-oss-20b,deepl:free,openrouter:baidu/ernie-5.5-flash-preview:free,openrouter:google/gemma-4-31b-it:free,nvidia:minimaxai/minimax-m3.1-flash,openrouter:openai/gpt-oss-120b,openrouter:openai/gpt-oss-20b,openrouter:google/gemini-3.1-flash-lite"
+GEMINI_THINKING = "minimal"
+FREE_TIMEOUT_MS = "2800"
+# Aylık hakkı olan servise günlük satır sınırı: DeepL ayda 1 milyon karakter ≈ 18 bin satır → günde 600.
+FREE_DAILY_LINES = "deepl:free=600"
+# Ücretli servisler (OpenRouter kredisi, kullanıcı kararı 20 Kasım): hepsinin toplamı günde en çok 3 dolar.
+FREE_PAID_DAILY_USD = "3"
+# Toplu çeviri (src/batch.js, 50 satırlık partiler): önce Gemini, hakkı bitince Groq ve NVIDIA (günlük sınırı yok, yavaş ama
+# toplu işte bekleme sorun değil). 20 Kasım: Gemini günlük hakkı öğleden önce bitiyordu, bekleyen satırlar birikiyordu.
+BATCH_CHAIN = "gemini:gemini-3.1-flash-lite,gemini:gemini-3.5-flash-lite,gemini:gemini-3.1-flash-lite-preview,gemini:gemini-3-flash-preview,openrouter:openai/gpt-oss-120b,openrouter:deepseek/deepseek-v4-flash,openrouter:google/gemini-3.1-flash-lite"
+# Claude kapalı: anında çeviri, Opus gözden geçirmesi ve ekrandan oyun tanıma para harcamaz ("1" yapılırsa yeniden açılır).
+CLAUDE_ENABLED = "0"
+WORKERS_AI_DAILY_NEURONS = "8000"
+
 # Çeviri havuzu (src/translate.js): anında çeviri Claude Sonnet, 30 dakikada bir bağlamla gözden geçirme Claude Opus (toplu işlem, yarı fiyat).
 # Günlük en çok harcama (dolar); dolunca uygulamalar kendi çevirileriyle devam eder.
-TRANSLATE_DAILY_USD = "20"
+TRANSLATE_DAILY_USD = "10"
 # Claude yalnız bu hedef dillerde para harcar (virgüllü; "*" hepsi). Öbür dillerde havuzdaki çeviriler yine verilir,
 # yeni satırları uygulama kullanıcının kendi motoruyla ya da ücretsiz çeviriyle çevirir; İngilizcesi havuza yazılır.
 TRANSLATE_LANGS = "tr"

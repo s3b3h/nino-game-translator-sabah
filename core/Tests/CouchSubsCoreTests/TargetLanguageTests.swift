@@ -21,6 +21,18 @@ final class TargetLanguageTests: XCTestCase {
         }
     }
 
+    /// GTA 6: tuş simgesi "sır" diye okunup son sözcüğe yapıştı; cümle Türkçe sanılıp gösterilmiyordu.
+    func testOneStrayTurkishLetterDoesNotMakeEnglishTurkish() {
+        for text in ["Yeah, I guess. Sure beats jailsır", "Yeah, I guess. Sure beats jai sır.",
+                     "You need to get back to the car before they ğet away"] {
+            XCTAssertFalse(TargetLanguage.isAlready(text, in: "tr"), text)
+        }
+        for text in ["Uzaktan Oynama'yı kullanarak bağlandı", "Oyunlar Medya İçerikleri", "Kullanıcılar ve Hesaplar",
+                     "Bu oyunu oynamak için sistem yazılımını güncelle"] {
+            XCTAssertTrue(TargetLanguage.isAlready(text, in: "tr"), text)
+        }
+    }
+
     func testBlockWithATurkishLineIsTheConsoleScreen() {
         XCTAssertTrue(TargetLanguage.hasLine("Oyunlar Medya İçerikleri\nshare\nSTUDIO I\nRED DEAD", in: "tr"))
         XCTAssertFalse(TargetLanguage.hasLine("AUDIO\nControls the volume of dialogue relative to\nSFX and music.", in: "tr"))

@@ -76,6 +76,16 @@ public class SubtitleBlockTests
     [InlineData("Hand me the L1.", false)]
     public void ButtonAtTheEndIsAPrompt(string line, bool prompt) => Assert.Equal(prompt, ButtonPrompts.IsPrompt(line));
 
+    // Nino: GTA 6 "△ ⋮ DRINKS" ipucunda simgeler harf okunuyor ("A e DRINKS").
+    [Theory]
+    [InlineData("A e DRINKS", true)]
+    [InlineData("A : SIT DOWN", true)]
+    [InlineData("GET DOWN!", false)]
+    [InlineData("I am SHAKING", false)]
+    [InlineData("Hey, you got Lucia's phone.", false)]
+    public void IconsReadAsLettersBeforeAnActionArePrompts(string line, bool prompt) =>
+        Assert.Equal(prompt, ButtonPrompts.IsPrompt(line));
+
     [Theory]
     [InlineData("9? We'll lose these tracks.", "We'll lose these tracks.")]
     [InlineData("100. Mac and John...", "Mac and John...")]

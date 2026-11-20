@@ -25,10 +25,14 @@ public struct VisionReader: TextReader {
     /// Nino: satırın başında ve sonunda da düğme simgesi aranır ("△ Get back on the wagon"). Yalnız ipucu ve görev
     /// yazılarında açılır; her karede okunan altyazıda gereksiz yük olmasın.
     public var edgeIcons = false
+    /// Nino: okuma yalnız işlemcide yapılır (Neural Engine kullanılmaz). Telefon ekranı gibi sık okunan büyük ve net
+    /// yazılar için: Neural Engine'deki istek sıklığı artınca Apple'ın yazı tanıması takılıp Nino'yu yeniden açtırıyordu.
+    public var cpuOnly = false
 
-    public init(language: String = "en", edgeIcons: Bool = false) {
+    public init(language: String = "en", edgeIcons: Bool = false, cpuOnly: Bool = false) {
         self.language = language
         self.edgeIcons = edgeIcons
+        self.cpuOnly = cpuOnly
     }
 
     public func read(_ image: CGImage) throws -> String {
@@ -50,6 +54,10 @@ public struct VisionReader: TextReader {
         // iş parçacığı bırakılır) ve bu kare atlanır. Sonraki kare yeni kapıdan okunur.
         let gate = Self.watch.gate
         guard gate.lock(before: Date().addingTimeInterval(Self.gateWait)) else {
+            // Nino: kapıyı tutan okuma kısa süredir sürüyorsa takılma yoktur, yalnız sıra kalabalıktır (telefon, altyazı,
+            // köşeler ve harita aynı anda okunuyor). Bu kare atlanır; eskiden bu da "takıldı" sayılıp Nino kendini 20-30
+            // sn'de bir yeniden açıyordu (20 Kasım 2026, GTA 6 telefonu).
+            if let held = Self.watch.heldFor, held < Self.stuckAfter { throw VisionBusy() }
             // Takılma Neural Engine'de (TextRecognition bir semaforda sonsuza dek bekliyor; sonraki her istek aynı
             // dedektörün sırasına girip o da takılıyordu). Bundan sonraki okumalar işlemcide (CPU) yapılır: ayrı bir
             // dedektör açılır, altyazı Nino'yu kapatıp açmadan sürer.
@@ -59,15 +67,25 @@ public struct VisionReader: TextReader {
                 Self.watch.replace(gate)
                 throw VisionStuck()
             }
-            defer { gate.unlock() }
+            Self.watch.took(holderInfo(image))
+            defer { Self.watch.released(); gate.unlock() }
             return deep ? try Self.firstLines(of: image, using: recognize) : try recognize(image)
         }
-        defer { gate.unlock() }
+        Self.watch.took(holderInfo(image))
+        defer { Self.watch.released(); gate.unlock() }
         return deep ? try Self.firstLines(of: image, using: recognize) : try recognize(image)
     }
 
     /// Kapı en çok bu kadar beklenir (saniye); normal bir okuma 0,1-0,5 sn sürer.
     static let gateWait: TimeInterval = 4
+    /// Kapıyı tutan tek bir okuma bundan uzun sürerse takılmış sayılır. Cihaz üstü çeviri de Neural Engine'i kullanır;
+    /// telefonun mesajları çevrilirken bir okuma birkaç saniye sürebiliyor. Gerçek takılma hiç bitmez, bu sınırla da yakalanır.
+    static let stuckAfter: TimeInterval = 8
+
+    /// Nino: okuma sırası kalabalık; bu kare okunmadan atlanır (takılma değildir).
+    public struct VisionBusy: Error, CustomStringConvertible {
+        public var description: String { "Vision okuma sırası dolu; kare atlandı" }
+    }
 
     /// Vision'ın takıldığını bildirir; bu kare okunmaz.
     public struct VisionStuck: Error, CustomStringConvertible {
@@ -80,6 +98,17 @@ public struct VisionReader: TextReader {
         private var current = NSLock()
         private var running: [ObjectIdentifier: VNRequest] = [:]
         private var cpu = false
+        private var holderSince: Date?
+        private var holder = ""
+        private var stuckHolder = ""
+
+        /// Takıldığında kapıyı tutan okuma (görüntünün boyu, işlemci mi) ve ne zamandır sürdüğü.
+        var stuckInfo: String { lock.withLock { stuckHolder } }
+        func took(_ info: String) { lock.withLock { holderSince = Date(); holder = info } }
+
+        /// Kapıyı şu an tutan okuma ne zamandır sürüyor (kapı boşsa nil).
+        var heldFor: TimeInterval? { lock.withLock { holderSince.map { Date().timeIntervalSince($0) } } }
+        func released() { lock.withLock { holderSince = nil } }
 
         /// Neural Engine takıldıysa okumalar işlemcide yapılır (bu oturum boyunca).
         var usesCPU: Bool { lock.withLock { cpu } }
@@ -88,7 +117,11 @@ public struct VisionReader: TextReader {
         var gate: NSLock { lock.withLock { current } }
 
         func replace(_ stuck: NSLock) {
-            lock.withLock { if current === stuck { current = NSLock() }; wasStuck = true }
+            lock.withLock {
+                if current === stuck { current = NSLock() }
+                wasStuck = true
+                stuckHolder = holder + (holderSince.map { String(format: ", %.1f sn", Date().timeIntervalSince($0)) } ?? "")
+            }
         }
 
         /// Bir okuma takıldı ve kapı yenilendi (Nino: Mac bunu görünce kendini yeniden açar; aynı süreçte Vision düzelmiyor).
@@ -105,6 +138,14 @@ public struct VisionReader: TextReader {
     }
 
     static let watch = Watch()
+
+    /// Nino: takılma anında kapıyı tutan okuma (günlüğe yazılır; hangi okumanın takıldığı anlaşılsın).
+    public static var stuckInfo: String { watch.stuckInfo }
+
+    private func holderInfo(_ image: CGImage) -> String {
+        "\(image.width)×\(image.height)" + (cpuOnly ? " işlemci" : "") + (deepLabel)
+    }
+    private var deepLabel: String { edgeIcons ? " simgeli" : "" }
 
     /// Vision bu süreçte takıldı mı (bkz. `Watch.replace`).
     public static var isStuck: Bool { watch.stuck }
@@ -182,7 +223,7 @@ public struct VisionReader: TextReader {
             request.recognitionLevel = .accurate
             request.recognitionLanguages = [language]
             request.usesLanguageCorrection = true
-            if Self.watch.usesCPU { Self.runOnCPU(request) }
+            if cpuOnly || Self.watch.usesCPU { Self.runOnCPU(request) }
             Self.watch.started(request)
             defer { Self.watch.finished(request) }
             try VNImageRequestHandler(cgImage: image).perform([request])

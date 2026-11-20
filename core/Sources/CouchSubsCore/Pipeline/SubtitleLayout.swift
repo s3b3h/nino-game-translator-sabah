@@ -69,6 +69,16 @@ public struct SubtitleLayout: Codable, Equatable, Sendable {
         return base - Self.baselineMargin
     }
 
+    /// Nino (kullanıcı, 20 Kasım 2026): altyazının yeri öğrenildiyse yalnız o şerit okunur; şeridin bu kadar üstünden
+    /// başlanır (üç satırlık altyazı da sığsın). Geniş alan okununca telefondaki mesaj, tabela ve menü yazıları altyazı
+    /// sanılıyordu ("You got my plane?!"). Öğrenilmemişse nil (ayarlardaki alan okunur).
+    public func readTop(for game: String) -> Double? {
+        band(for: game).map { $0.top - Self.readMargin }
+    }
+
+    /// Okunan şeridin, öğrenilen şeridin üstüne bırakılan payı.
+    public static let readMargin = 0.05
+
     /// Taban çizgisi için gereken en az örnek.
     public static let baselineSamples = 12
     /// Tabanın bu kadar üstünde biten blok altyazının yerinde sayılmaz (GTA 6: taban ≈0.915, çizgi ≈0.845).

@@ -95,6 +95,12 @@ public struct Reading: Equatable, Sendable {
     /// Yalnız yön + mesafelerden oluşan satır. Arkasında söz olan cümle ("Turn right at the lights, okay?") altyazıdır.
     public static func isNavigationHint(_ raw: String) -> Bool {
         let text = raw.trimmingCharacters(in: .whitespaces)
+        // Nino (@GreatRival, 20 Kasım 2026): mesafesiz tek komutluk tarif satırları da ("Turn left", "Keep right",
+        // "Make a U-turn") tarif sayılır. Arkasında söz olan cümle ("Turn left at the lights") altyazı kalır.
+        if text.range(of: #"^[\s\-–—'"‘’.,·•]*(make\s+an?\s+)?(u-?\s?turn|turn|keep|bear)(\s+(left|right))?(\s+(\d+(?:[.,]\d+)?|[Oo])\s*(ft|mi|yd|km|m)\b)*\s*[.!]?$"#,
+                      options: [.regularExpression, .caseInsensitive]) != nil {
+            return true
+        }
         guard let move = text.range(of: #"^[\s\-–—'"‘’.,·•]*(u-?\s?turn|turn|keep)\s+(left|right)\b"#,
                                     options: [.regularExpression, .caseInsensitive]) else { return false }
         let rest = String(text[move.upperBound...])
@@ -354,6 +360,11 @@ public enum ButtonPrompts {
         guard let first = tokens.first else { return false }
         // Nino: oyunun menü açıklaması ("PHOTO MODE  SELECT") altyazı değildir.
         if line == line.uppercased(), line.uppercased().contains("PHOTO MODE") { return true }
+        // Nino: GTA 6 etkileşim ipucu "△ ⋮ DRINKS": simgeler harf okunuyor ("A e DRINKS"). Başta 1-2 karakterlik bir-üç
+        // kırıntı, ardından noktalamasız BÜYÜK HARFLİ 1-3 sözcük ipucudur, altyazı değildir.
+        if line.range(of: #"^\s*(\S\s+){1,3}[A-Z][A-Z']{2,}(\s+[A-Z][A-Z']{1,}){0,2}\s*$"#, options: .regularExpression) != nil {
+            return true
+        }
 
         let isButton = { (token: String) in buttons.contains(token.uppercased()) }
         let words = tokens.filter { !isButton($0) && $0.contains(where: \.isLetter) }

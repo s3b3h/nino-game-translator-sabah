@@ -128,9 +128,10 @@ internal static class Home
     /// <summary>
     /// Nino: toplam indirme göstergesi (TV'nin sağ üstü). Oyunlardaki para göstergesi gibi: kalın, hafif eğik (−0.12
     /// yatırma), siyah çerçeveli; üstte küçük beyaz başlık, altında yeşil sayı. Sayı sunucudan geldiği gibi yazılır
-    /// (binlik ayırıcı yerel biçimde); üstüne ekleme yapılmaz.
+    /// (binlik ayırıcı yerel biçimde); üstüne ekleme yapılmaz. <paramref name="countsUp"/>: sayı 1, 2, 3 diye başlayıp
+    /// hızlanarak toplama fırlar (bkz. <see cref="CountUp"/>).
     /// </summary>
-    public static FrameworkElement DownloadHud(int total, double scale)
+    public static FrameworkElement DownloadHud(int total, double scale, bool countsUp = false)
     {
         var title = T("Total downloads");
         var arabic = TargetLanguage.ContainsArabic(title);
@@ -146,9 +147,75 @@ internal static class Home
         };
         hud.Children.Add(top);
         hud.Children.Add(number);
+        if (countsUp && !NinoBot.ReduceMotion && total > 3) CountUp(number, total);
         // Hafif eğim: x' = x − 0.12·y + 3 (Arapça yazıda harfleri bozmasın diye yok).
         if (!arabic) hud.RenderTransform = new MatrixTransform(1, 0, -0.12, 1, 3 * scale, 0);
         return hud;
+    }
+
+    /// <summary>
+    /// Nino (kullanıcı isteği, 21 Kasım 2026; Mac: DownloadHUD countsUp): canlı ekran açılınca sayı 1, 2, 3 diye yavaş
+    /// başlar (her biri 280 ms), sonra 1,55 sn'de hızlanarak (p^2,6) toplam sayıya fırlar; sonda oyunun "görev tamam"
+    /// yazısı gibi büyüyüp yeşil parlayarak yerine oturur (<see cref="Punch"/>). Sayının bütün katmanları (çerçeve,
+    /// gölge, renkli yazı) birlikte güncellenir.
+    /// </summary>
+    private static void CountUp(Grid number, int total)
+    {
+        var blocks = number.Children.OfType<TextBlock>().ToList();
+        void Show(int value)
+        {
+            var text = DownloadCounter.Format(value, CultureInfo.CurrentCulture);
+            foreach (var block in blocks) block.Text = text;
+        }
+        foreach (var block in blocks) System.Windows.Documents.Typography.SetNumeralAlignment(block, FontNumeralAlignment.Tabular);
+        Show(1);
+        const double step = 280, duration = 1550;
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
+        timer.Tick += (_, _) =>
+        {
+            var ms = clock.Elapsed.TotalMilliseconds;
+            // İlk üç sayı tek tek görünür.
+            if (ms < 3 * step)
+            {
+                Show((int)(ms / step) + 1);
+                return;
+            }
+            var p = Math.Min(1, (ms - 3 * step) / duration);
+            Show(Math.Max(3, (int)Math.Round(Math.Pow(p, 2.6) * total)));
+            if (p < 1) return;
+            timer.Stop();
+            Show(total);
+            Punch(number);
+        };
+        // Gösterge ekrandan kalkınca sayaç da durur.
+        number.Unloaded += (_, _) => timer.Stop();
+        timer.Start();
+    }
+
+    /// <summary>Sayının sonundaki vuruş: sağ kenarına göre 1,32 katına yaylanarak büyür, yeşil parlar, sonra yerine oturur.</summary>
+    private static void Punch(Grid number)
+    {
+        static KeyTime At(double ms) => KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(ms));
+        var grow = new ScaleTransform(1, 1);
+        number.RenderTransformOrigin = new Point(1, 0.5);
+        number.RenderTransform = grow;
+        // Parıltı: WPF bulanıklığı Mac'tekinin iki katı yazılır (yarıçapı farklı ölçer).
+        var glow = new DropShadowEffect { Color = HudGreen, ShadowDepth = 0, BlurRadius = 28, Opacity = 0 };
+        number.Effect = glow;
+        var size = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.Stop };
+        size.KeyFrames.Add(new EasingDoubleKeyFrame(1.32, At(220), new BackEase { Amplitude = 0.5, EasingMode = EasingMode.EaseOut }));
+        size.KeyFrames.Add(new LinearDoubleKeyFrame(1.32, At(260)));
+        size.KeyFrames.Add(new EasingDoubleKeyFrame(1, At(710), new BackEase { Amplitude = 0.3, EasingMode = EasingMode.EaseOut }));
+        var shine = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.Stop };
+        shine.KeyFrames.Add(new EasingDoubleKeyFrame(0.95, At(220), new QuadraticEase { EasingMode = EasingMode.EaseOut }));
+        shine.KeyFrames.Add(new LinearDoubleKeyFrame(0.95, At(260)));
+        shine.KeyFrames.Add(new EasingDoubleKeyFrame(0, At(710), new QuadraticEase { EasingMode = EasingMode.EaseOut }));
+        // Bitince parıltı katmanı kalkar (görünmeyen gölge boşuna çizilmesin).
+        shine.Completed += (_, _) => number.Effect = null;
+        grow.BeginAnimation(ScaleTransform.ScaleXProperty, size);
+        grow.BeginAnimation(ScaleTransform.ScaleYProperty, size);
+        glow.BeginAnimation(DropShadowEffect.OpacityProperty, shine);
     }
 
     /// <summary>
@@ -294,6 +361,18 @@ public sealed class LivingRoomScene : UserControl
     /// <summary>Nino: toplam indirme göstergesi; bekleme ekranında da canlı ekranda da aynı yerde (sağ üst) durur.</summary>
     private readonly Grid hudHost;
     private int? hudTotal;
+    /// <summary>Gösterge canlı ekran için mi kuruldu: canlı ekrana her girişte sayı baştan sayılır.</summary>
+    private bool hudLive;
+    /// <summary>
+    /// Nino (kullanıcı isteği, 21 Kasım 2026; Mac: LivingRoomScene.introHold): açılışta fiş bir an (0,9 sn) çekik görünür,
+    /// sonra yaylanarak prize takılır (çeviri kendiliğinden başlasa da). Gösteri uygulama her açıldığında bir kez oynar
+    /// (sahne yeniden kurulunca, örneğin ayarlardan dönünce, yeniden oynamaz).
+    /// </summary>
+    private static bool introPlayed;
+    private bool introHold = !introPlayed;
+    private DispatcherTimer? introTimer;
+    /// <summary>Fişin prize yaylanarak gidişi (her karede <see cref="drag"/> küçülür, kablo da fişle birlikte çizilir).</summary>
+    private DispatcherTimer? plugSpring;
     private readonly DispatcherTimer downloadsTimer = new() { Interval = TimeSpan.FromSeconds(DownloadCounter.RefreshSeconds) };
     private readonly Path cable = new()
     {
@@ -396,13 +475,27 @@ public sealed class LivingRoomScene : UserControl
         {
             _ = controller.RefreshDownloadsAsync();
             downloadsTimer.Start();
+            if (introHold && introTimer is null)
+            {
+                introPlayed = true;
+                introTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(NinoBot.ReduceMotion ? 1 : 900) };
+                introTimer.Tick += (_, _) =>
+                {
+                    introTimer.Stop();
+                    introHold = false;
+                    Refresh(springPlug: true);
+                };
+                introTimer.Start();
+            }
         };
         Unloaded += (_, _) =>
         {
             controller.PropertyChanged -= OnChanged;
             downloadsTimer.Stop();
+            introTimer?.Stop();
+            StopPlugSpring();
         };
-        plugged = Home.On(controller);
+        plugged = Wanted;
         leds.Opacity = plugged ? 1 : 0;
         ShowSocketGlow(animated: false);
         ShowScreen();
@@ -515,24 +608,67 @@ public sealed class LivingRoomScene : UserControl
         }
     }
 
-    private void OnChanged(object? sender, PropertyChangedEventArgs e)
+    /// <summary>Fiş prizde mi olmalı: çeviri açık ya da açılıyor, açılış gösterisinin beklemesi de bitti.</summary>
+    private bool Wanted => Home.On(controller) && !introHold;
+
+    private void OnChanged(object? sender, PropertyChangedEventArgs e) => Dispatcher.BeginInvoke(() => Refresh());
+
+    private void Refresh(bool springPlug = false)
     {
-        Dispatcher.BeginInvoke(() =>
+        var now = Wanted;
+        if (now != plugged)
         {
-            var now = Home.On(controller);
-            if (now != plugged)
+            plugged = now;
+            leds.BeginAnimation(OpacityProperty, new DoubleAnimation(now ? 1 : 0, TimeSpan.FromMilliseconds(800)));
+            // Her takışta açılış animasyonu baştan oynar.
+            splashDone = !now;
+            splash = null;
+            ShowSocketGlow(animated: true);
+            StopPlugSpring();
+            if (springPlug && now && !NinoBot.ReduceMotion && dragStart is null) SpringPlug();
+            else DrawPlug();
+        }
+        ColorLeds();
+        ShowScreen();
+    }
+
+    /// <summary>
+    /// Fiş sarktığı yerden prize yayla gider (Mac: spring response 0,55, damping 0,7): sönümlü yay, hafifçe aşıp oturur.
+    /// Yol boyunca fiş gövdesiyle görünür, oturunca kapağa döner.
+    /// </summary>
+    private void SpringPlug()
+    {
+        var from = Hanging - Socket;
+        const double response = 0.55, damping = 0.7, length = 0.9;
+        var omega = 2 * Math.PI / response;
+        var omegaD = omega * Math.Sqrt(1 - damping * damping);
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        drag = from;
+        DrawPlug();
+        plugSpring = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
+        plugSpring.Tick += (_, _) =>
+        {
+            var t = clock.Elapsed.TotalSeconds;
+            if (t >= length)
             {
-                plugged = now;
-                leds.BeginAnimation(OpacityProperty, new DoubleAnimation(now ? 1 : 0, TimeSpan.FromMilliseconds(800)));
-                // Her takışta açılış animasyonu baştan oynar.
-                splashDone = !now;
-                splash = null;
-                ShowSocketGlow(animated: true);
+                StopPlugSpring();
                 DrawPlug();
+                return;
             }
-            ColorLeds();
-            ShowScreen();
-        });
+            // Kalan yol: e^(−ζωt)·(cos ω_d t + ζω/ω_d · sin ω_d t), 1'den 0'a iner.
+            var left = Math.Exp(-damping * omega * t) * (Math.Cos(omegaD * t) + damping * omega / omegaD * Math.Sin(omegaD * t));
+            drag = from * left;
+            DrawPlug();
+        };
+        plugSpring.Start();
+    }
+
+    private void StopPlugSpring()
+    {
+        if (plugSpring is null) return;
+        plugSpring.Stop();
+        plugSpring = null;
+        drag = new Vector();
     }
 
     private void ShowScreen()
@@ -554,18 +690,23 @@ public sealed class LivingRoomScene : UserControl
 
     /// <summary>
     /// Toplam indirme göstergesi: fiş takılı değilken (bekleme ekranı) ve canlı ekranda aynı yerde, sağ üstte; açılış
-    /// animasyonu oynarken gizli. Sayı hiç alınamadıysa görünmez.
+    /// animasyonu oynarken gizli. Sayı hiç alınamadıysa görünmez. Açılış gösterisinin beklemesinde de gizli: sayı fiş
+    /// takılınca canlı ekranda sayılarak çıkar (Mac: TVStandbyScreen(downloads: introHold ? nil : …)).
     /// </summary>
     private void ShowHud()
     {
         var total = controller.DownloadTotal;
-        if (total != hudTotal)
+        var live = plugged && splashDone;
+        if (total != hudTotal || live != hudLive)
         {
+            // Canlı ekrana girince (ya da sayı canlı ekrandayken ilk kez gelince) sayı 1, 2, 3 diye sayılır.
+            var countsUp = live && (!hudLive || hudTotal is null);
             hudTotal = total;
+            hudLive = live;
             hudHost.Children.Clear();
-            if (total is { } value) hudHost.Children.Add(Home.DownloadHud(value, layout.ScreenScale));
+            if (total is { } value) hudHost.Children.Add(Home.DownloadHud(value, layout.ScreenScale, countsUp));
         }
-        hudHost.Visibility = !plugged || splashDone ? Visibility.Visible : Visibility.Collapsed;
+        hudHost.Visibility = !introHold && (!plugged || splashDone) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>Nino'nun açılışı TV'de: logo bulanıktan netleşerek büyür, arkasında ışık, sonra ad ve slogan; ~2,4 sn.</summary>
@@ -675,6 +816,7 @@ public sealed class LivingRoomScene : UserControl
 
     private void OnPlugDown(object sender, MouseButtonEventArgs e)
     {
+        StopPlugSpring();
         dragStart = e.GetPosition(this);
         drag = new Vector();
         plug.CaptureMouse();

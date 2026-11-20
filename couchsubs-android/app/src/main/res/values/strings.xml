@@ -78,16 +78,16 @@
     <string name="psn_problem_blank">Sayfa boş kaldı; Sony\'nin giriş uygulaması bu telefonun uygulama içi tarayıcısında çalışmadı.</string>
     <string name="psn_problem_crashed">Uygulama içi tarayıcı (Android System WebView) çalışmadı. Play Store\'dan güncellemeyi deneyebilirsiniz.</string>
     <string name="psn_problem_other">Sayfa yüklenirken bir sorun oluştu.</string>
-    <string name="pair_title">PS5\'inizi Eşleyin</string>
+    <string name="pair_title">PS5\'inizi Bağlayın</string>
     <string name="pair_body">PS5\'te ikinci hesapla Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir\'i seçin ve ekranda görünen kodu girin.</string>
     <string name="pair_searching">PS5 aranıyor…</string>
     <string name="pair_still_searching">PS5\'inizi açın ya da dinlenme modunda bırakın; bulununca burada kendiliğinden görünür. Telefon ve PS5 aynı Wi-Fi\'da olmalı.</string>
     <string name="pair_search_again">Yeniden Ara</string>
     <string name="pair_address">PS5 adresi (ör. 192.168.1.20)</string>
-    <string name="pair_code">Eşleme kodu</string>
-    <string name="pair_button">Eşle</string>
+    <string name="pair_code">8 haneli kod</string>
+    <string name="pair_button">Bağlan</string>
     <string name="pair_working">PS5\'e bağlanılıyor (en fazla 30 sn)…</string>
-    <string name="pair_failed">Eşleme yapılamadı: %1$s</string>
+    <string name="pair_failed">Bağlanamadı: %1$s</string>
     <string name="target_title">Altyazılar Nerede Görünsün?</string>
     <string name="target_tv">TV\'de, oyunun üzerinde</string>
     <string name="target_tv_body">Nino TV uygulaması açıldığında bu telefonu kendiliğinden bulur. TV uygulamasını (Samsung, LG, Android TV) bu telefon kurabilir; bilgisayar gerekmez.</string>
@@ -136,7 +136,7 @@
     <string name="packs_delete_body">%1$s bu telefondan silinir. Yeniden kullanmak için dosyayı yeniden içe aktarmanız gerekir.</string>
 
     <string name="profile">Profil</string>
-    <string name="profile_not_paired">Eşlenmedi</string>
+    <string name="profile_not_paired">Bağlı değil</string>
     <string name="profile_psn">PSN hesabı</string>
     <string name="profile_psn_missing">Bağlı değil</string>
     <string name="notify_packs">Yeni paket geldiğinde</string>
@@ -146,6 +146,8 @@
     <string name="settings_key">Anahtar</string>
     <string name="settings_packs">Oyun paketleri</string>
     <string name="settings_text_size">Altyazı görünümü</string>
+    <string name="settings_auto_size">TV\'de oyunun altyazı boyuna uydur</string>
+    <string name="settings_auto_size_note">Açıkken TV yazı boyunu oyundaki İngilizce satıra göre ayarlar; aşağıdaki boyu değiştirirsen bu kapanır.</string>
     <string name="settings_pool">Ortak havuza katkı</string>
     <string name="settings_stack_previous">Hızlı konuşmada önceki satırları üstte göster</string>
     <string name="settings_stack_previous_note">Kapalıyken her yeni satır öncekinin yerine geçer. TV uygulaması 0.9.16 ve sonrası gerekir.</string>
@@ -200,7 +202,7 @@
     <string name="regist_bad_address">Bu adres çözümlenemedi. Lütfen PS5\'in IP adresini kontrol edin.</string>
     <string name="regist_no_answer">PS5 yanıt vermedi. Telefonunuz ve PS5 aynı Wi-Fi ağında mı?</string>
     <string name="regist_no_reply">PS5 kodu aldı ancak yanıt vermedi. Lütfen yeniden deneyin.</string>
-    <string name="regist_failed">Eşleme yapılamadı.</string>
+    <string name="regist_failed">PS5\'e bağlanılamadı.</string>
     <string name="target_body">Bunu daha sonra ana ekrandan değiştirebilirsiniz.</string>
     <string name="target_searching">Ağda TV aranıyor…</string>
     <string name="target_tv_on_network">Ağda</string>
@@ -212,7 +214,7 @@
     <string name="main_unpaired">PS5 eşlenmedi</string>
     <string name="main_unpaired_body">Paketlere ve ayarlara şimdiden göz atabilirsiniz.</string>
     <string name="main_unpaired_note">PS5\'e bağlanmak için Ayarlar\'dan eşleme yapın.</string>
-    <string name="main_pair_button">PS5\'i eşleyin</string>
+    <string name="main_pair_button">PS5\'i Bağlayın</string>
     <string name="main_packs_title">Hazır paketlerle anında altyazı</string>
     <string name="main_packs_games">GTA V, RDR2, Mafia ve daha fazlası</string>
     <string name="main_engine">Çeviri</string>
@@ -458,8 +460,8 @@
     <string name="nino_slide_to_plug">Çeviri için kaydırın</string>
     <string name="nino_slide_to_unplug">Durdurmak için geri kaydırın</string>
     <string name="nino_plug_to_start">Fişi prize takın, %1$s altyazı açılsın</string>
-    <string name="nino_pair_first">Önce PS5\'inizi eşleyin</string>
-    <string name="nino_plug_drag_hint">ÇALIŞTIRMAK İÇİN FİŞİ PRİZE SÜRÜKLEYİNİZ</string>
+    <string name="nino_pair_first">Kurulum İçin Fişe Dokunun</string>
+    <string name="nino_plug_drag_hint">FİŞE DOKUNUN YA DA PRİZE SÜRÜKLEYİN</string>
     <string name="nino_total_downloads">TOPLAM İNDİRME</string>
     <string name="nino_live">CANLI</string>
     <string name="nino_connecting_ps5">PS5\'e bağlanılıyor…</string>
@@ -468,7 +470,7 @@
     <string name="nino_start_translation">Çeviriyi başlat</string>
     <string name="nino_toggle_connecting">Bağlanıyor…</string>
     <string name="nino_toggle_on">Açın</string>
-    <string name="nino_toggle_pair">PS5\'i Eşleyin</string>
+    <string name="nino_toggle_pair">PS5\'i Bağlayın</string>
     <string name="nino_subtitles_in">%1$s Altyazı</string>
     <string name="nino_tap_to_setup">Kurulum İçin Dokunun</string>
     <string name="nino_subtitles_on">Altyazılar Açık</string>
@@ -524,10 +526,10 @@
     <string name="nino_slide_to_start">Başlatmak İçin Kaydırın</string>
     <string name="home_live">Canlı</string>
     <string name="home_ready">Hazır</string>
-    <string name="home_not_paired">Eşlenmedi</string>
+    <string name="home_not_paired">Bağlı Değil</string>
     <string name="home_connecting">Bağlanıyor</string>
     <string name="home_idle_hint">Çeviri başlayınca altyazılar burada akar.</string>
-    <string name="home_pair_hint">Başlamak için PS5\'inizi eşleyin.</string>
+    <string name="home_pair_hint">Başlamak için PS5\'inizi bağlayın.</string>
     <string name="home_stat_time">Süre</string>
     <string name="home_stat_lines">Satır</string>
     <string name="home_stat_packs">Paketten</string>
@@ -538,7 +540,7 @@
     <string name="home_rotate_body">Telefonu yan çevirin ya da buraya dokunun</string>
     <string name="home_title_live">Altyazılar Açık</string>
     <string name="home_title_ready">%1$s Altyazı</string>
-    <string name="home_title_pair">PS5\'inizi Eşleyin</string>
+    <string name="home_title_pair">PS5\'inizi Bağlayın</string>
     <string name="slide_start">Başlatmak İçin Kaydırın</string>
     <string name="slide_stop">Durdurmak İçin Kaydırın</string>
     <string name="slide_pair">Kurulum İçin Dokunun</string>

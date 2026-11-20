@@ -60,6 +60,12 @@ class Reading(lines: List<TextLine>) {
         /** Cümle gibi görünen satır bu kadar yüksekse de atılır (karenin %13'ü). */
         const val MAX_SENTENCE_LINE_HEIGHT = 0.13
 
+        /**
+         * Nino (@GreatRival, 20 Kasım 2026): mesafesiz tek komutluk tarif satırları da ("Turn left", "Keep right", "Make a
+         * U-turn") tarif sayılır. Arkasında söz olan cümle ("Turn left at the lights") altyazı kalır (Mac: Reading.swift).
+         */
+        private val NAV_COMMAND = Regex("""^[\s\-–—'"‘’.,·•]*(make\s+an?\s+)?(u-?\s?turn|turn|keep|bear)(\s+(left|right))?(\s+(\d+(?:[.,]\d+)?|[Oo])\s*(ft|mi|yd|km|m)\b)*\s*[.!]?$""",
+            RegexOption.IGNORE_CASE)
         private val NAV_MOVE = Regex("""^[\s\-–—'"‘’.,·•]*(u-?\s?turn|turn|keep)\s+(left|right)\b""", RegexOption.IGNORE_CASE)
         /** Mesafe: sayı (okuma hatasıyla "O"/"o" = 0) + birim. */
         private val NAV_DISTANCE = Regex("""(\d+(?:[.,]\d+)?|[Oo])\s*(ft|mi|yd|km|m)\b""")
@@ -67,6 +73,7 @@ class Reading(lines: List<TextLine>) {
         /** Yalnız yön + mesafelerden oluşan satır. Arkasında söz olan cümle ("Turn right at the lights, okay?") altyazıdır. */
         fun isNavigationHint(raw: String): Boolean {
             val text = raw.trim()
+            if (NAV_COMMAND.matches(text)) return true
             val move = NAV_MOVE.find(text) ?: return false
             val rest = text.substring(move.range.last + 1)
             if (!NAV_DISTANCE.containsMatchIn(rest)) return false
@@ -216,12 +223,16 @@ object ButtonPrompts {
     private val verbs = setOf("press", "hold", "tap", "push", "use", "mash", "release")
     private val separators = Regex("[ \\t+/]+")
     private const val BRACKETS = "()[]{}<>「」"
+    private val ICON_LETTERS_PROMPT = Regex("""^\s*(\S\s+){1,3}[A-Z][A-Z']{2,}(\s+[A-Z][A-Z']{1,}){0,2}\s*$""")
 
     private fun isButton(token: String) = token.lowercase() in buttons
 
     fun isPrompt(line: String): Boolean {
         val tokens = line.split(separators).map { it.trim { c -> c in BRACKETS } }.filter { it.isNotEmpty() }
         if (tokens.isEmpty()) return false
+        // Nino: GTA 6 etkileşim ipucu "△ ⋮ DRINKS": simgeler harf okunuyor ("A e DRINKS"). Başta bir-üç tek karakterlik
+        // kırıntı, ardından noktalamasız BÜYÜK HARFLİ 1-3 sözcük ipucudur, altyazı değildir (Mac: ButtonPrompts.isPrompt).
+        if (ICON_LETTERS_PROMPT.matches(line)) return true
         val first = tokens[0]
         val words = tokens.count { !isButton(it) && it.any { c -> c.isLetter() } }
         if (isButton(first)) return words <= 5

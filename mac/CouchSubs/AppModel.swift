@@ -132,6 +132,8 @@ protocol StreamControlling: AnyObject {
     var onFrame: ((CGImage) -> Void)? { get set }
     /// Nino: PS5'in sesi (konuşanı tanımak için); `wantsAudio` bağlanmadan önce açılır.
     var onAudio: (([Float]) -> Void)? { get set }
+    /// Nino (geliştirici video kaydı): tam kalitede ses (48 kHz iki kanal).
+    var onFullAudio: (([Float]) -> Void)? { get set }
     var wantsAudio: Bool { get set }
     var onState: ((SessionState) -> Void)? { get set }
     /// PS5 ağda yeni bir adreste bulundu; yeni adres kaydedilir.
@@ -145,6 +147,7 @@ protocol StreamControlling: AnyObject {
 
 extension StreamControlling {
     var onAudio: (([Float]) -> Void)? { get { nil } set {} }
+    var onFullAudio: (([Float]) -> Void)? { get { nil } set {} }
     /// Pencere ve yakalama kartı kaynakları PS5'i ağda aramaz; bildirecekleri bir şey yok (bkz. `LocalNetworkAccess`).
     var onLocalNetworkBlocked: ((Bool) -> Void)? { get { nil } set {} }
     var wantsAudio: Bool { get { false } set {} }
@@ -1663,11 +1666,17 @@ final class AppModel: ObservableObject {
     /// Takılma yüzünden yeniden açıldıysa (son 2 dk içinde) çeviri kendiliğinden başlar.
     func resumeIfRelaunched() async {
         let at = UserDefaults.standard.double(forKey: Self.resumeKey)
-        guard at > 0 else { return }
         UserDefaults.standard.removeObject(forKey: Self.resumeKey)
-        guard Date().timeIntervalSince1970 - at < 120 else { return }
+        var resume = at > 0 && Date().timeIntervalSince1970 - at < 120
+        var note = "yeniden açıldı; çeviri kendiliğinden başlıyor"
+        #if DEBUG
+        // Nino (kullanıcı isteği): geliştirici sürümü her açılışta çeviriyi kendiliğinden başlatır (fiş kendiliğinden
+        // takılır); denemeler sırasında Nino sık yeniden açılıyor.
+        if !resume, step == .done { resume = true; note = "geliştirici sürümü: çeviri kendiliğinden başlıyor" }
+        #endif
+        guard resume else { return }
         for _ in 0..<40 where !canStart { try? await Task.sleep(nanoseconds: 250_000_000) }
-        SubtitleLog.write("yeniden açıldı; çeviri kendiliğinden başlıyor")
+        SubtitleLog.write(note)
         await start()
     }
 
@@ -1731,6 +1740,11 @@ final class AppModel: ObservableObject {
             session.wantsAudio = true
             session.onAudio = { samples in tracker.append(samples) }
         }
+        #if DEBUG
+        // Geliştirici sürümü: video kaydı açıkken (frames/video/KAYIT) PS5'in sesi de tam kalitede yazılır.
+        session.wantsAudio = true
+        session.onFullAudio = { samples in NinoDebugFrames.recordAudio(samples) }
+        #endif
         session.start()
         self.session = session
 
@@ -2180,7 +2194,16 @@ final class AppModel: ObservableObject {
     }
 
     /// Tuş simgeleri ("□", "✕", "○", "△", "⊙") çıkarılır; "L1", "R2" gibi tuş adları kalır.
+    /// Çeviri motorunun döndürdüğü HTML kodları ("&amp;", "&#39;") düz karaktere çevrilir.
+    nonisolated static func withoutEntities(_ text: String) -> String {
+        guard text.contains("&") else { return text }
+        return text.replacingOccurrences(of: "&amp;", with: "&").replacingOccurrences(of: "&#39;", with: "'")
+            .replacingOccurrences(of: "&quot;", with: "\"").replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">").replacingOccurrences(of: "&apos;", with: "'")
+    }
+
     nonisolated static func withoutIcons(_ text: String) -> String {
+        let text = withoutEntities(text)
         let kept = text.unicodeScalars.filter { scalar in
             switch scalar.properties.generalCategory {
             case .otherSymbol, .mathSymbol, .privateUse: return false
@@ -2218,6 +2241,9 @@ final class AppModel: ObservableObject {
 
     // MARK: Telefon mesajları
 
+    /// Gerçek mesaj bildirimi sağ alttan gelir: kartın sol ve üst kenarı en az bu kadar (kareye oranla).
+    static let messageCardMinLeft = 0.55
+    static let messageCardMinTop = 0.72
     private var messageText = ""
     private var messagePending = ""
     private var messageItems: [ScreenTranslation.Item] = []
@@ -2230,6 +2256,15 @@ final class AppModel: ObservableObject {
         messageSeen = Date()
         if let call = MessageCard.call(card) {
             showCall(card, name: call.name, status: call.status)
+            return
+        }
+        // Kullanıcı isteği (20 Kasım 2026): buzlu kart yalnız sağ alttan gelen gerçek mesaj bildiriminde gösterilir.
+        // Telefon açıkken (son 10 sn) ya da kart ekranın ortasındaysa bu telefon uygulamasının satırlarıdır; gösterilmez
+        // (altyazı olarak da çıkmaz).
+        let cardBoxes = card.lines.compactMap(\.box)
+        let cardTop = cardBoxes.map(\.top).min() ?? 0, cardLeft = cardBoxes.map(\.left).min() ?? 0
+        guard Date().timeIntervalSince(phoneSeen) > 10, cardLeft >= Self.messageCardMinLeft, cardTop >= Self.messageCardMinTop else {
+            if !messageItems.isEmpty { messageItems = []; sendOverlays() }
             return
         }
         let (name, body) = MessageCard.parts(card)
@@ -2316,12 +2351,64 @@ final class AppModel: ObservableObject {
 
     private var phoneItems: [ScreenTranslation.Item] = []
     private var phoneKey = ""
+    /// Telefonda en son okunan yazılar ve görüldüğü an: altyazı okumasında bunlar görülürse altyazı sayılmaz.
+    private var phoneTexts: (texts: [String], at: Date) = ([], .distantPast)
     private var phonePending = ""
     private var phoneSeen = Date.distantPast
     private var phoneLastCheck = Date.distantPast
     private var phoneTask: Task<Void, Never>?
     /// Bu oturumda çevrilmiş mesajlar: sohbet kaydırılınca aynı mesaj yeniden çevrilmez.
-    private var phoneMemory: [String: String] = [:]
+    /// Diske de yazılır: Nino yeniden açılınca (takılma) telefonun Türkçeleri baştan çevrilmeden hemen gelir.
+    /// Her çeviri dili ayrı dosyadadır (dil değişince eski dilin çevirisi gelmesin).
+    private lazy var phoneMemoryLanguage = settings.targetLanguage
+    private lazy var phoneMemory: [String: String] = (try? JSONDecoder().decode([String: String].self,
+        from: Data(contentsOf: phoneMemoryFile))) ?? [:]
+    private var phoneMemoryFile: URL { AppFolder.support.appendingPathComponent("phone-memory-\(phoneMemoryLanguage).json") }
+    /// Örtülerin yerleştirildiği andaki telefon ekranı ve örtüler: telefon kayınca örtüler aynı kadar kaydırılır.
+    private var phoneBase: (panel: TextBox, items: [ScreenTranslation.Item])?
+    private var phoneTrackTask: Task<Void, Never>?
+    private var phoneTrackAt = Date.distantPast
+    private var phoneShift = (dx: 0.0, dy: 0.0)
+    /// Telefonu takip eder (koyu temalı uygulamada her karede bulunamıyor; bkz. PhonePanel.Tracker).
+    private let phoneTracker = PhonePanel.Tracker()
+    /// Telefon bu kadardan az kaydıysa (elde sallanma) panel yerinde kalır.
+    private static let phoneSteady = 0.05
+    /// Yerleştirildiği anda her mesajın telefon ekranına göre yeri (kaydırma bununla anlaşılır).
+    private var phoneAnchors: [String: Double] = [:]
+    /// Bir önceki ölçümde görülen kayma: telefonun yeri küçük karede bulunur, bir nokta oynaması ekranda ~8 piksel
+    /// titreme yapar. Örtüler ancak belirgin kayma iki ölçüm üst üste görülünce kaydırılır.
+    private var phoneShiftSeen: (dx: Double, dy: Double)?
+
+    /// Nino: Türkçeler balonların üstündeyken telefon elde sallanır; yazıyı yeniden okumadan (pahalı) yalnız telefonun
+    /// yeri sık sık bulunur ve örtüler onunla birlikte kaydırılır, yoksa İngilizce kenardan görünürdü.
+    private func trackPhone(_ frame: CGImage) {
+        guard let base = phoneBase, !phoneItems.isEmpty, phoneTrackTask == nil,
+              Date().timeIntervalSince(phoneTrackAt) > 0.1 else { return }
+        phoneTrackAt = Date()
+        phoneTrackTask = Task { [weak self] in
+            let found = await Task.detached(priority: .userInitiated) { PhonePanel.find(in: frame)?.box }.value
+            guard let self else { return }
+            phoneTrackTask = nil
+            guard let found, let current = phoneBase, current.panel == base.panel else { return }
+            // Telefonun ortası ne kadar kaydı (kenar okuması bir iki nokta oynar; ortalama daha sakin).
+            let dx = (found.left + found.right - base.panel.left - base.panel.right) / 2
+            let dy = (found.top + found.bottom - base.panel.top - base.panel.bottom) / 2
+            guard abs(dx - phoneShift.dx) > 0.009 || abs(dy - phoneShift.dy) > 0.012, abs(dx) < 0.08, abs(dy) < 0.08 else {
+                phoneShiftSeen = nil
+                return
+            }
+            // Tek ölçümlük sıçrama gürültüdür; aynı yöndeki ikinci ölçümde kaydırılır (iki ölçümün ortalamasıyla).
+            guard let seen = phoneShiftSeen, abs(seen.dx - dx) < 0.008, abs(seen.dy - dy) < 0.011 else {
+                phoneShiftSeen = (dx, dy)
+                return
+            }
+            phoneShiftSeen = nil
+            let settled = ((seen.dx + dx) / 2, (seen.dy + dy) / 2)
+            phoneShift = settled
+            phoneItems = PhoneThread.shifted(base.items, dx: settled.0, dy: settled.1)
+            sendOverlays()
+        }
+    }
 
     /// Nino: telefonda bir sohbet açıksa mesajlarını okur, çevirir ve telefonun boş yanına, her mesajın hizasına yarı
     /// saydam yazıyla koyar. Eskiden bu yazılar altyazı sanılıp telefonun üstünde kocaman siyah kutuda çıkıyordu
@@ -2335,73 +2422,206 @@ final class AppModel: ObservableObject {
             phoneGame = first
         }
         guard settings.translateCorners, settings.sourceLanguage == "en", phoneGame, phoneTask == nil,
-              Date().timeIntervalSince(phoneLastCheck) > 0.6 else { return }
+              // Türkçeler yerleştikten sonra telefon seyrek okunur: bütün yazı okumaları tek sıradan geçer; telefon 0,6 sn'de
+              // bir okununca altyazı ve köşe okumaları 4 sn'den uzun bekleyip "Vision takıldı" sanılıyor, Nino her 20-30 sn'de
+              // kendini yeniden açıyordu (20 Kasım 2026). Kaydırınca örtüler kalkar ve hızlı okumaya dönülür.
+              Date().timeIntervalSince(phoneLastCheck) > (phoneItems.isEmpty ? 0.6 : 1.5) else { return }
+        // Harita/menü açıkken telefon aranmaz: haritanın aydınlık kısmı telefon sanılıp tuş listesi ("RECENTER") çevriliyordu.
+        if Date() < menuScreenUntil.addingTimeInterval(8) || !mapItems.isEmpty {
+            if !phoneItems.isEmpty { clearPhone() }
+            return
+        }
         phoneLastCheck = Date()
+        let tracker = phoneTracker
         phoneTask = Task { [weak self] in
             let found = await Task.detached(priority: .utility) { () -> (PhonePanel.Panel, Reading)? in
-                guard let panel = PhonePanel.find(in: frame) else { return nil }
+                guard let panel = tracker.locate(in: frame) else { return nil }
                 let box = panel.box
                 let region = CropRegion(top: box.top, bottom: box.bottom, left: box.left, right: box.right)
-                let reading = (try? VisionReader(language: "en").readLines(RegionCropper.crop(frame, to: region), deep: false)) ?? .empty
+                // Telefon işlemcide okunur (Neural Engine altyazı okumasına kalsın; bkz. VisionReader.cpuOnly).
+                let reading = (try? VisionReader(language: "en", cpuOnly: true).readLines(RegionCropper.crop(frame, to: region), deep: false)) ?? .empty
                 return (panel, reading.placed(in: box))
             }.value
             guard let self else { return }
             defer { phoneTask = nil }
-            guard let (panel, reading) = found, PhoneThread.isThread(reading, panel: panel) else {
+            guard let (panel, reading) = found else {
+                if !phoneItems.isEmpty, Date().timeIntervalSince(phoneSeen) > 1.2 { clearPhone() }
+                return
+            }
+            // Haritanın tuş listesi ("RECENTER", "2D VIEW") telefon sanılan bölgede okunduysa bu haritadır.
+            let mapKeys: Set<String> = ["recenter", "2d view", "3d view", "add marker", "set destination", "close menu"]
+            if reading.lines.contains(where: { mapKeys.contains(MenuBlock.clean($0.text).lowercased()) }) {
+                if !phoneItems.isEmpty { clearPhone() }
+                return
+            }
+            // Sohbet: mesajlar balon olarak. Mesaj listesi çevrilmez. Başka uygulama (BuckMe bankası): satırları ayrı ayrı.
+            // Başlığı ortalı uygulama ekranı ("Trip Details", Rydeme) sohbet sanılmasın: sohbette en az bir cümle olur.
+            let threadMessages = PhoneThread.isThread(reading, panel: panel) ? PhoneThread.messages(in: reading, panel: panel) : []
+            let chat = threadMessages.contains { PhoneThread.isSentence($0.text) }
+            var messages = chat ? threadMessages
+                : (PhoneThread.isMessageList(reading) ? [] : PhoneThread.appLines(in: reading, panel: panel))
+            guard !messages.isEmpty else {
                 if !phoneItems.isEmpty, Date().timeIntervalSince(phoneSeen) > 1.2 { clearPhone() }
                 return
             }
             phoneSeen = Date()
-            let messages = PhoneThread.messages(in: reading, panel: panel)
             // Kaydırınca mesajların yeri değişir: anahtar yeri de içerir. Aynı okuma iki kez görülünce çevrilir
             // (kaydırma sürerken yarım okunan satırlar çevrilmez).
-            let key = messages.map { TextMatch.normalize($0.text) + "@\(Int($0.box.top * 60))" }.joined(separator: "|")
+            // Yer telefonun ekranına göre ölçülür: el sallanınca anahtar değişmez (kaydırmayı trackPhone yapar), sohbet
+            // kaydırılınca değişir.
+            let key = messages.map { TextMatch.normalize($0.text) + "@\(Int(($0.box.top - panel.box.top) * 60))" }.joined(separator: "|")
             guard key != phoneKey else { return }
+            // Nino: sohbet kaydırıldı ya da mesajlar değişti: eski Türkçeler hemen kalkar. Yoksa yenileri hazır olana kadar
+            // (17 sn sürdüğü oldu) başka mesajların balonlarının üstünde yanlış yazı duruyordu.
+            if let base = phoneBase, !phoneItems.isEmpty {
+                let now = Dictionary(messages.map { (TextMatch.normalize($0.text), $0.box.top - panel.box.top) }, uniquingKeysWith: { a, _ in a })
+                // Okuyucu bir mesajı arada kaçırabiliyor (6 → 5 → 6); bu kaydırma değildir. Ortak mesajlardan biri yer
+                // değiştirdiyse ya da gösterilenlerin yarısından çoğu kaybolduysa sohbet kaydırılmıştır.
+                let keys = base.items.filter { !$0.backdrop }.map { TextMatch.normalize($0.source) }
+                let common = keys.filter { now[$0] != nil }
+                let moved = common.contains { key in
+                    guard let top = now[key], let anchor = phoneAnchors[key] else { return false }
+                    return abs(anchor - top) > 0.02
+                }
+                let stale = moved || common.count * 2 < keys.count
+                if stale {
+                    phoneItems = []
+                    phoneBase = nil
+                    phoneKey = ""
+                    sendOverlays()
+                }
+            }
             guard key == phonePending else { phonePending = key; return }
             let translator = makeTranslator()
             let translations = self.translations
             let game = translations.poolGame(gameChoice.sense.current?.name, packs.searchScope)
             let pooled = settings.sharePool
-            var texts: [String] = []
-            for message in messages {
-                let known = TextMatch.normalize(message.text)
-                if let remembered = phoneMemory[known] { texts.append(remembered); continue }
-                var turkish: String? = translations.store.match(message.text)
-                if turkish == nil, pooled { turkish = await translations.translate(message.text, game: game) }
-                if turkish == nil { turkish = try? await translator.translate(message.text) }
-                let clean = turkish.map(Self.withoutIcons)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                if !clean.isEmpty { phoneMemory[known] = clean }
-                texts.append(clean)
+            // Bilinmeyen mesajlar aynı anda çevrilir (sırayla çevrilince kaydırmadan sonra Türkçeler çok geç geliyordu).
+            if phoneMemoryLanguage != settings.targetLanguage {
+                phoneMemoryLanguage = settings.targetLanguage
+                phoneMemory = (try? JSONDecoder().decode([String: String].self, from: Data(contentsOf: phoneMemoryFile))) ?? [:]
             }
-            if phoneMemory.count > 300 { phoneMemory.removeAll() }
-            guard !Task.isCancelled else { return }
-            let column = PhoneThread.column(beside: panel)
-            let onLeft = column.right <= panel.box.left
-            var kept: [PhoneThread.Message] = [], wrapped: [[String]] = [], heights: [Double] = []
-            for (index, message) in messages.enumerated() {
-                let turkish = texts[index]
-                guard !turkish.isEmpty, TextMatch.normalize(turkish) != TextMatch.normalize(message.text) else { continue }
-                let line = min(max(message.lineHeight, 0.018), 0.03) * 0.9
-                kept.append(message)
-                wrapped.append(Self.wrap(turkish, width: column.right - column.left, line: line))
-                heights.append(line)
+            // Yarım okunan mesaj (son satırı ekranın dibinde kesik sanıldı) daha önce tam görüldüyse tam halinin çevirisi
+            // kullanılır; yarım cümlenin çevirisi bozuk çıkıyordu ("…kilolarıma getir. Seni biraz keseceğim").
+            let memory = phoneMemory
+            func remembered(_ text: String) -> String? {
+                let key = TextMatch.normalize(text)
+                guard key.split(separator: " ").count >= 5 else { return memory[key] }
+                // Sondan ya da baştan kesik okunan mesaj (üstte yarısı görünen) tam halinin çevirisini alır.
+                return memory.filter { $0.key == key || $0.key.hasPrefix(key + " ") || $0.key.hasSuffix(" " + key) }
+                    .max { $0.key.count < $1.key.count }?.value
             }
-            let boxes = PhoneThread.boxes(for: kept, lineCounts: wrapped.map(\.count), lineHeights: heights, column: column)
-            phoneItems = kept.indices.map { index in
-                var box = boxes[index]
-                if onLeft {
-                    // TV sade yazıyı sola yaslar: kısa çeviri telefondan uzakta kalmasın diye kutu yazı kadar dar tutulur.
-                    let longest = Double(wrapped[index].map(\.count).max() ?? 0)
-                    box.left = max(box.left, box.right - (longest * heights[index] * 0.5 * 9 / 16 + 0.01))
+            // Ekranın dibinde cümlesi bitmemiş çok satırlı son mesaj, tamamı görünene kadar yarım çevrilmez.
+            if chat, let last = messages.last, remembered(last.text) == nil,
+               last.box.bottom > panel.box.bottom - 0.06, last.box.bottom - last.box.top > last.lineHeight * 1.8,
+               !(last.text.trimmingCharacters(in: .whitespaces).last.map { ".!?…\")".contains($0) } ?? false) {
+                messages.removeLast()
+                guard !messages.isEmpty else { return }
+            }
+            // Nino: havuzun (elden geçmiş) çevirisi cihazın hafızasındakinden önce gelir; hafızada eski, kötü bir çeviri
+            // kalmış olabilir (havuz o an boştu, cihaz çevirisi yazılmıştı: "drops" → "damla").
+            // Ekranın üstünde baştan kesik (küçük harfle başlayan) ilk mesaj, tamamı görülmediyse yarım çevrilmez.
+            if chat, let first = messages.first, messages.count > 1, remembered(first.text) == nil,
+               first.text.first?.isLowercase == true {
+                messages.removeFirst()
+            }
+            var texts = messages.map { PhoneThread.glossary($0.text) ?? translations.store.match($0.text) ?? remembered($0.text) ?? "" }
+            let missing = messages.indices.filter { texts[$0].isEmpty }
+            let sources = missing.map { messages[$0].text }
+            // Nino: telefon mesajları da havuza bildirilir (altyazılar gibi); yoksa toplu çeviri ve elle düzeltme onları
+            // hiç görmüyordu.
+            if pooled || translations.isPoolFirst(game) {
+                let pool = self.pool
+                for text in sources { Task { await pool.offer(text, game: game) } }
+            }
+            // Sohbette her mesaj önceki (en çok üç) mesajla birlikte sorulur: kısaltma ve argo bağlamla doğru çevrilir.
+            let contexts = missing.map { index in chat ? Array(messages[max(0, index - 3)..<index].map(\.text)) : [] }
+            // Aynı anda en çok iki çeviri: cihaz üstü çeviri Neural Engine'i yazı okumayla paylaşır; altısı birden
+            // çalışınca okumalar yavaşlayıp "Vision takıldı" sanılıyordu.
+            var fromDevice = Set<Int>()
+            let translated = await withTaskGroup(of: (Int, String?, Bool).self) { group -> [Int: String] in
+                var out: [Int: String] = [:]
+                var next = 0
+                func add() {
+                    guard next < sources.count else { return }
+                    let index = next, text = sources[index], context = contexts[index]
+                    next += 1
+                    group.addTask {
+                        var turkish: String? = translations.store.match(text)
+                        if turkish == nil, pooled || translations.isPoolFirst(game) {
+                            turkish = await translations.translate(text, context: context, game: game)
+                        }
+                        if turkish != nil { return (index, turkish, false) }
+                        return (index, try? await translator.translate(text), true)
+                    }
                 }
-                var item = ScreenTranslation.Item(source: kept[index].text, translation: wrapped[index].joined(separator: "\n"),
-                                                  box: box, lineHeight: heights[index])
-                item.plain = true
-                return item
+                add(); add()
+                for await (index, turkish, device) in group {
+                    if let turkish { out[index] = turkish }
+                    if device { fromDevice.insert(index) }
+                    add()
+                }
+                return out
             }
+            for (slot, index) in missing.enumerated() {
+                let clean = translated[slot].map(Self.withoutIcons)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                // Nino: cihazın yedek çevirisi hafızaya yazılmaz; sonraki okumada havuz yeniden sorulur (o arada havuza
+                // doğru çeviri girmiş olabilir).
+                if !clean.isEmpty, !fromDevice.contains(slot) { phoneMemory[TextMatch.normalize(messages[index].text)] = clean }
+                texts[index] = clean
+            }
+            if phoneMemory.count > 600 { phoneMemory.removeAll() }
+            if !missing.isEmpty, let data = try? JSONEncoder().encode(phoneMemory) { try? data.write(to: phoneMemoryFile, options: .atomic) }
+            guard !Task.isCancelled else { return }
+            // Kullanıcı isteği (20 Kasım 2026): Türkçe her mesaj balonunun tam üstünde, balonun rengiyle; telefonun kendi
+            // yazısı gibi görünür (eskiden telefonun yanında yarı saydam yazıydı).
+            // Sohbet: telefonun yanında dikey mesajlaşma paneli. Uygulama (BuckMe): her yazının hemen altında sade Türkçe
+            // (kullanıcı isteği, 20 Kasım 2026; telefonun Türkçe kopyası "elle yapıştırılmış" duruyordu, kaldırıldı).
+            phoneItems = chat
+                ? PhoneThread.sideBubbles(for: messages, translations: texts, panel: panel, chat: true,
+                                          title: PhoneThread.titleText(reading, panel: panel),
+                                          color: PhonePanel.liftedSampler(for: frame, panel: panel)) { text, width, line in
+                    let wrapped = Self.wrap(text, width: width, line: line)
+                    return (wrapped.count, wrapped.map(\.count).max() ?? 0)
+                }
+                : PhoneThread.appBubbles(for: messages, translations: texts, panel: panel, color: PhonePanel.liftedSampler(for: frame, panel: panel))
+            phoneTexts = (messages.map(\.text), Date())
+            phoneAnchors = Dictionary(messages.map { (TextMatch.normalize($0.text), $0.box.top - panel.box.top) }, uniquingKeysWith: { a, _ in a })
+            // Kullanıcı isteği: panel telefonun yanında ayrı durur; telefon elde oynadıkça panel kaymaz. Telefon az oynadıysa
+            // yeni yerleşim eski telefon yerine göre kurulur (panel yerinde kalır); ancak telefon belirgin taşınınca panel de gider.
+            var anchorPanel = panel.box
+            // Uygulama baloncukları da sabitlenir (kullanıcı: "neden kendi kendine büyüyor, hareket ediyor").
+            if let old = phoneBase {
+                let dx = (panel.box.left + panel.box.right - old.panel.left - old.panel.right) / 2
+                let dy = (panel.box.top + panel.box.bottom - old.panel.top - old.panel.bottom) / 2
+                if abs(dx) < Self.phoneSteady, abs(dy) < Self.phoneSteady {
+                    phoneItems = PhoneThread.shifted(phoneItems, dx: -dx, dy: -dy)
+                    anchorPanel = old.panel
+                }
+            }
+            // Aynı mesaj yeniden okunduysa ve yeri az oynadıysa eski kutusu korunur (yazı boyu ve yeri zıplamasın).
+            if let old = phoneBase {
+                let current = PhoneThread.shifted(old.items, dx: phoneShift.dx, dy: phoneShift.dy)
+                // Uygulama ekranındaki Türkçeler aynıysa (aynı haber sayfası) bütün yerleşim eskisi gibi kalır; baloncuklar
+                // yeniden hesaplanıp birbirine binmesin.
+                let sameScreen = !chat && current.count == phoneItems.count
+                    && zip(current, phoneItems).allSatisfy { $0.translation == $1.translation && abs($0.box.top - $1.box.top) < 0.06 }
+                phoneItems = sameScreen ? current : phoneItems.map { item in
+                    // Uygulamada (haber paragrafı) aynı yazının boyu her okumada biraz farklı ölçülür; baloncuk büyüyüp
+                    // küçülmesin diye aynı yazı yakın yerdeyse eski baloncuk olduğu gibi kalır.
+                    let reach = chat ? (0.012, 0.015) : (0.04, 0.06)
+                    guard let same = current.first(where: { $0.source == item.source && $0.translation == item.translation }),
+                          abs(same.box.left - item.box.left) < reach.0, abs(same.box.top - item.box.top) < reach.1 else { return item }
+                    return same
+                }
+            }
+            phoneBase = (anchorPanel, phoneItems)
+            phoneShift = (0, 0)
+            phoneShiftSeen = nil
             phoneKey = key
             phonePending = ""
-            SubtitleLog.write("telefon: \(kept.count) mesaj" + (kept.first.map { " (\(SubtitleLog.excerpt($0.text)) → \(texts[messages.firstIndex(of: $0) ?? 0]))" } ?? ""))
+            let shown = phoneItems.filter { !$0.backdrop }
+            SubtitleLog.write("telefon: \(shown.count) yazı" + (shown.first.map { " (\(SubtitleLog.excerpt($0.source)) → \($0.translation))" } ?? "") + (chat ? "" : " · uygulama"))
             sendOverlays()
         }
     }
@@ -2413,13 +2633,42 @@ final class AppModel: ObservableObject {
     private var mapItems: [ScreenTranslation.Item] = []
     private var mapKey = ""
     private var mapTask: Task<Void, Never>?
+    /// Nino: çeviri sürerken seçilen yeni kart; süren çeviri bitince o çevrilir.
+    private var mapPending: MapCard.Found?
+    /// Bu oturumda çevrilmiş kartlar (anahtar → satırlar): haritada aynı yere dönülünce Türkçesi hemen gelir.
+    private var mapMemory: [String: [String]] = [:]
+    /// Ekrandaki Türkçenin ait olduğu kartın başlığı ve yeri.
+    private var mapShown: (title: String, top: Double) = ("", -1)
+    /// Ekrandaki kartın tam metni: aynı kartın yarım okuması (alttaki satır okunamadı) onun yerine geçmez.
+    private var mapShownText = ""
 
     /// Nino: haritada seçili görevin kartı ("BUY FLOWERS / Lucia will appreciate this / Have some flowers delivered…")
     /// çevrilir ve kartın hemen altına (yer yoksa üstüne) yarı saydam yazılır. Menünün kalanı çevrilmez.
     private func showMapCard(_ card: MapCard.Found) {
+        // Nino: PS5'in kendi bildirimi ("…, Uzaktan Oynama'yı kullanarak bağlandı.") zaten Türkçe; kart değildir.
+        let all = ([card.title] + card.sentences).joined(separator: " ")
+        if all.contains(where: { "ğışĞİŞ".contains($0) }) || card.sentences.isEmpty { return }
+        // PS5'in sağ üstteki bildirimi (oturum adı "Ceviri Altyazi" ve tuş satırı) görev kartı değildir.
+        if card.title.isEmpty, card.box.left > 0.6, card.box.top < 0.32 { return }
+        // Ekranın en üstündeki sekme şeridi ("JASON  LUCIA  MAP  BRIEF  PROGRESS") ve PS5 bildirimi kart değildir.
+        if card.box.top < 0.1 { return }
+        let fullText = TextMatch.normalize(all)
+        if !card.title.isEmpty, TextMatch.normalize(card.title) == mapShown.title, mapShownText.hasPrefix(fullText), mapShownText != fullText {
+            return
+        }
         let key = TextMatch.normalize(([card.title] + card.sentences).joined(separator: " ")) + "@\(Int(card.box.top * 50))"
-        guard key != mapKey, mapTask == nil else { return }
+        guard key != mapKey else { return }
         mapKey = key
+        // Nino: imleç başka yere geçti; eski kartın Türkçesi yeni kartın altında kalmasın (GTA 6: "LADONNA'S SOUL FOOD"
+        // kartının altında "CHIHUAHUA HOTDOG"un Türkçesi duruyordu). Yenisinin çevirisi gelene kadar boş kalır.
+        // Aynı kart (aynı başlık, aynı yer) biraz farklı okunduysa ("0.26 ml" / "0.26 mi") eski Türkçe yenisi gelene
+        // kadar kalır; yoksa kart her yeniden okumada yanıp sönerdi.
+        let sameCard = !card.title.isEmpty && TextMatch.normalize(card.title) == mapShown.title && abs(card.box.top - mapShown.top) < 0.04
+        if !mapItems.isEmpty, !sameCard { mapItems = []; sendOverlays() }
+        if let lines = mapMemory[key] { placeMapCard(card, lines: lines); return }
+        // Çeviri sürüyorsa yeni kart beklemeye alınır (en son seçilen); süren bitince o çevrilir.
+        guard mapTask == nil else { mapPending = card; return }
+        mapPending = nil
         let translator = makeTranslator()
         let translations = self.translations
         let game = translations.poolGame(gameChoice.sense.current?.name, packs.searchScope)
@@ -2440,33 +2689,106 @@ final class AppModel: ObservableObject {
             }
             for sentence in card.sentences {
                 let text = await turkish(sentence)
-                if !text.isEmpty { lines += Self.wrap(text, width: width, line: line) }
+                // Satırlara bölünmez (TV kutunun genişliğine göre böler); terim düzeltmesi bütün cümlede yapılır.
+                if !text.isEmpty { lines.append(Self.withMapTerms(Self.withoutEntities(text))) }
             }
             guard let self else { return }
             mapTask = nil
+            if !lines.isEmpty { mapMemory[key] = lines }
+            if mapMemory.count > 200 { mapMemory.removeAll() }
+            if let next = mapPending {
+                // Çeviri sürerken imleç başka karta geçti: bu sonuç gösterilmez, en son kart çevrilir.
+                mapPending = nil
+                mapKey = ""
+                showMapCard(next)
+                return
+            }
             guard mapKey == key, !lines.isEmpty, Date() < menuScreenUntil else { return }
-            let height = line * Double(lines.count) * 1.3
-            // Kartın alt kenarı son satırın biraz altındadır; yer yoksa çeviri kartın üstüne konur.
-            var top = card.box.bottom + 0.05
-            if top + height > 0.97 { top = max(0.02, card.box.top - 0.04 - height) }
-            var item = ScreenTranslation.Item(source: ([card.title] + card.sentences).joined(separator: " "),
-                                              translation: lines.joined(separator: "\n"),
-                                              box: TextBox(left: card.box.left, top: top, right: card.box.left + width, bottom: top + height),
-                                              lineHeight: line)
-            item.plain = true
-            mapItems = [item]
-            SubtitleLog.write("harita kartı: \(SubtitleLog.excerpt(item.source)) → \(lines.joined(separator: " / "))")
-            sendOverlays()
+            placeMapCard(card, lines: lines)
         }
+    }
+
+    /// Kartın Türkçesi kartın hemen altına (yer yoksa üstüne) yarı saydam yazılır.
+    /// Nino: oyunun sık geçen terimlerinin yanlış çevirileri düzeltilir ("marked bills" → işaretli banknot, "lockup" → depo).
+    static func withMapTerms(_ text: String) -> String {
+        let fixes: [(String, String)] = [
+            ("KAPALI TUTULMASI", "DEPOSU"), ("Kapalı Tutulması", "Deposu"), ("kapalı tutulması", "deposu"),
+            ("işaretli faturaların", "işaretli banknotların"), ("işaretli faturalar", "işaretli banknotlar"),
+            ("işaretli fatura", "işaretli banknot"), ("narkotik", "uyuşturucu"), ("NARKOTİK", "UYUŞTURUCU"),
+            ("trafik ışığı papağan balığı", "stoplight papağan balığı"), ("kırmızı ışık papağan balığı", "stoplight papağan balığı"),
+        ]
+        return fixes.reduce(text) { $0.replacingOccurrences(of: $1.0, with: $1.1) }
+    }
+
+    /// Nino: kartın başlığı bir dükkân ya da mekân adıysa ("RIDEOUT CUSTOMS", "ONE-EYED WILLIE'S AUTO SHOP") çevrilmez;
+    /// "DIŞARIDAN GELEN GÜMRÜK" gibi saçma çıkıyordu.
+    static func isPlaceName(_ title: String, description: String = "") -> Bool {
+        // Açıklama bir işletmeyi anlatıyorsa ("Ammu-Nation distributor…", "Mod shop…", "dive bar…") başlık onun adıdır.
+        let business = ["distributor", "shop", "store", "dive bar", " bar", "restaurant", "dealer", "club", "diner", "garage",
+                        "convenience", "wholesaler", "boutique", "salon", "motel", "hotel", "bodega"]
+        let about = description.lowercased()
+        if business.contains(where: { about.contains($0) }) { return true }
+        let words = title.uppercased().split(separator: " ").map(String.init)
+        let places: Set<String> = ["CUSTOMS", "AUTO", "SHOP", "BAR", "CLUB", "MOTORS", "GARAGE", "CARE", "SPEEDWAY", "DINER",
+                                   "CAFE", "GRILL", "MOTEL", "HOTEL", "STORE", "MART", "LOUNGE", "SALOON", "TACKLE", "ANCHOR",
+                                   "MARINA", "AMMU-NATION", "BARBER", "TATTOO", "PAWN"]
+        // "JASON'S MAILBOX", "DONNIE'S TRAILER" çevrilir (Jason'ın Posta Kutusu); yalnız işletme adları kalır.
+        return words.contains(where: places.contains) || (title.uppercased().hasPrefix("THE ") && words.count <= 4)
+    }
+
+    private func placeMapCard(_ card: MapCard.Found, lines: [String]) {
+        var lines = lines.map(Self.withoutEntities).map(Self.withMapTerms)
+        if !card.title.isEmpty, !lines.isEmpty, Self.isPlaceName(card.title, description: card.sentences.joined(separator: " ")) {
+            lines[0] = card.title
+        }
+        var line = min(max(card.lineHeight, 0.02), 0.032) * 0.85
+        // Kullanıcı isteği: oyunun kartı gibi; kartın çerçevesiyle (yazıları değil, köşeleri) aynı genişlikte, hemen
+        // altında; yer yoksa üstünde; o da yetmezse yazı küçülür.
+        let frame = lastFrame.flatMap { MapCard.frame(around: card.box, in: $0) }
+            ?? TextBox(left: card.box.left - 0.015, top: card.box.top - 0.02, right: card.box.right + 0.015, bottom: card.box.bottom + 0.02)
+        // Kullanıcı: kutu kart kadar büyük olmak zorunda değil; yazı kadar. Kartın çerçevesi yalnız sınırdır (sol kenar,
+        // en çok genişlik, altına/üstüne yerleşme).
+        // Dar yazı tipi: bir harf satır yüksekliğinin yaklaşık %42'si.
+        let charWidth = line * 0.42 * 9 / 16
+        let longest = Double(lines.map(\.count).max() ?? 10)
+        let width = min(frame.right - frame.left, longest * charWidth + 0.035)
+        let wrapped = lines
+        let rows = lines.enumerated().map { index, text in
+            index == 0 ? 1 : max(1, Int((Double(text.count) * charWidth / (width - 0.03)).rounded(.up)))
+        }.reduce(0, +)
+        var height = line * Double(rows) * 1.32 + 0.022
+        let below = 0.97 - (frame.bottom + 0.012), above = frame.top - 0.012 - 0.02
+        var top = frame.bottom + 0.012
+        if height > below {
+            if height <= above || above > below {
+                if height > above { line *= (above - 0.022) / (height - 0.022); height = above }
+                top = frame.top - 0.012 - height
+            } else {
+                line *= (below - 0.022) / (height - 0.022); height = below
+            }
+        }
+        var item = ScreenTranslation.Item(source: ([card.title] + card.sentences).joined(separator: " "),
+                                          translation: wrapped.joined(separator: "\n"),
+                                          box: TextBox(left: max(frame.left, card.box.left - 0.014), top: top,
+                                                       right: max(frame.left, card.box.left - 0.014) + width, bottom: top + height),
+                                          lineHeight: line)
+        item.card = true
+        mapItems = [item]
+        mapShown = (TextMatch.normalize(card.title), card.box.top)
+        mapShownText = TextMatch.normalize(([card.title] + card.sentences).joined(separator: " "))
+        SubtitleLog.write("harita kartı: \(SubtitleLog.excerpt(item.source)) → \(lines.joined(separator: " / "))")
+        sendOverlays()
     }
 
     private func clearMapCard() {
         mapItems = []
         mapKey = ""
+        mapPending = nil
     }
 
     private func clearPhone() {
         phoneItems = []
+        phoneBase = nil
         phoneKey = ""
         phonePending = ""
         sendOverlays()
@@ -2508,6 +2830,12 @@ final class AppModel: ObservableObject {
     private lazy var layoutStore = SubtitleLayoutStore(file: AppFolder.support.appendingPathComponent("subtitle-layout.json"))
     /// Şu anki oyun (çeviri paketinden); bilinmiyorsa "genel".
     private var currentGame: String { packs.searchScope ?? "genel" }
+    /// Okunan altyazı alanı: altyazının yeri öğrenildiyse yalnız o şerit (bkz. SubtitleLayout.readTop).
+    private var readRegion: CropRegion {
+        var region = settings.region
+        if let top = layoutStore.current.readTop(for: currentGame), top > region.top, top < region.bottom - 0.06 { region.top = top }
+        return region
+    }
     private var currentHudTop: Double? { layoutStore.current.hudTop(for: currentGame) }
     /// Nino: havuz öncelikli oyunda (GTA 6) altyazının yerinde olmayan ve havuzda bilinmeyen yazı gösterilmez (tabela).
     /// Başka oyunlarda kural kapalıdır: paketi olmayan oyunda her satır "bilinmeyen"dir.
@@ -2538,7 +2866,9 @@ final class AppModel: ObservableObject {
         // Bütün ekranın okunması yazı tanımayı yoruyor: üç köşe okumasında bir (~4,5 sn) ve küçültülmüş kareyle.
         menuCounter = (menuCounter + 1) % 3
         // Menü/harita ekranı açıkken her okumada bakılır (oyun durmuştur; kart değişince Türkçesi çabuk gelsin).
-        let readMenu = menuCounter == 0 || Date() < menuScreenUntil
+        // Harita az önce açıktıysa (sekme değişirken bir okumada tanınmamış olabilir) bir süre daha her okumada bakılır;
+        // yoksa sol menünün satırları ipucu kutusu sanılıp Türkçesi alttaki satırların üstüne biniyordu (GTA 6, EXPLORATION).
+        let readMenu = menuCounter == 0 || Date() < menuScreenUntil.addingTimeInterval(10)
         regions.append(CropRegion(top: 0.03, bottom: 0.95, left: 0.0, right: 1.0))
         let subtitleBox = lastSubtitleBox
         let subtitleText = TextMatch.normalize(lastSource)
@@ -2587,6 +2917,16 @@ final class AppModel: ObservableObject {
                 menuScreenUntil = Date().addingTimeInterval(5)
                 menuScreenFlag.set(until: menuScreenUntil)
                 if !promptItems.isEmpty { promptItems = []; promptText = ""; changedPrompts = true }
+            }
+            // Nino: harita/görev menüsünün sol listesi ("◆ Earn Money / OPTIONAL / …") menü tanınmadan önce de ipucu sayılmaz.
+            if let corner = readings[0] {
+                let texts = corner.lines.map { $0.text.trimmingCharacters(in: .whitespaces) }
+                let headings = texts.contains { ["OPTIONAL", "STORY", "SIDE", "COMPLETED", "ACTIVITIES"].contains($0.uppercased()) && $0 == $0.uppercased() }
+                let bullets = texts.filter { $0.hasPrefix("◆") || $0.hasPrefix("♦") }.count
+                if headings || bullets >= 2 {
+                    readings[0] = nil
+                    if !cornerItems[0].isEmpty { cornerItems[0] = []; cornerTexts[0] = ""; cornerPending[0] = ""; changedPrompts = true }
+                }
             }
             if Date() < menuScreenUntil {
                 // Menü/harita ekranında sol üstteki liste ipucu kutusu değildir ("STORY / Pick Up Lucia / OPTIONAL");
@@ -2746,6 +3086,12 @@ final class AppModel: ObservableObject {
                 }
                 // Nino: bu arada çeviri dili değiştiyse (resetCorners) eski dildeki sonuç belleğe yazılmaz.
                 if Task.isCancelled { return }
+                // Nino: çeviri sürerken harita/menü açıldıysa sol üstteki liste ipucu değildir; geç gelen Türkçesi
+                // haritanın sol menüsünün üstüne biniyordu (kullanıcı: "soldakilerin çevirisine gerek yok").
+                if i == 0, Date() < menuScreenUntil {
+                    cornerItems[0] = []; cornerTexts[0] = ""; cornerPending[0] = ""
+                    continue
+                }
                 if !text.isEmpty, !cornerItems[i].isEmpty {
                     cornerMemory.append((key, cornerItems[i]))
                     if cornerMemory.count > 40 { cornerMemory.removeFirst() }
@@ -2840,6 +3186,15 @@ final class AppModel: ObservableObject {
             HealthRecorder.shared.line(translationMs: metrics.translationMs)
         }
         pipeline.onPrompts = { [weak self] prompts in self?.showPrompts(prompts) }
+        // Nino (kullanıcı fikri): telefon uygulamasının sözcükleri görülünce telefon oradan da bulunur.
+        pipeline.onPhoneUI = { [weak self] boxes in
+            guard let self, let frame = self.lastFrame else { return }
+            self.phoneTracker.adopt(around: boxes, in: frame)
+        }
+        pipeline.phoneTexts = { [weak self] in
+            guard let self, Date().timeIntervalSince(self.phoneTexts.at) < 30 else { return [] }
+            return self.phoneTexts.texts
+        }
         pipeline.onMessage = { [weak self] card in self?.showMessage(card) }
         let menuFlag = menuScreenFlag
         pipeline.isMenuScreen = { menuFlag.active }
@@ -3301,12 +3656,12 @@ final class AppModel: ObservableObject {
     private func handle(_ frame: CGImage, capturedAt: Int) async {
         lastFrame = frame
         #if DEBUG
-        NinoDebugFrames.capture(frame, region: settings.region, box: lastSubtitleBox, source: lastSource, translation: lastTranslation)
+        NinoDebugFrames.capture(frame, region: readRegion, box: lastSubtitleBox, source: lastSource, translation: lastTranslation)
         #endif
         if isRunning { watchCorners(frame); identifyGameIfNeeded(frame); clearStaleMessage(); watchPhone(frame) }
         // Köşe okuması Vision'ın takıldığını 4-5 sn'de fark eder (kapı açılmaz); 15 sn beklemeden yeniden açılır.
         if isRunning, VisionReader.isStuck {
-            SubtitleLog.write("Vision okuması takıldı (köşe okuması fark etti)")
+            SubtitleLog.write("Vision okuması takıldı (köşe okuması fark etti; takılan okuma: \(VisionReader.stuckInfo))")
             relaunchAfterStuckReading()
             return
         }
@@ -3329,7 +3684,7 @@ final class AppModel: ObservableObject {
             entry = frameGate.enter(now: SubtitleStabilizer.uptimeMs())
         }
         guard case .enter(let token) = entry, let pipeline else { return }
-        await pipeline.process(frame, region: settings.region, capturedAt: capturedAt)
+        await pipeline.process(frame, region: readRegion, capturedAt: capturedAt)
         frameGate.leave(token)
     }
 
@@ -3433,7 +3788,11 @@ extension AppModel {
     /// Tanınan oyun havuz öncelikli mi (şimdilik GTA 6). Yalnız görünüm içindir: sunucuya o an ulaşılamasa da
     /// (`isPoolFirst` o zaman false döner) oyun aynı oyundur, fon kalır.
     var liveGamePoolFirst: Bool {
-        guard let name = gameChoice.sense.current?.name else { return false }
+        // Nino: oyun bu açılışta henüz tanınmadıysa (ekrandan tanıma birkaç deneme sürebiliyor) son oynanan oyunun teması
+        // kalır; Nino her yeniden açıldığında GTA renkleri ve "GTA 6 açık" yazısı kayboluyordu (kullanıcı, 21 Kasım 2026).
+        guard let name = gameChoice.sense.current?.name else {
+            return session != nil && UserDefaults.standard.bool(forKey: Self.lastGamePoolFirstKey)
+        }
         return translations.poolFirst.contains(translations.poolGame(name, packs.searchScope))
     }
 

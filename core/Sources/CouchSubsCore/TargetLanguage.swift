@@ -122,7 +122,9 @@ public enum TargetLanguage {
 
     public static func isAlready(_ text: String, in target: String, source: String = "en") -> Bool {
         let target = code(target)
-        if let letters = ownLetters[target], text.contains(where: letters.contains) { return true }
+        if let letters = ownLetters[target], text.contains(where: letters.contains) {
+            return !isSourceWithOneStrayWord(text, letters: letters, target: target, source: source)
+        }
         // Arap harfli yazı İngilizce kaynakta çıkmaz: Arapça hedefte bu yazı zaten Arapçadır (PS5'in Arapça menüleri).
         if target == "ar" || target == "ur", containsArabic(text) { return true }
         // Kendi yazısı olan diller: o yazının harfi İngilizce kaynakta çıkmaz.
@@ -135,6 +137,22 @@ public enum TargetLanguage {
         recognizer.processString(text)
         let hypotheses = recognizer.languageHypotheses(withMaximum: 2)
         return (hypotheses[NLLanguage(target)] ?? 0) >= 0.9
+    }
+
+    /// Nino: hedef dile özgü harf tek bir sözcükteyse ve geri kalanı açıkça kaynak dildeyse yazı kaynak dildedir. Yazı
+    /// tanıma yanındaki tuş simgesini harf sanıp sözcüğe yapıştırabiliyor (GTA 6: "Sure beats jailsır"): satır "zaten
+    /// Türkçe" sayılıp gösterilmiyor, önceki kısa çevirinin kutusu bu uzun İngilizcenin üstünde kalıp iki yanından taşıyordu.
+    static func isSourceWithOneStrayWord(_ text: String, letters: Set<Character>, target: String, source: String) -> Bool {
+        let words: [String] = text.split(whereSeparator: { !$0.isLetter }).map(String.init).filter { $0.count > 1 }
+        let marked: [String] = words.filter { word in word.contains(where: { letters.contains($0) }) }
+        let rest: [String] = words.filter { word in !word.contains(where: { letters.contains($0) }) }
+        guard marked.count == 1, rest.count >= 3 else { return false }
+        let sourceLanguage = NLLanguage(code(source))
+        let recognizer = NLLanguageRecognizer()
+        recognizer.languageConstraints = [NLLanguage(target), sourceLanguage]
+        recognizer.processString(rest.joined(separator: " "))
+        let confidence: Double = recognizer.languageHypotheses(withMaximum: 2)[sourceLanguage] ?? 0
+        return confidence >= 0.9
     }
 
     /// Okunan bloğun herhangi bir satırı hedef dildeyse blok oyunun değil konsolun ekranıdır (PS5 menüsü, ana ekran).

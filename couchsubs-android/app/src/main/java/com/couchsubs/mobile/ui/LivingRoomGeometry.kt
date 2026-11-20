@@ -34,8 +34,6 @@ internal class RoomLayout(
     val cableOut: Offset = Offset(1f, 0.1f),
     /** Fiş çıkıkken sehpanın yanından sarkar. */
     val hanging: Offset,
-    /** Sehpanın ön yüzündeki kaydırma rayının ortası (y); ray iki sahnede de aynı x aralığındadır. */
-    val railY: Float,
 ) {
     companion object {
         const val CANVAS_W = 1672f
@@ -53,7 +51,6 @@ internal class RoomLayout(
             cableLead = listOf(Offset(1490f, 706f), Offset(1522f, 706f), Offset(1535f, 709f), Offset(1545f, 716f), Offset(1552f, 727f)),
             cableOut = Offset(0.5f, 0.87f),
             hanging = Offset(1600f, 885f),
-            railY = 792f,
         )
         val XBOX = RoomLayout(
             image = R.drawable.living_room_xbox,
@@ -63,8 +60,6 @@ internal class RoomLayout(
             socket = Offset(1561f, 381f),
             cableStart = Offset(1572f, 722f),
             hanging = Offset(1646f, 912f),
-            // Sehpa bu görselde 20 piksel aşağıda ve biraz daha yüksek: ray ön yüzün aynı yerinde dursun.
-            railY = 816f,
         )
     }
 }
@@ -95,15 +90,21 @@ internal object LivingRoomGeometry {
         return eased * atan2(-(socket.x - plug.x), socket.y - plug.y)
     }
 
+    /**
+     * Telefonda fişin büyütme oranı (iPhone'daki `boost` ile aynı): görselde ~8 dp kalırdı, en çok 1,6 kat büyür.
+     * [dpPerPixel]: sahne pikselinin dp karşılığı.
+     */
+    fun plugBoost(dpPerPixel: Float): Float = (0.3f / dpPerPixel.coerceAtLeast(0.01f)).coerceIn(1f, 1.6f)
+
     /** Uçların baktığı yön (birim vektör). */
     fun prong(turn: Float): Offset = Offset(-sin(turn), cos(turn))
 
     /**
      * Kablonun yolu. Görseldeki kablonun (PS5) son parçasının üstünden başlar ki ek yeri belli olmasın; Xbox'ta konsolun
-     * arkasından çıkar. Fiş çıkıkken fişin arkasına (gövdenin üstündeki kablo boğazı) fişin ekseni boyunca girer ve boyundan
+     * arkasından çıkar. Fiş çıkıkken fişin arkasına (gövdenin üstündeki kablo boğazı, fiş büyütülünce [neck] de büyür) fişin ekseni boyunca girer ve boyundan
      * artan kadar sarkar; takılıyken ([inSocket]) alttan prize kıvrılır.
      */
-    fun cable(layout: RoomLayout, plug: Offset, turn: Float, inSocket: Boolean): CableShape {
+    fun cable(layout: RoomLayout, plug: Offset, turn: Float, inSocket: Boolean, neck: Float = 40f): CableShape {
         val lead = layout.cableLead.ifEmpty { listOf(layout.cableStart) }
         val start = lead.last()
         val out = layout.cableOut
@@ -112,7 +113,7 @@ internal object LivingRoomGeometry {
             return CableShape(lead, Offset(start.x + out.x * 90, start.y + out.y * 90), Offset(end.x + 10, end.y + 170), end)
         }
         val prong = prong(turn)
-        val back = Offset(plug.x - prong.x * 40, plug.y - prong.y * 40)
+        val back = Offset(plug.x - prong.x * neck, plug.y - prong.y * neck)
         val sag = (CABLE_LENGTH - hypot(back.x - start.x, back.y - start.y)).coerceAtLeast(0f) * 0.45f
         return CableShape(lead,
             Offset(start.x + out.x * 70, start.y + out.y * 70 + sag),

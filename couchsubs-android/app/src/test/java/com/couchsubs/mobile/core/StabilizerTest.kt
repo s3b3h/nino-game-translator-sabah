@@ -321,6 +321,13 @@ class OcrNoiseTest {
         assertTrue(ButtonPrompts.isPrompt("Press ✕ to jump"))
         assertFalse(ButtonPrompts.isPrompt("We go now, boy."))
     }
+
+    /** GTA 6 etkileşim ipucu "△ ⋮ DRINKS": simgeler harf okunur (Mac ile aynı kural). */
+    @Test
+    fun iconsReadAsLettersBeforeCapsAreAPrompt() {
+        listOf("A e DRINKS", "A : SIT DOWN").forEach { assertTrue(it, ButtonPrompts.isPrompt(it)) }
+        listOf("GET DOWN!", "I am SHAKING", "Hey, you got Lucia's phone.").forEach { assertFalse(it, ButtonPrompts.isPrompt(it)) }
+    }
 }
 
 /** Okuma hattı: paket satırı beklemeden gösterilir, motor yalnız paketsiz satırda çağrılır. */

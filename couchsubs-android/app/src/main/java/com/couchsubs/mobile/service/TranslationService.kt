@@ -178,6 +178,8 @@ class TranslationService : Service() {
     private var wifiLock: WifiManager.WifiLock? = null
     /** Altyazı bölgesi ve ek alanlar (Ayarlar › Altyazı alanı); çeviri sürerken değişirse hemen yenisi okunur. */
     @Volatile private var region = CropRegion()
+    /** Öğrenilen altyazı şeridinin okunacak üstü ([SubtitleLayout.readTop]); her karede hesaplanmasın diye burada tutulur. */
+    @Volatile private var readTop: Double? = null
     @Volatile private var extraAreas: List<com.couchsubs.mobile.core.ExtraArea> = emptyList()
     @Volatile private var areasListener: android.content.SharedPreferences.OnSharedPreferenceChangeListener? = null
     /** Ek alanları ana altyazıdan ayrı ve seyrek (saniyede bir) okuyan; kendi okuyucusu ve iş parçacığı var. */
@@ -383,12 +385,16 @@ class TranslationService : Service() {
         poolGame = { playedGame ?: game.takeIf { it != "genel" } }
         // Klipten okunan satırlar sunucuya gitmez: havuz öncelikli oyun yalnız gerçek oyunda.
         poolFirstActive = { realGame && translationPool.isPoolFirst(poolGame()) }
+        // Oyun tanınmadan da son oyunun teması hemen görünsün (bkz. publishPoolFirst). Oturumun oyunu henüz bağlanmadığından
+        // (PlayedGame.onChange aşağıda) bu ilk karar hatırlanan değerin üstüne yazılmaz.
+        publishPoolFirst(remember = false)
         // Nino: havuz öncelikli oyunda (varsayılan GTA 6) çeviri havuzdan, gelmezse ücretsiz ML Kit'ten; motor çağrılmaz.
         val translator = TargetAwareTranslator(poolFirst(engine, free), target)
         pipeline = SubtitlePipeline(translator, subtitleServer).apply {
             // Nino: atlanan dev yazılar (tabela, reklam panosu) günlüğe yazılır; Sorun Bildir günlüğünde görünür.
             log = { message -> Log.i(TAG, message) }
             hudTop = layout.hudTop(game)
+            this@TranslationService.readTop = layout.readTop(game)
             // Yarım ya da bozuk okuma hemen çevrilmez; aynı satırın en iyi okuması çevrilir (Windows ve iPhone ile aynı).
             holdReadings = true
             // Oyun paketleri Türkçedir: yalnız Türkçe çeviride kullanılır.
@@ -420,6 +426,7 @@ class TranslationService : Service() {
                 pair.box?.let { box ->
                     layout.record(box, game)
                     hudTop = layout.hudTop(game)
+                    this@TranslationService.readTop = layout.readTop(game)
                 }
                 LiveState.shown(pair, pair.packId?.let { packTitles?.get(it) ?: it })
                 LiveState.health.line(pair.translationMs?.toLong())
@@ -508,7 +515,9 @@ class TranslationService : Service() {
             val now = System.currentTimeMillis()
             if (screenRequested.compareAndSet(true, false)) startScreen(frame)
             if (!reading.get() && now - lastRead >= 1000 / MAX_READS_PER_SECOND) {
-                val area = region
+                // Nino: altyazının yeri öğrenildiyse yalnız o şerit okunur (Mac: AppModel.readRegion). Satırların kutusu
+                // okunan alana göre olduğundan aynı alan hatta da verilir.
+                val area = SubtitleLayout.readRegion(region, readTop)
                 // Karenin geldiği an: gecikme buradan TV'ye gidene kadar ölçülür (hattın saatiyle).
                 val capturedAt = com.couchsubs.mobile.core.monotonicClock()
                 SubtitleReader.copyRegion(frame, area)?.let { pixels ->
@@ -808,9 +817,15 @@ class TranslationService : Service() {
      * oyun ([PlayedGame]) birlikte aranır: oyun tanınmadıysa fon değişmez (Mac ve iPhone'daki liveGamePoolFirst gibi).
      * Oyun değişince ve her gösterilen satırda çağrılır; değer değişmediyse arayüz yeniden çizilmez.
      */
-    private fun publishPoolFirst() {
+    private fun publishPoolFirst(remember: Boolean = true) {
         // Karar kilit alır; güncelleme bloğu yeniden çalışabildiği için dışarıda hesaplanır.
-        val first = PlayedGame.sense.current != null && poolFirstActive()
+        // Nino: oyun bu oturumda henüz tanınmadıysa (ekrandan tanıma birkaç deneme sürebiliyor) son oynanan oyunun teması
+        // kalır; her yeniden açılışta GTA renkleri ve "GTA 6 açık" yazısı kayboluyordu (Mac: liveGamePoolFirst, 21 Kasım
+        // 2026). Klip ve yakalama denemesinde (gerçek oyun değil) hep false; hatırlanan değer de yalnız gerçek oyundan yazılır.
+        val realGame = FrameSources.replacement == null
+        val first = if (PlayedGame.sense.current != null) {
+            poolFirstActive().also { if (remember && realGame && settings.lastGamePoolFirst != it) settings.lastGamePoolFirst = it }
+        } else realGame && settings.lastGamePoolFirst
         if (LiveState.status.value.poolFirstGame != first) LiveState.update { it.copy(poolFirstGame = first) }
     }
 

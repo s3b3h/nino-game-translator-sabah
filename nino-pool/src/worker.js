@@ -15,6 +15,8 @@
 //   GET  /v1/config             uygulamaların uzaktan ayarı (çeviri havuzu açık mı, bekleme süresi, en düşük sürüm)
 //   GET  /v1/ping               uygulama çeviri sürerken dakikada bir "buradayım" (panelde şu an oynayan)
 //   GET  /v1/stats              panelin sayıları (Authorization: Bearer EXPORT_TOKEN)
+//   GET  /v1/free-check         ücretsiz çeviri servislerinin durumu (Authorization: Bearer EXPORT_TOKEN)
+//   POST /v1/batch-run?chunks=2[&lang=ar] toplu çeviriyi elle bir kez çalıştırır (Authorization: Bearer EXPORT_TOKEN)
 //   GET  /panel                 Nino paneli (veri içermez; anahtarla /v1/stats'tan çeker)
 //   GET  /reports               bildirimleri okuma sayfası (veri içermez; anahtarla /v1/reports'tan çeker)
 // IP adresi hiçbir yere yazılmaz.
@@ -24,6 +26,8 @@ import { LIMITS } from "./validate.js";
 import { REPORT_LIMITS, receiveReport, listReports, getReport, getReportImage, setReportStatus } from "./reports.js";
 import { REPORTS_PAGE } from "./reports-page.js";
 import { ASSISTANT_LIMITS, handleAssistant, assistantEnabled } from "./assistant.js";
+import { checkFree } from "./free.js";
+import { batchTranslate } from "./batch.js";
 import { touchInstall, handlePing, handleTv, collectStats, samplePlayers, storedDownloadTotal, refreshDownloads } from "./stats.js";
 import { ADMIN_PAGE } from "./admin-page.js";
 import { IDENTIFY_LIMITS, handleIdentify } from "./identify.js";
@@ -86,6 +90,25 @@ export async function handle(request, env, now = Math.floor(Date.now() / 1000), 
   if (path === "/v1/tv" && request.method === "GET") {
     await handleTv(env.DB, env, url.searchParams, now);
     return new Response(null, { status: 204, headers: { "cache-control": "no-store", "access-control-allow-origin": "*" } });
+  }
+
+  if (path === "/v1/free-check" && request.method === "GET") {
+    if (!env.EXPORT_TOKEN) return json(503, { ok: false, error: "export_disabled" });
+    if (!authorized(request, env)) return json(401, { ok: false, error: "unauthorized" });
+    // ?chain=servis:model,… ile zincirde olmayan bir modeli de denemek için (yönetici); ?lines=["…"] deneme satırları.
+    const url = new URL(request.url);
+    const chain = url.searchParams.get("chain");
+    let lines = null;
+    try { lines = JSON.parse(url.searchParams.get("lines") ?? "null"); } catch { lines = null; }
+    return json(200, { ok: true, results: await checkFree(chain ? { ...env, FREE_CHAIN: chain } : env, fetch, Array.isArray(lines) ? lines.map(String).slice(0, 10) : undefined) });
+  }
+
+  if (path === "/v1/batch-run" && request.method === "POST") {
+    if (!env.EXPORT_TOKEN) return json(503, { ok: false, error: "export_disabled" });
+    if (!authorized(request, env)) return json(401, { ok: false, error: "unauthorized" });
+    const chunks = Math.min(10, Math.max(1, Number(url.searchParams.get("chunks")) || 2));
+    const lang = url.searchParams.get("lang") === "ar" ? "ar" : "tr";
+    return json(200, { ok: true, lang, ...(await batchTranslate(env.DB, env, now, { maxChunks: chunks, lang })) });
   }
 
   if (path === "/v1/stats" && request.method === "GET") {
@@ -262,6 +285,12 @@ export default {
     if (env.STATS_GITHUB !== "0") await refreshDownloads(env.DB, now).catch(() => null);
     // Gözden geçirme 30 dakikada bir (wrangler.toml), bakım günde bir.
     if (event?.cron === "17 3 * * *") await prune(env.DB, now);
-    else console.log("gözden geçirme", JSON.stringify(await reviewTranslations(env.DB, env, now)));
+    else {
+      console.log("gözden geçirme", JSON.stringify(await reviewTranslations(env.DB, env, now)));
+      // Toplu ücretsiz çeviri: anında çeviride hak dolduğu için çevrilemeyen satırlar 50'şer satırlık partilerle.
+      // Türkçe öncelikli (oyuncuların çoğu); Arapça da çevrilir, payı küçük (aynı Gemini hakkı ve günlük dolar sınırı).
+      console.log("toplu çeviri", JSON.stringify(await batchTranslate(env.DB, env, now, { maxChunks: 30 }).catch((e) => ({ error: String(e?.message ?? e) }))));
+      console.log("toplu çeviri ar", JSON.stringify(await batchTranslate(env.DB, env, now, { lang: "ar", maxChunks: 10 }).catch((e) => ({ error: String(e?.message ?? e) }))));
+    }
   },
 };

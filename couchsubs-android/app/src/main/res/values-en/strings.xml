@@ -144,6 +144,8 @@
     <string name="settings_key">Key</string>
     <string name="settings_packs">Game packs</string>
     <string name="settings_text_size">Subtitle appearance</string>
+    <string name="settings_auto_size">Match the game\'s subtitle size on the TV</string>
+    <string name="settings_auto_size_note">While on, the TV sizes the text from the game\'s English line; changing the size below turns this off.</string>
     <string name="settings_pool">Contribute to the shared pool</string>
     <string name="settings_stack_previous">Keep previous lines above in fast dialogue</string>
     <string name="settings_stack_previous_note">When off, each new line replaces the previous one. Needs TV app 0.9.16 or later.</string>

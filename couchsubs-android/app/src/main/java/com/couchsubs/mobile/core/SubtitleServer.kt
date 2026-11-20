@@ -51,6 +51,12 @@ data class SubtitleStyle(
     /** Hızlı konuşmada önceki satır(lar) yeni satırın üstünde kısa süre soluk kalsın mı; kapalıysa yeni satır eskisinin yerine geçer. */
     val stackPrevious: Boolean = true,
     val font: SubtitleFont = SubtitleFont.CONDENSED,
+    /**
+     * Nino: TV yazı boyunu oyunun İngilizce satırına uydursun mu (Mac: SubtitleStyle.autoSize). Açıkken TV [fontSize]'ı
+     * yok sayar. Eskiden bu alan hiç gönderilmiyordu; TV varsayılanı (açık) kaldığından telefondaki boy ayarı TV'de
+     * hiçbir şeyi değiştirmiyordu (LG + Xbox, 3.5.1).
+     */
+    val autoSize: Boolean = true,
 ) {
     companion object {
         /** Örtme kipinde kutunun en az koyuluğu (yüzde); Ayarlar'daki kaydırıcı bu kipte buradan başlar. */
@@ -158,6 +164,7 @@ class SubtitleServer(
 
         fun styleFrame(style: SubtitleStyle) = frame(
             "style", mapOf(
+                "autoSize" to style.autoSize,
                 "background" to style.background.coerceIn(0, 100),
                 "backgroundShape" to style.backgroundShape.name.lowercase(Locale.ROOT),
                 "bold" to style.bold,

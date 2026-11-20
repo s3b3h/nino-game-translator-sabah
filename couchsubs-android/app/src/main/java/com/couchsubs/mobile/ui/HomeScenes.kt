@@ -15,6 +15,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -43,7 +44,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -119,6 +119,7 @@ internal fun onColors(): Pair<Color, Color> = when (TargetLanguage.code(Services
     "th", "ms", "tl" -> Color(0xFF2D4FB3) to Color(0xFF1A3380)
     else -> FlagRed to FlagDeep
 }
+private val HintInk = Color(0xFF55607A)
 private val LedBlue = Color(0xFF1F5CFF)
 private val LedLight = Color(0xFF738CFF)
 /** Nino: GTA 6 tanınınca LED'lerin renkleri, soldan sağa (pembe, lila, açık mavi): geniş ışık ve ince kenar ışığı / şerit. */
@@ -141,27 +142,46 @@ private fun LiveStatus.liveText(): String = TargetLanguage.displayText(current.i
 
 /**
  * Salon (Mac'teki birinci arayüz). Saydam salon görseli sabit durur (konsola göre PS5'li ya da Xbox'lı salon;
- * [RoomLayout]); üstüne TV ekranının içi, konsoldan prize giden kablo ve fiş çizilir. Fiş prize takılınca (dokunarak,
- * sürükleyerek ya da alttaki rayla) çeviri başlar, TV'de Nino'nun açılış animasyonu oynar, ardından altyazılar akar; mavi
+ * [RoomLayout]); üstüne TV ekranının içi, konsoldan prize giden kablo ve fiş çizilir. Fiş prize takılınca (dokunarak ya
+ * da sürükleyerek) çeviri başlar, TV'de Nino'nun açılış animasyonu oynar, ardından altyazılar akar; mavi
  * LED'ler yalnız fiş takılıyken yanar. Fiş takılı değilken priz yanıp söner, TV'de ne yapılacağı ve toplam indirme
  * yazar. Koordinatlar görselin piksel ölçüsündedir (1672×941). Not: konsolun biçimi Sony'nin tasarımına benzer;
  * Play'e göndermeden önce markasız bir çizimle değiştirilmeli (bkz. CLAUDE.md, Marka).
  */
 @Composable
 fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Modifier, onStart: () -> Unit, onStop: () -> Unit, onLocked: () -> Unit) {
-    val plugged = status.running
+    val running = status.running
     val reduced = reducedMotion()
+    // Nino (kullanıcı isteği, 21 Kasım 2026; Mac: LivingRoomScene.introHold): açılışta fiş bir an (0,9 sn) çekik görünür,
+    // sonra yaylanarak prize takılır (çeviri kendiliğinden başlasa da). Uygulama her açıldığında bir kez oynar.
+    var introHold by remember { mutableStateOf(!livingRoomIntroPlayed) }
+    var introSpring by remember { mutableStateOf(!livingRoomIntroPlayed) }
+    LaunchedEffect(Unit) {
+        if (livingRoomIntroPlayed) return@LaunchedEffect
+        livingRoomIntroPlayed = true
+        if (!reduced) delay(INTRO_HOLD_MS)
+        introHold = false
+        delay(1200)
+        introSpring = false
+    }
+    // Görünüm için fiş prizde mi. Dokunma, sürükleme ve ray kararları gerçek duruma ([running]) bakar: açılış gösterisi
+    // sürerken dokunulursa çalışan çeviri yeniden başlatılmaz, durdurulur.
+    val plugged = running && !introHold
+    // Fiş prize yaylanarak gider ve oradan yaylanarak düşer (Mac: .spring(response: 0.5, dampingFraction: 0.78); açılışta
+    // response 0.55, dampingFraction 0.7). Compose sertliği = (2π / response)².
+    val plugProgress by animateFloatAsState(if (plugged) 1f else 0f,
+        if (reduced) snap() else if (introSpring) spring(dampingRatio = 0.7f, stiffness = 130f) else spring(dampingRatio = 0.78f, stiffness = 158f),
+        label = "plug")
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val drag = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
-    val slide = remember { Animatable(0f) }
     var splashDone by remember { mutableStateOf(status.running) }
     LaunchedEffect(plugged) { if (plugged && !status.streaming) splashDone = false }
     val leds by animateFloatAsState(if (plugged) 1f else 0f, tween(if (reduced) 0 else 800), label = "leds")
     // Nino: GTA 6 tanınınca (havuz öncelikli oyun; TV'deki gün batımı fonuyla aynı koşul) LED'ler oyunun renklerine
     // döner; renk değişimi yumuşak canlanır (Mac'teki gibi 1,2 sn).
     val gtaLeds by animateFloatAsState(if (plugged && status.poolFirstGame) 1f else 0f, tween(if (reduced) 0 else 1200), label = "gtaLeds")
-    fun toggle() = if (plugged) onStop() else if (paired) onStart() else onLocked()
+    fun toggle() = if (running) onStop() else if (paired) onStart() else onLocked()
     val layout = if (Services.settings.xbox) RoomLayout.XBOX else RoomLayout.PS5
     val socket = layout.socket
     val hanging = layout.hanging
@@ -182,34 +202,23 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
         val canvasWidth = CANVAS_W + 40f
         val sceneWidthPx = with(density) { maxWidth.toPx() }
         val scale = sceneWidthPx / canvasWidth
-        // Sarkan fiş görselin altına taşıyorsa (Xbox'lı salon) alttaki yazının üstüne binmesin.
-        val heightDp = with(density) { (maxOf(CANVAS_H, hanging.y + 48f) * scale).toDp() } + 8.dp
+        // Nino (iPhone'daki gibi): fiş görselde çok küçük kalır; telefonda en çok 1,6 kat büyük çizilir ki kolay yakalansın.
+        val boost = LivingRoomGeometry.plugBoost(scale / density.density)
+        // Sarkan fiş (büyütülmüş hâliyle) görselin altına taşıyorsa alttaki yazının üstüne binmesin.
+        val heightDp = with(density) { (maxOf(CANVAS_H, hanging.y + 46f * boost) * scale).toDp() } + 6.dp
         fun dp(value: Float) = with(density) { (value * scale).toDp() }
-        val base = if (plugged) socket else hanging
-        // Nino: sehpanın önündeki ray. Telefonda küçük fişi prize sürüklemek zor; rayda kaydırdıkça fiş prize doğru
-        // yükselir, sona varınca takılır (geri kaydırınca çıkar).
-        val railX = RAIL_START * scale
-        val railWidthPx = (RAIL_END - RAIL_START) * scale
-        val railHeight = maxOf(dp(RAIL_H), 30.dp)
-        val railKnob = railHeight + 10.dp
-        val railKnobPx = with(density) { railKnob.toPx() }
-        val railTravel = (railWidthPx - railKnobPx).coerceAtLeast(1f)
-        val railBase = if (plugged) railTravel else 0f
-        val railPos = (railBase + slide.value).coerceIn(0f, railTravel)
-        val railProgress = railPos / railTravel
-        val sliding = slide.value != 0f
-        fun onRail(progress: Float) = Offset(hanging.x + (socket.x - hanging.x) * progress, hanging.y + (socket.y - hanging.y) * progress)
-        val plugAt = if (sliding) onRail(railProgress) else Offset(base.x + drag.value.x / scale, base.y + drag.value.y / scale)
-        val dragging = drag.value != Offset.Zero || sliding
-        // Fişin yönü: prize yaklaştıkça uçları prize döner (rayla giderken de). Ray sona dayanınca fiş tam prizin üstündedir
-        // ve oradan yön çıkmaz (kural 0 verir, fiş bir an aşağı dönerdi): yön, rayın sonuna az kala olan yerden alınır.
-        val plugTurn = LivingRoomGeometry.plugTurn(if (sliding) onRail(railProgress.coerceAtMost(0.99f)) else plugAt, socket, hanging)
+        // Fişin dinlendiği yer: çıkık yerinden prize yaylanarak gider (yay prizin biraz ötesine taşıp geri oturur).
+        val base = Offset(hanging.x + (socket.x - hanging.x) * plugProgress, hanging.y + (socket.y - hanging.y) * plugProgress)
+        val plugAt = Offset(base.x + drag.value.x / scale, base.y + drag.value.y / scale)
+        val dragging = drag.value != Offset.Zero
+        // Fişin yönü: prize yaklaştıkça uçları prize döner.
+        val plugTurn = LivingRoomGeometry.plugTurn(plugAt, socket, hanging)
 
         val unplugText = stringResource(R.string.nino_unplug_to_stop)
         val plugText = stringResource(R.string.nino_plug_to_start, targetLanguageName())
         Box(Modifier.fillMaxWidth().height(heightDp).semantics {
             role = Role.Button
-            contentDescription = if (plugged) unplugText else plugText
+            contentDescription = if (running) unplugText else plugText
             onClick { toggle(); true }
         }) {
             // LED'ler: görselin arkasında, saydam kenarlarından taşar (bulanıklık yerine katmanlı ışık; Android 8'de de çalışır).
@@ -220,17 +229,19 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
                 Modifier.offset(dp(socket.x - SOCKET_GLOW_BOX / 2), dp(socket.y - SOCKET_GLOW_BOX / 2)).align(Alignment.TopStart))
             Image(painterResource(layout.image), contentDescription = null, contentScale = ContentScale.FillBounds,
                 modifier = Modifier.offset(0.dp, 0.dp).requiredSize(dp(CANVAS_W), dp(CANVAS_H)).align(Alignment.TopStart))
-            // TV ekranı: altta siyah zemin (geçişlerde görseldeki ekran görünmesin), içerik 588 noktalık TV'ye göre çizilip büyütülür.
+            // TV ekranı: altta siyah zemin (geçişlerde görseldeki ekran görünmesin), içerik 420 noktalık TV'ye göre çizilip
+            // ölçeklenir (eskiden 588: telefonda altyazı ve rozetler iPhone'dakinden çok küçük kalıyordu).
             val screen = layout.screen
             Box(Modifier.offset(dp(screen.left), dp(screen.top)).requiredSize(dp(screen.width), dp(screen.height)).align(Alignment.TopStart)
                 .background(Color.Black).clipToBounds(), contentAlignment = Alignment.Center) {
-                val virtualW = 588f
+                val virtualW = 420f
                 val virtualH = virtualW * screen.height / screen.width
                 val factor = with(density) { (screen.width * scale) / virtualW.dp.toPx() }
                 Box(Modifier.requiredSize(virtualW.dp, virtualH.dp).graphicsLayer { scaleX = factor; scaleY = factor }) {
                     when {
                         // Nino: "SİNYAL YOK" yerine ne yapılacağı; sağ üstte toplam indirme.
-                        !plugged -> TvStandbyScreen(downloads)
+                        // Açılış gösterisinde sayı fiş takılınca sayılarak çıkar; önce görünmez.
+                        !plugged -> TvStandbyScreen(if (introHold) null else downloads)
                         !splashDone -> TvSplash(onFinish = { splashDone = true })
                         // Nino: oyun havuz öncelikliyse (GTA 6) TV'de gün batımı fonu (Mac'teki gibi). Toplam indirme, fiş
                         // takılı değilkenki yerinde (sağ üst) kalır.
@@ -243,7 +254,7 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
             Canvas(Modifier.fillMaxSize()) {
                 val s = scale
                 val inSocket = plugged && !dragging
-                val cable = LivingRoomGeometry.cable(layout, plugAt, plugTurn, inSocket)
+                val cable = LivingRoomGeometry.cable(layout, plugAt, plugTurn, inSocket, neck = 40f * boost)
                 val path = Path()
                 path.moveTo(cable.lead.first().x * s, cable.lead.first().y * s)
                 cable.lead.drop(1).forEach { path.lineTo(it.x * s, it.y * s) }
@@ -252,10 +263,11 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
                 // Xbox görselinde kablo yok: kablo konsolun arkasındaki girişten küçük bir fiş başıyla çıkar.
                 if (layout.cableLead.isEmpty()) drawRoundRect(Color(0xFF141414), Offset((layout.cableStart.x - 7) * s, (layout.cableStart.y - 6) * s),
                     Size(14 * s, 12 * s), CornerRadius(3 * s))
-                drawPlug(plugAt, s, inSocket, dragging, plugTurn)
+                drawPlug(plugAt, s, boost, inSocket, dragging, plugTurn)
             }
-            // Dokunma alanları en az 48 dp (fiş görselde küçük kalsa da kolay yakalansın); sahnenin dışına taşmaz.
-            val touch = 56.dp
+            // Dokunma alanları 64 dp (iPhone'da 60): fiş görselde küçük kalsa da kolay yakalansın; sahnenin dışına taşmaz.
+            // Fişe ya da prize dokunmak takar/çıkarır; fişi prize sürüklemek de takar (iPhone ile aynı).
+            val touch = 64.dp
             val touchPx = with(density) { touch.toPx() }
             val widthPx = sceneWidthPx
             val heightPx = with(density) { heightDp.toPx() }
@@ -263,17 +275,19 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
                 (point.x * scale - touchPx / 2).coerceIn(0f, widthPx - touchPx).roundToInt(),
                 (point.y * scale - touchPx / 2).coerceIn(0f, heightPx - touchPx).roundToInt(),
             )
-            // Prize dokunmak da fişi takar/çıkarır.
             Box(Modifier.offset { clampedOffset(socket) }.size(touch).clickable(
                 interactionSource = remember { MutableInteractionSource() }, indication = null) { toggle() })
-            Box(Modifier.offset { clampedOffset(plugAt) }.size(touch)
-                .pointerInput(plugged, paired) {
+            // Fişin alanı dinlendiği yerde durur (parmakla kaymaz): sürükleme ölçüsü titremez.
+            Box(Modifier.offset { clampedOffset(if (plugged) socket else hanging) }.size(touch)
+                .pointerInput(running, paired) {
                     detectDragGestures(
                         onDragEnd = {
-                            val end = Offset(base.x + drag.value.x / scale, base.y + drag.value.y / scale)
+                            // Karar fişin oturduğu yere göre verilir (yay sürerken canlanan yere değil).
+                            val rest = if (running) socket else hanging
+                            val end = Offset(rest.x + drag.value.x / scale, rest.y + drag.value.y / scale)
                             val near = hypot(end.x - socket.x, end.y - socket.y) < 160
                             scope.launch { drag.animateTo(Offset.Zero, spring(dampingRatio = 0.75f)) }
-                            if (near != plugged) toggle()
+                            if (near != running) toggle()
                         },
                         onDragCancel = { scope.launch { drag.animateTo(Offset.Zero) } },
                     ) { change, amount ->
@@ -281,43 +295,7 @@ fun LivingRoomScene(status: LiveStatus, paired: Boolean, modifier: Modifier = Mo
                         scope.launch { drag.snapTo(drag.value + amount) }
                     }
                 }
-                .pointerInput(plugged, paired) { detectTapGestures { toggle() } })
-            // Ray: sehpanın ön yüzünde buzlu oluk; her yerinden kaydırılabilir, dokunmak da fişi takar/çıkarır.
-            val railTouch = maxOf(railKnob, 56.dp)
-            val railTouchPx = with(density) { railTouch.toPx() }
-            val railY = layout.railY * scale
-            val railHeightPx = with(density) { railHeight.toPx() }
-            val railWidthDp = with(density) { railWidthPx.toDp() }
-            Box(Modifier.offset { IntOffset(railX.roundToInt(), (railY - railHeightPx / 2).roundToInt()) }
-                .size(railWidthDp, railHeight)
-                .background(Color.Black.copy(alpha = 0.38f + 0.2f * railProgress), RoundedCornerShape(50))
-                .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(50)), contentAlignment = Alignment.Center) {
-                Text(if (plugged) stringResource(R.string.nino_slide_to_unplug) else stringResource(R.string.nino_slide_to_plug) + "  ›",
-                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.85f), maxLines = 1,
-                    modifier = Modifier.alpha(if (plugged) railProgress else 1f - railProgress)
-                        .padding(start = if (plugged) 0.dp else railKnob, end = if (plugged) railKnob else 0.dp))
-            }
-            Box(Modifier.offset { IntOffset(railX.roundToInt(), (railY - railTouchPx / 2).roundToInt()) }
-                .size(railWidthDp, railTouch)
-                .pointerInput(plugged, paired) {
-                    detectHorizontalDragGestures(onDragEnd = {
-                        val end = (railBase + slide.value) / railTravel
-                        scope.launch { slide.animateTo(0f, spring(dampingRatio = 0.8f)) }
-                        if (!plugged && end > 0.8f) toggle() else if (plugged && end < 0.2f) toggle()
-                    }, onDragCancel = { scope.launch { slide.animateTo(0f) } }) { change, amount ->
-                        change.consume()
-                        scope.launch { slide.snapTo(slide.value + amount) }
-                    }
-                }
-                .pointerInput(plugged, paired) { detectTapGestures { toggle() } })
-            // Rayın küresi: içinde fiş simgesi; takılıyken mavi yanar.
-            Box(Modifier.offset { IntOffset((railX + railPos).roundToInt(), (railY - railKnobPx / 2).roundToInt()) }
-                .size(railKnob).shadow(8.dp, CircleShape)
-                .background(Color.White, CircleShape)
-                .background(LedLight.copy(alpha = railProgress), CircleShape)
-                .border(1.5.dp, Color.White.copy(alpha = 0.9f), CircleShape), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.Power, null, tint = if (railProgress > 0.5f) Color.White else Color(0xFF1B2440), modifier = Modifier.size(railKnob * 0.55f))
-            }
+                .pointerInput(running, paired) { detectTapGestures { toggle() } })
         }
     }
 }
@@ -330,16 +308,16 @@ fun targetLanguageName(): String = when (val code = TargetLanguage.code(Services
     else -> TargetLanguage.nativeName(code)
 }
 
-/** Sahnenin altındaki tek satırlık ipucu. */
+/** Sahnenin altındaki tek satırlık ipucu (iPhone'daki gibi sola yaslı, küçük, orta kalınlıkta). */
 @Composable
-fun LivingRoomHint(running: Boolean, paired: Boolean) {
+fun LivingRoomHint(running: Boolean, paired: Boolean, modifier: Modifier = Modifier) {
     Text(
         when {
             running -> stringResource(R.string.nino_unplug_to_stop)
             paired -> stringResource(R.string.nino_plug_to_start, targetLanguageName())
             else -> stringResource(R.string.nino_pair_first)
         },
-        style = Tokens.Type.caption, color = Tokens.Color.secondary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+        fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium, color = HintInk, modifier = modifier,
     )
 }
 
@@ -374,14 +352,18 @@ fun LiveTvScreen(status: LiveStatus, modifier: Modifier = Modifier, sunset: Bool
             Text(liveLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold,
                 letterSpacing = if (TargetLanguage.containsArabic(liveLabel)) 0.sp else 1.2.sp, color = Color.White)
         }
-        if (downloads != null) DownloadHud(downloads, Modifier.align(Alignment.TopEnd))
+        // Nino: fiş takılınca sayı 1, 2, 3 diye başlar, hızlanıp toplam sayıya fırlar (Mac: DownloadHUD countsUp).
+        if (downloads != null) DownloadHud(downloads, Modifier.align(Alignment.TopEnd), countsUp = true)
         Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)) {
             when {
                 // PS5 görüntüsü gelmiyorsa altyazı yerine bağlantının durumu yazılır.
                 !status.streaming -> Text(status.phase.ifEmpty { stringResource(R.string.nino_connecting_ps5) }, fontSize = 15.sp, fontWeight = FontWeight.Medium,
                     color = Color.White.copy(alpha = 0.7f), textAlign = TextAlign.Center)
                 text.isEmpty() -> Text(stringResource(R.string.nino_waiting_next), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.55f))
-                else -> Text(text, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = Color.White, textAlign = TextAlign.Center,
+                // Uzun satır küçülür ve en çok üç satır kalır (iPhone: lineLimit(3), minimumScaleFactor(0.6)); CANLI rozetine taşmaz.
+                else -> Text(text, fontSize = when { text.length > 90 -> 17.sp; text.length > 60 -> 20.sp; else -> 24.sp },
+                    fontWeight = FontWeight.SemiBold, color = Color.White, textAlign = TextAlign.Center,
+                    maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     modifier = Modifier.background(Color.Black.copy(alpha = 0.72f), RoundedCornerShape(10.dp)).padding(horizontal = 16.dp, vertical = 8.dp))
             }
         }
@@ -461,8 +443,10 @@ private val SoftEdgeAlphas = floatArrayOf(0.040f, 0.069f, 0.135f, 0.225f, 0.331f
  * Fiş: çıkıkken siyah gövde ve iki metal uç; uçlar [turn] yönüne bakar (radyan; 0 = aşağı, saat yönü artı; bkz.
  * [LivingRoomGeometry.plugTurn]). Takılıyken prizin önünde yuvarlak siyah kapak.
  */
-private fun DrawScope.drawPlug(at: Offset, s: Float, inSocket: Boolean, lifted: Boolean, turn: Float) {
-    val c = Offset(at.x * s, at.y * s)
+private fun DrawScope.drawPlug(at: Offset, scale: Float, boost: Float, inSocket: Boolean, lifted: Boolean, turn: Float) {
+    val c = Offset(at.x * scale, at.y * scale)
+    // [boost]: telefonda fiş büyütülür (iPhone: en çok 1,6 kat); kapak da aynı oranda.
+    val s = scale * boost
     if (inSocket) {
         val r = 29 * s
         drawCircle(Color.Black.copy(alpha = 0.35f), r * 1.08f, c + Offset(0f, 4 * s))
@@ -484,12 +468,13 @@ private fun DrawScope.drawPlug(at: Offset, s: Float, inSocket: Boolean, lifted: 
     }
 }
 
+/** Açılış gösterisi bu süreçte oynadı mı (uygulama her açıldığında bir kez; ayarlardan dönünce yeniden oynamaz). */
+private var livingRoomIntroPlayed = false
+/** Açılışta fişin çekik durduğu süre (Mac ile aynı). */
+private const val INTRO_HOLD_MS = 900L
+
 private const val CANVAS_W = RoomLayout.CANVAS_W
 private const val CANVAS_H = RoomLayout.CANVAS_H
-/** Sehpanın ön yüzündeki kaydırma rayı (görsel pikseli); yüksekliği sahneye göre [RoomLayout.railY]. */
-private const val RAIL_START = 230f
-private const val RAIL_END = 1300f
-private const val RAIL_H = 64f
 
 /**
  * Cam düğme (Mac'teki ikinci arayüz): hap biçimli iz ve üstünde kayan cam küre. Kapalıyken küre solda, iz mavi-gri;

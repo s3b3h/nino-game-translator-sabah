@@ -81,4 +81,23 @@ class SubtitleLayoutTest {
         val later = pipeline.withoutStaleLines(Reading(listOf(TextLine("You two, get up there.", TextBox(0.3, 0.8, 0.7, 0.85)), tip)), 10_000)
         assertEquals(listOf("You two, get up there."), later.lines.map { it.text })
     }
+
+    /** Mac: SubtitleLayout.readTop + AppModel.readRegion. Öğrenilen şerit okunan alanı daraltır, genişletmez. */
+    @Test
+    fun learnedBandNarrowsTheReadArea() {
+        val layout = SubtitleLayout(null)
+        assertNull(layout.readTop("gta"))
+        val settings = CropRegion(top = 0.62, bottom = 0.97)
+        assertEquals(settings, SubtitleLayout.readRegion(settings, layout.readTop("gta")))
+        repeat(12) { layout.record(box(0.84, 0.90), "gta") }
+        val top = layout.readTop("gta")!!
+        assertEquals(0.84 - SubtitleLayout.READ_MARGIN, top, 1e-9)
+        val narrowed = SubtitleLayout.readRegion(settings, top)
+        assertEquals(top, narrowed.top, 1e-9)
+        assertEquals(settings.bottom, narrowed.bottom, 0.0)
+        assertEquals(settings.left, narrowed.left, 0.0)
+        // Şerit alanın üstündeyse alan büyümez; alttan 0,06'dan ince şerit kalacaksa alan olduğu gibi okunur.
+        assertEquals(settings, SubtitleLayout.readRegion(settings, 0.50))
+        assertEquals(settings, SubtitleLayout.readRegion(settings, 0.92))
+    }
 }

@@ -11,13 +11,14 @@ final class OpusAudioDecoder {
     private let output: AVAudioFormat
     private let framesPerPacket: AVAudioFrameCount
 
-    init?(channels: Int, rate: Int, frameSize: Int) {
+    /// `outputRate`/`outputChannels`: konuşanı tanımak için 16 kHz tek kanal; video kaydı için 48 kHz iki kanal.
+    init?(channels: Int, rate: Int, frameSize: Int, outputRate: Double = 16_000, outputChannels: AVAudioChannelCount = 1) {
         var description = AudioStreamBasicDescription(
             mSampleRate: Double(rate), mFormatID: kAudioFormatOpus, mFormatFlags: 0, mBytesPerPacket: 0,
             mFramesPerPacket: UInt32(frameSize), mBytesPerFrame: 0, mChannelsPerFrame: UInt32(channels),
             mBitsPerChannel: 0, mReserved: 0)
         guard let input = AVAudioFormat(streamDescription: &description),
-              let output = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000, channels: 1, interleaved: false),
+              let output = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: outputRate, channels: outputChannels, interleaved: false),
               let converter = AVAudioConverter(from: input, to: output) else { return nil }
         self.input = input
         self.output = output
@@ -49,7 +50,12 @@ final class OpusAudioDecoder {
             status.pointee = .haveData
             return compressed
         }
-        guard error == nil, let channel = pcm.floatChannelData?[0] else { return [] }
-        return Array(UnsafeBufferPointer(start: channel, count: Int(pcm.frameLength)))
+        guard error == nil, let data = pcm.floatChannelData else { return [] }
+        let frames = Int(pcm.frameLength), count = Int(output.channelCount)
+        if count == 1 { return Array(UnsafeBufferPointer(start: data[0], count: frames)) }
+        // Birden çok kanal: sırayla (L R L R …).
+        var out = [Float](repeating: 0, count: frames * count)
+        for frame in 0..<frames { for channel in 0..<count { out[frame * count + channel] = data[channel][frame] } }
+        return out
     }
 }

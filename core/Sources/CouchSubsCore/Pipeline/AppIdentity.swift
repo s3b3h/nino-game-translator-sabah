@@ -12,7 +12,7 @@ public enum AppIdentity {
     public static var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0" }
     public static let serverPort: UInt16 = 8787
     /// Nino: herkesin gördüğü sürüm adı, bütün uygulamalarda (Mac, Windows, telefon, TV) aynı.
-    public static let label = "V3.5"
+    public static let label = "V4.0"
     /// "V3.3 (0.2.5)"
     public static var displayVersion: String { "\(label) (\(version))" }
 }

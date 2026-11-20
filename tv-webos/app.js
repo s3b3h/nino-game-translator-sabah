@@ -6,9 +6,9 @@
   'use strict';
 
   // TV uygulamasının sürümü: appinfo.json, tv-tizen/config.xml ve tv-android/app/build.gradle ile aynı tutulur.
-  var APP_VERSION = '3.5.0';
+  var APP_VERSION = '4.0.0';
   // Nino: herkesin göreceği sürüm adı (bütün uygulamalarda aynı: V3.2). Teknik numara parantez içinde.
-  var APP_LABEL = 'V3.5';
+  var APP_LABEL = 'V4.0';
   var t = window.t;
   var config = window.COUCHSUBS_CONFIG || {};
   var platform = window.COUCHSUBS_PLATFORM;
@@ -430,6 +430,32 @@
     if (preview) preview.className = 'p-preview';
   }
 
+  // Nino (akıllı koyuluk): sahne aydınlıksa zemin koyulaşır, karanlıksa açılıp sahneye karışır. Örtü (İngilizceyi
+  // kapatan zemin) her zaman opaktır; yalnız dışa taşan yumuşak gölgesi değişir.
+  var sceneLight = 0.5;
+  function applySceneLight(light) {
+    sceneLight = Math.max(0, Math.min(1, light));
+    if (!document.body || document.body.className.indexOf('glass') < 0) return;
+    var alpha = (0.3 + 0.55 * sceneLight).toFixed(2);
+    textBackground = 'rgba(10, 10, 10, ' + alpha + ')';
+    var shadow = '0 0 ' + Math.round(14 + 22 * sceneLight) + 'px ' + Math.round(2 + 8 * sceneLight) + 'px rgba(10, 10, 10, ' + (0.5 + 0.4 * sceneLight).toFixed(2) + ')';
+    $('subtitle-cover').style.setProperty('box-shadow', shadow, 'important');
+  }
+
+  // Nino (buzlu zemin): bilgisayar altyazının arkasındaki sahnenin bulanık halini gönderir; örtünün zemini o olur
+  // (siyah kutu değil, sahnenin buzlu cam görünümü; İngilizce bulanıklıkta kaybolur). Yoksa koyu zemin kalır.
+  function applyCoverImage(cover) {
+    var el = $('subtitle-cover');
+    if (cover && document.body && document.body.className.indexOf('glass') >= 0) {
+      el.style.setProperty('background', 'linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)), url(data:image/jpeg;base64,' + cover + ') center / 100% 100% no-repeat', 'important');
+      el.style.setProperty('box-shadow', 'none', 'important');
+      document.body.classList.add('frosted');
+    } else {
+      el.style.removeProperty('background');
+      document.body.classList.remove('frosted');
+    }
+  }
+
   function showSubtitle(text, duration, box, paragraphs, replaces) {
     var now = Date.now();
     var current = rawText('subtitle-text');
@@ -571,6 +597,43 @@
     if (ARABIC_RE.test(String(text))) el.setAttribute('dir', 'rtl'); else el.removeAttribute('dir');
   }
 
+  // Nino: dört yüz tuşu kendi çizimimiz (SVG). Sony'nin dosyası ya da logosu değildir. Cam gibi koyu bir tuş:
+  // üstten alta koyulaşan yüzey, üstte ışık yansıması, ince parlak kenar; şekil kendi renginde hafifçe parlar.
+  // Ortak gradyanlar sayfaya bir kez eklenir (ensureFaceDefs); her simge yalnız onlara başvurur.
+  var FACE_SHAPES = {
+    '✕': ['#a9cbff', '<path d="M35 35L65 65M65 35L35 65"/>'],
+    '○': ['#ff9494', '<circle cx="50" cy="50" r="17"/>'],
+    '△': ['#6eebc0', '<path d="M50 31.5L69 64H31Z"/>'],
+    '□': ['#ffa8e4', '<rect x="33" y="33" width="34" height="34" rx="2.5"/>']
+  };
+  function faceSvg(tok) {
+    var s = FACE_SHAPES[tok];
+    var stroke = ' fill="none" stroke="' + s[0] + '" stroke-linecap="round" stroke-linejoin="round"';
+    return '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<circle cx="50" cy="50" r="47" fill="url(#nino-key-face)"/>' +
+      '<circle cx="50" cy="50" r="45.5" fill="none" stroke="url(#nino-key-rim)" stroke-width="3"/>' +
+      '<ellipse cx="50" cy="27" rx="31" ry="15" fill="url(#nino-key-gloss)"/>' +
+      '<g' + stroke + ' stroke-width="15" opacity="0.22">' + s[1] + '</g>' +
+      '<g' + stroke + ' stroke-width="8">' + s[1] + '</g></svg>';
+  }
+  var faceDefsAdded = false;
+  function ensureFaceDefs() {
+    if (faceDefsAdded || !document.body) return;
+    faceDefsAdded = true;
+    var holder = document.createElement('div');
+    holder.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+    holder.innerHTML = '<svg width="0" height="0" aria-hidden="true"><defs>' +
+      '<radialGradient id="nino-key-face" cx="50%" cy="30%" r="75%">' +
+        '<stop offset="0" stop-color="#3b3e48"/><stop offset="0.6" stop-color="#1c1d23"/><stop offset="1" stop-color="#0c0d10"/></radialGradient>' +
+      '<linearGradient id="nino-key-rim" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#fff" stop-opacity="0.75"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.18"/>' +
+        '<stop offset="1" stop-color="#fff" stop-opacity="0.35"/></linearGradient>' +
+      '<linearGradient id="nino-key-gloss" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+      '</defs></svg>';
+    document.body.appendChild(holder);
+  }
+
   function setRich(el, text) {
     el.textContent = '';
     setDirection(el, text);
@@ -593,8 +656,14 @@
         } else {
           icon.className = /^[LR][12]$/.test(tok) || tok.length > 2 ? 'btn-icon pill' : (/^[LR]3$/.test(tok) ? 'btn-icon stick' : 'btn-icon');
         }
-        parts[i] = tok;
-        icon.textContent = parts[i];
+        if (FACE_SHAPES[tok]) {
+          ensureFaceDefs();
+          icon.className = 'btn-icon face';
+          icon.setAttribute('data-key', tok);
+          icon.innerHTML = faceSvg(tok);
+        } else {
+          icon.textContent = tok;
+        }
         el.appendChild(icon);
       } else {
         el.appendChild(document.createTextNode(parts[i]));
@@ -605,6 +674,8 @@
   var SCREEN_PAD_X = 0.018;
   var SCREEN_PAD_Y = 0.008;
   var SCREEN_MIN_FONT = 14;
+  // Nino: balonun içine sığdırılan çevirinin en küçük yazısı (px).
+  var BUBBLE_MIN_FONT = 11;
 
   // Yalnız aşağıdaki bağımsız kutular büyümeyi sınırlar; kaynakta zaten üst üste olan
   // kutuların yerini değiştirmeyiz. Aynı hesap bütün sonuçlar için yapılır, sıra önemli değildir.
@@ -625,22 +696,98 @@
 
   function showScreen(items, duration, overlay) {
     var host = $('screen');
+    // Nino: telefon balonlarının örtüleri sık gelir (telefon elde sallanır). Yazılar aynıysa silinip yeniden çizilmez
+    // (yazı boyu zıplıyordu); yalnız yerleri yumuşakça güncellenir.
+    if (moveBubbles(host, items, duration)) return;
+    // Panel zaten görünüyorsa (yeni mesaj, kaydırma) zemin yeniden belirmez; yalnız balonlar yumuşakça gelir.
+    var panelShown = (host.className === '' || host.className === 'steady') && !!host.querySelector('.item.backdrop');
     // "Ekran çevriliyor…" yazısı sonuçların üstünde kalmasın. Nino: köşe/ipucu çevirisi (overlay) gelince altyazı
     // silinmez; ikisi aynı anda görünür.
     if (overlay !== true) hideSubtitle('screen');
     host.innerHTML = '';
-    host.className = '';
+    host.className = panelShown ? 'steady' : '';
     var width = window.innerWidth || 1920;
     var height = window.innerHeight || 1080;
     for (var i = 0; i < (items || []).length; i++) {
       var item = items[i];
       var box = validBox(item && item.box);
+      // Nino: yazısız zemin (telefonun yanındaki mesajlaşma paneli).
+      if (box && item.backdrop === true && typeof item.fill === 'string' && /^#[0-9a-fA-F]{6}$/.test(item.fill)) {
+        var panelEl = document.createElement('div');
+        panelEl.className = 'item backdrop';
+        panelEl.setAttribute('data-text', '');
+        var alpha = typeof item.alpha === 'number' ? item.alpha : 1;
+        panelEl.style.background = 'rgba(' + parseInt(item.fill.substr(1, 2), 16) + ',' + parseInt(item.fill.substr(3, 2), 16) + ','
+          + parseInt(item.fill.substr(5, 2), 16) + ',' + alpha + ')';
+        panelEl.style.left = (box.left * 100) + '%';
+        panelEl.style.top = (box.top * 100) + '%';
+        panelEl.style.width = ((box.right - box.left) * width) + 'px';
+        panelEl.style.height = ((box.bottom - box.top) * height) + 'px';
+        // Nino: panelin sağ alt köşesinde, mini haritanın altındakinin aynısı, daha saydam logo.
+        var mark = document.createElement('img');
+        mark.className = 'panel-badge';
+        mark.src = 'nino-badge.png';
+        mark.alt = '';
+        panelEl.appendChild(mark);
+        // Nino (kullanıcı isteği): panelin en üstünde ortada gönderenin adı, telefonun başlığı gibi.
+        if (typeof item.text === 'string' && item.text) {
+          var head = document.createElement('div');
+          head.className = 'panel-title';
+          head.textContent = item.text;
+          var headLine = typeof item.line === 'number' && item.line > 0 ? item.line * height : 24;
+          head.style.fontSize = Math.max(BUBBLE_MIN_FONT, Math.round(headLine * 1.05)) + 'px';
+          panelEl.appendChild(head);
+        }
+        host.appendChild(panelEl);
+        continue;
+      }
       if (!box || !item.text) continue;
       var el = document.createElement('div');
       el.className = item.paragraphs === true ? 'item paragraphs' : 'item';
       // Nino: kutusuz sade yazı (oyunun görev yazısının altındaki Türkçesi): pay yok, sola yaslı, yalnız gölge.
       if (item.plain === true) el.className += ' plain';
+      // Nino: harita kartının Türkçesi, oyunun kartı gibi (style.css .item.card).
+      if (item.card === true) el.className += ' card';
       if (item.italic === true) el.className += ' italic';
+      // Nino: oyunun kutusunun (telefon mesaj balonu) tam üstü: aynı zemin ve yazı rengiyle, kutunun içine sığdırılır.
+      var fill = typeof item.fill === 'string' && /^#[0-9a-fA-F]{6}$/.test(item.fill) ? item.fill : null;
+      if (fill) {
+        el.className = 'item bubble';
+        el.setAttribute('data-text', item.text);
+        setRich(el, item.text);
+        var ink = typeof item.ink === 'string' && /^#[0-9a-fA-F]{6}$/.test(item.ink) ? item.ink : '#1c1c1e';
+        el.style.background = fill;
+        if (typeof item.alpha === 'number' && item.alpha >= 0 && item.alpha < 1) {
+          el.style.background = 'rgba(' + parseInt(fill.substr(1, 2), 16) + ',' + parseInt(fill.substr(3, 2), 16) + ','
+            + parseInt(fill.substr(5, 2), 16) + ',' + item.alpha + ')';
+        }
+        if (item.side === true) {
+          el.className += ' side';
+          // Balonlar sırayla, hafifçe yukarı kayarak gelir.
+          el.style.animationDelay = (Math.min(i, 8) * 60) + 'ms';
+        }
+        el.style.color = ink;
+        el.style.left = (box.left * 100) + '%';
+        el.style.top = (box.top * 100) + '%';
+        var bubbleWidth = Math.max(40, (box.right - box.left) * width);
+        var bubbleHeight = Math.max(12, (box.bottom - box.top) * height);
+        el.style.width = bubbleWidth + 'px';
+        el.style.height = bubbleHeight + 'px';
+        var bubbleLine = typeof item.line === 'number' && item.line > 0 ? item.line * height : bubbleHeight;
+        var bubbleSize = Math.max(BUBBLE_MIN_FONT, Math.min(64, Math.round(bubbleLine * 0.98)));
+        el.style.fontSize = bubbleSize + 'px';
+        // Eğik tutulan telefonun balonları eğiktir: Türkçe de aynı açıyla, ortasından döner.
+        if (typeof item.angle === 'number' && Math.abs(item.angle) >= 0.3 && Math.abs(item.angle) <= 30) {
+          el.style.transform = 'rotate(' + item.angle + 'deg)';
+        }
+        host.appendChild(el);
+        // Türkçe çoğu zaman İngilizceden uzundur: balondan taşmasın diye yazı küçülür.
+        while ((el.scrollHeight > bubbleHeight + 1 || el.scrollWidth > bubbleWidth + 1) && bubbleSize > BUBBLE_MIN_FONT) {
+          bubbleSize -= 1;
+          el.style.fontSize = bubbleSize + 'px';
+        }
+        continue;
+      }
       setRich(el, item.text);
       // Nino: oyunun süslü İngilizce harfleri OCR kutusundan taşar; örtü solda ve dikeyde daha geniş,
       // sağda (düğme simgesine doğru) dar tutulur ki simge örtülmesin.
@@ -672,10 +819,38 @@
     screenTimer = setTimeout(hideScreen, duration || 20000);
   }
 
+  function moveBubbles(host, items, duration) {
+    var list = items || [];
+    if (!list.length || host.className === 'hidden' || host.className === 'leaving' || host.children.length !== list.length) return false;
+    for (var i = 0; i < list.length; i++) {
+      var child = host.children[i];
+      if (!list[i] || !list[i].fill || !list[i].box || child.getAttribute('data-text') !== (list[i].text || '')) return false;
+    }
+    for (var j = 0; j < list.length; j++) {
+      var box = validBox(list[j].box);
+      if (!box) continue;
+      host.children[j].style.left = (box.left * 100) + '%';
+      host.children[j].style.top = (box.top * 100) + '%';
+    }
+    clearTimeout(screenTimer);
+    screenTimer = setTimeout(hideScreen, duration || 20000);
+    return true;
+  }
+
   function hideScreen() {
     clearTimeout(screenTimer);
-    $('screen').className = 'hidden';
-    $('screen').innerHTML = '';
+    var host = $('screen');
+    // Nino: telefonun yanındaki panel yumuşakça solar (birden kaybolmaz).
+    if (host.className !== 'hidden' && host.querySelector('.item.side, .item.backdrop')) {
+      host.className = 'leaving';
+      screenTimer = setTimeout(function () {
+        host.className = 'hidden';
+        host.innerHTML = '';
+      }, 320);
+      return;
+    }
+    host.className = 'hidden';
+    host.innerHTML = '';
   }
 
   // --- Ek alanlar ---
@@ -925,6 +1100,14 @@
       setBodyClass('thin-bg', alpha < 0.3);
       textBackground = 'rgba(0, 0, 0, ' + alpha + ')';
       coverBackground = style.background >= 100 ? '#000' : textBackground;
+      // Nino (kullanıcı isteği, 21 Kasım 2026): tam siyah zemin yerine buzlu cam: koyu, hafif saydam geçiş, ince açık
+      // kenar ve üstte parlama (style.css body.glass). Altındaki İngilizce sızmasın diye yeterince koyu.
+      var glass = style.background >= 90;
+      setBodyClass('glass', glass);
+      if (glass) {
+        textBackground = 'rgba(16, 16, 16, 0.8)';
+        coverBackground = 'rgba(16, 16, 16, 0.86)';
+      }
       $('subtitle-text').style.background = textBackground;
       $('subtitle-prev-text').style.background = 'rgba(0, 0, 0, ' + (alpha * 0.83).toFixed(2) + ')';
       $('subtitle-prev2-text').style.background = 'rgba(0, 0, 0, ' + (alpha * 0.83).toFixed(2) + ')';
@@ -1007,6 +1190,7 @@
       clearTimeout(dropTimer);
       dropTimer = null;
       setStatus('st-conn', t('connected'), 'ok');
+      $('nino-badge').className = '';
     };
     eventSource.onerror = function () {
       // Bağlantı kısa süre içinde geri gelmezse eski altyazı ekranda asılı kalmasın. Bir anlık kopma yazıyı silmez.
@@ -1018,6 +1202,7 @@
           hideSubtitle('drop');
           hideScreen();
           hideRegions();
+          $('nino-badge').className = 'hidden';
         }, DROP_HIDE_MS);
       }
       setStatus('st-conn', t('reconnecting'), 'bad');
@@ -1033,6 +1218,8 @@
       diag.subtitles++;
       renderDiag();
       if (data.text) {
+        if (typeof data.light === 'number') applySceneLight(data.light);
+        applyCoverImage(typeof data.cover === 'string' ? data.cover : '');
         showSubtitle(data.text, data.duration, data.box, data.paragraphs === true, data.replace === true);
         notePanelSubtitle(data.text);
       }

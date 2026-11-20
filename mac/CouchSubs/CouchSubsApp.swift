@@ -101,10 +101,14 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            Group {
-                if model.step == .done { MainView() } else { OnboardingView() }
+            // Nino: ana ekran açılış logosu kalkınca kurulur; salondaki fiş ve sayaç gösterisi logonun arkasında oynayıp
+            // kaçıyordu (kullanıcı isteği, 21 Kasım 2026).
+            if !showSplash || model.step != .done {
+                Group {
+                    if model.step == .done { MainView() } else { OnboardingView() }
+                }
+                .opacity(showSplash ? 0 : 1)
             }
-            .opacity(showSplash ? 0 : 1)
             if showSplash {
                 SplashView { withAnimation(.easeOut(duration: 0.35)) { showSplash = false } }
                     .transition(.opacity)

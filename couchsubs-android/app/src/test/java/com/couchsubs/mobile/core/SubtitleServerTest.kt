@@ -65,7 +65,7 @@ class SubtitleServerTest {
     fun clearAndStyleFrames() {
         assertEquals("event: clear\ndata: {}\n\n", SubtitleServer.clearFrame())
         assertEquals(
-            "event: style\ndata: {\"background\":100,\"backgroundShape\":\"fit\",\"bold\":false,\"bottomPercent\":7,\"displayMode\":\"inApp\",\"font\":\"condensed\",\"fontSize\":46," +
+            "event: style\ndata: {\"autoSize\":true,\"background\":100,\"backgroundShape\":\"fit\",\"bold\":false,\"bottomPercent\":7,\"displayMode\":\"inApp\",\"font\":\"condensed\",\"fontSize\":46," +
                 "\"placement\":\"cover\",\"stackPrevious\":true,\"textColor\":\"white\"}\n\n",
             SubtitleServer.styleFrame(SubtitleStyle()),
         )
@@ -75,6 +75,8 @@ class SubtitleServerTest {
         assertTrue(band.contains("\"background\":100") && band.contains("\"backgroundShape\":\"band\""))
         // "Önceki satırları üstte tut" kapalıysa TV'ye false gider (Windows ve Mac ile aynı).
         assertTrue(SubtitleServer.styleFrame(SubtitleStyle(stackPrevious = false)).contains("\"stackPrevious\":false"))
+        // Kullanıcı boyu kendisi seçince TV otomatik boyu bırakır; yoksa fontSize TV'de yok sayılır.
+        assertTrue(SubtitleServer.styleFrame(SubtitleStyle(autoSize = false)).contains("\"autoSize\":false"))
     }
 
     @Test

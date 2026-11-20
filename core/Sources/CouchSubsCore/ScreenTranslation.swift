@@ -26,6 +26,20 @@ public enum ScreenTranslation {
         public var plain = false
         /// Nino: eğik yazı (telefon araması: "Paradise Taxi aranıyor…").
         public var italic = false
+        /// Nino: oyunun kendi kutusunun rengi ("#e9e9ec"); verilmişse Türkçe o kutunun tam üstüne, aynı zeminle ve
+        /// `ink` renginde yazılır, orijinal yazı gibi durur (GTA 6 telefon mesaj balonları).
+        public var fill: String?
+        public var ink: String?
+        /// Nino: yazının dönme açısı (derece, saat yönü artı): eğik tutulan telefonun balonları da eğiktir.
+        public var angle: Double?
+        /// Nino: zeminin saydamlığı (0–1; `fill` ile). Telefonun yanındaki balonlar biraz saydamdır.
+        public var alpha: Double?
+        /// Nino: oyunun kutusunun üstünde değil yanında duran balon (TV daha yuvarlak, gölgeli çizer).
+        public var side = false
+        /// Nino: yazısız zemin (telefonun yanındaki mesajlaşma paneli); balonlar onun üstünde durur.
+        public var backdrop = false
+        /// Nino: harita kartının Türkçesi; TV oyunun kartı gibi çizer (koyu zemin, üstte pembe çizgi, ilk satır başlık).
+        public var card = false
 
         public init(source: String, translation: String, box: TextBox, lineHeight: Double) {
             self.source = source

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Nino: telefonun ana ekranı (Android'deki HomePremium ile aynı): durum satırı, büyük başlık, sahne kartı, bayrak renkli
-// kaydırma çubuğu ve altta üç kısa yol. Arapça arayüzde her şey sağdan sola; kaydırma da sağdan sola yapılır.
+// Nino: telefonun ana ekranı: durum satırı, büyük başlık, salon sahnesi (Mac ve Android'deki gibi: fiş prize takılınca
+// çeviri başlar; bkz. LivingRoom.swift) ve altta üç kısa yol. Arapça arayüzde her şey sağdan sola; sahne aynalanmaz.
 
 import CoreMotion
 import RemotePlay
@@ -56,8 +56,6 @@ enum FlagColors {
 
 private let ink = Color(hex: 0x0A1430)
 private let inkSoft = Color(hex: 0x55607A)
-private let stageTop = Color(hex: 0x151E36)
-private let stageBottom = Color(hex: 0x06080F)
 private let liveGreen = Color(hex: 0x30C578)
 
 /// Ana ekranın durumu.
@@ -117,16 +115,38 @@ struct HomeScreen: View {
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .animation(.easeOut(duration: 0.25), value: state)
-            HomeStage(state: state, line: currentLine, source: model.isDemo ? model.demoLine?.source : nil,
-                      problem: problem,
-                      badge: t(model.isDemo ? "demo.badge" : "home.live"), locale: locale,
-                      sunset: state == .live && !model.isDemo && model.liveGamePoolFirst,
-                      onFullScreen: onPhone ? { openFullScreen() } : nil)
-                .padding(.top, 8)
-            SlideToTranslate(state: state, target: target, label: slideLabel,
-                             onStart: start, onStop: stop, onSetup: { path.append(.ps5) })
+            // Nino: kaydırma çubuğu yerine bütün Nino uygulamalarındaki salon: fişi prize takmak çeviriyi başlatır,
+            // çekmek durdurur (eşlenmemişse kurulum açılır).
+            PhoneLivingRoom(active: model.isDemo || model.isRunning || model.isStarting,
+                            streaming: state == .live,
+                            line: currentLine, source: model.isDemo ? model.demoLine?.source : nil,
+                            problem: problem,
+                            badge: t(model.isDemo ? "demo.badge" : "home.live"),
+                            gta: (model.isRunning || model.isStarting) && !model.isDemo && model.liveGamePoolFirst,
+                            onToggle: toggle,
+                            onTV: { openFullScreen() })
                 .tourTarget(.start)
-                .padding(.top, 10)
+                .padding(.top, 8)
+            HStack(spacing: 10) {
+                Text(verbatim: sceneHint)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                // Nino: altyazı TV'ye gitse de telefonda tam ekran açılabilsin.
+                if state == .live {
+                    Button { openFullScreen() } label: {
+                        Label(t("home.fullScreen"), systemImage: "arrow.up.left.and.arrow.down.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Mobile.Palette.accent)
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .background(Color.white.opacity(0.72), in: Capsule())
+                            .overlay(Capsule().strokeBorder(Color.white, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.opacity)
+                }
+            }
             // PS5 eşlenmemişken: uygulamanın nasıl çalıştığını PS5'siz gösteren demo (App İnceleme de kullanır).
             if state == .notPaired && !model.isDemo {
                 TryWithoutPS5Button(title: t("demo.try")) { model.startDemo() }
@@ -170,9 +190,10 @@ struct HomeScreen: View {
                 }
             }
             if model.translatorStatus == .needsDownload, #available(iOS 26, *) { LanguagePackTile() }
-            if model.translatorStatus == .unsupported, !Translator.isAvailable {
-                MobileNote(text: String(localized: "Apple's free translation needs iOS 26 or later. Game packs, DeepL and AI translation work on this device."))
-            } else if model.translatorStatus == .unsupported, !model.onlineTranslationActive {
+            if OldIOSTranslationNotice.applies(model) {
+                // Nino: iOS 26'dan eskide ücretsiz Apple çevirisi yok: GTA 6 havuzdan çalışır, diğer oyunlara Gemini anahtarı.
+                OldIOSTranslationNotice { path.append(.settings) }
+            } else if Translator.isAvailable, model.translatorStatus == .unsupported, !model.onlineTranslationActive {
                 // Nino: Apple'ın ücretsiz çevirisinde olmayan dil (Urduca, Bengalce, Filipince).
                 MobileNote(text: String(localized: "Apple's free translation doesn't support this language yet. Turn on AI translation in Settings › Translation; Gemini is free."))
             }
@@ -239,12 +260,27 @@ struct HomeScreen: View {
         }
     }
 
-    private var slideLabel: String {
+    /// Sahnenin altındaki tek satırlık ipucu.
+    private var sceneHint: String {
         switch state {
-        case .notPaired: t("slide.pair")
-        case .ready: t("slide.start")
-        default: t("slide.stop")
+        case .notPaired: model.isDemo ? t("scene.unplug") : t("slide.pair")
+        case .ready: t("scene.plug")
+        default: t("scene.unplug")
         }
+    }
+
+    /// Fişe ya da prize dokunulunca (ya da fiş sürüklenince): çeviri açıksa durur, kapalıysa başlar; eşlenmemişse kurulum.
+    private func toggle() {
+        if model.isDemo { model.stopDemo(); return }
+        // Hazırlık sürerken (bir saniyeden kısa) çekilirse hazırlık biter bitmez durdurulur; dokunuş kaybolmaz (Mac gibi).
+        if model.isStarting {
+            Task { @MainActor in
+                while model.isStarting { try? await Task.sleep(for: .milliseconds(50)) }
+                if model.isRunning { model.stop() }
+            }
+            return
+        }
+        if model.isRunning { stop() } else if model.canStart { start() } else { path.append(.ps5) }
     }
 
     private var currentLine: String? {
@@ -305,121 +341,9 @@ private struct PulsingDot: View {
     }
 }
 
-/// Sahne: koyu ekran. Canlıyken altyazı akar (dokununca tam ekran); değilken tek satırlık sakin bir yazı.
-private struct HomeStage: View {
-    let state: HomeState
-    let line: String?
-    var source: String?
-    /// Bağlanılamama nedeni; varsa "Bağlanıyor…" yerine uyarı simgesiyle bu yazılır.
-    var problem: String?
-    var badge: String
-    let locale: Locale
-    /// Tanınan oyun havuz öncelikli (GTA 6): koyu zemin yerine buzlu gün batımı fonu; altyazı önünde durur.
-    var sunset = false
-    let onFullScreen: (() -> Void)?
-
-    private func t(_ key: String) -> String { UILanguage.text(key, locale) }
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 28, style: .continuous)
-        ZStack {
-            shape.fill(LinearGradient(colors: [stageTop, stageBottom], startPoint: .top, endPoint: .bottom))
-            if sunset {
-                SunsetBackdrop().clipShape(shape).transition(.opacity)
-            }
-            if state == .live {
-                VStack {
-                    Spacer(minLength: 0)
-                    if let source, line != nil {
-                        Text(verbatim: source).font(.system(size: 13)).foregroundStyle(.white.opacity(0.5))
-                            .lineLimit(1).padding(.bottom, 4).transition(.opacity)
-                    }
-                    if let line, !line.isEmpty {
-                        Text(verbatim: TargetLanguage.displayText(line))
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(3)
-                            .minimumScaleFactor(0.6)
-                            .padding(.horizontal, 18).padding(.vertical, 12)
-                            .background(Color.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            .subtitleDirection(line)
-                            .id(line)
-                            .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    } else {
-                        Text(verbatim: t("home.stage.waiting")).font(.system(size: 16, weight: .medium)).foregroundStyle(.white.opacity(0.45))
-                    }
-                }
-                .padding(.horizontal, 16).padding(.bottom, 22)
-                .animation(.easeOut(duration: 0.2), value: line)
-            } else if let problem {
-                VStack(spacing: 10) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 20, weight: .semibold))
-                        // Koyu sahnede okunur turuncu (Palette.warning açık zemin içindir).
-                        .foregroundStyle(Color.orange)
-                    Text(verbatim: problem)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
-                        .lineLimit(7)
-                        .minimumScaleFactor(0.7)
-                }
-                .padding(.horizontal, 20).padding(.vertical, 16)
-                .accessibilityElement(children: .combine)
-                .transition(.opacity)
-            } else {
-                Text(verbatim: t(state == .connecting ? "home.stage.connecting" : "home.stage.idle"))
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.42))
-                    .multilineTextAlignment(.center)
-                    .padding(24)
-            }
-        }
-        .frame(height: 196)
-        .animation(.easeOut(duration: 0.3), value: sunset)
-        .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.03)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-        .overlay(alignment: .topLeading) {
-            if state == .live {
-                HStack(spacing: 6) {
-                    Circle().fill(Color(hex: 0xE5162B)).frame(width: 8, height: 8)
-                    Text(verbatim: badge).font(.system(size: 12, weight: .bold)).tracking(1.2).foregroundStyle(.white)
-                }
-                .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Color.black.opacity(0.45), in: Capsule())
-                .padding(14)
-            }
-        }
-        .overlay(alignment: .topTrailing) {
-            if state == .live, let onFullScreen {
-                Button(action: onFullScreen) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right").font(.system(size: 13, weight: .semibold))
-                        Text(verbatim: t("home.fullScreen")).font(.system(size: 14, weight: .semibold))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.leading, 12).padding(.trailing, 14).padding(.vertical, 8)
-                    .background(.ultraThinMaterial.opacity(0.9), in: Capsule())
-                    .background(LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.06)], startPoint: .top, endPoint: .bottom), in: Capsule())
-                    .overlay(Capsule().strokeBorder(LinearGradient(colors: [.white.opacity(0.55), .white.opacity(0.12)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-                    .environment(\.colorScheme, .dark)
-                    .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
-                }
-                .buttonStyle(.plain)
-                .padding(12)
-                .transition(.opacity)
-            }
-        }
-        .environment(\.layoutDirection, .leftToRight)
-        .shadow(color: ink.opacity(0.35), radius: 18, y: 10)
-        .contentShape(shape)
-        .onTapGesture { if state == .live { onFullScreen?() } }
-    }
-}
-
 /// GTA 6 için Nino'nun kendi fonu (Mac'teki `SunsetBackdrop` ile aynı): laciverd-mor-pembe gün batımı geçişi,
 /// hafif karartılmış. Oyunun logosu ya da görseli kullanılmaz, yalnız renk geçişi.
-private struct SunsetBackdrop: View {
+struct SunsetBackdrop: View {
     // Yalnız bir geçiş: güneş, bulanıklık ya da ayrı katman yok (Mac: GameBackdrop.swift ile aynı renkler).
     var body: some View {
         ZStack {
@@ -433,174 +357,6 @@ private struct SunsetBackdrop: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-    }
-}
-
-/// Kaydırarak başlatma: koyu iz, beyaz yuvarlak tutamaç, üzerinde akan parlak yazı. Sona kadar kaydırınca başlar; açıkken
-/// iz bayrak renginde, tutamaç camlı bayrak küresi; geri kaydırınca durur. Eşlenmemişse dokununca kurulum açılır. Arapça
-/// arayüzde tutamaç sağda başlar ve sola kaydırılır.
-private struct SlideToTranslate: View {
-    @Environment(\.layoutDirection) private var direction
-    let state: HomeState
-    let target: String
-    let label: String
-    let onStart: () -> Void
-    let onStop: () -> Void
-    let onSetup: () -> Void
-    @State private var drag: CGFloat = 0
-
-    private let height: CGFloat = 68
-    private let knob: CGFloat = 56
-    private let inset: CGFloat = 6
-
-    var body: some View {
-        let rtl = direction == .rightToLeft
-        let on = state == .live || state == .connecting
-        GeometryReader { proxy in
-            let travel = max(1, proxy.size.width - knob - inset * 2)
-            let base: CGFloat = on ? travel : 0
-            let x = min(max(base + drag, 0), travel)
-            let progress = x / travel
-            let (top, bottom) = FlagColors.pair(for: target)
-            ZStack(alignment: .leading) {
-                Capsule().fill(ink)
-                Capsule().fill(LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)).opacity(progress)
-                Capsule().fill(LinearGradient(stops: [.init(color: .white.opacity(0.22 * progress), location: 0), .init(color: .clear, location: 0.5)],
-                                              startPoint: .top, endPoint: .bottom))
-                Capsule().strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
-                ShimmerText(text: label, rtl: rtl, base: 0.55 + 0.25 * progress)
-                    .opacity(on ? 1 : max(0, 1 - progress * 1.4))
-                    .frame(maxWidth: .infinity)
-                    // Yazı, tutamacın bulunduğu tarafta ona yer bırakır (kapalıyken başta, açıkken sonda).
-                    .padding((on != rtl) ? .trailing : .leading, knob + inset * 2)
-                    .padding((on != rtl) ? .leading : .trailing, inset * 2)
-                ZStack {
-                    Circle().fill(Color.white)
-                    if state == .connecting {
-                        ProgressView().tint(Mobile.Palette.accent)
-                    } else {
-                        Image(systemName: rtl ? "arrow.left" : "arrow.right")
-                            .font(.system(size: 22, weight: .semibold)).foregroundStyle(ink)
-                            .opacity(1 - progress)
-                        FlagGlass(target: target).opacity(progress)
-                    }
-                }
-                .frame(width: knob, height: knob)
-                .clipShape(Circle())
-                .shadow(color: .black.opacity(0.25), radius: 8, y: 3)
-                .offset(x: inset + (rtl ? travel - x : x))
-                .gesture(DragGesture(minimumDistance: 2)
-                    .onChanged { value in drag = rtl ? -value.translation.width : value.translation.width }
-                    .onEnded { _ in
-                        let end = (base + drag) / travel
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) { drag = 0 }
-                        switch state {
-                        case .notPaired: if end > 0.5 { onSetup() }
-                        default:
-                            if !on && end > 0.85 { onStart() } else if on && end < 0.15 { onStop() }
-                        }
-                    })
-                .onTapGesture {
-                    switch state {
-                    case .notPaired: onSetup()
-                    case .ready: onStart()
-                    default: onStop()
-                    }
-                }
-            }
-            .shadow(color: top.opacity(0.4 * progress), radius: 14, y: 6)
-            .animation(.spring(response: 0.4, dampingFraction: 0.82), value: on)
-        }
-        .frame(height: height)
-        .environment(\.layoutDirection, .leftToRight)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: label))
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAction {
-            switch state {
-            case .notPaired: onSetup()
-            case .ready: onStart()
-            default: onStop()
-            }
-        }
-    }
-}
-
-/// iPhone'un eski "kaydırarak aç" ışıltısı gibi soldan sağa (Arapça'da sağdan sola) akan parlak yazı.
-private struct ShimmerText: View {
-    let text: String
-    let rtl: Bool
-    let base: Double
-
-    var body: some View {
-        TimelineView(.animation) { context in
-            let t = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2) / 2.2
-            let sweep = -0.3 + 1.6 * t
-            let center = rtl ? 1 - sweep : sweep
-            Text(verbatim: text)
-                .font(.system(size: 17, weight: .semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .foregroundStyle(LinearGradient(stops: [
-                    .init(color: .white.opacity(base), location: max(0, center - 0.18)),
-                    .init(color: .white, location: min(1, max(0, center))),
-                    .init(color: .white.opacity(base), location: min(1, center + 0.18)),
-                ], startPoint: .leading, endPoint: .trailing))
-        }
-    }
-}
-
-/// Camlı bayrak küresi: bayrak dairenin içinde, üstünde buzlu parlama ve ince ışıklı kenar.
-private struct FlagGlass: View {
-    /// Türkçede çizilmiş ay yıldız, öbür dillerde dilin bayrağı (emoji).
-    let target: String
-
-    var body: some View {
-        GeometryReader { proxy in
-            let size = proxy.size.width
-            ZStack {
-                if !TargetLanguage.isTurkish(target) {
-                    Text(verbatim: TargetLanguage.flag(target)).font(.system(size: size * 1.15)).fixedSize()
-                } else {
-                    FlagColors.red
-                    CrescentStar().frame(width: size * 0.6, height: size * 0.6)
-                }
-                Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.9), .white.opacity(0.1), .white.opacity(0.5)],
-                                                     startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2)
-                Ellipse().fill(LinearGradient(colors: [.white.opacity(0.6), .clear], startPoint: .top, endPoint: .bottom))
-                    .frame(width: size * 0.6, height: size * 0.3)
-                    .offset(y: -size * 0.27)
-            }
-            .frame(width: size, height: size)
-            .clipShape(Circle())
-        }
-    }
-}
-
-/// Bayraktaki ay yıldız: beyaz ay (iç daire kırmızıyla oyulur) ve ucu aya bakan beş köşeli yıldız.
-private struct CrescentStar: View {
-    var body: some View {
-        Canvas { context, size in
-            let s = min(size.width, size.height)
-            let r = s * 0.42
-            let moon = CGPoint(x: s * 0.42, y: s / 2)
-            context.fill(Path(ellipseIn: CGRect(x: moon.x - r, y: moon.y - r, width: r * 2, height: r * 2)), with: .color(.white))
-            let inner = r * 0.8
-            let cut = CGPoint(x: moon.x + r * 0.32, y: s / 2)
-            context.fill(Path(ellipseIn: CGRect(x: cut.x - inner, y: cut.y - inner, width: inner * 2, height: inner * 2)), with: .color(FlagColors.red))
-            let center = CGPoint(x: s * 0.8, y: s / 2)
-            let outer = s * 0.17
-            let innerStar = outer * 0.382
-            var star = Path()
-            for i in 0..<10 {
-                let angle = Double.pi + Double(i) * Double.pi / 5
-                let radius = i % 2 == 0 ? outer : innerStar
-                let point = CGPoint(x: center.x + cos(angle) * radius, y: center.y + sin(angle) * radius)
-                if i == 0 { star.move(to: point) } else { star.addLine(to: point) }
-            }
-            star.closeSubpath()
-            context.fill(star, with: .color(.white))
-        }
     }
 }
 

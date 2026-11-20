@@ -135,6 +135,8 @@
     <string name="settings_key">کی</string>
     <string name="settings_packs">گیم پیکس</string>
     <string name="settings_text_size">سب ٹائٹل کی شکل</string>
+    <string name="settings_auto_size">ٹی وی پر گیم کے سب ٹائٹل کے سائز سے ملائیں</string>
+    <string name="settings_auto_size_note">آن ہونے پر ٹی وی گیم کی انگریزی لائن کے مطابق متن کا سائز رکھتا ہے؛ نیچے سائز بدلنے سے یہ بند ہو جاتا ہے۔</string>
     <string name="settings_pool">مشترکہ پول میں حصہ ڈالیں</string>
     <string name="settings_stack_previous">تیز مکالمے میں پچھلی لائنیں اوپر رکھیں</string>
     <string name="settings_stack_previous_note">بند ہونے پر ہر نئی لائن پچھلی کی جگہ لے لیتی ہے۔ TV ایپ 0.9.16 یا بعد کا ورژن درکار ہے۔</string>

@@ -22,6 +22,9 @@ public final class SubtitlePipeline {
     public static let lateResultMs = 2500
     /// Çeviri sürerken sırada en çok bu kadar satır bekler; daha eskisi atlanır (kuyruk konuşma hızıyla büyümesin).
     public static let maxWaiting = 2
+    /// Telefon kaybolduktan sonra bu kadar süre daha yerinde sayılır: geçiş animasyonu ve koyu temalı uygulamada (Rydeme)
+    /// telefonun bazı karelerde bulunamaması. 1,5 sn yetmiyordu; telefonun alt penceresi mesaj kartı ve ipucu sanılıyordu.
+    public static let phoneHoldMs = 5000
     private static let rememberedPairs = 8
     /// Bozuk okunan (OCR izi taşıyan) ve pakette bulunmayan satır en çok bu kadar bekletilir: aynı satırın düzgün okuması
     /// gelirse o çevrilir (Windows: PackWaitMs).
@@ -106,6 +109,10 @@ public final class SubtitlePipeline {
     private var work: Task<String, Error>?
     /// Şu an oyun ekranında duran satırın numarası (bölge boşalınca nil).
     private var lineOnScreen: Int?
+    /// Nino: telefonu takip eder (koyu temalı uygulamada her karede bulunamıyor).
+    private let phoneTracker = PhonePanel.Tracker()
+    /// Nino: en son bulunan telefon ekranı ve zamanı.
+    private var lastPhone: (box: TextBox, at: Int)?
     /// Son çevrilen satırlar (kaynak → çeviri; zaten hedef dildeyse nil). Geri gelen satır bunlardan yeniden gösterilir.
     private var pairs: [(number: Int, source: String, translation: String?)] = []
     /// Okuma durdurulunca artar; önceki oturumdan dönen çeviriler gösterilmez.
@@ -126,6 +133,11 @@ public final class SubtitlePipeline {
     public var onPrompts: ((Reading) -> Void)?
     /// Nino: telefona gelen mesaj kartı (bkz. `MessageCard`); verilmişse kart altyazı olarak çevrilmez, buna gönderilir.
     public var onMessage: ((Reading) -> Void)?
+    /// Nino: telefon uygulamasına özgü yazılar görüldü (karedeki yerleri); Mac telefonu bunlardan da bulabilsin.
+    public var onPhoneUI: (([TextBox]) -> Void)?
+    /// Nino: telefonda az önce görülen mesajların yazısı. Altyazı okumasında bunlardan biri görülürse altyazı değildir
+    /// (telefon ekrana kayarak gelirken bulunamadığı karede son mesaj "You got my plane?!" altyazı diye çıkıyordu).
+    public var phoneTexts: (() -> [String])?
     /// Son görülen mesaj kartının metni ve zamanı.
     private var lastCard: (body: String, at: Int)?
     private var lastCall: (name: String, at: Int)?
@@ -231,7 +243,11 @@ public final class SubtitlePipeline {
 
     /// Okuma çeviriyi beklemez; böylece çeviri sürerken gelen satırlar da yakalanır.
     /// `capturedAt`: karenin PS5 akışından geldiği an (`clock` ile aynı saat); verilmezse şimdi.
+    /// Nino: işlenen son kare (buzlu zemin bu kareden kesilir, bkz. CoverBlur).
+    private var currentFrame: CGImage?
+
     public func process(_ frame: CGImage, region: CropRegion, capturedAt: Int? = nil) async {
+        currentFrame = frame
         let captured = capturedAt ?? now()
         if !sawFrame {
             sawFrame = true
@@ -243,11 +259,25 @@ public final class SubtitlePipeline {
         // Yazı tanıma uzun sürebilir; arayüz takılmasın diye ana iş parçacığının dışında yapılır.
         let reader = self.reader
         let wantsPhone = phonePanels?() == true
-        let (area, signature, phone) = await Task.detached(priority: .userInitiated) {
-            let area = RegionCropper.crop(frame, to: region)
-            return (area, RegionCropper.signature(of: area), wantsPhone ? PhonePanel.find(in: frame)?.box : nil)
+        // Nino: sohbet açılırken telefonun ekranı kayarak değişir; o bir iki karede telefon bulunamıyor ve içindeki mesaj
+        // siyah altyazı kutusunda çıkıyordu. Telefon az önce görüldüyse (`phoneHoldMs`) aynı yerde sayılır.
+        let recentPhone = lastPhone.flatMap { captured - $0.at < Self.phoneHoldMs ? $0.box : nil }
+        let tracker = phoneTracker
+        let (area, signature, phone, found) = await Task.detached(priority: .userInitiated) {
+            var area = RegionCropper.crop(frame, to: region)
+            let found = wantsPhone ? tracker.locate(in: frame)?.box : nil
+            // Nino: çerçeveli son mesajın (mavi kenarlı) olduğu karede ekran kısa bulunuyor (alt kenar 0,68); son mesaj
+            // maskenin dışında kalıp altyazı diye okunuyordu ("You got my plane?!"). Maske ekranın gerçek alt kenarına kadar
+            // uzatılır, ama altyazının başladığı yere (0,84) inmez.
+            let phone = (wantsPhone ? (found ?? recentPhone) : nil).map { box in
+                TextBox(left: box.left, top: box.top, right: box.right, bottom: max(box.bottom, min(box.bottom + 0.15, 0.84)))
+            }
+            // Nino: telefonun bölgeye giren kısmı okunmadan siyaha boyanır (bkz. RegionCropper.masking).
+            if let phone { area = RegionCropper.masking(area, box: phone, in: region) }
+            return (area, RegionCropper.signature(of: area), phone, found)
         }.value
         guard session == startedSession else { return }
+        if let found { lastPhone = (found, captured) }
         switch scheduler.plan(signature: signature) {
         case .reuse:
             break
@@ -262,6 +292,16 @@ public final class SubtitlePipeline {
             }
             lastReadMs = now() - started
             lastReading = (try? result.get()) ?? .empty
+            // Nino (akıllı koyuluk): okunan alanın aydınlığı (yazının parlak noktaları sayılmasın diye ortanca).
+            let color = PhonePanel.sampler(for: area, width: 160, height: 40)
+            var lights: [Int] = []
+            for y in stride(from: 0.1, through: 0.9, by: 0.1) {
+                for x in stride(from: 0.05, through: 0.95, by: 0.05) {
+                    if let c = color(x, y) { lights.append((c.r * 299 + c.g * 587 + c.b * 114) / 1000) }
+                }
+            }
+            lights.sort()
+            if !lights.isEmpty { (server as? SubtitleServer)?.sceneLight = Double(lights[lights.count / 2]) / 255 }
             onReadResult?(result.failure)
             scheduler.record(lastReading.text)
         }
@@ -278,6 +318,40 @@ public final class SubtitlePipeline {
                 let x = place.left + (box.left + box.right) / 2 * (place.right - place.left)
                 let y = place.top + (box.top + box.bottom) / 2 * (place.bottom - place.top)
                 return !(x > phone.left - 0.02 && x < phone.right + 0.02 && y > phone.top - 0.02 && y < phone.bottom + 0.02)
+            })
+        }
+        if wantsPhone {
+            // Nino (kullanıcı, 20 Kasım 2026): GTA'nın altyazısı koyu sahnede beyaz yazıdır; açık zeminde koyu yazı telefonun
+            // ekranıdır (mesaj balonu), altyazı değildir. Telefon bulunamasa da (yakınlaştırınca, ekran kararınca) geçerli.
+            let color = PhonePanel.sampler(for: area)
+            visible = Reading(lines: visible.lines.filter { line in
+                guard let box = line.box else { return true }
+                return !PhoneThread.isDarkOnLight(box, color: color)
+            })
+        }
+        // Nino: telefon uygulamasına özgü yazı ("Change Destination", "Book Ryde ($82)") telefon bulunamasa da altyazı,
+        // mesaj kartı ya da ipucu değildir.
+        let phoneUI = visible.lines.filter { PhoneThread.isPhoneUI($0.text) }
+        if !phoneUI.isEmpty {
+            let boxes = phoneUI.compactMap { $0.box?.placed(in: place) }
+            if found == nil { phoneTracker.adopt(around: boxes, in: frame) }
+            onPhoneUI?(boxes)
+        }
+        visible = Reading(lines: visible.lines.filter { !PhoneThread.isPhoneUI($0.text) })
+        let phoneTexts = phoneTexts?().map(TextMatch.normalize).filter { !$0.isEmpty } ?? []
+        if phone != nil || !phoneTexts.isEmpty {
+            // Nino (kullanıcı): telefon açıkken altyazı çizgisinin üstündeki hiçbir yazı altyazı değildir; pakette bilinse de
+            // (telefondaki son mesaj GTA'nın gerçek yazısı olduğundan paketten çevrilip altyazı diye gösteriliyordu).
+            let floor = max(subtitleFloor ?? 0, 0.8)
+            visible = Reading(lines: visible.lines.filter { line in
+                guard let box = line.box else { return true }
+                return place.top + (box.top + box.bottom) / 2 * (place.bottom - place.top) >= floor
+            })
+        }
+        if let texts = Optional(phoneTexts), !texts.isEmpty {
+            visible = Reading(lines: visible.lines.filter { line in
+                let key = TextMatch.normalize(line.text)
+                return key.split(separator: " ").count < 3 || !texts.contains { $0.contains(key) }
             })
         }
         if let hudTop {
@@ -533,6 +607,9 @@ public final class SubtitlePipeline {
     }
 
     private func enqueue(_ source: String, box: TextBox?, read: ReadInfo? = nil) {
+        if let server = server as? SubtitleServer {
+            server.coverImage = box.flatMap { box in currentFrame.flatMap { CoverBlur.make(frame: $0, box: box) } }
+        }
         lastRequested += 1
         let request = Request(number: lastRequested, source: source, box: box, session: session, read: read ?? currentRead)
         lineOnScreen = request.number
@@ -634,6 +711,7 @@ public final class SubtitlePipeline {
         let pack = packName?().map { "paket:" + $0 } ?? "paket"
         guard shouldSend else {
             log(request, "\(SubtitleLog.excerpt(source)) → \(pack), zaten hedef dilde, gösterilmedi")
+            clearStale(request)
             return
         }
         let metrics = measure(request, translation: nil, origin: .pack)
@@ -722,6 +800,7 @@ public final class SubtitlePipeline {
         if let target = targetLanguage, TargetLanguage.isAlready(source, in: target) {
             remember(request.number, source, nil)
             log(request, "zaten hedef dilde, çevirmene gönderilmedi")
+            clearStale(request)
             onAlreadyTarget?()
             return
         }
@@ -751,6 +830,7 @@ public final class SubtitlePipeline {
                 let reason = !shouldSend ? "zaten hedef dilde"
                     : request.superseded ? "uzamış okuması geldi" : "daha yeni satır gösterildi (#\(lastShown))"
                 log(request, "\(result), atıldı: \(reason)")
+                if !shouldSend { clearStale(request) }
                 return
             }
             let onScreen = request.number == lineOnScreen
@@ -786,6 +866,16 @@ public final class SubtitlePipeline {
                 if lastSent?.source == request.source { lastSent = nil }
             }
         }
+    }
+
+    /// Nino: ekrandaki yeni satır gösterilmeyecek (zaten hedef dilde). Önceki satırın çevirisi TV'de kalırsa kutusu artık
+    /// başka (çoğu zaman daha uzun) bir İngilizcenin üstündedir ve yazı iki yanından taşar (GTA 6: "İyi misin?" kutusunun
+    /// altından "Yeah, I guess. Sure beats jail" görünüyordu). Yalnız bu satır hâlâ ekrandaysa ve ondan yenisi
+    /// gösterilmemişse silinir; geç gelen sonuç daha yeni bir altyazıyı silmez.
+    private func clearStale(_ request: Request) {
+        guard request.session == session, request.number == lineOnScreen, lastShown < request.number else { return }
+        server.clear()
+        log(request, "önceki çeviri ekrandan kaldırıldı (yeni satırın üstünde kalmasın)")
     }
 
     /// Satır şimdi TV'ye gidiyor: okunduğu kareden bu ana kadarki ölçümler.

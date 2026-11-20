@@ -17,8 +17,54 @@ enum NinoDebugFrames {
         AppFolder.logs.appendingPathComponent("frames", isDirectory: true)
     }
 
+    // Video kaydı: frames/video/KAYIT dosyası varken saniyede 10 ham kare frames/video/v-<ms>.jpg olarak yazılır
+    // (ekrandaki sorunları birleşik videoda incelemek için).
+    nonisolated(unsafe) private static var lastVideo: TimeInterval = 0
+    nonisolated(unsafe) private static var recordingCheckedAt: TimeInterval = 0
+    nonisolated(unsafe) private static var recording = false
+    static var videoFolder: URL { folder.appendingPathComponent("video", isDirectory: true) }
+
+    private static func recordVideo(_ frame: CGImage, now: TimeInterval) {
+        if now - recordingCheckedAt > 0.5 {
+            recordingCheckedAt = now
+            recording = FileManager.default.fileExists(atPath: videoFolder.appendingPathComponent("KAYIT").path)
+        }
+        guard recording, now - lastVideo >= 0.1 else { return }
+        lastVideo = now
+        let name = "v-\(Int(now * 1000)).jpg"
+        queue.async {
+            guard let dest = CGImageDestinationCreateWithURL(videoFolder.appendingPathComponent(name) as CFURL,
+                                                             UTType.jpeg.identifier as CFString, 1, nil) else { return }
+            CGImageDestinationAddImage(dest, frame, [kCGImageDestinationLossyCompressionQuality: 0.85] as CFDictionary)
+            CGImageDestinationFinalize(dest)
+        }
+    }
+
+    /// Ses kaydı: KAYIT varken 48 kHz iki kanal float örnekler video/ses.f32 dosyasına eklenir; ilk örneğin zamanı
+    /// (ms) video/ses-baslangic.txt'ye yazılır (video hazırlanırken görüntüyle eşlemek için).
+    nonisolated(unsafe) private static var audioFile: FileHandle?
+    private static let audioQueue = DispatchQueue(label: "nino.debug-audio")
+    static func recordAudio(_ samples: [Float]) {
+        let now = Date().timeIntervalSince1970
+        audioQueue.async {
+            if !recording {
+                if audioFile != nil { try? audioFile?.close(); audioFile = nil }
+                return
+            }
+            if audioFile == nil {
+                let url = videoFolder.appendingPathComponent("ses.f32")
+                FileManager.default.createFile(atPath: url.path, contents: nil)
+                audioFile = try? FileHandle(forWritingTo: url)
+                let start = Int((now - Double(samples.count / 2) / 48_000) * 1000)
+                try? String(start).write(to: videoFolder.appendingPathComponent("ses-baslangic.txt"), atomically: true, encoding: .utf8)
+            }
+            samples.withUnsafeBufferPointer { audioFile?.write(Data(buffer: $0)) }
+        }
+    }
+
     static func capture(_ frame: CGImage, region: CropRegion, box: TextBox?, source: String, translation: String) {
         let now = Date().timeIntervalSince1970
+        recordVideo(frame, now: now)
         guard now - last >= 2 else { return }
         last = now
         queue.async {
