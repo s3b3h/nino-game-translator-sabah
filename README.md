@@ -36,6 +36,8 @@ Mac, Windows ve Android telefondaki Nino sonraki güncellemeleri kendisi yükler
 
 > 🔌 **Dikkat:** "Fişi takın" derken **Nino uygulamasının ekranındaki çizilmiş fişi** kastediyoruz (çeviriyi başlatan düğme). PS5'in ya da TV'nin **gerçek elektrik fişine dokunmayın**; PS5 her zamanki gibi açık kalsın.
 
+<p align="center"><img src="docs/nino/v4/fis-nedir.jpg" width="880" alt="Fişi takın: Nino uygulamasının ekranındaki çizilmiş fiş, çeviriyi başlatan düğmedir"></p>
+
 Bir dahaki sefere yalnız 3. adım yeterlidir. Takılırsanız uygulamadaki **Nino'ya Sor** robotu adım adım yardım eder.
 
 ## 📖 Adım adım rehberler
@@ -119,20 +121,53 @@ Bu bir kez yapılır. Sonra her seferinde yalnız oyunu açıp Nino ekranındaki
 
 <a name="rehber-androidtv"></a>
 <details>
-<summary><b>📺 Android TV / Google TV'ye kurulum (TCL, iFFALCON, Sony, Philips, Xiaomi, Hisense, Vestel, Arçelik…)</b></summary>
+<summary><b>📺 Android TV / Google TV'ye kurulum (TCL, iFFALCON, Sony, Philips, Xiaomi, Hisense, Vestel, Arçelik, Beko, Grundig, Toshiba…) — adım adım</b></summary>
 
-TV'de **bir kez** geliştirici modunu açarsınız; sonra Nino uygulamayı kendisi kurar ve **güncellemeleri de kendisi yapar**.
+**Ne yapacağız?** TV'ye **Nino TV** uygulamasını kuracağız. Altyazı, oyunun üstünde bu uygulamayla görünür. Kurulumu bilgisayardaki ya da telefondaki Nino **kendisi yapar**; sizin tek işiniz TV'de bir kez "geliştirici modu"nu açmak. Bu bir kez yapılır, yaklaşık 3 dakika sürer. TV'ye zarar vermez, garantiyi bozmaz.
 
-1. TV'de **Ayarlar › Sistem › Hakkında**'ya gidin. (Bazı TV'lerde: **Ayarlar › Cihaz Tercihleri › Hakkında**.)
-2. **Android TV işletim sistemi yapısı** (ya da **Android TV OS derlemesi**) satırına art arda **7 kez** basın. "Artık geliştiricisiniz" yazar.
-3. **Ayarlar › Sistem › Geliştirici seçenekleri**'nde **USB hata ayıklama**'yı açın. Varsa **Kablosuz hata ayıklama**'yı da açın.
-4. Bilgisayardaki Nino'da **TV'ye kur**'a, telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a basın.
-5. TV'de "USB hata ayıklamasına izin verilsin mi?" sorusu çıkar: **Her zaman izin ver**'i işaretleyip **İzin ver**'e basın.
-6. Nino TV'de açılır ve PS5'in hangi HDMI girişinde olduğunu sorar.
+**Başlamadan önce:** TV, PS5 ve Nino'yu açtığınız bilgisayar ya da telefon **aynı Wi-Fi'da** olmalı. TV kumandası elinizde olsun.
 
-**Son çare (bilgisayarsız, telefonsuz):** TV'nin tarayıcısında adres çubuğuna `is.gd/ninotvapk` yazın, inen dosyayı kurun. Bu yolla kurulan uygulama kendiliğinden güncellenmez.
+**1. TV'de "Hakkında" ekranını bulun**
+- Kumandada ⚙️ **Ayarlar**'a basın (bazı TV'lerde ev tuşu › sağ üstteki dişli).
+- **Sistem › Hakkında**'ya girin.
+- Sizin TV'de yoksa şunlardan biridir: **Cihaz Tercihleri › Hakkında** (Sony, Philips, Xiaomi) ya da **Sistem › Hakkında** (TCL, iFFALCON).
 
-> **TCL ve iFFALCON:** Elle kurduysanız **Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster › Nino**'yu açın. Yoksa TV "PS5 görüntüsü Nino'nun içinde gelmiyor" der. Bilgisayardaki ya da telefondaki Nino ile kurulumda bu izni Nino kendisi verir.
+**2. Geliştirici seçeneklerini açın**
+- Hakkında ekranında aşağı inin, **Android TV işletim sistemi yapısı** satırını bulun. Adı **Android TV OS derlemesi** ya da **Build** da olabilir.
+- Bu satırın üstündeyken kumandanın **orta (OK) tuşuna art arda 7 kez** basın.
+- Ekranın altında "**Artık bir geliştiricisiniz**" yazar. Yazmazsa birkaç kez daha basın.
+
+**3. USB hata ayıklamayı açın**
+- Bir geri gelin: **Sistem** menüsünde artık **Geliştirici seçenekleri** var (Sony/Philips'te **Cihaz Tercihleri** altında).
+- İçine girin, **USB hata ayıklama**'yı bulun ve **açın**. Çıkan uyarıya **Tamam** deyin.
+- Listede **Ağ hata ayıklaması** ya da **ADB over network** varsa onu da açın.
+
+**4. Kurulumu başlatın**
+- **Bilgisayarda (Mac / Windows):** Nino'nun kurulumundaki TV adımında **Android TV / Google TV**'yi seçin. Ya da sonradan: **Ayarlar › TV'ye kur**.
+- **Telefonda (Android):** Nino'da **Profil › Nino'yu TV'ye Kur › Android TV** › listede TV'nizi seçin › **Kur ve aç**.
+
+**5. TV'de izin verin (önemli)**
+- Birkaç saniye içinde TV'de "**USB hata ayıklamasına izin verilsin mi?**" penceresi açılır.
+- **Bu bilgisayardan her zaman izin ver** kutusunu işaretleyin, sonra **İzin ver**'e basın.
+- Pencere kumandaya cevap vermiyorsa: önce ok tuşlarıyla kutuya gelip OK'e, sonra **İzin ver**'e gelip OK'e basın.
+
+**6. Bitti**
+- Nino TV, TV'de kendiliğinden açılır ve PS5'in hangi HDMI girişinde olduğunu sorar; PS5'in girişini seçin.
+- Nino artık TV'nin **Uygulamalar** satırında. Sonraki güncellemeleri Nino kendisi kurar; bunun için **USB hata ayıklamayı açık bırakın**.
+
+**Takılırsanız:**
+
+| Ne oluyor? | Ne yapın |
+|---|---|
+| Nino TV'yi bulamıyor | TV açık ve aynı Wi-Fi'da mı? TV'nin adresini elle yazın: TV'de **Ayarlar › Ağ ve İnternet › bağlı Wi-Fi** › **IP adresi** (ör. 192.168.1.20). |
+| "İzin verilsin mi?" penceresi çıkmıyor | USB hata ayıklamayı kapatıp yeniden açın, TV'yi kapatıp açın ve **TV'ye kur**'a tekrar basın. |
+| Yanlışlıkla "Reddet"e bastım | **TV'ye kur**'a tekrar basın; pencere yeniden çıkar. |
+| Telefon "kablosuz hata ayıklama" istiyor (Android 11+ TV) | TV'de **Geliştirici seçenekleri › Kablosuz hata ayıklama**'yı açıp içine girin › **Cihazı eşleme kodu ile eşle** › ekrandaki 6 haneli kodu ve IP:port'u telefona yazın; pencere açıkken **Kur ve aç**'a basın. |
+| TV "PS5 görüntüsü Nino'nun içinde gelmiyor" diyor (TCL, iFFALCON) | Nino'dan **TV'ye kur**'a bir kez daha basın; izni Nino kendisi verir. Elle kurduysanız: **Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster › Nino** › açın. |
+| "Eski kopya kaldırılamadı" | TV'de **Ayarlar › Uygulamalar › Tüm uygulamalar › Nino › Kaldır**, sonra **TV'ye kur**'a tekrar basın. |
+| Bilgisayarım da telefonum da yok | TV'nin tarayıcısında adres çubuğuna `is.gd/ninotvapk` yazın, inen dosyayı açıp kurun. Bu yolla kurulan uygulama kendiliğinden güncellenmez. |
+
+Hâlâ olmuyorsa uygulamadaki **Nino'ya Sor** robotuna TV'nizin markasını yazın; o ekranın adını bile söyler. Fotoğraflı tam anlatım: **[📷 PS5 + Android TV](docs/KURULUM-ANDROID-TV.md)**.
 </details>
 
 <a name="rehber-samsung"></a>
