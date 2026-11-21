@@ -11,7 +11,9 @@ import Foundation
 /// `stuckAfterMs`'ten uzun süren okuma takılmış sayılır; çağıran hattı yeniden kurar.
 public struct FrameGate {
     /// Yavaş bir Mac'te bütün karenin derin okuması birkaç saniye sürebilir; bundan uzunu takılmadır.
-    public static let defaultStuckAfterMs = 15_000
+    /// Nino V4: 15 sn'de bir yavaş okuma da takılma sayılıp Nino yeniden açılıyor, PS5 bağlantısı kopuyordu; gerçek
+    /// takılma hiç bitmediği için 45 sn yeter.
+    public static let defaultStuckAfterMs = 45_000
 
     public enum Entry: Equatable {
         /// Önceki kare işleniyor; bu kare atlanır.

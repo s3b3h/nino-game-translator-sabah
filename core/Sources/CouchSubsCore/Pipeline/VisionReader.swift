@@ -64,6 +64,11 @@ public struct VisionReader: TextReader {
             Self.watch.switchToCPU()
             Self.watch.cancelRunning()
             guard gate.lock(before: Date().addingTimeInterval(1)) else {
+                // Nino V4: telefon, harita ve köşe okumaları eklenince tek bir okuma 9-10 sn sürebiliyor ama bitiyor.
+                // Bunu "takıldı" sayıp Nino'yu yeniden açmak PS5 bağlantısını 5 dakikada bir koparıyordu (21 Kasım
+                // 2026). Yavaş okumada yalnız bu kare atlanır; kapı ancak okuma `hardStuckAfter`'dan uzun sürerse
+                // (gerçek takılma, hiç bitmez) yenilenir ve Nino yeniden açılır.
+                if let held = Self.watch.heldFor, held < Self.hardStuckAfter { throw VisionBusy() }
                 Self.watch.replace(gate)
                 throw VisionStuck()
             }
@@ -81,6 +86,9 @@ public struct VisionReader: TextReader {
     /// Kapıyı tutan tek bir okuma bundan uzun sürerse takılmış sayılır. Cihaz üstü çeviri de Neural Engine'i kullanır;
     /// telefonun mesajları çevrilirken bir okuma birkaç saniye sürebiliyor. Gerçek takılma hiç bitmez, bu sınırla da yakalanır.
     static let stuckAfter: TimeInterval = 8
+    /// Kapıyı tutan okuma bundan uzun sürerse kalıcı takılma sayılır (Mac Nino'yu yeniden açar). Yavaş ama biten
+    /// okumalar (9-10 sn) bu sınırın çok altında kalır.
+    static let hardStuckAfter: TimeInterval = 45
 
     /// Nino: okuma sırası kalabalık; bu kare okunmadan atlanır (takılma değildir).
     public struct VisionBusy: Error, CustomStringConvertible {
