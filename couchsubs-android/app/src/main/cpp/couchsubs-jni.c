@@ -513,7 +513,7 @@ static void cs_session_free(JNIEnv *env, cs_session *session)
 }
 
 /* Oturumu başlatır; 0 dönerse lastError'a nedeni yazar. listener.onEvent(type, reason, text) libchiaki'nin iş
- * parçacığından çağrılır. Kareler frameListener.onFrame(buffer, width, height, rowStride, colorFormat) ile çözücünün
+ * parçacığından çağrılır. Kareler frameListener.onFrame(buffer, width, height, rowStride, colorFormat, chroma) ile çözücünün
  * çıkış iş parçacığından verilir (arabellek yalnız çağrı süresince geçerlidir). */
 JNIEXPORT jlong JNICALL JNI_FCN(sessionStart)(JNIEnv *env, jclass cls, jstring host_string, jbyteArray regist_key_array,
 		jbyteArray morning_array, jbyteArray account_array, jint width, jint height, jobject frame_listener, jboolean swap_decoder,

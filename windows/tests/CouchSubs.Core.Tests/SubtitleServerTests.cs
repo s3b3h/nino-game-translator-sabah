@@ -276,6 +276,28 @@ public class SubtitleServerTests
         Assert.True(System.Text.Json.JsonSerializer.Deserialize<SubtitleStyle>("{\"FontSize\":58}")!.Watermark);
     }
 
+    /// <summary>
+    /// Nino: "oyunun altyazısına uydur" TV'ye gider (Mac ve Android'deki gibi); eskiden Windows göndermiyordu, TV hep
+    /// kendisi ölçüyordu ve seçilen yazı boyu TV'ye yansımıyordu. Eski kayıtta boy değiştirildiyse kapalı sayılır.
+    /// </summary>
+    [Fact]
+    public async Task StyleCarriesAutoSizeAndOldSettingsKeepTheirSize()
+    {
+        using var server = new SubtitleServer(0);
+        var port = await server.StartAsync();
+        server.SendStyle(new SubtitleStyle());
+        Assert.Contains("\"autoSize\":true", await FirstStyleData(port));
+        server.SendStyle(new SubtitleStyle() with { AutoSize = false });
+        Assert.Contains("\"autoSize\":false", await FirstStyleData(port));
+        // Eski kayıt: boy değiştirilmediyse açık, değiştirildiyse kapalı.
+        Assert.True(System.Text.Json.JsonSerializer.Deserialize<SubtitleStyle>("{\"FontSize\":46}")!.MatchesGameSize);
+        Assert.False(System.Text.Json.JsonSerializer.Deserialize<SubtitleStyle>("{\"FontSize\":58}")!.MatchesGameSize);
+        Assert.True(System.Text.Json.JsonSerializer.Deserialize<SubtitleStyle>("{\"FontSize\":58,\"AutoSize\":true}")!.MatchesGameSize);
+        // Kaydedilip yeniden okununca seçim korunur.
+        var saved = System.Text.Json.JsonSerializer.Serialize(new SubtitleStyle(FontSize: 46, AutoSize: false));
+        Assert.False(System.Text.Json.JsonSerializer.Deserialize<SubtitleStyle>(saved)!.MatchesGameSize);
+    }
+
     private static async Task<string?> FirstStyleData(int port)
     {
         using var response = await Http.GetAsync($"http://127.0.0.1:{port}/events", HttpCompletionOption.ResponseHeadersRead);

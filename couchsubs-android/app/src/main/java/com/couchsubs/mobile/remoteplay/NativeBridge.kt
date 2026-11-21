@@ -28,7 +28,8 @@ fun interface NativeSessionListener {
  * Çağrı kısa sürmeli (kopyala ve dön); bu sürede çözücü yeni kare vermez.
  */
 fun interface NativeFrameListener {
-    fun onFrame(buffer: ByteBuffer, width: Int, height: Int, rowStride: Int, colorFormat: Int)
+    /** [chroma]: Y düzleminin hemen arkasında yarım çözünürlüklü renk de var (NV12: U, V sırasıyla; satır `2 * (width / 2)` bayt). */
+    fun onFrame(buffer: ByteBuffer, width: Int, height: Int, rowStride: Int, colorFormat: Int, chroma: Boolean)
 }
 
 /** libchiaki'ye JNI köprüsü (app/src/main/cpp/couchsubs-jni.c). */

@@ -173,7 +173,7 @@ object GameName {
 object GameCatalog {
     /** Paketi olmayan ama çok oynanan ya da yeni çıkan oyunlar (Mac, iPhone ve Windows'ta aynı liste). */
     val POPULAR = listOf(
-        "Grand Theft Auto VI", "Grand Theft Auto V", "Red Dead Redemption 2", "Ghost of Yōtei", "Marvel's Spider-Man 2",
+        "GTA 6", "GTA 5", "Red Dead Redemption 2", "Ghost of Yōtei", "Marvel's Spider-Man 2",
         "Death Stranding 2: On the Beach", "Elden Ring", "Elden Ring Nightreign", "Assassin's Creed Shadows",
         "Call of Duty: Black Ops 7", "Call of Duty: Black Ops 6", "Battlefield 6", "EA Sports FC 26",
         "Mafia: The Old Country", "The Last of Us Part II Remastered", "God of War Ragnarök", "Cyberpunk 2077",
@@ -188,12 +188,16 @@ object GameCatalog {
      * Öneriler (en çok [limit]): önce son oynanan, sonra paketlerin oyunları, sonra popüler oyunlar; aynı oyun bir kez. Arama
      * yazılmışsa adı ya da anahtarı aramayı içerenler, adı aramayla başlayanlar önde.
      */
+    /** Nino: listede kısa adla görünen oyunların uzun adı; "grand theft" aranınca da bulunsun. */
+    val FULL_NAMES = mapOf("GTA 6" to "Grand Theft Auto VI", "GTA 5" to "Grand Theft Auto V")
+
     fun suggestions(query: String, packs: List<String>, last: String?, limit: Int = 8): List<String> {
         val seen = HashSet<String>()
         val all = (listOfNotNull(last) + packs + POPULAR).filter { name -> GameName.key(name).let { it.isNotEmpty() && seen.add(it) } }
         val wanted = GameName.key(query)
         if (wanted.isEmpty()) return all.take(limit)
-        val found = all.filter { GameName.key(it).contains(wanted) }
+        val plain = query.trim().lowercase()
+        val found = all.filter { GameName.key(it).contains(wanted) || FULL_NAMES[it]?.lowercase()?.contains(plain) == true }
         val (first, rest) = found.partition { GameName.key(it).startsWith(wanted) }
         return (first + rest).take(limit)
     }

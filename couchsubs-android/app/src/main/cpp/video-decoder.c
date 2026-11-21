@@ -160,7 +160,7 @@ bool couchsubs_video_decoder_start(CouchSubsVideoDecoder *decoder, JNIEnv *env, 
 	if((*env)->GetJavaVM(env, &decoder->vm) != JNI_OK)
 		return false;
 	jclass cls = (*env)->GetObjectClass(env, frame_listener);
-	decoder->on_frame = cls ? (*env)->GetMethodID(env, cls, "onFrame", "(Ljava/nio/ByteBuffer;IIII)V") : NULL;
+	decoder->on_frame = cls ? (*env)->GetMethodID(env, cls, "onFrame", "(Ljava/nio/ByteBuffer;IIIIZ)V") : NULL;
 	if(cls)
 		(*env)->DeleteLocalRef(env, cls);
 	if(!decoder->on_frame)
@@ -388,6 +388,74 @@ static void read_output_format(CouchSubsVideoDecoder *decoder)
 				f->crop_left, f->crop_top, f->crop_right, f->crop_bottom);
 }
 
+/* Nino: renk (U, V) yarım çözünürlükte dst'ye NV12 sırasıyla (U, V, U, V…; satır başına 2 * (width / 2) bayt)
+ * kopyalanır: oyundaki telefonun ekranını ve mesaj balonlarının rengini bulmak için (yazı tanıma kullanmaz). Biçim
+ * bilinmiyorsa ya da renk düzlemi arabelleğe sığmıyorsa false; kare yine de (yalnız parlaklıkla) verilir. Esnek biçimlerde
+ * (0x7F420888, 0x23) düzen garanti değildir; yaygın olan NV12 varsayılır (yanlışsa renkler bozuk çıkar, sınır taşmaz). */
+static bool copy_chroma(const CouchSubsOutputFormat *f, const uint8_t *base, size_t start, size_t end, uint8_t *dst)
+{
+	size_t cw = (size_t)(f->crop_right - f->crop_left) / 2;
+	size_t ch = (size_t)(f->crop_bottom - f->crop_top) / 2;
+	if(cw == 0 || ch == 0)
+		return false;
+	size_t stride = (size_t)f->stride;
+	size_t slice = f->slice_height >= f->height ? (size_t)f->slice_height : (size_t)f->height;
+	size_t plane = start + stride * slice;
+	size_t cx = (size_t)f->crop_left / 2, cy = (size_t)f->crop_top / 2;
+	switch(f->color_format)
+	{
+		case 21: /* NV12 */
+		case 39:
+		case 0x7FA30C04:
+		case COLOR_FORMAT_YUV420_FLEXIBLE:
+		case 0x23:
+		case 0x11: /* NV21: V, U sırası */
+		{
+			size_t first = plane + cy * stride + cx * 2;
+			if(first + (ch - 1) * stride + cw * 2 > end)
+				return false;
+			for(size_t y = 0; y < ch; y++)
+				memcpy(dst + y * cw * 2, base + first + y * stride, cw * 2);
+			if(f->color_format == 0x11)
+			{
+				for(size_t i = 0; i + 1 < cw * ch * 2; i += 2)
+				{
+					uint8_t t = dst[i];
+					dst[i] = dst[i + 1];
+					dst[i + 1] = t;
+				}
+			}
+			return true;
+		}
+		case 19: /* I420: U, sonra V */
+		case 20:
+		case 0x32315659: /* YV12: V, sonra U; renk satırı 16'ya hizalı */
+		{
+			size_t cs = f->color_format == 0x32315659 ? ((stride / 2) + 15) & ~(size_t)15 : stride / 2;
+			size_t first_plane = plane, second_plane = plane + cs * (slice / 2);
+			size_t u = f->color_format == 0x32315659 ? second_plane : first_plane;
+			size_t v = f->color_format == 0x32315659 ? first_plane : second_plane;
+			size_t last = (u > v ? u : v) + (cy + ch - 1) * cs + cx + cw;
+			if(last > end)
+				return false;
+			for(size_t y = 0; y < ch; y++)
+			{
+				const uint8_t *ur = base + u + (cy + y) * cs + cx;
+				const uint8_t *vr = base + v + (cy + y) * cs + cx;
+				uint8_t *out = dst + y * cw * 2;
+				for(size_t x = 0; x < cw; x++)
+				{
+					out[2 * x] = ur[x];
+					out[2 * x + 1] = vr[x];
+				}
+			}
+			return true;
+		}
+		default:
+			return false;
+	}
+}
+
 /* Kare arabelleğini (Java'nın doğrudan ByteBuffer'ı) en az size bayta büyütür. */
 static bool ensure_frame_buffer(CouchSubsVideoDecoder *decoder, JNIEnv *env, size_t size)
 {
@@ -454,12 +522,16 @@ static bool copy_luma(CouchSubsVideoDecoder *decoder, JNIEnv *env, size_t index,
 			CHIAKI_LOGE(decoder->log, "Video decoder: output buffer too small (%zu < %zu); frames skipped", end, last);
 		return false;
 	}
-	if(!ensure_frame_buffer(decoder, env, width * height))
+	/* Y düzleminin arkasına yarım çözünürlüklü renk için yer (bkz. copy_chroma). */
+	size_t chroma_size = (width / 2) * (height / 2) * 2;
+	if(!ensure_frame_buffer(decoder, env, width * height + chroma_size))
 		return false;
 	const uint8_t *src = base + first;
 	uint8_t *dst = decoder->frame_ptr;
 	for(size_t y = 0; y < height; y++)
 		memcpy(dst + y * width, src + y * stride, width);
+	/* Renk okunamazsa kare yine verilir (altyazı yalnız parlaklıkla okunur). */
+	decoder->frame_chroma = copy_chroma(f, base, start, end, dst + width * height);
 	return true;
 }
 
@@ -469,7 +541,7 @@ static void deliver_frame(CouchSubsVideoDecoder *decoder, JNIEnv *env)
 	jint width = f->crop_right - f->crop_left;
 	jint height = f->crop_bottom - f->crop_top;
 	(*env)->CallVoidMethod(env, decoder->frame_listener, decoder->on_frame, decoder->frame_buffer, width, height, width,
-			(jint)f->color_format);
+			(jint)f->color_format, (jboolean)(decoder->frame_chroma ? JNI_TRUE : JNI_FALSE));
 	if((*env)->ExceptionCheck(env))
 		(*env)->ExceptionClear(env);
 	atomic_fetch_add(&decoder->frames_out, 1);

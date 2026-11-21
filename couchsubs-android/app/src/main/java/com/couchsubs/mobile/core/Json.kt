@@ -18,6 +18,11 @@ object Json {
             .stripTrailingZeros().toPlainString()
     }
 
+    /** Nino: sınırsız ondalık sayı (telefon balonunun açısı: -12.5, 5.7); [digits] basamağa yuvarlanır. */
+    class Signed(value: Double, digits: Int = 1) {
+        val text: String = BigDecimal.valueOf(value).setScale(digits, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+    }
+
     private fun append(out: StringBuilder, value: Any?) {
         when (value) {
             null -> out.append("null")
@@ -25,6 +30,7 @@ object Json {
             is Boolean -> out.append(if (value) "true" else "false")
             is Int, is Long -> out.append(value.toString())
             is Decimal -> out.append(value.text)
+            is Signed -> out.append(value.text)
             is Map<*, *> -> {
                 out.append('{')
                 value.entries.sortedBy { it.key as String }.forEachIndexed { index, entry ->

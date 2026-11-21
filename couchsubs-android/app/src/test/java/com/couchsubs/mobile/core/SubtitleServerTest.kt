@@ -11,6 +11,30 @@ import java.net.Socket
 
 /** TV uygulamalarının (LG, Samsung, Android TV) okuduğu olay biçimi: Windows'taki SubtitleServerTests ile aynı çıktı. */
 class SubtitleServerTest {
+    /**
+     * Nino: telefonun yanındaki panel ve balonlar, harita kartı Mac/Windows ile aynı alanlarla gider (TV sayfası aynı
+     * çizer); `overlay` işaretli olay TV'deki altyazıyı silmez.
+     */
+    @Test
+    fun phoneAndMapItemsCarryTheirStyle() {
+        val data = SubtitleServer.screenFrame(listOf(
+            ScreenTranslation.Item("", "Lucia", TextBox(0.3, 0.2, 0.57, 0.85), 0.022, fill = "#f5f5f6", alpha = 0.6, backdrop = true),
+            ScreenTranslation.Item("Are you high?", "Kafan mı güzel?", TextBox(0.31, 0.5, 0.45, 0.53), 0.02,
+                fill = "#acccfe", ink = "#2c2c2e", alpha = 0.95, side = true, angle = 5.71),
+            ScreenTranslation.Item("BUY FLOWERS", "ÇİÇEK AL", TextBox(0.55, 0.6, 0.8, 0.7), 0.02, card = true),
+        ), 120000, overlay = true)
+        assertTrue(data, data.contains("\"overlay\":true"))
+        assertTrue(data, data.contains("\"alpha\":0.6,\"backdrop\":true,"))
+        assertTrue(data, data.contains("\"fill\":\"#f5f5f6\""))
+        assertTrue(data, data.contains("\"alpha\":0.95,\"angle\":5.7,"))
+        assertTrue(data, data.contains("\"ink\":\"#2c2c2e\""))
+        assertTrue(data, data.contains("\"side\":true"))
+        assertTrue(data, data.contains("\"card\":true"))
+        // Düz "Ekranı çevir" olayında bu alanlar yoktur.
+        val plain = SubtitleServer.screenFrame(listOf(ScreenTranslation.Item("a", "b", TextBox(0.1, 0.1, 0.2, 0.2), 0.02)), 1000)
+        assertFalse(plain.contains("overlay") || plain.contains("fill") || plain.contains("card"))
+    }
+
     @Test
     fun subtitleFrameMatchesDesktop() {
         val frame = SubtitleServer.subtitleFrame("Merhaba", 4000, TextBox(0.25, 0.8, 0.75, 0.87499), at = 1700000000000)

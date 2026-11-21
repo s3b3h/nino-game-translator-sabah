@@ -347,7 +347,7 @@ class StreamSession(
         var described = false
         // Çözücünün çıkış iş parçacığından gelir. Kare Java'nın arabelleğindedir (Image.getPlanes yok): okunamayan
         // kare yerel tarafta atlanır, burada JNI'yi durduracak bir çağrı kalmadı.
-        val frames = NativeFrameListener { buffer, frameWidth, frameHeight, rowStride, colorFormat ->
+        val frames = NativeFrameListener { buffer, frameWidth, frameHeight, rowStride, colorFormat, hasChroma ->
             framesReceived++
             watchdog.picture(SystemClock.elapsedRealtime())
             if (!described) {
@@ -357,7 +357,7 @@ class StreamSession(
                 Backend.breadcrumb(text)
             }
             try {
-                onFrame(VideoFrame(buffer, frameWidth, frameHeight, rowStride, colorFormat))
+                onFrame(VideoFrame(buffer, frameWidth, frameHeight, rowStride, colorFormat, nativeChroma(buffer, frameWidth, frameHeight, hasChroma)))
             } catch (error: RuntimeException) {
                 Log.e(TAG, "frame handler", error)
             }
@@ -504,4 +504,15 @@ class StreamSession(
             Log.e(TAG, "state handler", error)
         }
     }
+}
+
+/** Nino: yerel çözücünün Y düzleminin arkasına koyduğu yarım çözünürlüklü renk (NV12); yoksa ya da sığmıyorsa null. */
+internal fun nativeChroma(buffer: java.nio.ByteBuffer, width: Int, height: Int, present: Boolean): Chroma? {
+    val cw = width / 2
+    val ch = height / 2
+    val offset = width * height
+    if (!present || cw <= 0 || ch <= 0 || buffer.capacity() < offset + cw * ch * 2) return null
+    val u = buffer.duplicate().apply { position(offset) }.slice()
+    val v = buffer.duplicate().apply { position(offset + 1) }.slice()
+    return Chroma(u, v, cw, ch, cw * 2, 2)
 }

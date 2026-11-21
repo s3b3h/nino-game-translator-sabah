@@ -23,6 +23,23 @@ object ScreenTranslation {
         val translation: String,
         val box: TextBox,
         val lineHeight: Double,
+        /** Nino: kutusuz, oyunun kendi yazısı gibi gölgeli sade yazı. */
+        val plain: Boolean = false,
+        /** Nino: eğik yazı (telefon araması). */
+        val italic: Boolean = false,
+        /** Nino: oyunun kutusunun rengi ("#e9e9ec"); verilmişse Türkçe aynı zeminle ve [ink] renginde yazılır. */
+        val fill: String? = null,
+        val ink: String? = null,
+        /** Nino: yazının dönme açısı (derece, saat yönü artı): eğik tutulan telefonun balonları da eğiktir. */
+        val angle: Double? = null,
+        /** Nino: zeminin saydamlığı (0–1; [fill] ile). */
+        val alpha: Double? = null,
+        /** Nino: oyunun kutusunun üstünde değil yanında duran balon (TV daha yuvarlak, gölgeli çizer). */
+        val side: Boolean = false,
+        /** Nino: yazısız zemin (telefonun yanındaki mesajlaşma paneli); balonlar onun üstünde durur. */
+        val backdrop: Boolean = false,
+        /** Nino: harita kartının Türkçesi; TV oyunun kartı gibi çizer. */
+        val card: Boolean = false,
     ) {
         /** Birden çok parça var: satır satır, sola yaslı gösterilir. */
         val paragraphs: Boolean get() = translation.contains('\n')

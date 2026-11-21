@@ -124,7 +124,7 @@ class GameSenseTest {
         val list = GameCatalog.suggestions("", listOf("Mafia: The Old Country"), last = "Elden Ring")
         assertEquals("Elden Ring", list[0])
         assertEquals("Mafia: The Old Country", list[1])
-        assertEquals("Grand Theft Auto VI", GameCatalog.suggestions("gta 6", emptyList(), null).first())
+        assertEquals("GTA 6", GameCatalog.suggestions("gta 6", emptyList(), null).first())
         assertTrue(GameCatalog.suggestions("zzzz", emptyList(), null).isEmpty())
     }
 }

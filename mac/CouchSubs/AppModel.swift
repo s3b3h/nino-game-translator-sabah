@@ -919,9 +919,13 @@ final class AppModel: ObservableObject {
         // Nino: havuz öncelikli oyunda (GTA 6) telefonun ekranı aranır; içindeki yazılar altyazı sayılmaz.
         // Oyun henüz tanınmadıysa (Nino telefon açıkken başladı; telefon ekranından oyun tanınmaz) son oturumdaki oyun geçerlidir.
         let lastGameKey = Self.lastGamePoolFirstKey
+        // Nino: oyun hiç tanınmadıysa çeviri dili havuz öncelikliyse (Türkçe) de aranır (iPhone ve Android ile aynı; PS5
+        // oyunu çoğu zaman söylemiyor, yeni kurulumda telefon hiç aranmıyordu).
+        let target = settings.targetLanguage
         let phoneGame: @Sendable () -> Bool = {
             if poolFirst() { return true }
-            return sense.current == nil && UserDefaults.standard.bool(forKey: lastGameKey)
+            return sense.current == nil
+                && (UserDefaults.standard.bool(forKey: lastGameKey) || translations.poolFirst.allows(language: target))
         }
         pipeline.phonePanels = english ? phoneGame : nil
         // Ek alanlar yalnız pakette aranır; havuza gitmez (arayüz ve bildirim yazıları kişisel olabilir).
@@ -2470,6 +2474,7 @@ final class AppModel: ObservableObject {
     private func watchPhone(_ frame: CGImage) {
         // Tanınan oyun havuz öncelikli mi (GTA 6): bir sonraki açılışta oyun tanınana kadar bu hatırlanır.
         var phoneGame = UserDefaults.standard.bool(forKey: Self.lastGamePoolFirstKey)
+            || translations.poolFirst.allows(language: settings.targetLanguage)
         if gameChoice.sense.current != nil {
             let first = liveGamePoolFirst
             if first != phoneGame { UserDefaults.standard.set(first, forKey: Self.lastGamePoolFirstKey) }
@@ -2519,6 +2524,8 @@ final class AppModel: ObservableObject {
                 return
             }
             phoneSeen = Date()
+            // Nino: oyunun telefonu okundu; bu telefon GTA 6'ya özgü (oyun henüz tanınmadıysa tanınır).
+            noteScreenGame(GameMarkers.gta6)
             // Kaydırınca mesajların yeri değişir: anahtar yeri de içerir. Aynı okuma iki kez görülünce çevrilir
             // (kaydırma sürerken yarım okunan satırlar çevrilmez).
             // Yer telefonun ekranına göre ölçülür: el sallanınca anahtar değişmez (kaydırmayı trackPhone yapar), sohbet
@@ -2681,6 +2688,17 @@ final class AppModel: ObservableObject {
     }
 
     nonisolated static let lastGamePoolFirstKey = "ninoLastGamePoolFirst"
+
+    /// Nino: oyun ekrandaki kendine özgü yazılardan tanındı (bkz. `GameMarkers`). PS5'in bildirdiği ya da kullanıcının
+    /// seçtiği oyun her zaman önce gelir; aynı oyun zaten biliniyorsa bir şey yapılmaz.
+    private func noteScreenGame(_ name: String) {
+        let sense = gameChoice.sense
+        if let known = sense.current?.name, GameName.key(known) == GameName.key(name) { return }
+        if sense.source == .console || sense.source == .user { return }
+        SubtitleLog.write("oyun ekrandaki yazılardan tanındı: \(name)")
+        gameChoice.seen(name)
+        startTranslationSync()
+    }
 
     // MARK: Harita (GTA 6): seçili görevin kartının Türkçesi kartın altında, yarı saydam
 
@@ -2943,6 +2961,8 @@ final class AppModel: ObservableObject {
                 }.value
                 if i == 2, MenuBlock.isMenuScreen(reading) { menuScreen = true }
                 // Nino: harita ekranı da menüdür (sol liste ve tuşlar çevrilmez); yalnız seçili görevin kartı çevrilir.
+                // Nino: oyun ekrandaki kendine özgü yazılardan da tanınır (PS5 çoğu zaman söylemiyor; bkz. GameMarkers).
+                if i == 2, let name = GameMarkers.game(in: reading) { self?.noteScreenGame(name) }
                 if i == 2, MapCard.isMapScreen(reading) {
                     menuScreen = true
                     mapCard = MapCard.find(in: reading)

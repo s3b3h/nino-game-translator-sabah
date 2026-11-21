@@ -131,7 +131,7 @@ public class GameSenseTests
         var list = GameCatalog.Suggestions("", ["Mafia: The Old Country"], "Elden Ring");
         Assert.Equal("Elden Ring", list[0]);
         Assert.Equal("Mafia: The Old Country", list[1]);
-        Assert.Equal("Grand Theft Auto VI", GameCatalog.Suggestions("gta 6", [], null)[0]);
+        Assert.Equal("GTA 6", GameCatalog.Suggestions("gta 6", [], null)[0]);
         Assert.Empty(GameCatalog.Suggestions("zzzz", [], null));
     }
 

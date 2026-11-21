@@ -57,6 +57,8 @@ public sealed class PhoneWatcher
     /// <summary>true döndüğü sürece (harita ya da menü açık) telefon aranmaz.</summary>
     public Func<bool>? Paused { get; set; }
     public Action<string>? Log { get; set; }
+    /// <summary>Nino: oyunun telefonunda sohbet ya da uygulama okundu (bu telefon GTA 6'ya özgü; oyun buradan da tanınır).</summary>
+    public Action? PhoneScreen { get; set; }
 
     public IReadOnlyList<ScreenTranslation.Item> Items { get { lock (gate) return items; } }
 
@@ -163,6 +165,7 @@ public sealed class PhoneWatcher
             return;
         }
         Volatile.Write(ref seen, now());
+        PhoneScreen?.Invoke();
         // Kaydırınca mesajların yeri değişir: anahtar yeri de içerir (telefonun ekranına göre; el sallanınca değişmez).
         var readKey = string.Join('|', messages.Select(m => TextMatch.Normalize(m.Text) + "@" + (int)((m.Box.Top - panel.Box.Top) * 60)));
         Dictionary<string, string> known;

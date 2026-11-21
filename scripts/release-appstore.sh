@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # App Store sürümlerini arşivler ve App Store Connect'e (yalnız iç TestFlight) yükler. Ayrıntı: docs/app-store.md.
 # Kullanım: release-appstore.sh ios|mac <yapı numarası> [--no-upload | --unsigned]
-#   ios: couchsubs-ios (iPhone/iPad), mac: mac/CouchSubsAppStore (Mac App Store, sandbox'lı). İkisi de com.couchsubs.ios.
+#   ios: couchsubs-ios (iPhone/iPad), mac: mac/CouchSubsAppStore (Mac App Store, sandbox'lı). İkisi de com.ninotranslator.ios.
 #   Yapı numarası her platformda bir öncekinden büyük olmalı (App Store Connect › TestFlight'ta son yapıya bakın).
 #   --no-upload: yüklemeden dist/appstore/export-<platform> altına dışa aktarır.
 #   --unsigned: Apple hesabı olmadan Release arşivinin derlendiğini ve (Mac) sandbox denetimlerini sınar; iOS imzasız,
 #   Mac ad-hoc imzalı arşiv üretir, yüklemez. Bu arşiv App Store'a gönderilemez.
-# İmza otomatik (takım 79N3CT6T46): Xcode › Settings › Accounts'ta Enmera'nın Apple hesabı açık olmalı.
+# İmza otomatik (takım 2D65S2R5LX, Nino): App Store Connect API anahtarı ya da Xcode › Settings › Accounts.
 # Sürüm (CFBundleShortVersionString) son v* etiketinin sayı kısmıdır (v0.1.0-beta.31 → 0.1.0); APP_VERSION ile değişir.
 set -e
 setopt pipefail
@@ -46,7 +46,7 @@ AUTH_ARGS=()
 if [[ -n "${ASC_KEY_ID:-}" && -n "${ASC_ISSUER_ID:-}" && -f "${ASC_KEY_PATH:-/nonexistent}" ]]; then
   AUTH_ARGS=(-authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
 fi
-SIGN_ARGS=(-allowProvisioningUpdates "${AUTH_ARGS[@]}" DEVELOPMENT_TEAM=79N3CT6T46 CODE_SIGN_STYLE=Automatic)
+SIGN_ARGS=(-allowProvisioningUpdates "${AUTH_ARGS[@]}" DEVELOPMENT_TEAM=2D65S2R5LX CODE_SIGN_STYLE=Automatic)
 if [[ "$3" == --unsigned && "$PLATFORM" == ios ]]; then
   SIGN_ARGS=(CODE_SIGNING_ALLOWED=NO)
 elif [[ "$3" == --unsigned ]]; then

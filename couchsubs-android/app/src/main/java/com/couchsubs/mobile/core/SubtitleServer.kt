@@ -152,16 +152,31 @@ class SubtitleServer(
          * "Ekranı çevir" sonuçları: her çeviri yazının yeri (`box`), tipik satır yüksekliği (`line`, ekrana oranla) ve
          * çok parçalıysa `paragraphs` ile gider (Mac/iPhone `screen` olayı ile aynı). TV öncekinin yerine bunları koyar.
          */
-        fun screenFrame(items: List<ScreenTranslation.Item>, durationMs: Int): String {
+        /**
+         * [overlay]: Nino: oyun sürerken sürekli gelen yan çeviriler (telefonun yanındaki mesajlar, harita kartı); TV o an
+         * görünen altyazıyı silmez. Öğelerin ek alanları Mac/Windows ile aynı adlarla gider (TV sayfası bunları tanır).
+         */
+        fun screenFrame(items: List<ScreenTranslation.Item>, durationMs: Int, overlay: Boolean = false): String {
             val list = items.map { item ->
                 val json = mutableMapOf<String, Any?>(
                     "box" to boxJson(item.box), "line" to Json.Decimal(Math.round(item.lineHeight.coerceIn(0.0, 1.0) * 10000) / 10000.0),
                     "text" to item.translation,
                 )
                 if (item.paragraphs) json["paragraphs"] = true
+                if (item.plain) json["plain"] = true
+                if (item.italic) json["italic"] = true
+                item.fill?.let { json["fill"] = it }
+                item.ink?.let { json["ink"] = it }
+                item.angle?.let { if (kotlin.math.abs(it) >= 0.3) json["angle"] = Json.Signed(it) }
+                item.alpha?.let { json["alpha"] = Json.Decimal(Math.round(it.coerceIn(0.0, 1.0) * 100) / 100.0) }
+                if (item.side) json["side"] = true
+                if (item.backdrop) json["backdrop"] = true
+                if (item.card) json["card"] = true
                 json
             }
-            return frame("screen", mapOf("duration" to durationMs, "items" to list))
+            val payload = mutableMapOf<String, Any?>("duration" to durationMs, "items" to list)
+            if (overlay) payload["overlay"] = true
+            return frame("screen", payload)
         }
 
         fun styleFrame(style: SubtitleStyle) = frame(
@@ -251,8 +266,14 @@ class SubtitleServer(
     }
 
     /** "Ekranı çevir" sonuçlarını TV'ye (ve telefon ekranına) gönderir. */
-    fun sendScreen(items: List<ScreenTranslation.Item>, durationMs: Int) {
-        broadcast(screenFrame(items, durationMs), subtitle = true)
+    /**
+     * [overlay]: Nino: telefonun yanındaki mesajlar ve harita kartı gibi sürekli gelen yan çeviriler; TV o an görünen
+     * altyazıyı silmez. Telefonun ekranına gitmez (orada oyunun telefonunun yanı yoktur; Windows'ta da bilgisayar
+     * penceresine gitmez).
+     */
+    fun sendScreen(items: List<ScreenTranslation.Item>, durationMs: Int, overlay: Boolean = false) {
+        broadcast(screenFrame(items, durationMs, overlay), subtitle = true)
+        if (overlay) return
         onEvent?.invoke(SubtitleEvent.Screen(items, durationMs))
     }
 

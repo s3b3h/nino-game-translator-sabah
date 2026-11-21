@@ -41,6 +41,7 @@ import com.couchsubs.mobile.core.SubtitleServer
 import com.couchsubs.mobile.core.TextTranslator
 import com.couchsubs.mobile.ocr.RegionPixels
 import com.couchsubs.mobile.ocr.SubtitleReader
+import com.couchsubs.mobile.remoteplay.rgb
 import com.couchsubs.mobile.remoteplay.ConsoleDiscovery
 import com.couchsubs.mobile.remoteplay.DisconnectKind
 import com.couchsubs.mobile.remoteplay.FrameSource
@@ -186,6 +187,19 @@ class TranslationService : Service() {
     @Volatile private var regionWatcher: com.couchsubs.mobile.core.RegionWatcher? = null
     @Volatile private var regionReader: SubtitleReader? = null
     private val regionWork = Executors.newSingleThreadExecutor { Thread(it, "CouchSubs extra areas").apply { isDaemon = true; priority = Thread.MIN_PRIORITY } }
+    /** Nino: oyundaki telefonun (GTA 6) sohbetini telefonun yanında çeviren (Mac, iPhone ve Windows ile aynı; bkz. PhoneWatcher). */
+    @Volatile private var phoneWatcher: com.couchsubs.mobile.core.PhoneWatcher? = null
+    /** Nino: haritada seçili görevin kartını çeviren (bkz. MapCardWatcher). */
+    @Volatile private var mapWatcher: com.couchsubs.mobile.core.MapCardWatcher? = null
+    /** Telefon ve harita okuyucusu (altyazınınkinden ayrı; onu bekletmesin). */
+    @Volatile private var overlayReader: SubtitleReader? = null
+    private val phoneWork = Executors.newSingleThreadExecutor { Thread(it, "Nino phone").apply { isDaemon = true; priority = Thread.MIN_PRIORITY } }
+    private val phoneTrackWork = Executors.newSingleThreadExecutor { Thread(it, "Nino phone track").apply { isDaemon = true } }
+    private val mapWork = Executors.newSingleThreadExecutor { Thread(it, "Nino map").apply { isDaemon = true; priority = Thread.MIN_PRIORITY } }
+    /** Altyazı okumasında telefonu bulan (okuyucununkinden ayrı; Windows'ta hattın kendi takibi gibi). */
+    private val subtitlePhoneTracker = com.couchsubs.mobile.core.PhonePanel.Tracker { com.couchsubs.mobile.core.monotonicClock() }
+    /** Altyazı okumasında en son bulunan telefon ekranı ve zamanı. */
+    @Volatile private var lastPhone: Pair<com.couchsubs.mobile.core.TextBox, Long>? = null
     private val lifecycle = Any()
     @Volatile private var destroyed = false
     @Volatile private var streaming = false
@@ -449,6 +463,8 @@ class TranslationService : Service() {
             TargetAwareTranslator(free.separate().let { line -> poolFirst(onlineTranslator(line) ?: line, line) }, target), subtitleServer).apply {
             packLookup = { text -> if (turkish && packTitles != null && settings.packsEnabled) PackLookup.match(library, text) else null }
         }
+        // Nino: oyundaki telefon (GTA 6) ve harita kartı (Mac, iPhone ve Windows ile aynı).
+        setupPhoneAndMap(translationPool, free, turkish, linePool)
         // Nino: oyunun havuzdaki çevirileri oturum başında ve oyun değişince hemen, sonra dakikada bir iner (sunucunun
         // syncSeconds aralığıyla kendini sınırlar); aynı döngüde sunucuya "buradayım" denir.
         fun restartSync() = synchronized(syncLock) {
@@ -514,6 +530,9 @@ class TranslationService : Service() {
         val onFrame: (com.couchsubs.mobile.remoteplay.VideoFrame) -> Unit = { frame ->
             val now = System.currentTimeMillis()
             if (screenRequested.compareAndSet(true, false)) startScreen(frame)
+            // Nino: karenin renkli kopyası yalnız gerekince ve karede bir kez çıkarılır (telefon ve harita için).
+            // Renk düzlemi yoksa (çözücü renk vermedi) telefon aranmaz: siyah-beyazda altyazı sahnesi telefon sanılıyordu.
+            val color = lazy(LazyThreadSafetyMode.NONE) { if (frame.chroma != null) frame.rgb() else null }
             if (!reading.get() && now - lastRead >= 1000 / MAX_READS_PER_SECOND) {
                 // Nino: altyazının yeri öğrenildiyse yalnız o şerit okunur (Mac: AppModel.readRegion). Satırların kutusu
                 // okunan alana göre olduğundan aynı alan hatta da verilir.
@@ -523,7 +542,10 @@ class TranslationService : Service() {
                 SubtitleReader.copyRegion(frame, area)?.let { pixels ->
                     lastRead = now
                     reading.set(true)
-                    ocr.execute { read(pixels, area, capturedAt) }
+                    // Nino: havuz öncelikli oyunda karenin renkli kopyası da okumaya gider; telefon okuma iş parçacığında
+                    // aranır ve ekranındaki yazılar okumadan önce siyaha boyanır.
+                    val phoneColor = if (phoneWatcher != null && phoneGameActive()) color.value else null
+                    ocr.execute { read(pixels, area, capturedAt, phoneColor) }
                 }
             }
             // Ek alanlar saniyede bir, kendi iş parçacığında okunur; altyazı okumasını beklemez, onu bekletmez.
@@ -532,6 +554,14 @@ class TranslationService : Service() {
                     com.couchsubs.mobile.core.RegionWatcher.Crop(it, com.couchsubs.mobile.core.RegionSignature.of(it.nv21, it.width, it.height))
                 }
             }) { task -> runCatching { regionWork.execute(task) } }
+            // Nino: oyundaki telefon ve harita kartı ayrı ve seyrek okunur (altyazıyı bekletmez).
+            if (screenIdle()) {
+                // Harita kartı ve telefon yalnız havuz öncelikli oyunda (GTA 6; Mac ve Windows'ta da öyle).
+                if (phoneGameActive()) mapWatcher?.offer({ color.value }) { r -> SubtitleReader.copyRegion(frame, r) }
+                if (phoneGameActive() && frame.chroma != null) phoneWatcher?.offer({ color.value }) { box ->
+                    SubtitleReader.copyRegion(frame, CropRegion(box.top, box.bottom, box.left, box.right))
+                }
+            }
             FramePreview.offer(frame, now)
             if (realGame) identifyGameIfNeeded(frame, translationPool, library)
         }
@@ -540,6 +570,9 @@ class TranslationService : Service() {
             if (!streaming) {
                 PlayedGame.consoleReported(null)
                 regionWatcher?.reset()
+                phoneWatcher?.reset()
+                mapWatcher?.reset()
+                lastPhone = null
             }
             when (state) {
                 SessionState.Connecting -> LiveState.health.connecting()
@@ -716,6 +749,8 @@ class TranslationService : Service() {
         server?.clearScreen()
         server?.clear()
         LiveState.update { it.copy(screen = emptyList(), screenState = LiveStatus.ScreenState.IDLE) }
+        // Nino: "Ekranı çevir" kalktı; telefonun ve harita kartının Türkçesi (hâlâ ekrandaysa) geri gelir.
+        sendOverlays()
     }
 
     /** Sıradaki kare geldi: bütün kare kopyalanır, okuma ve çeviri kendi iş parçacığında sürer. */
@@ -766,11 +801,12 @@ class TranslationService : Service() {
         server?.sendSubtitle(message, 6000)
     }
 
-    private fun read(pixels: RegionPixels, area: CropRegion, capturedAt: Long) {
+    private fun read(pixels: RegionPixels, area: CropRegion, capturedAt: Long, phoneColor: com.couchsubs.mobile.core.RgbImage? = null) {
         try {
             // Bölge değişmediyse (aynı altyazı duruyor) yeniden okunmaz; son okuma hattı yine besler (kararlılık ve
             // silme saate bağlıdır, Windows'taki ReadScheduler gibi). Aynı okuma en çok 20 kare (hızlı okumada 2) kullanılır.
             val current = pipeline ?: return
+            val phone = phoneColor?.let { phoneInRead(it, area, pixels, capturedAt) }
             val maxReuse = if (settings.fastSubtitleDetection) FAST_MAX_REUSE else DEFAULT_MAX_REUSE
             val reused = pixels.signature == lastSignature && reusedReads < maxReuse
             reusedReads = if (reused) reusedReads + 1 else 0
@@ -781,13 +817,139 @@ class TranslationService : Service() {
             lastSignature = pixels.signature
             lastReading = result
             lastOcrMs = ocrMs
-            current.process(result, area.box, com.couchsubs.mobile.core.RegionSignature.of(pixels.nv21, pixels.width, pixels.height),
+            // Nino: harita ekranında altyazı okunmaz (yer adları altyazı sanılmasın); telefona ait satırlar altyazı değildir.
+            val shown = if (mapWatcher?.mapOpen == true) com.couchsubs.mobile.core.Reading.Empty else withoutPhoneLines(result, area, phone)
+            current.process(shown, area.box, com.couchsubs.mobile.core.RegionSignature.of(pixels.nv21, pixels.width, pixels.height),
                 capturedAt, ocrMs)
         } catch (error: Exception) {
             Log.w(TAG, "OCR", error)
         } finally {
             reading.set(false)
         }
+    }
+
+    /** Nino: altyazı okumasındaki telefon: bulunan (ya da az önce görülen) ekranı, bulundu mu ve karenin renkli kopyası. */
+    private class PhoneInRead(
+        val box: com.couchsubs.mobile.core.TextBox?, val found: Boolean, val color: com.couchsubs.mobile.core.RgbImage?,
+    )
+
+    /**
+     * Nino: havuz öncelikli oyunda (GTA 6) karede oyunun telefonu aranır; telefonun okunan alana giren kısmı okunmadan
+     * siyaha boyanır (Windows: SubtitlePipeline, RegionCropper.Masking). OCR iş parçacığında, okumadan önce çağrılır.
+     */
+    private fun phoneInRead(image: com.couchsubs.mobile.core.RgbImage, area: CropRegion, pixels: RegionPixels, capturedAt: Long): PhoneInRead {
+        val found = runCatching { subtitlePhoneTracker.locate(image)?.box }.getOrNull()
+        if (found != null) lastPhone = found to capturedAt
+        val recent = lastPhone?.takeIf { capturedAt - it.second < com.couchsubs.mobile.core.PhoneLines.PHONE_HOLD_MS }?.first
+        val box = (found ?: recent)?.let { com.couchsubs.mobile.core.PhoneLines.mask(it) }
+        if (box != null) {
+            // Telefonun alandaki kısmı (alanın kendi oranlarında) siyaha boyanır.
+            val width = area.right - area.left
+            val height = area.bottom - area.top
+            val left = (((box.left - area.left) / width) * pixels.width).toInt().coerceIn(0, pixels.width)
+            val right = (((box.right - area.left) / width) * pixels.width).toInt().coerceIn(0, pixels.width)
+            val top = (((box.top - area.top) / height) * pixels.height).toInt().coerceIn(0, pixels.height)
+            val bottom = (((box.bottom - area.top) / height) * pixels.height).toInt().coerceIn(0, pixels.height)
+            for (y in top until bottom) java.util.Arrays.fill(pixels.nv21, y * pixels.width + left, y * pixels.width + right, 0)
+        }
+        return PhoneInRead(box, found != null, image)
+    }
+
+    /** Nino: telefona ait satırlar altyazı okumasından atılır (bkz. PhoneLines). OCR iş parçacığında çağrılır. */
+    private fun withoutPhoneLines(raw: com.couchsubs.mobile.core.Reading, area: CropRegion, phone: PhoneInRead?): com.couchsubs.mobile.core.Reading {
+        val watcher = phoneWatcher ?: return raw
+        val wants = phone != null
+        val texts = watcher.recentTexts
+        if (!wants && texts.isEmpty()) return raw
+        val place = area.box
+        val sampler = phone?.color?.let { image ->
+            val frameColor = com.couchsubs.mobile.core.PhonePanel.sampler(image)
+            val areaColor: (Double, Double) -> com.couchsubs.mobile.core.PhonePanel.Rgb? = { x, y ->
+                frameColor(place.left + x * (place.right - place.left), place.top + y * (place.bottom - place.top))
+            }
+            areaColor
+        }
+        return com.couchsubs.mobile.core.PhoneLines.without(raw, place, phone?.box, wants, sampler, texts) { boxes ->
+            val image = phone?.color ?: return@without
+            if (!phone.found) subtitlePhoneTracker.adopt(boxes, image)
+            watcher.adopt(boxes, image)
+        }
+    }
+
+    /**
+     * Nino: oyundaki telefon ve harita aranır mı: havuz öncelikli oyun (GTA 6) ya da oyun henüz tanınmadıysa çeviri dili
+     * havuz öncelikliyse (Türkçe). Yeni kurulumda oyun tanınmadan telefon hiç aranmıyor, sohbetin mesajları siyah altyazı
+     * kutusunda çıkıyordu (21 Kasım 2026, iPhone'da görüldü; iPhone ile aynı kural).
+     */
+    private fun phoneGameActive(): Boolean {
+        if (LiveState.status.value.poolFirstGame) return true
+        val pool = translations ?: return false
+        return FrameSources.replacement == null && PlayedGame.sense.current == null && pool.poolFirst.allows(target)
+    }
+
+    /**
+     * Nino: oyun ekrandaki kendine özgü yazılardan tanındı (bkz. GameMarkers). PS5'in bildirdiği ya da kullanıcının
+     * seçtiği oyun her zaman önce gelir; aynı oyun zaten biliniyorsa bir şey yapılmaz. Klipte (gerçek oyun değil) yapılmaz.
+     */
+    private fun noteScreenGame(name: String) {
+        if (FrameSources.replacement != null) return
+        val sense = PlayedGame.sense
+        val known = sense.current?.name
+        if (known != null && com.couchsubs.mobile.core.GameName.key(known) == com.couchsubs.mobile.core.GameName.key(name)) return
+        if (sense.source == com.couchsubs.mobile.core.GameSense.Source.CONSOLE || sense.source == com.couchsubs.mobile.core.GameSense.Source.USER) return
+        Log.i(TAG, "oyun ekrandaki yazılardan tanındı: $name")
+        PlayedGame.seen(name)
+    }
+
+    /** "Ekranı çevir" sonuçları ekranda değil (onlar öncelikli; telefonun ve haritanın Türkçesi onların yerini almaz). */
+    private fun screenIdle(): Boolean = LiveState.status.value.let { it.screenState == LiveStatus.ScreenState.IDLE && it.screen.isEmpty() }
+
+    /** Telefon ve harita kartı çevirileri TV'ye tek liste olarak, TV'deki altyazıyı silmeden gider (Mac: sendOverlays). */
+    private fun sendOverlays() {
+        val server = server ?: return
+        if (!screenIdle()) return
+        val all = (phoneWatcher?.shown ?: emptyList()) + (mapWatcher?.shown ?: emptyList())
+        if (all.isEmpty()) server.clearScreen() else server.sendScreen(all, 120_000, overlay = true)
+    }
+
+    /**
+     * Nino: telefon ve harita okuyucularını kurar. Çeviri sırası Mac'teki gibi: havuzun hazır çevirisi, sunucunun havuzu,
+     * sonra cihazın çevirmeni (o hafızaya yazılmaz).
+     */
+    private fun setupPhoneAndMap(translationPool: TranslationPool, free: MlKitTranslator, turkish: Boolean, linePool: NinoPool) {
+        val reader = SubtitleReader().also { overlayReader = it }
+        val read: (Any) -> com.couchsubs.mobile.core.Reading = { pixels -> reader.read(pixels as RegionPixels) }
+        val device = TargetAwareTranslator(free.separate().let { line -> onlineTranslator(line) ?: line }, target)
+        val pooled = { translationPool.isEnabled || poolFirstActive() }
+        val phone = com.couchsubs.mobile.core.PhoneWatcher(read, { text, context ->
+            val pooledText = translationPool.store.match(text) ?: (if (pooled()) translationPool.translate(text, context, poolGame()) else null)
+            // Cihazın yedek çevirisi hafızaya yazılmaz; sonraki okumada havuz yeniden sorulur.
+            if (pooledText != null) com.couchsubs.mobile.core.PhoneWatcher.Translation(pooledText, true)
+            else com.couchsubs.mobile.core.PhoneWatcher.Translation(runCatching { device.translate(text) }.getOrNull(), false)
+        }, memoryFile = File(filesDir, "phone-memory-$target.json"), run = { task -> phoneWork.execute(task) },
+            runTrack = { task -> phoneTrackWork.execute(task) })
+        phone.known = { translationPool.store.match(it) }
+        // Telefon uygulamalarının sabit Türkçeleri yalnız Türkçede.
+        phone.useGlossary = turkish
+        // Telefon mesajları da havuza bildirilir (altyazılar gibi).
+        phone.onUnknown = { texts -> if (turkish) texts.forEach { linePool.offer(it, poolGame()) } }
+        phone.log = { message -> Log.i(TAG, message) }
+        phone.onChange = { sendOverlays() }
+        // Nino: oyunun telefonu ve GTA 6'ya özgü ekran yazıları görülünce oyun GTA 6 sayılır (PS5 çoğu zaman söylemiyor).
+        phone.onPhoneScreen = { noteScreenGame(com.couchsubs.mobile.core.GameMarkers.GTA6) }
+        val map = com.couchsubs.mobile.core.MapCardWatcher(read, { piece ->
+            translationPool.store.match(piece)
+                ?: (if (pooled()) translationPool.translate(piece, emptyList(), poolGame()) else null)
+                ?: runCatching { device.translate(piece) }.getOrNull()
+        }, run = { task -> mapWork.execute(task) })
+        map.targetLanguage = target
+        map.log = { message -> Log.i(TAG, message) }
+        map.onChange = { sendOverlays() }
+        map.onScreen = { reading -> com.couchsubs.mobile.core.GameMarkers.game(reading)?.let { noteScreenGame(it) } }
+        // Harita/menü açıkken (ve kapandıktan sonra 8 sn) telefon aranmaz: haritanın aydınlık kısmı telefon sanılıyordu.
+        phone.paused = { map.recentlyOpen(8000) }
+        phoneWatcher = phone
+        mapWatcher = map
     }
 
     private var lastDump = 0L
@@ -956,6 +1118,13 @@ class TranslationService : Service() {
         regionWatcher = null
         regionReader?.close()
         regionReader = null
+        phoneWatcher?.close()
+        phoneWatcher = null
+        mapWatcher?.reset()
+        mapWatcher = null
+        overlayReader?.close()
+        overlayReader = null
+        lastPhone = null
         session?.dispose()
         session = null
         pipeline?.reset()
@@ -989,6 +1158,9 @@ class TranslationService : Service() {
         background.shutdownNow()
         ocr.shutdownNow()
         regionWork.shutdownNow()
+        phoneWork.shutdownNow()
+        phoneTrackWork.shutdownNow()
+        mapWork.shutdownNow()
         poolWork.shutdownNow()
         identifyWork.shutdownNow()
         poolSync.shutdownNow()

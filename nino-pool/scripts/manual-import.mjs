@@ -30,8 +30,17 @@ for (const file of files) {
   // --command (--file değil): dosyayla içe aktarma veritabanını kısa süre kilitler, canlı çeviri beklemesin.
   const statements = sql.split("\n");
   for (let i = 0; i < statements.length; i += 100) {
-    execFileSync("npx", ["wrangler", "d1", "execute", "nino-pool", "--remote", "--yes", "--command", statements.slice(i, i + 100).join("\n")],
-      { stdio: ["ignore", "ignore", "inherit"] });
+    // D1 yoğunken ("overloaded", 7429) bekleyip yeniden dener; komutlar tekrar çalıştırılabilir (aynı metni yazar).
+    for (let attempt = 1; ; attempt++) {
+      try {
+        execFileSync("npx", ["wrangler", "d1", "execute", "nino-pool", "--remote", "--yes", "--command", statements.slice(i, i + 100).join("\n")],
+          { stdio: ["ignore", "ignore", "pipe"] });
+        break;
+      } catch (e) {
+        if (attempt >= 6) throw e;
+        execFileSync("sleep", [String(attempt * 10)]);
+      }
+    }
   }
   renameSync(file, join(dir, "yuklendi", basename(file)));
   console.log(basename(file), rows.length, "satır yüklendi");

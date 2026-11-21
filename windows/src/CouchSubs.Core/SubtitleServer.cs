@@ -47,6 +47,12 @@ public enum SubtitleBackgroundShape
 /// Nino: TV'nin sol altındaki küçük Nino işareti görünsün mü; kapalıysa yalnız o işaret gizlenir. Eski kayıtta yoksa açık
 /// (Mac'teki SubtitleStyle.watermark ile aynı).
 /// </param>
+/// <param name="AutoSize">
+/// Nino: TV yazı boyunu oyunun İngilizce altyazısına uydursun mu (Mac: SubtitleStyle.autoSize, Android: tvAutoSize).
+/// Açıkken TV <paramref name="FontSize"/>'ı yok sayar. Eski kayıtta yoksa (null) yazı boyu hiç değiştirilmediyse açık,
+/// değiştirildiyse kapalı sayılır (Android ile aynı geçiş): eskiden Windows'ta bu ayar yoktu, TV hep kendisi ölçüyordu ve
+/// seçilen boy TV'ye hiç yansımıyordu.
+/// </param>
 public sealed record SubtitleStyle(
     int FontSize = 46,
     int BottomPercent = 7,
@@ -58,7 +64,16 @@ public sealed record SubtitleStyle(
     bool StackPrevious = true,
     SubtitleBackgroundShape BackgroundShape = SubtitleBackgroundShape.Fit,
     SubtitleFont Font = SubtitleFont.Condensed,
-    bool Watermark = true);
+    bool Watermark = true,
+    bool? AutoSize = null)
+{
+    /// <summary>Varsayılan yazı boyu (orta).</summary>
+    public const int DefaultFontSize = 46;
+
+    /// <summary>TV yazı boyunu oyunun altyazısına uyduruyor mu (eski kayıtta: boy değiştirilmediyse evet).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool MatchesGameSize => AutoSize ?? FontSize == DefaultFontSize;
+}
 
 /// <summary>
 /// Nino: altyazının yazı tipi. <c>System</c> cihazın kendi yazı tipi (eskisi gibi); öbürleri uygulamaya ve TV sayfasına
@@ -559,6 +574,8 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
             ["stackPrevious"] = style.StackPrevious,
             ["textColor"] = style.TextColor.ToString().ToLowerInvariant(),
             ["watermark"] = style.Watermark,
+            // Nino: kapalıysa TV seçilen boyu kullanır (Mac ve Android'deki "Boyutu oyunun altyazısına uydur").
+            ["autoSize"] = style.MatchesGameSize,
         });
 
     private static string Frame(string name, SortedDictionary<string, object> json) =>

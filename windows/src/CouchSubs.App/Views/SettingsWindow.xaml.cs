@@ -50,6 +50,7 @@ public partial class SettingsWindow : Window
         Bold.IsChecked = settings.Style.Bold;
         StackPrevious.IsChecked = settings.Style.StackPrevious;
         Watermark.IsChecked = settings.Style.Watermark;
+        AutoSize.IsChecked = settings.Style.MatchesGameSize;
         MisreadWait.Value = settings.MisreadWaitMs / 1000.0;
         PartialWait.Value = settings.PartialWaitMs / 1000.0;
         ShowWaits();
@@ -646,8 +647,18 @@ public partial class SettingsWindow : Window
         if (loading) return;
         var size = (int)Math.Round(e.NewValue);
         TextSizeValue.Text = size.ToString();
-        Update(s => s with { Style = s.Style with { FontSize = size } });
+        // Nino: boyu değiştirmek "oyunun altyazısına uydur"u kapatır; yoksa TV seçilen boyu yok sayıyordu (Android ile aynı).
+        Update(s => s with { Style = s.Style with { FontSize = size, AutoSize = false } });
+        if (AutoSize.IsChecked == true)
+        {
+            loading = true;
+            AutoSize.IsChecked = false;
+            loading = false;
+        }
     }
+
+    private void OnAutoSize(object sender, RoutedEventArgs e) =>
+        Update(s => s with { Style = s.Style with { AutoSize = AutoSize.IsChecked == true } });
 
     private void OnFreeTarget(object sender, RoutedEventArgs e)
     {

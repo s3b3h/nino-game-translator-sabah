@@ -18,6 +18,7 @@ import android.os.HandlerThread
 import android.util.Log
 import com.couchsubs.mobile.remoteplay.DisconnectKind
 import com.couchsubs.mobile.remoteplay.FrameSource
+import com.couchsubs.mobile.remoteplay.Chroma
 import com.couchsubs.mobile.remoteplay.VideoFrame
 import com.couchsubs.mobile.remoteplay.FrameSourceFactory
 import com.couchsubs.mobile.remoteplay.SessionState
@@ -248,7 +249,15 @@ class CaptureCardSource(
         val plane = image.planes[0]
         val buffer = plane.buffer.duplicate()
         buffer.position(crop.top * plane.rowStride + crop.left * plane.pixelStride)
-        return VideoFrame(buffer.slice(), crop.width(), crop.height(), plane.rowStride)
+        // Nino: renk düzlemleri de (oyundaki telefonu bulmak için); kırpma köşesinden başlatılır.
+        val chroma = if (image.planes.size >= 3) {
+            val (u, v) = image.planes[1] to image.planes[2]
+            fun start(p: Image.Plane) = p.buffer.duplicate().apply {
+                position((crop.top / 2) * p.rowStride + (crop.left / 2) * p.pixelStride)
+            }.slice()
+            runCatching { Chroma(start(u), start(v), crop.width() / 2, crop.height() / 2, u.rowStride, u.pixelStride) }.getOrNull()
+        } else null
+        return VideoFrame(buffer.slice(), crop.width(), crop.height(), plane.rowStride, chroma = chroma)
     }
 
     /** İlk karede "akış"; görüntü 4 sn simsiyah kalırsa "siyah görüntü", geri gelince yeniden "akış". */

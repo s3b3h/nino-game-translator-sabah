@@ -49,6 +49,8 @@ public sealed class MapCardWatcher
     /// <summary>Kart başlığı Türkçe büyük harfe çevrilir ("İ"); başka dilde kültürden bağımsız.</summary>
     public string TargetLanguage { get; set; } = "tr";
     public Action<string>? Log { get; set; }
+    /// <summary>Nino: her okumanın (karenin büyük kısmı) satırları; oyun buradan da tanınır (bkz. <see cref="GameMarkers"/>).</summary>
+    public Action<Reading>? Screen { get; set; }
 
     public IReadOnlyList<ScreenTranslation.Item> Items { get { lock (gate) return items; } }
 
@@ -118,6 +120,7 @@ public sealed class MapCardWatcher
     /// <summary>Okunmuş kareden harita kartını bulur (sınamalar için ayrı).</summary>
     internal async Task Process(Frame frame, Reading reading)
     {
+        Screen?.Invoke(reading);
         if (!MapCard.IsMapScreen(reading))
         {
             if (Items.Count > 0) Clear();

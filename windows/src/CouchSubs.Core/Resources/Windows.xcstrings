@@ -4190,6 +4190,148 @@
           }
         }
       }
+    },
+    "Match the game's subtitle size on the TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طابق حجم ترجمة اللعبة على التلفاز"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "টিভিতে গেমের সাবটাইটেলের আকারে মেলান"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Itugma sa laki ng subtitle ng laro sa TV"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "टीवी पर गेम के सबटाइटल के आकार से मिलाएँ"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samakan dengan ukuran subtitle game di TV"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Padankan saiz sari kata permainan di TV"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grootte van de game-ondertitel volgen op de tv"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ปรับให้ตรงกับขนาดคำบรรยายของเกมบนทีวี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV'de oyunun altyazı boyuna uydur"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ٹی وی پر گیم کے سب ٹائٹل کے سائز سے ملائیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khớp cỡ phụ đề của trò chơi trên TV"
+          }
+        }
+      }
+    },
+    "While on, the TV sizes the text from the game's English line; changing the size below turns this off.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عند التفعيل يضبط التلفاز حجم النص حسب سطر اللعبة الإنجليزي؛ تغيير الحجم أدناه يوقفه."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "চালু থাকলে টিভি গেমের ইংরেজি লাইন অনুযায়ী লেখার আকার ঠিক করে; নিচে আকার বদলালে এটি বন্ধ হয়।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Habang naka-on, sinusukat ng TV ang teksto ayon sa English na linya ng laro; ang pagbago ng laki sa ibaba ay mag-o-off nito."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चालू रहने पर टीवी गेम की अंग्रेज़ी पंक्ति के अनुसार टेक्स्ट का आकार तय करता है; नीचे आकार बदलने पर यह बंद हो जाता है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saat aktif, TV menyesuaikan ukuran teks dengan baris bahasa Inggris game; mengubah ukuran di bawah akan mematikannya."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apabila hidup, TV melaraskan saiz teks mengikut baris Inggeris permainan; menukar saiz di bawah akan mematikannya."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als dit aan staat, past de tv de tekstgrootte aan de Engelse regel van de game aan; de grootte hieronder wijzigen zet dit uit."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เมื่อเปิดอยู่ ทีวีจะปรับขนาดตัวอักษรตามบรรทัดภาษาอังกฤษของเกม การเปลี่ยนขนาดด้านล่างจะปิดตัวเลือกนี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açıkken TV yazı boyunu oyundaki İngilizce satıra göre ayarlar; aşağıdaki boyu değiştirirsen bu kapanır."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آن ہونے پر ٹی وی گیم کی انگریزی لائن کے مطابق متن کا سائز رکھتا ہے؛ نیچے سائز بدلنے سے یہ بند ہو جاتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi bật, TV chỉnh cỡ chữ theo dòng tiếng Anh của trò chơi; đổi cỡ chữ bên dưới sẽ tắt tùy chọn này."
+          }
+        }
+      }
     }
   }
 }

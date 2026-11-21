@@ -64,7 +64,8 @@ typedef struct couchsubs_video_decoder_t
 	/* Açık çözücüye başlık henüz verilmedi. */
 	bool header_pending;
 
-	/* Kare dinleyicisi: onFrame(ByteBuffer, int width, int height, int rowStride, int colorFormat). */
+	/* Kare dinleyicisi: onFrame(ByteBuffer, int width, int height, int rowStride, int colorFormat, boolean chroma).
+	 * chroma: Y düzleminin hemen arkasında yarım çözünürlüklü renk (NV12: U, V sırasıyla) da var. */
 	JavaVM *vm;
 	jobject frame_listener;
 	jmethodID on_frame;
@@ -73,6 +74,8 @@ typedef struct couchsubs_video_decoder_t
 	/* Java'nın sahip olduğu doğrudan arabellek (genel başvuru): Java tarafı başvuruyu tutsa bile bellek GC'nindir,
 	 * oturum bitince elden gitmez. */
 	jobject frame_buffer;
+	/* Nino: son kopyalanan karede renk de kopyalanabildi (yalnız çıkış iş parçacığı). */
+	bool frame_chroma;
 	uint8_t *frame_ptr;
 	size_t frame_capacity;
 } CouchSubsVideoDecoder;

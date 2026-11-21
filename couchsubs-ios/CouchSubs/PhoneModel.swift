@@ -179,6 +179,13 @@ final class PhoneModel: ObservableObject {
     /// Nino: köşe yazılarını ve telefon mesajlarını kendiliğinden tanıyıp çeviren (Mac'teki "köşe çevirisi" ile aynı
     /// mantık, CouchSubsCore'da); çeviri sürerken ve `settings.translateCorners` açıkken var.
     private var hints: ScreenHints?
+    /// Nino: oyundaki telefonun (GTA 6) sohbetini telefonun yanında, uygulama ekranlarını yazının altında çeviren (Mac ile
+    /// aynı kurallar, bkz. `PhoneWatcher`); köşe çevirisi açıkken ve kaynak İngilizceyken var.
+    private var phoneWatcher: PhoneWatcher?
+    /// Nino: haritada seçili görevin kartını çeviren (bkz. `MapCardWatcher`); kart köşe çevirisinin menü okumasında bulunur.
+    private var mapWatcher: MapCardWatcher?
+    /// Tanınan son oyun havuz öncelikli miydi (GTA 6): Nino telefon açıkken başlarsa oyun ekrandan tanınmaz, bu geçerlidir.
+    nonisolated static let lastGamePoolFirstKey = "ninoLastGamePoolFirst"
     /// Hatta aynı anda tek kare girer. Durdurma ve yeni hat kapıyı sıfırlar; takılan okuma hattı yeniden kurdurur (Mac ile aynı).
     private var frameGate = FrameGate()
     private var savedKeys: Set<TranslationEngine> = []
@@ -628,6 +635,10 @@ final class PhoneModel: ObservableObject {
         regionWatcher = nil
         hints?.reset()
         hints = nil
+        phoneWatcher?.reset()
+        phoneWatcher = nil
+        mapWatcher?.reset()
+        mapWatcher = nil
         #if DEBUG
         debugFrameTask?.cancel()
         debugFrameTask = nil
@@ -732,6 +743,8 @@ final class PhoneModel: ObservableObject {
             pipeline?.reset()
             regionWatcher?.reset()
             hints?.reset()
+            phoneWatcher?.reset()
+            mapWatcher?.reset()
             server.clear()
         }
     }
@@ -772,6 +785,10 @@ final class PhoneModel: ObservableObject {
         // çalışır (mesaj kartı altyazı sayılır, köşeler okunmaz).
         hints?.reset()
         hints = nil
+        phoneWatcher?.reset()
+        phoneWatcher = nil
+        mapWatcher?.reset()
+        mapWatcher = nil
         if settings.translateCorners {
             let hints = makeHints()
             self.hints = hints
@@ -782,6 +799,8 @@ final class PhoneModel: ObservableObject {
             pipeline.isMenuScreen = { menuFlag.active }
             // PS5'in kendi (hedef dildeki) ekranı: köşeler de bir süre çevrilmez.
             pipeline.onAlreadyTarget = { [weak hints] in hints?.noteSystemScreen() }
+            // Nino: oyundaki telefon ve harita kartı (Mac ile aynı); yalnız İngilizce oyunda.
+            if settings.sourceLanguage == "en" { connectPhoneAndMap(to: pipeline, hints: hints) }
         }
         connectPacks(to: pipeline)
         startTranslationSync()
@@ -828,8 +847,112 @@ final class PhoneModel: ObservableObject {
     private func showHints(_ items: [ScreenTranslation.Item]) {
         let shown = settings.output.showsOnComputer ? items : []
         if shown != hintItems { hintItems = shown }
+        sendOverlays()
+    }
+
+    /// Köşe, mesaj, telefon ve harita kartı çevirileri TV'ye tek liste olarak gider (Mac'teki `sendOverlays` gibi).
+    /// Telefonun yanındaki panel ve harita kartı yalnız TV'dedir (telefonun ekranında oyunun telefonunun yanı yoktur;
+    /// Windows'ta da bilgisayar penceresine gitmez).
+    private func sendOverlays() {
         guard isRunning, screenState == .idle else { return }
-        if items.isEmpty { server.clearScreen() } else { server.sendScreen(items, durationMs: 120_000, overlay: true) }
+        let all = (hints?.items ?? []) + (phoneWatcher?.items ?? []) + (mapWatcher?.items ?? [])
+        if all.isEmpty { server.clearScreen() } else { server.sendScreen(all, durationMs: 120_000, overlay: true) }
+    }
+
+    /// Nino: havuz öncelikli oyunda (GTA 6) telefon aranır. Oyun henüz tanınmadıysa son oturumdaki oyun geçerlidir.
+    /// Oyun henüz tanınmadıysa (yeni kurulumda PS5 bildirmeyebilir, ekrandan tanıma sürer) çeviri dili havuz öncelikliyse
+    /// (Türkçe) de açıktır; Ayarlar'daki "GTA 6" kartıyla (`ninoPoolActive`) aynı kural. Yoksa ilk denemede telefon hiç
+    /// aranmıyor, sohbetin mesajları siyah altyazı kutusunda çıkıyordu (21 Kasım 2026, iPhone).
+    private var phoneGameActive: Bool {
+        let remembered = defaults.bool(forKey: Self.lastGamePoolFirstKey)
+        guard gameChoice.sense.current != nil else {
+            return remembered || translations.poolFirst.allows(language: settings.targetLanguage)
+        }
+        let first = liveGamePoolFirst
+        if first != remembered { defaults.set(first, forKey: Self.lastGamePoolFirstKey) }
+        return first
+    }
+
+    /// Nino: oyun ekrandaki kendine özgü yazılardan tanındı (bkz. `GameMarkers`). PS5'in bildirdiği ya da kullanıcının
+    /// seçtiği oyun her zaman önce gelir; aynı oyun zaten biliniyorsa bir şey yapılmaz.
+    private func noteScreenGame(_ name: String) {
+        let sense = gameChoice.sense
+        if let known = sense.current?.name, GameName.key(known) == GameName.key(name) { return }
+        if sense.source == .console || sense.source == .user { return }
+        SubtitleLog.write("oyun ekrandaki yazılardan tanındı: \(name)")
+        gameChoice.seen(name)
+        startTranslationSync()
+    }
+
+    /// Nino: telefon ve harita okuyucularını kurar ve okuma hattına bağlar (Mac: watchPhone / showMapCard; Windows:
+    /// PhoneWatcher / MapCardWatcher). Çeviri sırası Mac'teki gibi: havuzun hazır çevirisi, sunucunun havuzu, seçili çevirmen.
+    private func connectPhoneAndMap(to pipeline: SubtitlePipeline, hints: ScreenHints) {
+        let translator = makeTranslator()
+        let offline = self.offline
+        let pooled = settings.sharePool && !offline
+        let (translations, packs, sense, pool) = (translations, packs, gameChoice.sense, pool)
+        let poolGame: @Sendable () -> String? = { translations.poolGame(sense.current?.name, packs.searchScope) }
+        let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(AppIdentity.name, isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        // Telefon işlemcide okunur (Neural Engine altyazı okumasına kalsın). Her çeviri dili ayrı hafıza dosyasında.
+        let phone = PhoneWatcher(reader: VisionReader(language: "en", cpuOnly: true),
+                                 memoryFile: folder.appendingPathComponent("phone-memory-\(settings.targetLanguage).json")) { text, context in
+            if let known = translations.store.match(text) { return .init(text: known, remember: true) }
+            let game = poolGame()
+            if !offline, pooled || translations.isPoolFirst(game),
+               let fresh = await translations.translate(text, context: context, game: game) {
+                return .init(text: fresh, remember: true)
+            }
+            // Cihazın yedek çevirisi hafızaya yazılmaz; sonraki okumada havuz yeniden sorulur.
+            return .init(text: try? await translator.translate(text), remember: false)
+        }
+        phone.known = { translations.store.match($0) }
+        // Telefon uygulamalarının sabit Türkçeleri yalnız Türkçede.
+        phone.useGlossary = TargetLanguage.isTurkish(settings.targetLanguage)
+        // Telefon mesajları da havuza bildirilir (altyazılar gibi); toplu çeviri ve elle düzeltme onları da görsün.
+        phone.onUnknown = { texts in
+            let game = poolGame()
+            guard !offline, pooled || translations.isPoolFirst(game) else { return }
+            for text in texts { Task { _ = await pool.offer(text, game: game) } }
+        }
+        phone.onLog = { SubtitleLog.write($0) }
+        phone.onChange = { [weak self] _ in self?.sendOverlays() }
+        // Nino: oyunun telefonu ve GTA 6'ya özgü ekran yazıları görülünce oyun GTA 6 sayılır (PS5 çoğu zaman söylemiyor).
+        phone.onPhoneScreen = { [weak self] in self?.noteScreenGame(GameMarkers.gta6) }
+        hints.onScreen = { [weak self] reading in
+            if let name = GameMarkers.game(in: reading) { self?.noteScreenGame(name) }
+        }
+        let map = MapCardWatcher { piece in
+            if let known = translations.store.match(piece) { return known }
+            if !offline, pooled, let fresh = await translations.translate(piece, game: poolGame()) { return fresh }
+            return try? await translator.translate(piece)
+        }
+        map.targetLanguage = settings.targetLanguage
+        let menuFlag = hints.menuFlag
+        map.isMapOpen = { menuFlag.active }
+        map.onLog = { SubtitleLog.write($0) }
+        map.onChange = { [weak self] _ in self?.sendOverlays() }
+        // Harita/menü açıkken (ve kapandıktan sonra 8 sn) telefon aranmaz: haritanın aydınlık kısmı telefon sanılıyordu.
+        phone.paused = { [weak map] in menuFlag.active(within: 8000) || map?.items.isEmpty == false }
+        hints.onMap = { [weak map] card, frame in
+            if let card { map?.show(card, frame: frame) } else { map?.clear() }
+        }
+        // Telefonun ekranındaki yazılar altyazı sayılmaz; telefon uygulamasının sözcükleri görülünce telefon oradan da bulunur.
+        let lastGameKey = Self.lastGamePoolFirstKey
+        let defaults = self.defaults
+        let target = settings.targetLanguage
+        pipeline.phonePanels = {
+            translations.isPoolFirst(poolGame()) || (sense.current == nil
+                && (defaults.bool(forKey: lastGameKey) || translations.poolFirst.allows(language: target)))
+        }
+        pipeline.phoneTexts = { [weak phone] in phone?.recentTexts ?? [] }
+        pipeline.onPhoneUI = { [weak self, weak phone] boxes in
+            guard let frame = self?.framePreview.image else { return }
+            phone?.adopt(boxes, in: frame)
+        }
+        phoneWatcher = phone
+        mapWatcher = map
     }
 
     private func handle(_ frame: CGImage, capturedAt: Int) async {
@@ -844,6 +967,9 @@ final class PhoneModel: ObservableObject {
         // "Ekranı çevir" sürerken ya da sonuçları ekrandayken okunmaz.
         if screenState == .idle {
             hints?.offer(frame, subtitleBox: current.lastBox, subtitleText: lastSource)
+            // Nino: oyundaki telefon (GTA 6) ayrı ve seyrek okunur; harita kapandıysa kartın Türkçesi kalkar.
+            if let phoneWatcher, phoneGameActive { phoneWatcher.offer(frame) }
+            if let mapWatcher, !mapWatcher.items.isEmpty, hints?.menuFlag.active != true { mapWatcher.clear() }
         } else {
             hints?.clearStaleMessage()
         }
@@ -1284,7 +1410,7 @@ final class PhoneModel: ObservableObject {
         server.clearScreen()
         server.clear()
         // Nino: "Ekranı çevir" sonuçları kalktı; kendiliğinden çevrilen köşe yazıları (hâlâ ekrandaysa) geri gelir.
-        if let items = hints?.items, !items.isEmpty { showHints(items) }
+        if let items = hints?.items, !items.isEmpty { showHints(items) } else { sendOverlays() }
     }
 
     /// Ekran çevrilemedi: nedeni telefonda ve TV'de birkaç saniye görünür.

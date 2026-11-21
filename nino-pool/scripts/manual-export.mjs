@@ -13,11 +13,11 @@ const prefix = `${lang}-${game === "*" ? "hepsi" : game}`;
 const dir = new URL("../manual/", import.meta.url);
 for (const d of ["bekleyen", "hazir", "yuklendi"]) mkdirSync(new URL(d, dir), { recursive: true });
 
-// Zaten bekleyen/hazır partilerdeki satırlar yeniden alınmaz.
+// Zaten bekleyen/hazır partilerdeki satırlar yeniden alınmaz (yalnız aynı dilin partileri: anahtar dillerde ortak).
 const taken = new Set();
 for (const d of ["bekleyen", "hazir"]) {
   for (const f of readdirSync(new URL(d, dir))) {
-    if (f.endsWith(".json")) for (const r of JSON.parse(execFileSync("cat", [new URL(`${d}/${f}`, dir).pathname]))) taken.add(r.k);
+    if (f.endsWith(".json") && f.startsWith(`${lang}-`)) for (const r of JSON.parse(execFileSync("cat", [new URL(`${d}/${f}`, dir).pathname]))) taken.add(r.k);
   }
 }
 

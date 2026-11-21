@@ -34,6 +34,8 @@ public final class ScreenHints {
 
         func set(until time: Int) { lock.withLock { until = time } }
         public var active: Bool { lock.withLock { now() < until } }
+        /// Menü/harita bu kadar süre önce de açıktıysa evet (sekme değişirken bir okumada tanınmamış olabilir).
+        public func active(within extraMs: Int) -> Bool { lock.withLock { now() < until + extraMs } }
     }
 
     /// İki tur arasındaki en kısa süre.
@@ -58,6 +60,11 @@ public final class ScreenHints {
     /// Gösterilecek liste her değiştiğinde (boşsa: hepsi kalktı).
     public var onChange: (([ScreenTranslation.Item]) -> Void)?
     public var onLog: ((String) -> Void)?
+    /// Nino: her menü okumasından sonra: harita ekranıysa seçili görevin kartı (bulunamadıysa nil), değilse nil
+    /// (bkz. `MapCardWatcher`). Verilmişse harita ekranı da menü sayılır.
+    public var onMap: ((MapCard.Found?, CGImage) -> Void)?
+    /// Nino: her menü okumasının (karenin büyük kısmı) satırları; oyun buradan da tanınır (bkz. `GameMarkers`).
+    public var onScreen: ((Reading) -> Void)?
     public let menuFlag: MenuFlag
     /// Tamamlanan tur ve yazı tanıma sayısı (ölçüm ve testler için).
     public private(set) var passes = 0
@@ -160,7 +167,9 @@ public final class ScreenHints {
         passes += 1
         // Bütün ekranın okunması yazı tanımayı yorar: menü üç turda bir (~4,5 sn) ve küçültülmüş kareyle aranır.
         menuCounter = (menuCounter + 1) % 3
-        let readMenu = menuReader != nil && menuCounter == 0
+        // Harita okunuyorsa menü/harita ekranı açıkken (ve kapandıktan sonra 10 sn) her turda bakılır: kart değişince
+        // Türkçesi çabuk gelsin (Mac ile aynı).
+        let readMenu = menuReader != nil && (menuCounter == 0 || (onMap != nil && menuFlag.active(within: 10_000)))
         let recentMenu = menuSeenAt.map { now() - $0 < 6000 } == true ? menuBoxes : []
 
         var readings: [Reading] = [.empty, .empty]
@@ -180,10 +189,14 @@ public final class ScreenHints {
         if readMenu, let menuReader {
             let screen = await read(frame, region: Self.menuRegion, with: menuReader, maxWidth: 1280)
             guard session == started else { return }
-            if MenuBlock.isMenuScreen(screen) {
+            onScreen?(screen)
+            let map = onMap != nil && MapCard.isMapScreen(screen)
+            if MenuBlock.isMenuScreen(screen) || map {
                 // Harita/duraklatma ekranı: okuma hattı 5 sn altyazı okumaz (yer adları altyazı sanılıyordu).
                 menuFlag.set(until: now() + 5000)
             }
+            // Harita ekranında yalnız seçili görevin kartı çevrilir (menünün kalanı değil).
+            onMap?(map ? MapCard.find(in: screen) : nil, frame)
             let menus = MenuBlock.groups(in: Reading(lines: screen.lines.map { line in
                 var cleaned = line
                 cleaned.text = MenuBlock.clean(line.text)
@@ -191,6 +204,22 @@ public final class ScreenHints {
             }.filter { !$0.text.isEmpty }))
             menuArea = menus.flatMap(\.lines).compactMap(\.box)
             if !menuArea.isEmpty { menuSeenAt = now(); menuBoxes = menuArea }
+        }
+        // Nino (harita okunuyorsa, Mac ile aynı): menü/harita ekranında ya da harita/görev menüsünün sol listesi
+        // ("◆ Earn Money / OPTIONAL / …") görülünce sol üstteki liste ipucu kutusu değildir; Türkçesi listenin üstüne biniyordu.
+        if onMap != nil {
+            let corner = readings[0].lines.map { $0.text.trimmingCharacters(in: .whitespaces) }
+            let headings = corner.contains { ["OPTIONAL", "STORY", "SIDE", "COMPLETED", "ACTIVITIES"].contains($0.uppercased()) && $0 == $0.uppercased() }
+            let bullets = corner.filter { $0.hasPrefix("◆") || $0.hasPrefix("♦") }.count
+            if menuFlag.active || headings || bullets >= 2 {
+                readings[0] = .empty
+                if !texts[0].isEmpty || !slotItems[0].isEmpty {
+                    texts[0] = ""
+                    pending[0] = ""
+                    emptyReads[0] = 0
+                    if !slotItems[0].isEmpty { slotItems[0] = []; onChange?(items) }
+                }
+            }
         }
         // Menü ekrandayken (son 6 sn'de görüldüyse) sol üst kutusu menü satırlarını çevirmez.
         if !menuArea.isEmpty {

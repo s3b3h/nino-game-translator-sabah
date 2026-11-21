@@ -279,7 +279,7 @@ public static class GameCatalog
     /// <summary>Paketi olmayan ama çok oynanan ya da yeni çıkan oyunlar (Mac, iPhone ve Android'de aynı liste).</summary>
     public static readonly IReadOnlyList<string> Popular =
     [
-        "Grand Theft Auto VI", "Grand Theft Auto V", "Red Dead Redemption 2", "Ghost of Yōtei", "Marvel's Spider-Man 2",
+        "GTA 6", "GTA 5", "Red Dead Redemption 2", "Ghost of Yōtei", "Marvel's Spider-Man 2",
         "Death Stranding 2: On the Beach", "Elden Ring", "Elden Ring Nightreign", "Assassin's Creed Shadows",
         "Call of Duty: Black Ops 7", "Call of Duty: Black Ops 6", "Battlefield 6", "EA Sports FC 26",
         "Mafia: The Old Country", "The Last of Us Part II Remastered", "God of War Ragnarök", "Cyberpunk 2077",
@@ -294,6 +294,9 @@ public static class GameCatalog
     /// Öneriler (en çok <paramref name="limit"/>): önce son oynanan, sonra paketlerin oyunları, sonra popüler oyunlar; aynı
     /// oyun bir kez. Arama yazılmışsa adı ya da anahtarı aramayı içerenler, adı aramayla başlayanlar önde.
     /// </summary>
+    /// <summary>Nino: listede kısa adla görünen oyunların uzun adı; "grand theft" aranınca da bulunsun.</summary>
+    private static readonly Dictionary<string, string> FullNames = new() { ["GTA 6"] = "Grand Theft Auto VI", ["GTA 5"] = "Grand Theft Auto V" };
+
     public static IReadOnlyList<string> Suggestions(string query, IEnumerable<string> packs, string? last, int limit = 8)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -305,7 +308,9 @@ public static class GameCatalog
         }
         var wanted = GameName.Key(query);
         if (wanted.Length == 0) return [.. all.Take(limit)];
-        var found = all.Where(n => GameName.Key(n).Contains(wanted, StringComparison.Ordinal)).ToList();
+        var plain = query.Trim().ToLowerInvariant();
+        var found = all.Where(n => GameName.Key(n).Contains(wanted, StringComparison.Ordinal)
+                                   || (FullNames.TryGetValue(n, out var full) && full.ToLowerInvariant().Contains(plain, StringComparison.Ordinal))).ToList();
         return [.. found.Where(n => GameName.Key(n).StartsWith(wanted, StringComparison.Ordinal))
             .Concat(found.Where(n => !GameName.Key(n).StartsWith(wanted, StringComparison.Ordinal))).Take(limit)];
     }

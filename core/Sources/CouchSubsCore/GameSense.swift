@@ -179,7 +179,7 @@ public enum GameName {
 public enum GameCatalog {
     /// Paketi olmayan ama çok oynanan ya da yeni çıkan oyunlar (Android ve Windows'ta aynı liste).
     public static let popular: [String] = [
-        "Grand Theft Auto VI", "Grand Theft Auto V", "Red Dead Redemption 2", "Ghost of Yōtei", "Marvel's Spider-Man 2",
+        "GTA 6", "GTA 5", "Red Dead Redemption 2", "Ghost of Yōtei", "Marvel's Spider-Man 2",
         "Death Stranding 2: On the Beach", "Elden Ring", "Elden Ring Nightreign", "Assassin's Creed Shadows",
         "Call of Duty: Black Ops 7", "Call of Duty: Black Ops 6", "Battlefield 6", "EA Sports FC 26",
         "Mafia: The Old Country", "The Last of Us Part II Remastered", "God of War Ragnarök", "Cyberpunk 2077",
@@ -189,6 +189,9 @@ public enum GameCatalog {
         "Indiana Jones and the Great Circle", "Dying Light: The Beast", "Ghost of Tsushima", "Star Wars Outlaws",
         "The Witcher 3: Wild Hunt", "Monster Hunter Wilds", "Split Fiction", "Hollow Knight: Silksong",
     ]
+
+    /// Nino: listede kısa adla görünen oyunların uzun adı; "grand theft" aranınca da bulunsun.
+    static let fullNames = ["GTA 6": "Grand Theft Auto VI", "GTA 5": "Grand Theft Auto V"]
 
     /// Öneriler (en çok `limit`): önce son oynanan, sonra paketlerin oyunları, sonra popüler oyunlar; aynı oyun bir kez.
     /// Arama yazılmışsa adı ya da anahtarı aramayı içerenler, adı aramayla başlayanlar önde.
@@ -202,7 +205,8 @@ public enum GameCatalog {
         }
         let wanted = GameName.key(query)
         guard !wanted.isEmpty else { return Array(all.prefix(limit)) }
-        let found = all.filter { GameName.key($0).contains(wanted) }
+        let plain = query.lowercased().trimmingCharacters(in: .whitespaces)
+        let found = all.filter { GameName.key($0).contains(wanted) || (fullNames[$0]?.lowercased().contains(plain) ?? false) }
         let first = found.filter { GameName.key($0).hasPrefix(wanted) }
         return Array((first + found.filter { !GameName.key($0).hasPrefix(wanted) }).prefix(limit))
     }

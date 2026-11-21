@@ -13,7 +13,7 @@ const dir = new URL("../manual/", import.meta.url);
 for (const d of ["bekleyen", "hazir", "yuklendi"]) mkdirSync(new URL(d, dir), { recursive: true });
 const taken = new Set();
 for (const d of ["bekleyen", "hazir"]) {
-  for (const f of readdirSync(new URL(d, dir))) if (f.endsWith(".json")) for (const r of JSON.parse(readFileSync(new URL(`${d}/${f}`, dir)))) taken.add(r.k);
+  for (const f of readdirSync(new URL(d, dir))) if (f.endsWith(".json") && f.startsWith(`${lang}-`)) for (const r of JSON.parse(readFileSync(new URL(`${d}/${f}`, dir)))) taken.add(r.k);
 }
 const list = games.split(",").map((g) => `'${g.replace(/[^a-z0-9-]/g, "")}'`).join(",");
 const want = Number(size) * Number(count);

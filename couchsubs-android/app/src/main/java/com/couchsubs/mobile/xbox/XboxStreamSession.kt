@@ -14,6 +14,7 @@ import com.couchsubs.mobile.account.Backend
 import com.couchsubs.mobile.remoteplay.DisconnectKind
 import com.couchsubs.mobile.remoteplay.FrameSource
 import com.couchsubs.mobile.remoteplay.SessionState
+import com.couchsubs.mobile.remoteplay.Chroma
 import com.couchsubs.mobile.remoteplay.VideoFrame
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
@@ -276,7 +277,9 @@ class XboxStreamSession(
             val i420 = frame.buffer.toI420() ?: return@VideoSink
             try {
                 if (frameCounter.framesInSession(negotiatedFrames) > 0) {
-                    onFrame(VideoFrame(i420.dataY, i420.width, i420.height, i420.strideY))
+                    // Nino: renk düzlemleri de (oyundaki telefonu bulmak için).
+                    val chroma = Chroma(i420.dataU, i420.dataV, (i420.width + 1) / 2, (i420.height + 1) / 2, i420.strideU, 1)
+                    onFrame(VideoFrame(i420.dataY, i420.width, i420.height, i420.strideY, chroma = chroma))
                 }
             } finally {
                 i420.release()

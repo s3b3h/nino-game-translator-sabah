@@ -2387,7 +2387,30 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// Nino: oynanan oyunda telefon ve harita kartı aranır mı: kaynak İngilizce ve oyun havuz öncelikli (GTA 6; Mac'teki
     /// phoneGame). Başka oyunlarda açık zemindeki koyu yazı süzgeci altyazıyı yutardı.
     /// </summary>
-    private bool PhoneGameActive => !subtitlesPaused && PoolFirstActive;
+    /// <summary>
+    /// Nino: oyun hiç tanınmadıysa çeviri dili havuz öncelikliyse (Türkçe) de açık (Mac, iPhone ve Android ile aynı): PS5 oyunu
+    /// çoğu zaman söylemiyor, yeni kurulumda telefon hiç aranmıyordu. Telefon ya da harita görülünce oyun GTA 6 sayılır.
+    /// </summary>
+    private bool PhoneGameActive => !subtitlesPaused && (PoolFirstActive
+        || (settings.SourceLanguage == "en" && gameSense.Current is null
+            && services.Translations?.CurrentPoolFirst.Allows(settings.TargetLanguage) == true));
+
+    /// <summary>
+    /// Nino: oyun ekrandaki kendine özgü yazılardan tanındı (bkz. <see cref="GameMarkers"/>). PS5'in bildirdiği ya da
+    /// kullanıcının seçtiği oyun her zaman önce gelir; aynı oyun zaten biliniyorsa bir şey yapılmaz. Arka plan iş
+    /// parçacığından çağrılabilir.
+    /// </summary>
+    private void NoteScreenGame(string name) => post(() =>
+    {
+        if (!IsRunning) return;
+        if (gameSense.Current?.Name is { } known && GameName.Key(known) == GameName.Key(name)) return;
+        if (gameSense.Source is GameSense.GameSource.Console or GameSense.GameSource.User) return;
+        SubtitleLog.Write($"oyun ekrandaki yazılardan tanındı: {name}");
+        gameSense.SetSeen(name);
+        AskingGame = false;
+        PublishGame();
+        StartTranslationSync();
+    });
 
     /// <summary>
     /// Telefon ve harita kartı okuyucuları gerekiyorsa kurulur. Kendi yazı tanıma motorları vardır (aynı motor iki okumayı
@@ -2410,10 +2433,16 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
                 Log = SubtitleLog.Write,
                 Changed = _ => SendOverlays(),
                 Paused = () => mapWatcher?.RecentlyOpen(8000) == true,
+                PhoneScreen = () => NoteScreenGame(GameMarkers.Gta6),
             };
         }
         if (mapWatcher is null && services.MakePlainReader(settings.SourceLanguage) is { } mapReader)
-            mapWatcher = new MapCardWatcher(mapReader, MakeTranslator()) { Log = SubtitleLog.Write, Changed = _ => SendOverlays() };
+            mapWatcher = new MapCardWatcher(mapReader, MakeTranslator())
+            {
+                Log = SubtitleLog.Write,
+                Changed = _ => SendOverlays(),
+                Screen = reading => { if (GameMarkers.Game(reading) is { } game) NoteScreenGame(game); },
+            };
         overlaysUnavailable = phoneWatcher is null || mapWatcher is null;
         if (phoneWatcher is { } phone)
         {

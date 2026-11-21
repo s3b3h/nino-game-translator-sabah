@@ -71,6 +71,11 @@
                     <!-- Görünüm ayarları bilgisayar ekranındaki pencereye de uygulanır. -->
                     <c:Card x:Name="StyleCard" Title="{t:T 'On the TV'}">
                         <StackPanel>
+                            <!-- Nino: varsayılan olarak TV yazı boyunu oyunun altyazısına uydurur (Mac ve Android ile aynı). -->
+                            <CheckBox x:Name="AutoSize" Content="{t:T 'Match the game\'s subtitle size on the TV'}" Foreground="{DynamicResource textPrimaryBrush}" Margin="0,0,0,4"
+                                      Checked="OnAutoSize" Unchecked="OnAutoSize" />
+                            <TextBlock Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"
+                                       Text="{t:T 'While on, the TV sizes the text from the game\'s English line; changing the size below turns this off.'}" />
                             <TextBlock Text="{t:T 'Text size'}" Margin="0,0,0,8" />
                             <Grid Margin="0,0,0,16">
                                 <Grid.ColumnDefinitions>
