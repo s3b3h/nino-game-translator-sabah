@@ -421,6 +421,9 @@ private struct AppearanceCard: View {
             if model.showsOnTV, model.tv?.brand == .androidTV {
                 AndroidDisplayModePicker(mode: $model.settings.style.displayMode)
             }
+            // Nino: en altta; yalnız TV'nin sol altındaki Nino rozetini kapatır (telefon panelindeki işaret kalır).
+            Toggle("Show the Nino watermark on the TV", isOn: $model.settings.style.watermark)
+            HintText(text: "When off, only the small Nino mark at the bottom left of the TV is hidden.")
         }
     }
 }

@@ -307,6 +307,15 @@ struct SettingsScreen: View {
                     Text("If the PS5 picture stays black inside the Nino TV app, choose Overlay: the TV shows the PS5 on its own HDMI input and the subtitles appear on top. If no picture arrives, the TV app first lists its HDMI inputs and switches to Overlay where it can. The TV app from Google Play has no Overlay mode: there this choice is not applied and the TV says so on screen.")
                         .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
                 }
+                // Nino: en altta; yalnız TV'nin sol altındaki Nino rozetini kapatır.
+                Toggle(isOn: $model.settings.style.watermark) {
+                    VStack(alignment: .leading, spacing: Mobile.Space.hair) {
+                        Text("Show the Nino watermark on the TV").font(Mobile.TypeScale.headline)
+                        Text("When off, only the small Nino mark at the bottom left of the TV is hidden.")
+                            .font(Mobile.TypeScale.caption).foregroundStyle(Mobile.Palette.secondary)
+                    }
+                }
+                .tint(Mobile.Palette.accent)
             }
             AreaTile()
             ExtraAreasTile()

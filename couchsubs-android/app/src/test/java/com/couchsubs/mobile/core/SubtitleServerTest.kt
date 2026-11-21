@@ -66,7 +66,7 @@ class SubtitleServerTest {
         assertEquals("event: clear\ndata: {}\n\n", SubtitleServer.clearFrame())
         assertEquals(
             "event: style\ndata: {\"autoSize\":true,\"background\":100,\"backgroundShape\":\"fit\",\"bold\":false,\"bottomPercent\":7,\"displayMode\":\"inApp\",\"font\":\"condensed\",\"fontSize\":46," +
-                "\"placement\":\"cover\",\"stackPrevious\":true,\"textColor\":\"white\"}\n\n",
+                "\"placement\":\"cover\",\"stackPrevious\":true,\"textColor\":\"white\",\"watermark\":true}\n\n",
             SubtitleServer.styleFrame(SubtitleStyle()),
         )
         assertTrue(SubtitleServer.styleFrame(SubtitleStyle(displayMode = TvDisplayMode.OVERLAY, textColor = SubtitleTextColor.YELLOW))
@@ -77,6 +77,8 @@ class SubtitleServerTest {
         assertTrue(SubtitleServer.styleFrame(SubtitleStyle(stackPrevious = false)).contains("\"stackPrevious\":false"))
         // Kullanıcı boyu kendisi seçince TV otomatik boyu bırakır; yoksa fontSize TV'de yok sayılır.
         assertTrue(SubtitleServer.styleFrame(SubtitleStyle(autoSize = false)).contains("\"autoSize\":false"))
+        // "TV'de Nino filigranını göster" kapalıysa TV yalnız sol alttaki Nino işaretini gizler (Mac ile aynı).
+        assertTrue(SubtitleServer.styleFrame(SubtitleStyle(watermark = false)).contains("\"watermark\":false"))
     }
 
     @Test

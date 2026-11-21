@@ -749,8 +749,9 @@ body[data-font="rounded"] #subtitle, body[data-font="rounded"] #screen { font-fa
 /* Nino: çeviri çalışırken sol altta: mini haritanın (GTA 6; 1080p'de x 32–333, y 884–1051) genişliğini geçmez,
    altında ortalanır; haritayı kapatmaz (kullanıcı isteği, 20 Kasım 2026). */
 #nino-badge { position: fixed; left: 3.2%; bottom: 0; width: 12.5%; height: auto; z-index: 7; pointer-events: none;
-  opacity: 1; filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.95)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85)); }
-#nino-badge.hidden { display: none; }
+  opacity: 0.05; filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.95)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85)); }
+/* Nino: filigran %95 saydam (kullanıcı isteği, 21 Kasım 2026); ayarlardan tamamen kapatılabilir (style.watermark). */
+#nino-badge.hidden, body.no-watermark #nino-badge { display: none; }
 
 /* Nino: Türkçe mesaj panelinin başlığı (gönderenin adı), telefondaki gibi üstte ortada. */
 #screen .item.backdrop .panel-title { position: absolute; left: 0; right: 0; top: 2.2%; text-align: center; font-weight: 700;

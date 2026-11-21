@@ -151,6 +151,8 @@
     <string name="settings_pool">Ortak havuza katkı</string>
     <string name="settings_stack_previous">Hızlı konuşmada önceki satırları üstte göster</string>
     <string name="settings_stack_previous_note">Kapalıyken her yeni satır öncekinin yerine geçer. TV uygulaması 0.9.16 ve sonrası gerekir.</string>
+    <string name="settings_tv_watermark">TV\'de Nino filigranını göster</string>
+    <string name="settings_tv_watermark_note">Kapatınca yalnız TV\'nin sol altındaki küçük Nino işareti gizlenir.</string>
     <string name="settings_display_mode">Görüntü modu (Android TV)</string>
     <string name="settings_display_mode_in_app">Uygulama içinde</string>
     <string name="settings_display_mode_overlay">Katman</string>

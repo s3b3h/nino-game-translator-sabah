@@ -149,6 +149,8 @@
     <string name="settings_pool">Contribute to the shared pool</string>
     <string name="settings_stack_previous">Keep previous lines above in fast dialogue</string>
     <string name="settings_stack_previous_note">When off, each new line replaces the previous one. Needs TV app 0.9.16 or later.</string>
+    <string name="settings_tv_watermark">Show Nino watermark on TV</string>
+    <string name="settings_tv_watermark_note">When off, only the small Nino mark in the bottom-left corner of the TV is hidden.</string>
     <string name="settings_display_mode">Picture mode (Android TV)</string>
     <string name="settings_display_mode_in_app">Inside the app</string>
     <string name="settings_display_mode_overlay">Overlay</string>

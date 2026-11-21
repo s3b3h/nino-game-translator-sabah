@@ -4048,6 +4048,148 @@
           }
         }
       }
+    },
+    "Show the Nino watermark on the TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار العلامة المائية لـ Nino على التلفاز"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "টিভিতে Nino জলছাপ দেখান"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipakita ang watermark ng Nino sa TV"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV पर Nino वॉटरमार्क दिखाएँ"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tampilkan watermark Nino di TV"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tunjukkan tera air Nino pada TV"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nino-watermerk op de tv tonen"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แสดงลายน้ำ Nino บนทีวี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV'de Nino filigranını göster"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV پر Nino واٹرمارک دکھائیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện hình mờ Nino trên TV"
+          }
+        }
+      }
+    },
+    "When off, only the small Nino mark at the bottom left of the TV is hidden.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عند الإيقاف، تُخفى فقط علامة Nino الصغيرة أسفل يسار التلفاز."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "বন্ধ থাকলে শুধু টিভির নিচে বাঁদিকের ছোট Nino চিহ্নটি লুকানো হয়।"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapag naka-off, ang maliit na marka ng Nino lang sa kaliwang ibaba ng TV ang itatago."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बंद करने पर केवल TV के नीचे बाईं ओर का छोटा Nino चिह्न छिपता है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jika dimatikan, hanya tanda kecil Nino di kiri bawah TV yang disembunyikan."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apabila dimatikan, hanya tanda kecil Nino di kiri bawah TV disembunyikan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als dit uit staat, wordt alleen het kleine Nino-teken linksonder op de tv verborgen."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เมื่อปิด จะซ่อนเฉพาะเครื่องหมาย Nino เล็กๆ ที่มุมซ้ายล่างของทีวี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapatınca yalnız TV'nin sol altındaki küçük Nino işareti gizlenir."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بند کرنے پر صرف TV کے نیچے بائیں جانب Nino کا چھوٹا نشان چھپ جاتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi tắt, chỉ dấu Nino nhỏ ở góc dưới bên trái TV bị ẩn."
+          }
+        }
+      }
     }
   }
 }

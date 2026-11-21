@@ -140,6 +140,8 @@
     <string name="settings_pool">مشترکہ پول میں حصہ ڈالیں</string>
     <string name="settings_stack_previous">تیز مکالمے میں پچھلی لائنیں اوپر رکھیں</string>
     <string name="settings_stack_previous_note">بند ہونے پر ہر نئی لائن پچھلی کی جگہ لے لیتی ہے۔ TV ایپ 0.9.16 یا بعد کا ورژن درکار ہے۔</string>
+    <string name="settings_tv_watermark">TV پر Nino واٹرمارک دکھائیں</string>
+    <string name="settings_tv_watermark_note">بند کرنے پر صرف TV کے نیچے بائیں کونے والا چھوٹا Nino نشان چھپ جاتا ہے۔</string>
     <string name="settings_display_mode">تصویر موڈ (Android TV)</string>
     <string name="settings_display_mode_in_app">ایپ کے اندر</string>
     <string name="settings_display_mode_overlay">اوورلے</string>

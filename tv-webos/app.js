@@ -6,7 +6,7 @@
   'use strict';
 
   // TV uygulamasının sürümü: appinfo.json, tv-tizen/config.xml ve tv-android/app/build.gradle ile aynı tutulur.
-  var APP_VERSION = '4.0.0';
+  var APP_VERSION = '4.0.3';
   // Nino: herkesin göreceği sürüm adı (bütün uygulamalarda aynı: V3.2). Teknik numara parantez içinde.
   var APP_LABEL = 'V4.0';
   var t = window.t;
@@ -1083,6 +1083,8 @@
   var TEXT_COLORS = { white: '#FFFFFF', yellow: '#FFE135' };
 
   function applyStyle(style) {
+    // Nino: ayarlardan filigran kapatılabilir; alanı göndermeyen eski bilgisayar/telefon sürümlerinde rozet görünür.
+    if (typeof style.watermark === 'boolean') setBodyClass('no-watermark', !style.watermark);
     if (style.fontSize) {
       fontBase = style.fontSize;
       var shown = rawText('subtitle-text');

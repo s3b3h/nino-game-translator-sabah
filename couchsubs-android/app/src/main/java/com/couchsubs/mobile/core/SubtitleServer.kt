@@ -57,6 +57,8 @@ data class SubtitleStyle(
      * hiçbir şeyi değiştirmiyordu (LG + Xbox, 3.5.1).
      */
     val autoSize: Boolean = true,
+    /** Nino: TV'nin sol altındaki küçük Nino işareti gösterilsin mi (Mac: SubtitleStyle.watermark). Kapalıyken yalnız o işaret gizlenir. */
+    val watermark: Boolean = true,
 ) {
     companion object {
         /** Örtme kipinde kutunun en az koyuluğu (yüzde); Ayarlar'daki kaydırıcı bu kipte buradan başlar. */
@@ -175,6 +177,7 @@ class SubtitleServer(
                 "placement" to style.placement.name.lowercase(Locale.ROOT),
                 "stackPrevious" to style.stackPrevious,
                 "textColor" to style.textColor.name.lowercase(Locale.ROOT),
+                "watermark" to style.watermark,
             )
         )
     }

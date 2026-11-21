@@ -14,8 +14,8 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "4.0.0"
-    CURRENT_PROJECT_VERSION: "22"
+    MARKETING_VERSION: "4.0.3"
+    CURRENT_PROJECT_VERSION: "23"
     # Nino: Apple geliştirici takımı burada değil; gerçek iPhone'a kurarken Xcode'da kendi takımınızı seçin
     # (Signing & Capabilities) ya da DEVELOPMENT_TEAM=... ile derleyin. Simülatör imza istemez.
     DEVELOPMENT_TEAM: ""

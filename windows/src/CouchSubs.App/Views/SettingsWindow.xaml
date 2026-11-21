@@ -168,6 +168,10 @@
                                 <TextBlock Style="{StaticResource HintText}" Margin="0,0,0,16"
                                            Text="{t:T 'If the PS5 picture stays black inside the Nino TV app, choose Overlay: the TV shows the PS5 on its own HDMI input and the subtitles appear on top. If the picture never arrives, the TV app switches to Overlay by itself.'}" />
                             </StackPanel>
+                            <CheckBox x:Name="Watermark" Content="{t:T 'Show the Nino watermark on the TV'}" Foreground="{DynamicResource textPrimaryBrush}" Margin="0,0,0,4"
+                                      Checked="OnWatermark" Unchecked="OnWatermark" />
+                            <TextBlock Style="{StaticResource HintText}" Margin="0,0,0,16"
+                                       Text="{t:T 'When off, only the small Nino mark at the bottom left of the TV is hidden.'}" />
                             <Button Content="{t:T 'Send test subtitle'}" Click="OnTest" />
                         </StackPanel>
                     </c:Card>

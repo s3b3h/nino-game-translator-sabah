@@ -140,6 +140,8 @@
     <string name="settings_pool">Đóng góp vào kho chung</string>
     <string name="settings_stack_previous">Giữ các câu trước ở trên khi hội thoại nhanh</string>
     <string name="settings_stack_previous_note">Khi tắt, mỗi câu mới sẽ thay câu trước. Cần ứng dụng TV 0.9.16 trở lên.</string>
+    <string name="settings_tv_watermark">Hiện hình mờ Nino trên TV</string>
+    <string name="settings_tv_watermark_note">Khi tắt, chỉ dấu Nino nhỏ ở góc dưới bên trái TV bị ẩn.</string>
     <string name="settings_display_mode">Chế độ hình ảnh (Android TV)</string>
     <string name="settings_display_mode_in_app">Trong ứng dụng</string>
     <string name="settings_display_mode_overlay">Lớp phủ</string>

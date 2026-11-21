@@ -232,6 +232,20 @@ public class SubtitleServerTests
         Assert.Contains("\"font\":\"system\"", await FirstStyleData(port));
     }
 
+    [Fact]
+    public async Task StyleCarriesWatermarkAndOldSettingsKeepIt()
+    {
+        using var server = new SubtitleServer(0);
+        var port = await server.StartAsync();
+        // Varsayılan: TV'nin sol altındaki Nino işareti görünür; ayar TV'ye gider.
+        server.SendStyle(new SubtitleStyle());
+        Assert.Contains("\"watermark\":true", await FirstStyleData(port));
+        server.SendStyle(new SubtitleStyle() with { Watermark = false });
+        Assert.Contains("\"watermark\":false", await FirstStyleData(port));
+        // Eski kayıtta alan yoksa açık kalır.
+        Assert.True(System.Text.Json.JsonSerializer.Deserialize<SubtitleStyle>("{\"FontSize\":58}")!.Watermark);
+    }
+
     private static async Task<string?> FirstStyleData(int port)
     {
         using var response = await Http.GetAsync($"http://127.0.0.1:{port}/events", HttpCompletionOption.ResponseHeadersRead);

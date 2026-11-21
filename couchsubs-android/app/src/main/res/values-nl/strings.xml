@@ -140,6 +140,8 @@
     <string name="settings_pool">Bijdragen aan de gedeelde pool</string>
     <string name="settings_stack_previous">Vorige regels erboven houden bij snelle dialogen</string>
     <string name="settings_stack_previous_note">Als dit uit staat, vervangt elke nieuwe regel de vorige. Vereist TV-app 0.9.16 of later.</string>
+    <string name="settings_tv_watermark">Nino-watermerk op tv tonen</string>
+    <string name="settings_tv_watermark_note">Als dit uit staat, wordt alleen het kleine Nino-teken linksonder op de tv verborgen.</string>
     <string name="settings_display_mode">Beeldmodus (Android TV)</string>
     <string name="settings_display_mode_in_app">In de app</string>
     <string name="settings_display_mode_overlay">Overlay</string>

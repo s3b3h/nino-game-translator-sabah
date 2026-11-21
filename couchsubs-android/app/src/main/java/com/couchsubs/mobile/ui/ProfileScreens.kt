@@ -164,6 +164,7 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
     var homeStyle by remember { mutableStateOf(settings.homeStyle) }
     var targetLanguage by remember { mutableStateOf(settings.targetLanguage) }
     var stackPrevious by remember { mutableStateOf(settings.stackPrevious) }
+    var watermark by remember { mutableStateOf(settings.tvWatermark) }
     var displayMode by remember { mutableStateOf(settings.tvDisplayMode) }
     var placement by remember { mutableStateOf(settings.tvPlacement) }
     var bottomPercent by remember { mutableStateOf(settings.tvBottomPercent.toFloat()) }
@@ -394,6 +395,9 @@ fun SettingsScreen(onBack: () -> Unit, onPacks: () -> Unit, onTarget: () -> Unit
                 }
                 Text(stringResource(R.string.settings_display_mode_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
             }
+            // Nino: TV'nin sol altındaki küçük Nino işareti (Mac'teki "TV'de Nino filigranını göster" ile aynı). Kapalıyken yalnız o gizlenir.
+            RowItem(stringResource(R.string.settings_tv_watermark)) { Switch(watermark, { watermark = it; settings.tvWatermark = it }) }
+            Text(stringResource(R.string.settings_tv_watermark_note), style = Tokens.Type.caption, color = Tokens.Color.secondary)
             RowItem(stringResource(R.string.settings_screen_on)) { Switch(screenOn, { screenOn = it; settings.keepScreenOn = it }) }
         }
         // Altyazı alanı ve ek alanlar (iPhone ile aynı sırada: görünümden sonra).

@@ -49,6 +49,7 @@ public partial class SettingsWindow : Window
         BackgroundShape.SelectedItem = BackgroundShape.Items.Cast<ComboBoxItem>().First(item => (string)item.Tag == settings.Style.BackgroundShape.ToString());
         Bold.IsChecked = settings.Style.Bold;
         StackPrevious.IsChecked = settings.Style.StackPrevious;
+        Watermark.IsChecked = settings.Style.Watermark;
         MisreadWait.Value = settings.MisreadWaitMs / 1000.0;
         PartialWait.Value = settings.PartialWaitMs / 1000.0;
         ShowWaits();
@@ -723,6 +724,9 @@ public partial class SettingsWindow : Window
 
     private void OnStackPrevious(object sender, RoutedEventArgs e) =>
         Update(s => s with { Style = s.Style with { StackPrevious = StackPrevious.IsChecked == true } });
+
+    private void OnWatermark(object sender, RoutedEventArgs e) =>
+        Update(s => s with { Style = s.Style with { Watermark = Watermark.IsChecked == true } });
 
     private void OnTextColor(object sender, SelectionChangedEventArgs e)
     {

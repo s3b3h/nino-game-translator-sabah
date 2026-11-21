@@ -140,6 +140,8 @@
     <string name="settings_pool">Berkontribusi ke kumpulan bersama</string>
     <string name="settings_stack_previous">Pertahankan baris sebelumnya di atas saat dialog cepat</string>
     <string name="settings_stack_previous_note">Jika nonaktif, setiap baris baru menggantikan baris sebelumnya. Memerlukan aplikasi TV 0.9.16 atau yang lebih baru.</string>
+    <string name="settings_tv_watermark">Tampilkan tanda air Nino di TV</string>
+    <string name="settings_tv_watermark_note">Jika dinonaktifkan, hanya tanda Nino kecil di kiri bawah TV yang disembunyikan.</string>
     <string name="settings_display_mode">Mode gambar (Android TV)</string>
     <string name="settings_display_mode_in_app">Di dalam aplikasi</string>
     <string name="settings_display_mode_overlay">Overlay</string>

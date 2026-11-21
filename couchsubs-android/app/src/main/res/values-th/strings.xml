@@ -140,6 +140,8 @@
     <string name="settings_pool">ร่วมส่งข้อมูลเข้าคลังกลาง</string>
     <string name="settings_stack_previous">แสดงบรรทัดก่อนหน้าไว้ด้านบนเมื่อบทพูดเร็ว</string>
     <string name="settings_stack_previous_note">เมื่อปิด บรรทัดใหม่แต่ละบรรทัดจะแทนที่บรรทัดก่อนหน้า ต้องใช้แอป TV 0.9.16 ขึ้นไป</string>
+    <string name="settings_tv_watermark">แสดงลายน้ำ Nino บนทีวี</string>
+    <string name="settings_tv_watermark_note">เมื่อปิด จะซ่อนเฉพาะเครื่องหมาย Nino เล็กๆ ที่มุมซ้ายล่างของทีวี</string>
     <string name="settings_display_mode">โหมดภาพ (Android TV)</string>
     <string name="settings_display_mode_in_app">ในแอป</string>
     <string name="settings_display_mode_overlay">โอเวอร์เลย์</string>

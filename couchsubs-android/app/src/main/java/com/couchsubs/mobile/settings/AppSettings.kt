@@ -251,6 +251,11 @@ class AppSettings(private val appContext: Context) : com.couchsubs.mobile.core.D
         get() = prefs.getBoolean("stackPrevious", true)
         set(value) = prefs.edit().putBoolean("stackPrevious", value).apply()
 
+    /** Nino: TV'nin sol altındaki küçük Nino işareti görünsün mü (Mac: SubtitleStyle.watermark). Varsayılan açık. */
+    var tvWatermark: Boolean
+        get() = prefs.getBoolean("tvWatermark", true)
+        set(value) = prefs.edit().putBoolean("tvWatermark", value).apply()
+
     /**
      * Android TV'de PS5 görüntüsünün nasıl gösterileceği. Bazı TV'lerde (ör. TCL) uygulama içindeki görüntü siyah kalıyor;
      * Katman'da TV, PS5'i kendi HDMI girişinde gösterir, altyazı üstte çıkar (Mac, Windows ve iPhone ile aynı seçim).
@@ -286,7 +291,7 @@ class AppSettings(private val appContext: Context) : com.couchsubs.mobile.core.D
             bottomPercent = tvBottomPercent,
             // Nino: örtme kipinde saydam kutu İngilizce yazıyı gizleyemez (iki yazı karışır); bu kipte kutu hep koyu.
             background = SubtitleStyle.effectiveBackground(tvPlacement, tvBackground), backgroundShape = tvBackgroundShape, textColor = textColor, stackPrevious = stackPrevious,
-            displayMode = tvDisplayMode, font = subtitleFont, autoSize = tvAutoSize)
+            displayMode = tvDisplayMode, font = subtitleFont, autoSize = tvAutoSize, watermark = tvWatermark)
 
     /**
      * Nino: TV yazı boyunu oyunun altyazısına uydursun mu (Mac: "Match the game's subtitle size", varsayılan açık). Açıkken
@@ -360,7 +365,7 @@ class AppSettings(private val appContext: Context) : com.couchsubs.mobile.core.D
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "subtitleScale" || key == "textColor" || key == "subtitleFont" || key == "tvFontSize" ||
                 key == "tvBackground" || key == "tvBackgroundShape" || key == "stackPrevious" || key == "tvDisplayMode" ||
-                key == "tvPlacement" || key == "tvBottomPercent" || key == "tvAutoSize") action()
+                key == "tvPlacement" || key == "tvBottomPercent" || key == "tvAutoSize" || key == "tvWatermark") action()
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
         return listener

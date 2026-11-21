@@ -140,6 +140,8 @@
     <string name="settings_pool">Menyumbang kepada kumpulan kongsi</string>
     <string name="settings_stack_previous">Kekalkan baris sebelumnya di atas dalam dialog pantas</string>
     <string name="settings_stack_previous_note">Apabila dimatikan, setiap baris baharu menggantikan baris sebelumnya. Memerlukan apl TV 0.9.16 atau lebih baharu.</string>
+    <string name="settings_tv_watermark">Tunjukkan tera air Nino pada TV</string>
+    <string name="settings_tv_watermark_note">Apabila dimatikan, hanya tanda Nino kecil di sudut kiri bawah TV disembunyikan.</string>
     <string name="settings_display_mode">Mod gambar (Android TV)</string>
     <string name="settings_display_mode_in_app">Di dalam apl</string>
     <string name="settings_display_mode_overlay">Tindihan</string>

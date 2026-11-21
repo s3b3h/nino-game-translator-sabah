@@ -43,6 +43,10 @@ public enum SubtitleBackgroundShape
 /// yerine geçer. TV uygulaması 0.9.16 ve sonrası tanır.
 /// </param>
 /// <param name="Font">Nino: altyazının yazı tipi; eski kayıtta yoksa Dar/Aksiyon (Mac'teki SubtitleStyle.font ile aynı).</param>
+/// <param name="Watermark">
+/// Nino: TV'nin sol altındaki küçük Nino işareti görünsün mü; kapalıysa yalnız o işaret gizlenir. Eski kayıtta yoksa açık
+/// (Mac'teki SubtitleStyle.watermark ile aynı).
+/// </param>
 public sealed record SubtitleStyle(
     int FontSize = 46,
     int BottomPercent = 7,
@@ -53,7 +57,8 @@ public sealed record SubtitleStyle(
     TvDisplayMode DisplayMode = TvDisplayMode.InApp,
     bool StackPrevious = true,
     SubtitleBackgroundShape BackgroundShape = SubtitleBackgroundShape.Fit,
-    SubtitleFont Font = SubtitleFont.Condensed);
+    SubtitleFont Font = SubtitleFont.Condensed,
+    bool Watermark = true);
 
 /// <summary>
 /// Nino: altyazının yazı tipi. <c>System</c> cihazın kendi yazı tipi (eskisi gibi); öbürleri uygulamaya ve TV sayfasına
@@ -536,6 +541,7 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
             ["placement"] = style.Placement.ToString().ToLowerInvariant(),
             ["stackPrevious"] = style.StackPrevious,
             ["textColor"] = style.TextColor.ToString().ToLowerInvariant(),
+            ["watermark"] = style.Watermark,
         });
 
     private static string Frame(string name, SortedDictionary<string, object> json) =>

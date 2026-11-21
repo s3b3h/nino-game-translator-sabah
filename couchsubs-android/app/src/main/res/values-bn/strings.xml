@@ -140,6 +140,8 @@
     <string name="settings_pool">শেয়ার্ড পুলে অবদান রাখুন</string>
     <string name="settings_stack_previous">দ্রুত ডায়লগে আগের লাইনগুলো ওপরে রাখুন</string>
     <string name="settings_stack_previous_note">বন্ধ থাকলে প্রতিটি নতুন লাইন আগেরটির জায়গা নেয়। TV অ্যাপ 0.9.16 বা পরের সংস্করণ লাগবে।</string>
+    <string name="settings_tv_watermark">TV-তে Nino জলছাপ দেখান</string>
+    <string name="settings_tv_watermark_note">বন্ধ করলে শুধু TV-র নিচে বাঁ দিকের ছোট Nino চিহ্নটি লুকানো থাকে।</string>
     <string name="settings_display_mode">ছবির মোড (Android TV)</string>
     <string name="settings_display_mode_in_app">অ্যাপের ভেতরে</string>
     <string name="settings_display_mode_overlay">ওভারলে</string>

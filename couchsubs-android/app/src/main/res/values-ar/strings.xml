@@ -403,6 +403,8 @@
     <string name="packs_delete_body">ستُحذف %1$s من هذا الهاتف. لاستخدامها مرة أخرى، استورد الملف من جديد.</string>
     <string name="settings_stack_previous">إبقاء الأسطر السابقة في الأعلى أثناء الحوار السريع</string>
     <string name="settings_stack_previous_note">عند الإيقاف، يحل كل سطر جديد محل السطر السابق. يتطلب تطبيق TV بالإصدار 0.9.16 أو أحدث.</string>
+    <string name="settings_tv_watermark">إظهار علامة Nino المائية على التلفاز</string>
+    <string name="settings_tv_watermark_note">عند الإيقاف، تُخفى فقط علامة Nino الصغيرة في أسفل يسار شاشة التلفاز.</string>
     <string name="settings_display_mode">وضع الصورة (Android TV)</string>
     <string name="settings_display_mode_in_app">داخل التطبيق</string>
     <string name="settings_display_mode_overlay">تراكب</string>

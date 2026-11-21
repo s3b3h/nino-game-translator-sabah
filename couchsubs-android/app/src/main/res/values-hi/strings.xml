@@ -140,6 +140,8 @@
     <string name="settings_pool">साझा पूल में योगदान दें</string>
     <string name="settings_stack_previous">तेज़ बातचीत में पिछली लाइनें ऊपर रखें</string>
     <string name="settings_stack_previous_note">बंद होने पर हर नई लाइन पिछली की जगह ले लेती है। TV ऐप 0.9.16 या बाद का चाहिए।</string>
+    <string name="settings_tv_watermark">TV पर Nino वॉटरमार्क दिखाएं</string>
+    <string name="settings_tv_watermark_note">बंद करने पर केवल TV के नीचे बाईं ओर का छोटा Nino निशान छिप जाता है।</string>
     <string name="settings_display_mode">तस्वीर मोड (Android TV)</string>
     <string name="settings_display_mode_in_app">ऐप के अंदर</string>
     <string name="settings_display_mode_overlay">ओवरले</string>

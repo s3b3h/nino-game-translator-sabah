@@ -97,10 +97,13 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
     public var autoSize: Bool
     /// Nino: yazı tipi. Varsayılan dar/aksiyon (GTA tarzı altyazıya en yakın); kaydı olmayan eski ayarlar da buna geçer.
     public var font: SubtitleFont
+    /// Nino: TV'de sol alttaki Nino filigranı (rozet) görünsün mü. Eski TV sürümleri alanı tanımaz, rozeti hep gösterir.
+    public var watermark: Bool
 
     public init(fontSize: Int = 46, bottomPercent: Int = 7, placement: SubtitlePlacement = .cover, background: Int = 100, backgroundShape: SubtitleBackgroundShape = .fit, bold: Bool = false,
                 textColor: SubtitleTextColor = .white, displayMode: TVDisplayMode = .inApp, stackPrevious: Bool = true,
-                theme: SubtitleTheme = .classic, autoSize: Bool = true, font: SubtitleFont = .condensed) {
+                theme: SubtitleTheme = .classic, autoSize: Bool = true, font: SubtitleFont = .condensed, watermark: Bool = true) {
+        self.watermark = watermark
         self.font = font
         self.theme = theme
         self.autoSize = autoSize
@@ -116,7 +119,7 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case fontSize, bottomPercent, placement, background, backgroundShape, bold, textColor, displayMode, stackPrevious, theme, autoSize, font
+        case fontSize, bottomPercent, placement, background, backgroundShape, bold, textColor, displayMode, stackPrevious, theme, autoSize, font, watermark
     }
 
     /// Eski sürümün kaydettiği ayarlarda yeni alanlar yoktur; eksikler varsayılanla dolar.
@@ -135,6 +138,7 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
         theme = (try? values.decodeIfPresent(SubtitleTheme.self, forKey: .theme)) ?? defaults.theme
         autoSize = (try? values.decodeIfPresent(Bool.self, forKey: .autoSize)) ?? defaults.autoSize
         font = (try? values.decodeIfPresent(SubtitleFont.self, forKey: .font)) ?? defaults.font
+        watermark = (try? values.decodeIfPresent(Bool.self, forKey: .watermark)) ?? defaults.watermark
         // Nino: oyunun altyazısını örtme kipinde saydam kutu İngilizce yazıyı gizleyemez, iki yazı birbirine karışır
         // (tema değiştirirken kutu %0'da kalabiliyordu). Bu kipte kutu her zaman koyudur.
         if placement == .cover, background < 60 { background = 100 }
@@ -144,7 +148,7 @@ public struct SubtitleStyle: Codable, Equatable, Sendable {
     var json: [String: Any] {
         ["fontSize": fontSize, "bottomPercent": bottomPercent, "placement": placement.rawValue,
          "background": max(0, min(100, background)), "backgroundShape": backgroundShape.rawValue, "bold": bold, "textColor": textColor.rawValue,
-         "displayMode": displayMode.rawValue, "stackPrevious": stackPrevious, "theme": theme.rawValue, "autoSize": autoSize, "font": font.rawValue]
+         "displayMode": displayMode.rawValue, "stackPrevious": stackPrevious, "theme": theme.rawValue, "autoSize": autoSize, "font": font.rawValue, "watermark": watermark]
     }
 }
 
