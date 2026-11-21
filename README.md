@@ -44,13 +44,13 @@ Bir dahaki sefere yalnız 3. adım yeterlidir. Takılırsanız uygulamadaki **Ni
 
 Başlığa tıklayın, rehber açılır. Sorunuzun cevabı büyük ihtimalle burada.
 
-**Resimli rehberler** (resme tıklayınca büyür):
+**Resimli rehberler** (resme tıklayınca o cihazın kurulumuna iner; orada başlığa tıklayın, rehber açılır):
 
 <p align="center">
-  <a href="docs/nino/v4/rehber/android-tv.jpg"><img src="docs/nino/v4/rehber/android-tv.jpg" width="210" alt="Android TV resimli rehber"></a>&nbsp;
-  <a href="docs/nino/v4/rehber/samsung.jpg"><img src="docs/nino/v4/rehber/samsung.jpg" width="210" alt="Samsung TV resimli rehber"></a>&nbsp;
-  <a href="docs/nino/v4/rehber/lg.jpg"><img src="docs/nino/v4/rehber/lg.jpg" width="210" alt="LG TV resimli rehber"></a>&nbsp;
-  <a href="docs/nino/v4/rehber/iphone.jpg"><img src="docs/nino/v4/rehber/iphone.jpg" width="210" alt="iPhone ve iPad resimli rehber"></a><br>
+  <a href="#rehber-androidtv"><img src="docs/nino/v4/rehber/android-tv.jpg" width="210" alt="Android TV resimli rehber"></a>&nbsp;
+  <a href="#rehber-samsung"><img src="docs/nino/v4/rehber/samsung.jpg" width="210" alt="Samsung TV resimli rehber"></a>&nbsp;
+  <a href="#rehber-lg"><img src="docs/nino/v4/rehber/lg.jpg" width="210" alt="LG TV resimli rehber"></a>&nbsp;
+  <a href="#rehber-iphone"><img src="docs/nino/v4/rehber/iphone.jpg" width="210" alt="iPhone ve iPad resimli rehber"></a><br>
   <sub>Android TV · Samsung · LG · iPhone/iPad</sub>
 </p>
 
