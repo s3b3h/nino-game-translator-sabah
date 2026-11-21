@@ -3,7 +3,7 @@
 Bu rehber, Nino'yu ilk kez kuracak herkes için. Teknik bilgi gerekmez. Adımları sırayla izleyin.
 Kurulum yaklaşık **5–10 dakika** sürer.
 
-> **Güncel sürüm: Nino V3.3.** Mac, Windows, Android telefon ve iPhone uygulamaları V3.3 (0.2.5), TV uygulaması V3.2 (0.9.31).
+> **Güncel sürüm: Nino V4.0** (4.0.0). Mac, Windows, Android telefon, iPhone ve TV uygulaması aynı sürümde.
 > Telefonda ve bilgisayarda sürümü **Ayarlar › Hakkında**'da görürsünüz. TV'de: [TV uygulamam güncel mi?](#tv-uygulamam-güncel-mi)
 
 > 🌍 **11 dil:** 🇹🇷 Türkçe · 🇸🇦 العربية · 🇮🇳 हिन्दी · 🇮🇩 Bahasa Indonesia · 🇹🇭 ไทย · 🇻🇳 Tiếng Việt · 🇵🇰 اردو · 🇧🇩 বাংলা ·
@@ -61,7 +61,7 @@ Mac ve Windows'taki Nino yeni sürümleri kendiliğinden indirip kurar.
    **[Nino-Telefon.apk](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)**
 2. İnen dosyaya dokunun. Telefon izin isterse **"Bu kaynaktan yüklemeye izin ver"** seçeneğini açın ve **Yükle**'ye basın.
 3. Daha önce Nino kuruluysa yeni sürüm eskisinin üstüne kurulur. Ayarlarınız korunur.
-4. Sürümü görmek için: Nino'da **Ayarlar › Hakkında**. Güncel sürüm **V3.3** (0.2.5).
+4. Sürümü görmek için: Nino'da **Ayarlar › Hakkında**. Güncel sürüm **V4.0** (4.0.0).
 
 ### 3.2 İlk açılış
 1. **Karşılama:** Üç kısa sayfa Nino'yu tanıtır. Sağ üstteki bayraktan çeviri dilini seçin (11 dil; Türkçe en üstte).
@@ -69,9 +69,9 @@ Mac ve Windows'taki Nino yeni sürümleri kendiliğinden indirip kurar.
 3. **Adım 1 – İkinci PSN Hesabı:** **"Sony İle Giriş Yapın"**a dokunun ve oyun oynadığınız hesaptan **farklı**,
    ücretsiz bir PlayStation hesabıyla giriş yapın. Giriş Sony'nin kendi sayfasında yapılır; şifreniz Nino'ya gelmez.
    *(Neden ikinci hesap? PS5, oyun oynadığınız hesapla aynı anda Remote Play bağlantısı açmaya izin vermez.)*
-4. **Adım 2 – PS5'inizi Eşleyin:** Nino PS5'inizi ağda kendiliğinden bulur.
+4. **Adım 2 – PS5'inizi Bağlayın:** Nino PS5'inizi ağda kendiliğinden bulur.
    - PS5'te **ikinci hesapla** giriş yapın → **Ayarlar › Sistem › Uzaktan Oynama › Cihazı Eşleştir**.
-   - Ekranda çıkan **8 haneli kodu** telefona yazın ve **Eşle**'ye basın.
+   - Ekranda çıkan **8 haneli kodu** telefona yazın ve **Bağlan**'a basın.
    - PS5 görünmüyorsa: PS5'in açık ya da dinlenme modunda olduğundan emin olun; liste birkaç saniyede bir yenilenir.
 5. **Adım 3 – Altyazılar Nerede Görünsün?**
    - **TV'de:** Akıllı TV'nizde Nino uygulaması varsa. Yoksa bu ekrandaki **"TV uygulamasını kurun"**a dokunun; telefon
@@ -80,9 +80,9 @@ Mac ve Windows'taki Nino yeni sürümleri kendiliğinden indirip kurar.
 
 ### 3.3 Kullanım
 1. PS5'te oyununuzu kendi hesabınızla açın.
-2. Nino'da **"Başlatmak İçin Kaydırın"** çubuğunu sona kadar kaydırın.
+2. Nino'nun ana ekranında **fişe dokunun ya da prize sürükleyin**.
 3. Altyazılar akmaya başlar. Telefonu **yan çevirirseniz** altyazı **tam ekran** açılır.
-4. Durdurmak için çubuğu geri kaydırın.
+4. Durdurmak için fişi çekin.
 
 > İpucu: Uzun oyunlarda telefonu şarja takın. Wi-Fi zayıfsa telefonu modeme yakın tutun.
 
@@ -166,9 +166,9 @@ Mac ya da Windows'taki Nino, kurulumun TV adımında TV'nizi bulur ve uygulamay�
 
 1. TV'de Nino'yu açın.
 2. Kumandada **OK**'e basın. Bir panel açılır.
-3. Panelin en üstünde, başlığın yanında sürüm yazar. Güncel sürüm: **V3.2** (0.9.31).
+3. Panelin en üstünde, başlığın yanında sürüm yazar. Güncel sürüm: **V4.0** (4.0.0).
 
-**V3.2 yazmıyorsa** TV uygulamanız eski. Telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın.
+**V4.0 yazmıyorsa** TV uygulamanız eski. Telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın.
 Geliştirici modu açıksa Nino güncellemeyi kendisi yapar.
 
 ### 5.3 Son çare: TV'nin tarayıcısıyla elle kurulum (yalnız Android TV / Google TV)
@@ -205,7 +205,7 @@ TV'de Nino'yu açtığınızda TV, konsolun bağlı olduğu HDMI girişini göst
    (Daha önce kurduysanız: **Ayarlar › Görüntü Kaynağı › Xbox**.)
 3. **Microsoft ile Giriş Yapın**'a dokunun. Nino bir kod gösterir; **Kodu Kopyala ve Sayfayı Aç** ile
    microsoft.com/link sayfasında kodu girin. Xbox'ta oturum açık olan **aynı hesabı** kullanın. Şifrenizi Nino'ya yazmazsınız.
-4. Listeden Xbox'ınızı seçin. Oyunu açıp çubuğu **kaydırın**; altyazılar telefonda ya da TV'de akar.
+4. Listeden Xbox'ınızı seçin. Oyunu açıp **fişi takın**; altyazılar telefonda ya da TV'de akar.
 
 PS5'tekinin aksine **ikinci hesap gerekmez**: Nino, Xbox uygulamasındaki "Uzaktan oynat" ile aynı ev yayınını yalnız
 izler. Ses çalmaz, kolunuza ya da hesabınıza dokunmaz.
@@ -256,7 +256,7 @@ kalır (oyunun İngilizce altyazısı da alttan görünür).
 | Telefon ısınıyor | Telefonu şarjda ve serin bir yerde tutun; ekran parlaklığı tam ekranda kendiliğinden azalır. |
 | Xbox listede görünmüyor | Xbox'ta Uzak özellikler açık mı, aynı Microsoft hesabıyla mı giriş yaptınız? Güç modunu "Uyku" yapın. |
 | Sadece görmek istiyorum | Ana ekranda **"PS5'siz Deneyin"**e dokunun; örnek altyazılarla uygulamayı gezebilirsiniz. |
-| TV'deki Nino eski görünüyor | TV'de Nino panelinde **V3.2** yazmıyorsa telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın. |
+| TV'deki Nino eski görünüyor | TV'de Nino panelinde **V4.0** yazmıyorsa telefondaki ya da bilgisayardaki Nino'dan **TV'ye kur**'a yeniden basın. |
 | TV "USB hata ayıklama" sorusunu göstermiyor | Geliştirici seçeneklerinde hata ayıklamanın açık olduğundan emin olun; TV'yi kapatıp açın ve tekrar deneyin. |
 | Samsung TV telefonu ya da bilgisayarı kabul etmiyor | Geliştirici modu penceresindeki **Host PC IP** telefonun (ya da bilgisayarın) adresi mi, başında sıfır olmadan yazılmış mı? Değiştirdikten sonra TV'yi güç tuşunu Samsung logosu görünene kadar basılı tutarak yeniden başlatın. Ayarlar doğruysa TV'nin fişini bir dakikalığına çekin, açıldıktan bir dakika sonra yeniden deneyin. |
 | OBS'te iki altyazı çıkıyor | Nino penceresini değil, kartın kendisini OBS'e ekleyin ve Bölüm 7'deki yolu izleyin. |

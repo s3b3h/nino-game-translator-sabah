@@ -15,12 +15,14 @@ Nino'yu **bir** cihaza kurmanız yeter: Mac, Windows ya da telefon. TV uygulamas
 
 | Cihazınız | İndirme bağlantısı | Not |
 |---|---|---|
-| 🍎 **Mac** (M1 ve sonrası) | **[Nino-Mac.zip](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)** | En çok denenen, önerilen |
-| 🪟 **Windows 10 / 11** | **[Nino-Windows-Setup.exe](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)** | Önerilen |
-| 🤖 **Android telefon** (Android 8+) | **[Nino-Telefon.apk](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)** | Bilgisayarınız yoksa |
-| 📱 **iPhone / iPad** | **[TestFlight ile kur](https://testflight.apple.com/join/1K3Q1KXp)** | Önce App Store'dan TestFlight'ı kurun |
-| 📺 **Android TV / Google TV** | Nino kendisi kurar · elle: **[tv.apk](https://yunusdemirbag.github.io/nino-game-translator/tv.apk)** | TV tarayıcısında kısa adres: `is.gd/ninotvapk` |
-| 📺 **Samsung · LG TV** | Nino kendisi kurar | [Kurulum Rehberi › TV](docs/KURULUM.md#5-tv-uygulamasını-kurma) |
+| 🍎 **Mac** (M1 ve sonrası) | **[Nino-Mac.zip](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)** | Önerilen · [kurulum ↓](#rehber-mac) |
+| 🪟 **Windows 10 / 11** | **[Nino-Windows-Setup.exe](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)** | Önerilen · [kurulum ↓](#rehber-windows) |
+| 🤖 **Android telefon** (Android 8+) | **[Nino-Telefon.apk](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)** | Bilgisayarınız yoksa · [kurulum ↓](#rehber-android) |
+| 📱 **iPhone / iPad** | **[TestFlight ile kur](https://testflight.apple.com/join/1K3Q1KXp)** | Önce App Store'dan TestFlight'ı kurun · [kurulum ↓](#rehber-iphone) |
+| 📺 **Android TV / Google TV** | Nino kendisi kurar · elle: **[tv.apk](https://yunusdemirbag.github.io/nino-game-translator/tv.apk)** | TV tarayıcısında: `is.gd/ninotvapk` · [kurulum ↓](#rehber-androidtv) |
+| 📺 **Samsung TV** | Nino kendisi kurar | [kurulum ↓](#rehber-samsung) |
+| 📺 **LG TV** | Nino kendisi kurar | [kurulum ↓](#rehber-lg) |
+| 🟩 **Xbox** | Telefon, Mac ya da Windows | [kurulum ↓](#rehber-xbox) |
 
 Tüm dosyalar ve sürüm notları: **[Sürümler sayfası](https://github.com/yunusdemirbag/nino-game-translator/releases/latest)** · Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)** · Fotoğraflı anlatım: **[📷 PS5 + Android TV](docs/KURULUM-ANDROID-TV.md)**
 
@@ -29,10 +31,153 @@ Mac, Windows ve Android telefondaki Nino sonraki güncellemeleri kendisi yükler
 ## 🚀 3 adımda başlayın
 
 1. **Nino'yu indirip açın** (yukarıdaki tablodan). İlk açılışta konsolunuzu seçin: **PS5** ya da **Xbox**.
-2. **Nino'nun söylediklerini yapın.** PS5 için ikinci, ücretsiz bir PSN hesabıyla giriş yapıp PS5'teki 8 haneli kodu yazarsınız. Sonra TV'nizi seçersiniz; Nino TV uygulamasını kurar.
+2. **Nino'nun söylediklerini yapın.** PS5 için ikinci, ücretsiz bir PSN hesabıyla giriş yapıp PS5'teki 8 haneli kodu yazarsınız ([nasıl?](#rehber-psn)). Sonra TV'nizi seçersiniz; Nino TV uygulamasını kurar.
 3. **Oyunu açın ve fişi prize takın.** Türkçe altyazı TV'de, oyunun üstünde görünür.
 
 Bir dahaki sefere yalnız 3. adım yeterlidir. Takılırsanız uygulamadaki **Nino'ya Sor** robotu adım adım yardım eder.
+
+## 📖 Adım adım rehberler
+
+Başlığa tıklayın, rehber açılır. Sorunuzun cevabı büyük ihtimalle burada.
+
+<a name="rehber-mac"></a>
+<details>
+<summary><b>🍎 Mac'e kurulum</b></summary>
+
+1. **[Nino-Mac.zip](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Mac.zip)** dosyasını indirin ve çift tıklayıp açın.
+2. Çıkan **Nino**'yu **Uygulamalar** klasörüne sürükleyin ve açın.
+3. Mac "doğrulanamadı" derse: **Sistem Ayarları › Gizlilik ve Güvenlik**'e girin, en altta **Yine de Aç**'a basın.
+4. İlk ekranda konsolunuzu seçin (**PS5** ya da **Xbox**) ve Nino'nun adımlarını izleyin:
+   - **PS5:** ikinci PSN hesabıyla giriş → PS5'i 8 haneli kodla bağlama ([nasıl?](#rehber-psn)) → TV seçimi.
+   - **Xbox:** [Xbox rehberi](#rehber-xbox).
+5. TV seçiminde Nino, TV uygulamasını TV'ye kendisi kurar. TV'de bir kez geliştirici modu açılması gerekir: [Android TV](#rehber-androidtv) · [Samsung](#rehber-samsung) · [LG](#rehber-lg).
+6. Oyunu açın, ana ekrandaki **fişi prize takın**. Altyazı TV'de görünür. Durdurmak için fişi çekin.
+
+Mac yerel ağ izni isterse **İzin Ver** deyin; yoksa PS5'i bulamaz. Sonraki güncellemeleri Nino kendisi kurar.
+</details>
+
+<a name="rehber-windows"></a>
+<details>
+<summary><b>🪟 Windows'a kurulum</b></summary>
+
+1. **[Nino-Windows-Setup.exe](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)** dosyasını indirip çalıştırın.
+2. "Windows bilgisayarınızı korudu" uyarısı çıkarsa: **Ek bilgi › Yine de çalıştır**.
+3. Güvenlik duvarı izin isterse **Özel ağlar**'ı işaretleyip **İzin ver**'e basın (TV ve PS5 ile konuşabilmesi için).
+4. Gerisi Mac ile aynı: konsolu seçin, [ikinci PSN hesabı](#rehber-psn), TV seçimi, fişi takın.
+
+Sonraki güncellemeleri Nino kendisi kurar.
+</details>
+
+<a name="rehber-android"></a>
+<details>
+<summary><b>🤖 Android telefona kurulum</b></summary>
+
+1. Telefonda **[Nino-Telefon.apk](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Telefon.apk)** bağlantısını açın ve inen dosyaya dokunun.
+2. Telefon "bilinmeyen kaynak" derse **Bu kaynaktan yüklemeye izin ver**'i açın, **Yükle**'ye basın. Play Protect uyarısında **Yine de yükle**'yi seçin.
+3. Nino'yu açın, sağ üstteki bayraktan dili seçin, konsolunuzu seçin.
+4. **PS5:** **Sony İle Giriş Yapın** ([neden ikinci hesap?](#rehber-psn)) → PS5'teki 8 haneli kodu yazın.
+5. **Altyazılar nerede görünsün?** TV'nizde Nino varsa **TV**, yoksa **Telefon**. TV'ye uygulamayı telefon kurar: **Profil › Nino'yu TV'ye Kur**.
+6. Oyunu açın, ana ekranda **fişe dokunun ya da prize sürükleyin**. Telefonu yan çevirirseniz altyazı tam ekran olur; **Tam Ekran** düğmesi de var.
+
+Daha önce kuruluysa yeni sürüm eskisinin üstüne kurulur, ayarlarınız kalır. Uzun oyunlarda telefonu şarja takın.
+</details>
+
+<a name="rehber-iphone"></a>
+<details>
+<summary><b>📱 iPhone / iPad'e kurulum</b></summary>
+
+1. App Store'dan Apple'ın ücretsiz **TestFlight** uygulamasını kurun.
+2. Bu bağlantıyı iPhone'da açın: **[TestFlight ile Nino](https://testflight.apple.com/join/1K3Q1KXp)** ve **Yükle**'ye dokunun.
+3. Kurulum adımları Android ile aynı: dil → konsol → [ikinci PSN hesabı](#rehber-psn) → 8 haneli kod → fişi takın.
+
+- **iOS 26 ve üstü:** Apple'ın ücretsiz, cihaz içi çevirisi kullanılır; başka bir şey gerekmez.
+- **iOS 26'dan eski:** GTA 6 yine ücretsiz çalışır (Nino'nun ortak çevirisi). Diğer oyunlar için **Ayarlar › Çeviri motoru › Gemini**'ye ücretsiz bir Gemini anahtarı ekleyin; uygulama adım adım gösterir.
+- Çeviri sürerken telefonu kilitlemeyin ve başka uygulamaya geçmeyin; iOS arka plandaki uygulamayı durdurur.
+</details>
+
+<a name="rehber-psn"></a>
+<details>
+<summary><b>🎮 PS5: ikinci PSN hesabı ve PS5'i bağlama (en çok sorulan)</b></summary>
+
+**Neden ikinci hesap?** Nino oyunu Remote Play ile izler. PS5, oynadığınız hesapla aynı anda Remote Play açtırmaz. Bu yüzden Nino ayrı, **ücretsiz** bir hesapla bağlanır. Oyunu yine **kendi hesabınızla** oynarsınız; kupalarınız ve kayıtlarınız sizde kalır. PS Plus gerekmez.
+
+1. [playstation.com](https://www.playstation.com)'da **yeni bir e-posta adresiyle** ücretsiz PSN hesabı açın.
+2. PS5'te kullanıcı seçme ekranında **Kullanıcı Ekle** ile bu hesapla bir kez giriş yapın.
+3. Bu ikinci hesaptayken **Ayarlar › Sistem › Uzaktan Oynama**:
+   - **Uzaktan Oynama'yı Etkinleştir**: açın.
+   - **Uzaktan Oynama Bağlantı Durumunu Gizle** (en alttaki): açın; oyun sırasında bildirim çıkmaz.
+   - **Cihazı Eşleştir**'i seçin: ekranda **8 haneli kod** çıkar.
+4. Nino'da ikinci hesapla **Sony İle Giriş Yapın** (şifreyi Sony'nin kendi sayfasına yazarsınız, Nino görmez) ve 8 haneli kodu yazıp **Bağlan**'a basın. Kod yaklaşık 5 dakika geçerlidir.
+5. PS5'te **kendi hesabınıza** dönün (PS düğmesi › profil resmi › **Kullanıcı Değiştir**) ve oyununuzu açın.
+
+Bu bir kez yapılır. Sonra her seferinde yalnız oyunu açıp fişi takarsınız. Fotoğraflı anlatım: **[📷 PS5 + Android TV](docs/KURULUM-ANDROID-TV.md)**.
+
+> **Kolumla oynayamıyorum:** PS5'te kolu açınca **kendi (ana) hesabınızı** seçin. İkinci hesapla oynarsanız kol oyunda çalışmaz.
+</details>
+
+<a name="rehber-androidtv"></a>
+<details>
+<summary><b>📺 Android TV / Google TV'ye kurulum (TCL, iFFALCON, Sony, Philips, Xiaomi, Hisense, Vestel, Arçelik…)</b></summary>
+
+TV'de **bir kez** geliştirici modunu açarsınız; sonra Nino uygulamayı kendisi kurar ve **güncellemeleri de kendisi yapar**.
+
+1. TV'de **Ayarlar › Sistem › Hakkında**'ya gidin. (Bazı TV'lerde: **Ayarlar › Cihaz Tercihleri › Hakkında**.)
+2. **Android TV işletim sistemi yapısı** (ya da **Android TV OS derlemesi**) satırına art arda **7 kez** basın. "Artık geliştiricisiniz" yazar.
+3. **Ayarlar › Sistem › Geliştirici seçenekleri**'nde **USB hata ayıklama**'yı açın. Varsa **Kablosuz hata ayıklama**'yı da açın.
+4. Bilgisayardaki Nino'da **TV'ye kur**'a, telefondaki Nino'da **Profil › Nino'yu TV'ye Kur**'a basın.
+5. TV'de "USB hata ayıklamasına izin verilsin mi?" sorusu çıkar: **Her zaman izin ver**'i işaretleyip **İzin ver**'e basın.
+6. Nino TV'de açılır ve PS5'in hangi HDMI girişinde olduğunu sorar.
+
+**Son çare (bilgisayarsız, telefonsuz):** TV'nin tarayıcısında adres çubuğuna `is.gd/ninotvapk` yazın, inen dosyayı kurun. Bu yolla kurulan uygulama kendiliğinden güncellenmez.
+
+> **TCL ve iFFALCON:** Elle kurduysanız **Ayarlar › Uygulamalar › Özel uygulama erişimi › Diğer uygulamaların üzerinde göster › Nino**'yu açın. Yoksa TV "PS5 görüntüsü Nino'nun içinde gelmiyor" der. Bilgisayardaki ya da telefondaki Nino ile kurulumda bu izni Nino kendisi verir.
+</details>
+
+<a name="rehber-samsung"></a>
+<details>
+<summary><b>📺 Samsung TV ve Samsung akıllı monitör (2016 ve sonrası) (deneysel)</b></summary>
+
+1. TV'de **Uygulamalar** ekranını açın. 2022 ve sonrası modellerde sayfanın **en altına** inip **Uygulama Ayarları**'nı seçin.
+2. Kumandayla **1 2 3 4 5** yazın (rakam tuşu yoksa **123** tuşuna basıp ekrandan seçin). **Geliştirici modu** penceresi açılır.
+3. **Developer mode**'u **On** yapın.
+4. **Host PC IP** alanına Nino'nun gösterdiği adresi yazın (başında sıfır olmadan: 001 değil 1) ve **OK**'e basın.
+5. TV'yi **tam** yeniden başlatın: güç tuşunu **Samsung logosu görünene kadar** basılı tutun ya da fişini bir dakikalığına çekin. Kısa basmak yetmez.
+6. Nino'da **Kur ve aç**'a basın. İlk kurulumda bir kez **ücretsiz Samsung hesabıyla** giriş istenir.
+
+Pencere açılmıyorsa TV'yi tam yeniden başlatıp tekrar deneyin; bazı TV'lerde ikinci ya da üçüncü denemede açılır.
+</details>
+
+<a name="rehber-lg"></a>
+<details>
+<summary><b>📺 LG TV (webOS) (deneysel)</b></summary>
+
+1. [webostv.developer.lge.com](https://webostv.developer.lge.com)'da ücretsiz **LG geliştirici hesabı** açın.
+2. TV'de LG Content Store'dan **Developer Mode** uygulamasını kurun ve hesabınızla girin.
+3. **Dev Mode Status**'u açın (TV yeniden başlar). Uygulamayı yeniden açıp **Key Server**'ı açın.
+4. Sol altta 6 karakterli **Passphrase** görünür. Bu kodu Nino'ya yazın ve **Kur ve aç**'a basın.
+5. Geliştirici modu en çok 1000 saat açık kalır; süre dolmadan Developer Mode uygulamasında **EXTEND**'e basın.
+
+> LG'de yazı boyu ya da arka plan değişmiyorsa: V4.0'dan önce kurulan LG uygulaması eskiydi. Nino'dan **TV'ye kur**'a bir kez daha basın.
+</details>
+
+<a name="rehber-xbox"></a>
+<details>
+<summary><b>🟩 Xbox Series X|S (deneysel)</b></summary>
+
+1. **Xbox'ta:** **Ayarlar › Cihazlar ve bağlantılar › Uzak özellikler**'i açın; güç modu **Uyku** olsun.
+2. **Android telefonda:** ilk ekranda **Xbox**'ı seçin → **Microsoft ile Giriş Yapın** → gösterilen kodu microsoft.com/link'te girin (Xbox'taki **aynı hesap**). Listeden Xbox'ınızı seçin, fişi takın.
+3. **Mac / Windows'ta:** Xbox'ı bilgisayarda açın (Windows'ta **Xbox** uygulamasındaki **Uzaktan oynat**, Mac'te [Greenlight](https://github.com/unknownskl/greenlight) ya da **xbox.com/play**). Nino'da **Xbox'ta oynuyorum**'u seçin.
+
+Xbox'ta **ikinci hesap gerekmez**. Nino yalnız izler; ses çalmaz, kolunuza dokunmaz.
+</details>
+
+<a name="rehber-capture"></a>
+<details>
+<summary><b>🎥 Capture Card ve yayıncılar (OBS)</b></summary>
+
+- **Capture Card:** Mac ya da Windows'ta **Ayarlar › Bağlantı**'da görüntü kaynağı olarak **Capture Card**'ı seçin. Remote Play ve ikinci hesap gerekmez.
+- **OBS ile yayın (Windows):** Kartı OBS'e **Video Yakalama Aygıtı** olarak ekleyin → kaynağa sağ tıklayıp **Pencereli Projektör (Kaynak)** → Nino'da **Ayarlar › Görüntü kaynağı › OBS projektörü** → **Ayarlar › OBS katmanı**'ndaki adresi OBS'e **Tarayıcı** kaynağı olarak ekleyin (1920×1080). Altyazı yayına tek gelir.
+</details>
 
 ## 🎮 Nino neleri çevirir
 
