@@ -83,7 +83,7 @@ HDMI girişinde olduğunu söyler.
 
    ![Kendi hesabınızla PS5 ana ekranı](nino/rehber/android-tv/4-kendi-hesabin.jpg)
 
-2. Bilgisayardaki Nino'da **fişi prize takın** (ya da çeviri düğmesine basın). Nino ikinci hesapla bağlanır; TV'deki
+2. Bilgisayardaki Nino uygulamasının ekranındaki **çizilmiş fişi prize takın** (tıklayın ya da sürükleyin). PS5'in ya da TV'nin gerçek kablosuna dokunmayın. Nino ikinci hesapla bağlanır; TV'deki
    Nino uygulaması kendiliğinden açılır.
 
    ![Uzaktan Oynama bağlandı; TV'nin uygulamalar satırında Nino](nino/rehber/android-tv/5-uzaktan-oynama-baglandi.jpg)
@@ -96,7 +96,7 @@ HDMI girişinde olduğunu söyler.
 
    ![Mafia: The Old Country'de konuşan adıyla Türkçe altyazı](nino/rehber/android-tv/8-mafia-turkce-altyazi.jpg)
 
-Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
+Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, Nino ekranındaki fişe tıklayın.
 
 ---
 
@@ -104,7 +104,7 @@ Bir dahaki sefere yalnız 5. adım yeterlidir: oyunu açın, fişi takın.
 
 | Sorun | Çözüm |
 |---|---|
-| TV'de **"Bilgisayardaki Nino bekleniyor"** yazısı gitmiyor | Bilgisayardaki Nino'nun açık olduğundan ve fişin takılı olduğundan emin olun. Olmazsa bilgisayardaki Nino'yu kapatıp yeniden açın. TV ve bilgisayar aynı Wi-Fi'da olmalı. |
+| TV'de **"Bilgisayardaki Nino bekleniyor"** yazısı gitmiyor | Bilgisayardaki Nino'nun açık olduğundan ve uygulamadaki fişin takılı (çevirinin açık) olduğundan emin olun. Olmazsa bilgisayardaki Nino'yu kapatıp yeniden açın. TV ve bilgisayar aynı Wi-Fi'da olmalı. |
 | Bilgisayarda **"TV uygulaması bekleniyor"** yazıyor | TV'de Nino uygulamasını açın. Bilgisayarda Nino'nun yalnızca **bir** kopyasının açık olduğundan emin olun. |
 | Oyun açılırken yasal uyarılar ya da menü yazıları çevriliyor | Nino yalnız oyunun altyazı alanını okur; açılış ekranları geçince düzelir. Ayarlar › Altyazı alanı'ndan alanı daraltabilirsiniz. |
 | Ekranda **"Uzaktan Oynama bağlandı"** bildirimi çıkıyor | İkinci hesapla Ayarlar › Sistem › Uzaktan Oynama'da **Uzaktan Oynama Bağlantı Durumunu Gizle**'yi açın. |

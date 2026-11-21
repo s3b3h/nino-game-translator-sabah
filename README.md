@@ -32,7 +32,9 @@ Mac, Windows ve Android telefondaki Nino sonraki güncellemeleri kendisi yükler
 
 1. **Nino'yu indirip açın** (yukarıdaki tablodan). İlk açılışta konsolunuzu seçin: **PS5** ya da **Xbox**.
 2. **Nino'nun söylediklerini yapın.** PS5 için ikinci, ücretsiz bir PSN hesabıyla giriş yapıp PS5'teki 8 haneli kodu yazarsınız ([nasıl?](#rehber-psn)). Sonra TV'nizi seçersiniz; Nino TV uygulamasını kurar.
-3. **Oyunu açın ve fişi prize takın.** Türkçe altyazı TV'de, oyunun üstünde görünür.
+3. **Oyunu açın, sonra Nino uygulamasının ekranındaki fişi prize takın.** Ekrandaki çizilmiş fişe dokunmanız ya da onu prize sürüklemeniz yeter; Türkçe altyazı TV'de, oyunun üstünde görünür.
+
+> 🔌 **Dikkat:** "Fişi takın" derken **Nino uygulamasının ekranındaki çizilmiş fişi** kastediyoruz (çeviriyi başlatan düğme). PS5'in ya da TV'nin **gerçek elektrik fişine dokunmayın**; PS5 her zamanki gibi açık kalsın.
 
 Bir dahaki sefere yalnız 3. adım yeterlidir. Takılırsanız uygulamadaki **Nino'ya Sor** robotu adım adım yardım eder.
 
@@ -51,7 +53,7 @@ Başlığa tıklayın, rehber açılır. Sorunuzun cevabı büyük ihtimalle bur
    - **PS5:** ikinci PSN hesabıyla giriş → PS5'i 8 haneli kodla bağlama ([nasıl?](#rehber-psn)) → TV seçimi.
    - **Xbox:** [Xbox rehberi](#rehber-xbox).
 5. TV seçiminde Nino, TV uygulamasını TV'ye kendisi kurar. TV'de bir kez geliştirici modu açılması gerekir: [Android TV](#rehber-androidtv) · [Samsung](#rehber-samsung) · [LG](#rehber-lg).
-6. Oyunu açın, ana ekrandaki **fişi prize takın**. Altyazı TV'de görünür. Durdurmak için fişi çekin.
+6. Oyunu açın, Nino'nun ana ekranındaki **çizilmiş fişe tıklayın ya da prize sürükleyin**. Altyazı TV'de görünür. Durdurmak için ekrandaki fişi çekin. ⚠️ Bu, Nino uygulamasının ekranındaki çizilmiş fiştir; PS5'in ya da TV'nin gerçek kablosuna dokunmayın.
 
 Mac yerel ağ izni isterse **İzin Ver** deyin; yoksa PS5'i bulamaz. Sonraki güncellemeleri Nino kendisi kurar.
 </details>
@@ -63,7 +65,7 @@ Mac yerel ağ izni isterse **İzin Ver** deyin; yoksa PS5'i bulamaz. Sonraki gü
 1. **[Nino-Windows-Setup.exe](https://github.com/yunusdemirbag/nino-game-translator/releases/latest/download/Nino-Windows-Setup.exe)** dosyasını indirip çalıştırın.
 2. "Windows bilgisayarınızı korudu" uyarısı çıkarsa: **Ek bilgi › Yine de çalıştır**.
 3. Güvenlik duvarı izin isterse **Özel ağlar**'ı işaretleyip **İzin ver**'e basın (TV ve PS5 ile konuşabilmesi için).
-4. Gerisi Mac ile aynı: konsolu seçin, [ikinci PSN hesabı](#rehber-psn), TV seçimi, fişi takın.
+4. Gerisi Mac ile aynı: konsolu seçin, [ikinci PSN hesabı](#rehber-psn), TV seçimi, sonra Nino ekranındaki fişe tıklayın (gerçek kabloya değil).
 
 Sonraki güncellemeleri Nino kendisi kurar.
 </details>
@@ -77,7 +79,7 @@ Sonraki güncellemeleri Nino kendisi kurar.
 3. Nino'yu açın, sağ üstteki bayraktan dili seçin, konsolunuzu seçin.
 4. **PS5:** **Sony İle Giriş Yapın** ([neden ikinci hesap?](#rehber-psn)) → PS5'teki 8 haneli kodu yazın.
 5. **Altyazılar nerede görünsün?** TV'nizde Nino varsa **TV**, yoksa **Telefon**. TV'ye uygulamayı telefon kurar: **Profil › Nino'yu TV'ye Kur**.
-6. Oyunu açın, ana ekranda **fişe dokunun ya da prize sürükleyin**. Telefonu yan çevirirseniz altyazı tam ekran olur; **Tam Ekran** düğmesi de var.
+6. Oyunu açın, Nino'nun ana ekranındaki **çizilmiş fişe dokunun ya da prize sürükleyin** (gerçek kabloya değil). Telefonu yan çevirirseniz altyazı tam ekran olur; **Tam Ekran** düğmesi de var.
 
 Daha önce kuruluysa yeni sürüm eskisinin üstüne kurulur, ayarlarınız kalır. Uzun oyunlarda telefonu şarja takın.
 </details>
@@ -88,7 +90,7 @@ Daha önce kuruluysa yeni sürüm eskisinin üstüne kurulur, ayarlarınız kal�
 
 1. App Store'dan Apple'ın ücretsiz **TestFlight** uygulamasını kurun.
 2. Bu bağlantıyı iPhone'da açın: **[TestFlight ile Nino](https://testflight.apple.com/join/1K3Q1KXp)** ve **Yükle**'ye dokunun.
-3. Kurulum adımları Android ile aynı: dil → konsol → [ikinci PSN hesabı](#rehber-psn) → 8 haneli kod → fişi takın.
+3. Kurulum adımları Android ile aynı: dil → konsol → [ikinci PSN hesabı](#rehber-psn) → 8 haneli kod → Nino ekranındaki fişe dokunun (gerçek kabloya değil).
 
 - **iOS 26 ve üstü:** Apple'ın ücretsiz, cihaz içi çevirisi kullanılır; başka bir şey gerekmez.
 - **iOS 26'dan eski:** GTA 6 yine ücretsiz çalışır (Nino'nun ortak çevirisi). Diğer oyunlar için **Ayarlar › Çeviri motoru › Gemini**'ye ücretsiz bir Gemini anahtarı ekleyin; uygulama adım adım gösterir.
@@ -110,7 +112,7 @@ Daha önce kuruluysa yeni sürüm eskisinin üstüne kurulur, ayarlarınız kal�
 4. Nino'da ikinci hesapla **Sony İle Giriş Yapın** (şifreyi Sony'nin kendi sayfasına yazarsınız, Nino görmez) ve 8 haneli kodu yazıp **Bağlan**'a basın. Kod yaklaşık 5 dakika geçerlidir.
 5. PS5'te **kendi hesabınıza** dönün (PS düğmesi › profil resmi › **Kullanıcı Değiştir**) ve oyununuzu açın.
 
-Bu bir kez yapılır. Sonra her seferinde yalnız oyunu açıp fişi takarsınız. Fotoğraflı anlatım: **[📷 PS5 + Android TV](docs/KURULUM-ANDROID-TV.md)**.
+Bu bir kez yapılır. Sonra her seferinde yalnız oyunu açıp Nino ekranındaki fişe dokunursunuz. Fotoğraflı anlatım: **[📷 PS5 + Android TV](docs/KURULUM-ANDROID-TV.md)**.
 
 > **Kolumla oynayamıyorum:** PS5'te kolu açınca **kendi (ana) hesabınızı** seçin. İkinci hesapla oynarsanız kol oyunda çalışmaz.
 </details>
@@ -141,7 +143,7 @@ TV'de **bir kez** geliştirici modunu açarsınız; sonra Nino uygulamayı kendi
 2. Kumandayla **1 2 3 4 5** yazın (rakam tuşu yoksa **123** tuşuna basıp ekrandan seçin). **Geliştirici modu** penceresi açılır.
 3. **Developer mode**'u **On** yapın.
 4. **Host PC IP** alanına Nino'nun gösterdiği adresi yazın (başında sıfır olmadan: 001 değil 1) ve **OK**'e basın.
-5. TV'yi **tam** yeniden başlatın: güç tuşunu **Samsung logosu görünene kadar** basılı tutun ya da fişini bir dakikalığına çekin. Kısa basmak yetmez.
+5. TV'yi **tam** yeniden başlatın: güç tuşunu **Samsung logosu görünene kadar** basılı tutun ya da TV'nin gerçek elektrik fişini bir dakikalığına çekin. Kısa basmak yetmez.
 6. Nino'da **Kur ve aç**'a basın. İlk kurulumda bir kez **ücretsiz Samsung hesabıyla** giriş istenir.
 
 Pencere açılmıyorsa TV'yi tam yeniden başlatıp tekrar deneyin; bazı TV'lerde ikinci ya da üçüncü denemede açılır.
@@ -165,7 +167,7 @@ Pencere açılmıyorsa TV'yi tam yeniden başlatıp tekrar deneyin; bazı TV'ler
 <summary><b>🟩 Xbox Series X|S (deneysel)</b></summary>
 
 1. **Xbox'ta:** **Ayarlar › Cihazlar ve bağlantılar › Uzak özellikler**'i açın; güç modu **Uyku** olsun.
-2. **Android telefonda:** ilk ekranda **Xbox**'ı seçin → **Microsoft ile Giriş Yapın** → gösterilen kodu microsoft.com/link'te girin (Xbox'taki **aynı hesap**). Listeden Xbox'ınızı seçin, fişi takın.
+2. **Android telefonda:** ilk ekranda **Xbox**'ı seçin → **Microsoft ile Giriş Yapın** → gösterilen kodu microsoft.com/link'te girin (Xbox'taki **aynı hesap**). Listeden Xbox'ınızı seçin, Nino ekranındaki fişe dokunun.
 3. **Mac / Windows'ta:** Xbox'ı bilgisayarda açın (Windows'ta **Xbox** uygulamasındaki **Uzaktan oynat**, Mac'te [Greenlight](https://github.com/unknownskl/greenlight) ya da **xbox.com/play**). Nino'da **Xbox'ta oynuyorum**'u seçin.
 
 Xbox'ta **ikinci hesap gerekmez**. Nino yalnız izler; ses çalmaz, kolunuza dokunmaz.
@@ -220,7 +222,7 @@ Xbox'ta **ikinci hesap gerekmez**. Nino yalnız izler; ses çalmaz, kolunuza dok
 - 🗺️ **Harita görev kartları (Mac):** Kartın tamamı, ikinci paragrafıyla birlikte okunur. Türkçesi kartın altına sığdırılır, İngilizcenin üstüne binmez. Kenarı Türk bayrağı kırmızı-beyazı.
 - 🧊 **Buzlu altyazı zemini:** Altyazının arkası oyunun kendi altyazısı gibi buzlu cam. Sahne aydınlıksa koyulaşır, karanlıksa açılır.
 - 🧹 **Daha temiz çeviri:** "Turn left" gibi navigasyon tarifleri ve "△ DRINKS" gibi etkileşim ipuçları artık altyazı sanılmaz. Altyazının yeri öğrenilince yalnız o bölge okunur.
-- 🔌 **Yeni açılış:** Fiş prize takılır, toplam indirme sayısı yukarı doğru sayar. Mac, Windows, Android ve iPhone'da aynı tasarım.
+- 🔌 **Yeni açılış:** Uygulamanın ekranındaki fiş prize takılır, toplam indirme sayısı yukarı doğru sayar. Mac, Windows, Android ve iPhone'da aynı tasarım.
 - 🍏 **iPhone:** iOS 26'dan eski sürümlerde ücretsiz Gemini anahtarının neden gerektiği uygulamada açıkça anlatılıyor.
 - 📺 **TV'de yazı boyu:** Android telefonda boyu değiştirince TV'deki altyazı da değişiyor (LG'de görülen sorun). İsteyen "TV'de oyunun altyazı boyuna uydur"u açık bırakabilir.
 - 🎯 **GTA 6:** Uygulama yeniden açıldığında GTA renkleri ve "GTA 6 etkin" yazısı hemen geri geliyor.
@@ -272,7 +274,7 @@ Adımlar: [Kurulum Rehberi › TV](docs/KURULUM.md#5-tv-uygulamasını-kurma).
 
 **Ekranda "Uzaktan Oynama bağlandı" bildirimi çıkıyor.** PS5'te ikinci hesapla **Ayarlar › Sistem › Uzaktan Oynama**'da en alttaki **Uzaktan Oynama Bağlantı Durumunu Gizle**'yi açın.
 
-**TV'de "Bilgisayardaki Nino bekleniyor" yazısı gitmiyor.** Nino'nun açık ve fişin takılı olduğundan emin olun. TV ve Nino'nun cihazı aynı Wi-Fi'da olmalı. Nino'nun yalnız **bir** kopyası açık olmalı.
+**TV'de "Bilgisayardaki Nino bekleniyor" yazısı gitmiyor.** Nino'nun açık ve uygulamadaki fişin takılı olduğundan (çevirinin açık olduğundan) emin olun. TV ve Nino'nun cihazı aynı Wi-Fi'da olmalı. Nino'nun yalnız **bir** kopyası açık olmalı.
 
 **Altyazı İngilizcenin tam üstüne gelmiyor.** Nino ilk birkaç altyazıda oyunun altyazı yerini öğrenir. Sorun sürerse **Ayarlar › Altyazı**'dan yerleşimi değiştirin.
 

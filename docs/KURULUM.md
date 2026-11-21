@@ -80,9 +80,9 @@ Mac ve Windows'taki Nino yeni sürümleri kendiliğinden indirip kurar.
 
 ### 3.3 Kullanım
 1. PS5'te oyununuzu kendi hesabınızla açın.
-2. Nino'nun ana ekranında **fişe dokunun ya da prize sürükleyin**.
+2. Nino'nun ana ekranındaki **çizilmiş fişe dokunun ya da prize sürükleyin**. Bu, uygulamanın ekranındaki düğmedir; PS5'in ya da TV'nin gerçek fişine dokunmayın.
 3. Altyazılar akmaya başlar. Telefonu **yan çevirirseniz** altyazı **tam ekran** açılır.
-4. Durdurmak için fişi çekin.
+4. Durdurmak için ekrandaki fişi çekin.
 
 > İpucu: Uzun oyunlarda telefonu şarja takın. Wi-Fi zayıfsa telefonu modeme yakın tutun.
 
@@ -142,7 +142,7 @@ Hata ayıklamayı açık bırakın. Böylece TV uygulaması kendiliğinden günc
 2. **1 2 3 4 5** yazın. Kumandada rakam tuşu yoksa **123** tuşuna basıp rakamları ekrandan seçin. Beşinci rakamdan sonra **Geliştirici modu** penceresi açılır.
 3. **Developer mode**'u **On** yapın.
 4. **Host PC IP** alanına telefonda (ya da bilgisayarda) gösterilen adresi yazın ve **OK**'i seçin. Her bölümü olduğu gibi yazın, başına sıfır koymayın (001 değil 1). Adres değiştirilemiyorsa önce **123** tuşuna basın.
-5. TV'yi tam olarak yeniden başlatın: güç tuşunu **Samsung logosu görünene kadar** basılı tutun ya da TV'nin fişini bir dakikalığına çekin. (Kısa basmak yetmez; TV yalnızca bekleme moduna geçer.)
+5. TV'yi tam olarak yeniden başlatın: güç tuşunu **Samsung logosu görünene kadar** basılı tutun ya da TV'nin gerçek elektrik fişini bir dakikalığına çekin. (Kısa basmak yetmez; TV yalnızca bekleme moduna geçer.)
 6. Telefonda **Kur ve aç**'a basın. İlk kurulumda bir kez **ücretsiz Samsung hesabıyla** giriş istenir.
 
 Pencere açılmıyorsa: TV'yi tam yeniden başlatıp yeniden deneyin (bazı TV'lerde ikinci ya da üçüncü denemede açılır), TV'ye USB klavye takıp 12345 yazın ya da Mac'teki Nino'da **Pencere açılmıyor mu?** altındaki **TV'ye 1 2 3 4 5 yaz** düğmesini deneyin (yalnızca bazı TV'lerde çalışır).
@@ -205,7 +205,7 @@ TV'de Nino'yu açtığınızda TV, konsolun bağlı olduğu HDMI girişini göst
    (Daha önce kurduysanız: **Ayarlar › Görüntü Kaynağı › Xbox**.)
 3. **Microsoft ile Giriş Yapın**'a dokunun. Nino bir kod gösterir; **Kodu Kopyala ve Sayfayı Aç** ile
    microsoft.com/link sayfasında kodu girin. Xbox'ta oturum açık olan **aynı hesabı** kullanın. Şifrenizi Nino'ya yazmazsınız.
-4. Listeden Xbox'ınızı seçin. Oyunu açıp **fişi takın**; altyazılar telefonda ya da TV'de akar.
+4. Listeden Xbox'ınızı seçin. Oyunu açıp Nino ekranındaki **fişe dokunun**; altyazılar telefonda ya da TV'de akar.
 
 PS5'tekinin aksine **ikinci hesap gerekmez**: Nino, Xbox uygulamasındaki "Uzaktan oynat" ile aynı ev yayınını yalnız
 izler. Ses çalmaz, kolunuza ya da hesabınıza dokunmaz.
