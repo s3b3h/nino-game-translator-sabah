@@ -24,7 +24,7 @@ Nino'yu **bir** cihaza kurmanız yeter: Mac, Windows ya da telefon. TV uygulamas
 | 📺 **LG TV** | Nino kendisi kurar | [kurulum ↓](#rehber-lg) |
 | 🟩 **Xbox** | Telefon, Mac ya da Windows | [kurulum ↓](#rehber-xbox) |
 
-Tüm dosyalar ve sürüm notları: **[Sürümler sayfası](https://github.com/yunusdemirbag/nino-game-translator/releases/latest)** · Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)** · Fotoğraflı anlatım: **[📷 PS5 + Android TV](docs/KURULUM-ANDROID-TV.md)**
+Tüm dosyalar ve sürüm notları: **[Sürümler sayfası](https://github.com/yunusdemirbag/nino-game-translator/releases/latest)** · Resimli anlatım: **[📷 Resimli Kurulum Rehberi](https://yunusdemirbag.github.io/nino-game-translator/rehber/)** · Adım adım anlatım: **[📘 Kurulum Rehberi](docs/KURULUM.md)** · Fotoğraflı anlatım: **[📷 PS5 + Android TV](docs/KURULUM-ANDROID-TV.md)**
 
 Mac, Windows ve Android telefondaki Nino sonraki güncellemeleri kendisi yükler.
 
@@ -36,7 +36,7 @@ Mac, Windows ve Android telefondaki Nino sonraki güncellemeleri kendisi yükler
 
 > 🔌 **Dikkat:** "Fişi takın" derken **Nino uygulamasının ekranındaki çizilmiş fişi** kastediyoruz (çeviriyi başlatan düğme). PS5'in ya da TV'nin **gerçek elektrik fişine dokunmayın**; PS5 her zamanki gibi açık kalsın.
 
-<p align="center"><img src="docs/nino/v4/fis-nedir.jpg" width="880" alt="Fişi takın: Nino uygulamasının ekranındaki çizilmiş fiş, çeviriyi başlatan düğmedir"></p>
+<p align="center"><a href="https://yunusdemirbag.github.io/nino-game-translator/rehber/#fis"><img src="docs/nino/v4/fis-nedir.jpg" width="880" alt="Fişi takın: Nino uygulamasının ekranındaki çizilmiş fiş, çeviriyi başlatan düğmedir"></a></p>
 
 Bir dahaki sefere yalnız 3. adım yeterlidir. Takılırsanız uygulamadaki **Nino'ya Sor** robotu adım adım yardım eder.
 
@@ -44,13 +44,13 @@ Bir dahaki sefere yalnız 3. adım yeterlidir. Takılırsanız uygulamadaki **Ni
 
 Başlığa tıklayın, rehber açılır. Sorunuzun cevabı büyük ihtimalle burada.
 
-**Resimli rehberler** (resme tıklayınca o cihazın kurulumuna iner; orada başlığa tıklayın, rehber açılır):
+**Resimli rehberler:** resme tıklayın, büyük açılır. Hepsi tek sayfada: **[📷 Resimli Kurulum Rehberi](https://yunusdemirbag.github.io/nino-game-translator/rehber/)**
 
 <p align="center">
-  <a href="#rehber-androidtv"><img src="docs/nino/v4/rehber/android-tv.jpg" width="210" alt="Android TV resimli rehber"></a>&nbsp;
-  <a href="#rehber-samsung"><img src="docs/nino/v4/rehber/samsung.jpg" width="210" alt="Samsung TV resimli rehber"></a>&nbsp;
-  <a href="#rehber-lg"><img src="docs/nino/v4/rehber/lg.jpg" width="210" alt="LG TV resimli rehber"></a>&nbsp;
-  <a href="#rehber-iphone"><img src="docs/nino/v4/rehber/iphone.jpg" width="210" alt="iPhone ve iPad resimli rehber"></a><br>
+  <a href="https://yunusdemirbag.github.io/nino-game-translator/rehber/#android-tv"><img src="docs/nino/v4/rehber/android-tv.jpg" width="210" alt="Android TV resimli rehber"></a>&nbsp;
+  <a href="https://yunusdemirbag.github.io/nino-game-translator/rehber/#samsung"><img src="docs/nino/v4/rehber/samsung.jpg" width="210" alt="Samsung TV resimli rehber"></a>&nbsp;
+  <a href="https://yunusdemirbag.github.io/nino-game-translator/rehber/#lg"><img src="docs/nino/v4/rehber/lg.jpg" width="210" alt="LG TV resimli rehber"></a>&nbsp;
+  <a href="https://yunusdemirbag.github.io/nino-game-translator/rehber/#iphone"><img src="docs/nino/v4/rehber/iphone.jpg" width="210" alt="iPhone ve iPad resimli rehber"></a><br>
   <sub>Android TV · Samsung · LG · iPhone/iPad</sub>
 </p>
 
