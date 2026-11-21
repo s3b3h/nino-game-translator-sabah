@@ -1663,25 +1663,57 @@ final class AppModel: ObservableObject {
         NSApplication.shared.terminate(nil)
     }
 
-    /// Son kez Nino kapanmadan okuma yeniden kurulduğu an.
-    private var lastReadRecovery: Date?
+    /// Nino 4.0.5: Okumalar takılınca yedek okuyucuya (ayrı süreç) geçer; bu süreçteki Vision kilidi PS5 bağlantısını
+    /// etkilemez. Yedek okuyucu oturum başında açılır, ilk okumada ısınır.
+    private func prepareReadRescuer() {
+        if VisionReader.rescuer == nil, let executable = Bundle.main.executableURL {
+            let rescuer = OcrHelperReader(executable: executable)
+            rescuer.onLog = { line in SubtitleLog.write(line) }
+            VisionReader.rescuer = rescuer
+        }
+        VisionReader.onLog = { line in SubtitleLog.write(line) }
+    }
 
-    /// Nino 4.0.4: Okuma takılınca Nino artık kendini kapatıp açmaz (PS5 bağlantısı kopuyordu, 21 Kasım 2026: 25-60 dk
-    /// oyundan sonra). Önce aynı süreçte okuma hattı yeniden kurulur ve yazı tanıma işlemciye geçer; PS5 akışı sürer.
-    /// Yalnız 10 dk içinde yeniden takılırsa (aynı süreçte düzelmiyor demektir) son çare olarak yeniden açılır.
+    /// Son kez okuma hattının yedekle yeniden kurulduğu an.
+    private var lastRescueRebuild: Date?
+
+    /// Okuma takıldı: yedek okuyucu çalışıyorsa Nino kapanmadan okuma hattı yeniden kurulur (yeni hattın okumaları
+    /// yedeğe gider, PS5 bağlantısı sürer). Yedek yoksa ya da 10 dk içinde yine takıldıysa, takılma anının yığını
+    /// `~/Library/Logs/Nino/takilma-*.txt` dosyasına kaydedilir ve son çare olarak Nino yeniden açılır.
     private func recoverStuckReading(_ why: String) {
         guard isRunning else { return }
-        if let last = lastReadRecovery, Date().timeIntervalSince(last) < 600 {
-            SubtitleLog.write("\(why); 10 dk içinde ikinci takılma")
-            relaunchAfterStuckReading()
+        if VisionReader.isRescuing, let rescuer = VisionReader.rescuer, !rescuer.isExhausted,
+           lastRescueRebuild.map({ Date().timeIntervalSince($0) > 600 }) ?? true {
+            lastRescueRebuild = Date()
+            SubtitleLog.write("\(why); okuma hattı yedek okuyucuyla yeniden kuruldu, Nino kapanmıyor")
+            regionWatcher?.reset()
+            regionWatcher = nil
+            makePipeline()
             return
         }
-        lastReadRecovery = Date()
-        SubtitleLog.write("\(why); Nino kapanmadan okuma yeniden kuruluyor (yazı tanıma işlemcide, PS5 bağlantısı sürüyor)")
-        VisionReader.recoverInProcess()
-        regionWatcher?.reset()
-        regionWatcher = nil
-        makePipeline()
+        SubtitleLog.write(why)
+        Self.saveStuckSample()
+        relaunchAfterStuckReading()
+    }
+
+    /// Kendi sürecinin 2 sn'lik yığın örneğini günlük klasörüne yazar (en çok 6 sn bekler; son 5 dosya tutulur).
+    private static func saveStuckSample() {
+        let folder = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/Nino")
+        let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
+        let file = folder.appendingPathComponent("takilma-\(stamp).txt")
+        let sample = Process()
+        sample.executableURL = URL(fileURLWithPath: "/usr/bin/sample")
+        sample.arguments = [String(ProcessInfo.processInfo.processIdentifier), "2", "-mayDie", "-file", file.path]
+        sample.standardOutput = FileHandle.nullDevice
+        sample.standardError = FileHandle.nullDevice
+        guard (try? sample.run()) != nil else { return }
+        let deadline = Date().addingTimeInterval(6)
+        while sample.isRunning, Date() < deadline { Thread.sleep(forTimeInterval: 0.1) }
+        if sample.isRunning { sample.terminate() }
+        SubtitleLog.write("takılma anının yığını kaydedildi: \(file.lastPathComponent)")
+        let old = ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? [])
+            .filter { $0.hasPrefix("takilma-") }.sorted()
+        for name in old.dropLast(5) { try? FileManager.default.removeItem(at: folder.appendingPathComponent(name)) }
     }
 
     /// Takılma yüzünden yeniden açıldıysa (son 2 dk içinde) çeviri kendiliğinden başlar.
@@ -1717,6 +1749,7 @@ final class AppModel: ObservableObject {
         try? await startServer()
         server.sendStyle(settings.style)
 
+        prepareReadRescuer()
         makePipeline()
         sessionStartedAt = Date()
         lastMetrics = nil
@@ -3454,6 +3487,7 @@ final class AppModel: ObservableObject {
     }
 
     func stop() {
+        VisionReader.rescuer?.shutdown()
         resetCorners()
         // Nino: TV'deki rozet ve yazılar fiş çekilince hemen kaybolsun.
         server.sendStopped()
@@ -3689,6 +3723,11 @@ final class AppModel: ObservableObject {
             return
         }
         guard pipeline != nil else { return }
+        // Nino 4.0.5: okumalar yedekteyse, takılan okumayı bekleyen hat 45 sn beklenmeden yenilenir (altyazı kesilmez).
+        if VisionReader.isRescuing, let held = frameGate.heldMs(now: SubtitleStabilizer.uptimeMs()), held > 9_000 {
+            recoverStuckReading("altyazı okuması \(held) ms'dir takılı")
+            return
+        }
         // Ek alanlar ayrı ve seyrek okunur (saniyede bir); altyazı okumasını beklemez, onu bekletmez.
         let areas = settings.activeExtraAreas
         if regionWatcher == nil, !areas.isEmpty, let pipeline { regionWatcher = makeRegionWatcher(packLookup: regionPackLookup) }

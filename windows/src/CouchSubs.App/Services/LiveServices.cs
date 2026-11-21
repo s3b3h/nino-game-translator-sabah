@@ -355,6 +355,14 @@ public sealed class LiveServices : IAppServices
         }
     }
 
+    /// <summary>Nino: telefon ekranı ve harita kartı için tek geçişte okuyan yazı tanıyıcı.</summary>
+    public ITextReader? MakePlainReader(string language)
+    {
+        var reader = WindowsOcrReader.Create(language);
+        if (reader is not null) reader.SingleRead = true;
+        return reader;
+    }
+
     public ITextReader? MakeReader(string language)
     {
         var reader = WindowsOcrReader.Create(language);

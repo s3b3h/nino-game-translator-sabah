@@ -513,6 +513,11 @@ public interface IAppServices
     /// <summary>Oyun dili için yazı tanıyıcı; bilgisayarda hiç OCR dili yoksa null.</summary>
     ITextReader? MakeReader(string language);
     /// <summary>
+    /// Nino: tek geçişte okuyan yazı tanıyıcı (telefon ekranı, harita kartı). Altyazı okuyucusu her kareyi birkaç
+    /// hazırlıkla okur; büyük alanda bu çok pahalıdır ve koyu yazılı açık ekranda gereksizdir.
+    /// </summary>
+    ITextReader? MakePlainReader(string language) => MakeReader(language);
+    /// <summary>
     /// Oyun dilinin kendi yazı tanıma paketi yüklü mü. Değilse okuyucu sistemin diliyle (ör. Türkçe) okur ve İngilizce
     /// altyazı "thıs.messs" gibi bozulur; kullanıcıya paketi yüklemesi söylenir.
     /// </summary>

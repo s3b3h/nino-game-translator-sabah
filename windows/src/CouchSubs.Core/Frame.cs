@@ -132,6 +132,33 @@ public static class RegionCropper
         return image.Crop(left, top, right - left, bottom - top);
     }
 
+    /// <summary>
+    /// Nino: kırpılmış bölgenin (<paramref name="area"/>, karede <paramref name="region"/>) <paramref name="box"/>'a
+    /// (karedeki yer, 0–1) düşen kısmı siyaha boyanmış kopyası. Telefon açıkken ekranının bölgeye giren kısmı okunmaz
+    /// (Mac: RegionCropper.masking). Kutu bölgeye değmiyorsa bölge olduğu gibi döner.
+    /// </summary>
+    public static Frame Masking(Frame area, TextBox box, CropRegion region, double margin = 0.01)
+    {
+        double width = region.Right - region.Left, height = region.Bottom - region.Top;
+        if (width <= 0 || height <= 0) return area;
+        double left = (box.Left - margin - region.Left) / width, right = (box.Right + margin - region.Left) / width;
+        double top = (box.Top - margin - region.Top) / height, bottom = (box.Bottom + margin - region.Top) / height;
+        if (right <= 0 || left >= 1 || bottom <= 0 || top >= 1) return area;
+        var result = area.Crop(0, 0, area.Width, area.Height);
+        var x0 = (int)Math.Floor(Math.Max(0, left) * area.Width);
+        var x1 = (int)Math.Ceiling(Math.Min(1, right) * area.Width);
+        var y0 = (int)Math.Floor(Math.Max(0, top) * area.Height);
+        var y1 = (int)Math.Ceiling(Math.Min(1, bottom) * area.Height);
+        for (var y = y0; y < Math.Min(y1, area.Height); y++)
+            for (var x = x0; x < Math.Min(x1, area.Width); x++)
+            {
+                var i = (y * result.Stride) + (x * 4);
+                result.Pixels[i] = result.Pixels[i + 1] = result.Pixels[i + 2] = 0;
+                result.Pixels[i + 3] = 255;
+            }
+        return result;
+    }
+
     /// <summary>Bölgenin küçültülmüş gri kopyası: iki kareyi yazı tanımaya gerek kalmadan karşılaştırmaya yeter.</summary>
     public static byte[] Signature(Frame image)
     {

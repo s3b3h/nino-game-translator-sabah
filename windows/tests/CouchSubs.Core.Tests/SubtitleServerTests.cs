@@ -89,6 +89,36 @@ public class SubtitleServerTests
             l.Contains("{\"box\":{\"bottom\":0.84,\"left\":0.4,\"right\":0.6,\"top\":0.8},\"line\":0.04,\"text\":\"Kapıyı aç.\"}"));
     }
 
+    /// <summary>
+    /// Nino: telefonun yanındaki panel ve balonlar, harita kartı Mac ile aynı alanlarla gider (TV sayfası aynı çizer);
+    /// <c>overlay</c> işaretli olay TV'deki altyazıyı silmez.
+    /// </summary>
+    [Fact]
+    public async Task PhoneAndMapItemsCarryTheirStyle()
+    {
+        using var server = new SubtitleServer(0);
+        var port = await server.StartAsync();
+        using var response = await Http.GetAsync($"http://127.0.0.1:{port}/events", HttpCompletionOption.ResponseHeadersRead);
+        await WaitUntil(() => server.ConnectedClients == 1);
+        server.SendScreen([
+            new("", "Lucia", new TextBox(0.3, 0.2, 0.57, 0.85), 0.022) { Fill = "#f5f5f6", Alpha = 0.6, Backdrop = true },
+            new("Are you high?", "Kafan mı güzel?", new TextBox(0.31, 0.5, 0.45, 0.53), 0.02)
+                { Fill = "#acccfe", Ink = "#2c2c2e", Alpha = 0.95, Side = true, Angle = 5.71 },
+            new("BUY FLOWERS", "ÇİÇEK AL", new TextBox(0.55, 0.6, 0.8, 0.7), 0.02) { Card = true },
+        ], 120000, overlay: true);
+        server.ClearScreen();
+        using var reader = new StreamReader(await response.Content.ReadAsStreamAsync());
+        var lines = await ReadLines(reader, "event: screen-clear");
+        var data = Assert.Single(lines, l => l.StartsWith("data:") && l.Contains("\"items\""));
+        Assert.Contains("\"overlay\":true", data);
+        Assert.Contains("\"alpha\":0.6,\"backdrop\":true,", data);
+        Assert.Contains("\"fill\":\"#f5f5f6\"", data);
+        Assert.Contains("\"alpha\":0.95,\"angle\":5.7,", data);
+        Assert.Contains("\"ink\":\"#2c2c2e\"", data);
+        Assert.Contains("\"side\":true", data);
+        Assert.Contains("\"card\":true", data);
+    }
+
     /// <summary>Ek alanın çevirisi kendi olayıyla gider (eski TV uygulamaları tanımadığı olayı yok sayar; Mac ile aynı).</summary>
     [Fact]
     public async Task StreamsRegionTranslationsAndTheirClear()

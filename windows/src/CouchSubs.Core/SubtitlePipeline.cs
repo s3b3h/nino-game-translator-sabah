@@ -172,6 +172,88 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
     /// <summary>Paket isabetinde satırın geldiği paket (günlük için; bilinmiyorsa null).</summary>
     public Func<string?>? PackName { get; set; }
 
+    /// <summary>
+    /// Telefon kaybolduktan sonra bu kadar süre daha yerinde sayılır: geçiş animasyonu ve koyu temalı uygulamada (Rydeme)
+    /// telefonun bazı karelerde bulunamaması (Mac: SubtitlePipeline.phoneHoldMs).
+    /// </summary>
+    public const int PhoneHoldMs = 5000;
+    /// <summary>
+    /// Nino: true döndüğü sürece karede oyunun telefonu aranır (GTA 6); telefonun ekranındaki yazılar altyazı sayılmaz
+    /// (uygulama onları telefonun yanında gösterir; bkz. <see cref="PhonePanel"/>). Kare iş parçacığında çağrılır.
+    /// </summary>
+    public Func<bool>? PhonePanels { get; set; }
+    /// <summary>
+    /// Nino: telefonda az önce görülen mesajların yazısı. Altyazı okumasında bunlardan biri görülürse altyazı değildir
+    /// (telefon ekrana kayarak gelirken bulunamadığı karede son mesaj altyazı diye çıkıyordu).
+    /// </summary>
+    public Func<IReadOnlyList<string>>? PhoneTexts { get; set; }
+    /// <summary>Nino: telefon uygulamasına özgü yazılar görüldü (karedeki yerleri ve kare); telefon bunlardan da bulunabilsin.</summary>
+    public Action<IReadOnlyList<TextBox>, Frame>? PhoneUISeen { get; set; }
+    /// <summary>Nino: true döndüğü sürece (oyunun harita ekranı) okunan yazı altyazı sayılmaz.</summary>
+    public Func<bool>? IsMenuScreen { get; set; }
+    /// <summary>Nino: telefonu takip eder (koyu temalı uygulamada her karede bulunamıyor).</summary>
+    private readonly PhonePanel.Tracker phoneTracker = new(clock ?? DefaultClock);
+    /// <summary>Nino: en son bulunan telefon ekranı ve zamanı.</summary>
+    private (TextBox Box, long At)? lastPhone;
+
+    /// <summary>
+    /// Nino: telefon açıkken (ya da az önce görüldüyse) altyazı okumasından telefona ait satırlar atılır (Mac:
+    /// SubtitlePipeline.process ile aynı sıra): telefonun ekranındaki satırlar, açık zeminde koyu yazı (mesaj balonu),
+    /// telefon uygulamasına özgü yazılar, altyazı çizgisinin üstündeki satırlar ve telefonda az önce görülen mesajlar.
+    /// </summary>
+    private Reading WithoutPhoneLines(Reading raw, TextBox place, TextBox? phone, bool wantsPhone, bool phoneFound, Frame? area, Frame frame)
+    {
+        if (!wantsPhone && phone is null && PhoneTexts is null) return raw;
+        var lines = raw.Lines.ToList();
+        if (phone is { } p)
+        {
+            // Nino: telefon açık; ekranındaki yazılar (mesajlar, kişi listesi) altyazı değildir.
+            lines = [.. lines.Where(line =>
+            {
+                if (line.Box is not { } box) return true;
+                var x = place.Left + ((box.Left + box.Right) / 2 * (place.Right - place.Left));
+                var y = place.Top + ((box.Top + box.Bottom) / 2 * (place.Bottom - place.Top));
+                return !(x > p.Left - 0.02 && x < p.Right + 0.02 && y > p.Top - 0.02 && y < p.Bottom + 0.02);
+            })];
+        }
+        if (wantsPhone && area is not null && lines.Count > 0)
+        {
+            // Nino (kullanıcı, 20 Kasım 2026): GTA'nın altyazısı koyu sahnede beyaz yazıdır; açık zeminde koyu yazı telefonun
+            // ekranıdır (mesaj balonu), altyazı değildir. Telefon bulunamasa da geçerli.
+            var color = PhonePanel.Sampler(area);
+            lines = [.. lines.Where(line => line.Box is not { } box || !PhoneThread.IsDarkOnLight(box, color))];
+        }
+        if (wantsPhone)
+        {
+            // Nino: telefon uygulamasına özgü yazı ("Change Destination", "Book Ryde ($82)") telefon bulunamasa da altyazı değildir.
+            var phoneUI = lines.Where(line => PhoneThread.IsPhoneUI(line.Text)).ToList();
+            if (phoneUI.Count > 0)
+            {
+                var boxes = phoneUI.Where(l => l.Box is not null).Select(l => l.Box!.Value.PlacedIn(place)).ToList();
+                if (!phoneFound) phoneTracker.Adopt(boxes, frame);
+                PhoneUISeen?.Invoke(boxes, frame);
+                lines = [.. lines.Where(line => !PhoneThread.IsPhoneUI(line.Text))];
+            }
+        }
+        var texts = (PhoneTexts?.Invoke() ?? []).Select(TextMatch.Normalize).Where(t => t.Length > 0).ToList();
+        if (phone is not null || texts.Count > 0)
+        {
+            // Nino (kullanıcı): telefon açıkken altyazı çizgisinin üstündeki hiçbir yazı altyazı değildir.
+            const double floor = 0.8;
+            lines = [.. lines.Where(line => line.Box is not { } box
+                                            || place.Top + ((box.Top + box.Bottom) / 2 * (place.Bottom - place.Top)) >= floor)];
+        }
+        if (texts.Count > 0)
+        {
+            lines = [.. lines.Where(line =>
+            {
+                var key = TextMatch.Normalize(line.Text);
+                return key.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length < 3 || !texts.Any(t => t.Contains(key, StringComparison.Ordinal));
+            })];
+        }
+        return lines.Count == raw.Lines.Count ? raw : new Reading(lines);
+    }
+
     private void Write(string message) => Log?.Invoke(message);
 
     private void Write(Request request, string message) => Log?.Invoke($"#{request.Number} {message}");
@@ -192,19 +274,42 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
                 Write($"ilk kare: oturum başından {now() - sessionStart} ms sonra");
             }
         }
+        // Nino: sohbet açılırken telefonun ekranı kayarak değişir; o bir iki karede telefon bulunamıyor ve içindeki mesaj
+        // siyah altyazı kutusunda çıkıyordu. Telefon az önce görüldüyse (PhoneHoldMs) aynı yerde sayılır.
+        var wantsPhone = PhonePanels?.Invoke() == true;
+        TextBox? recentPhone;
+        lock (gate) recentPhone = lastPhone is { } seen && captured - seen.At < PhoneHoldMs ? seen.Box : null;
         // Yazı tanıma uzun sürebilir; çağıranı (arayüzü) bekletmemek için iş parçacığı havuzunda yapılır.
-        var (raw, ocrMs, signature) = await Task.Run(() =>
+        var (raw, ocrMs, signature, phone, phoneFound, croppedArea) = await Task.Run(() =>
         {
             byte[]? signature = null;
+            TextBox? phone = null;
+            var phoneFound = false;
+            Frame? cropped = null;
             try
             {
                 var area = RegionCropper.Crop(frame, region);
+                if (wantsPhone)
+                {
+                    var found = phoneTracker.Locate(frame)?.Box;
+                    phoneFound = found is not null;
+                    if (found is { } seen) lock (gate) lastPhone = (seen, captured);
+                    // Nino: çerçeveli son mesajın olduğu karede ekran kısa bulunuyor; maske ekranın gerçek alt kenarına kadar
+                    // uzatılır, ama altyazının başladığı yere (0,84) inmez.
+                    if ((found ?? recentPhone) is { } box)
+                    {
+                        phone = box with { Bottom = Math.Max(box.Bottom, Math.Min(box.Bottom + 0.15, 0.84)) };
+                        // Nino: telefonun bölgeye giren kısmı okunmadan siyaha boyanır.
+                        area = RegionCropper.Masking(area, phone.Value, region);
+                    }
+                }
+                cropped = area;
                 signature = RegionCropper.Signature(area);
                 ReadPlan plan;
                 lock (gate)
                 {
                     plan = schedule.Plan(signature);
-                    if (plan.Reuse) return (lastReading, lastReadMs, signature);
+                    if (plan.Reuse) return (lastReading, lastReadMs, signature, phone, phoneFound, cropped);
                 }
                 var readStarted = now();
                 var read = reader.ReadLines(area, plan.Deep);
@@ -215,9 +320,9 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
                     lastReading = read;
                     lastReadMs = readMs;
                 }
-                return (read, (int?)readMs, signature);
+                return (read, (int?)readMs, signature, phone, phoneFound, cropped);
             }
-            catch { return (Reading.Empty, (int?)null, signature); }
+            catch { return (Reading.Empty, (int?)null, signature, phone, phoneFound, cropped); }
         });
         lock (gate)
         {
@@ -231,6 +336,9 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
         // Yazı tanımanın uydurduğu sözcük çöpleri ("ou$3e") de çevirmene gitmez.
         // Alandaki menü ve köşe göstergeleri de altyazı değildir; yalnız altyazı bloğu çevrilir ve kutusu ona göre olur.
         var area = new TextBox(region.Left, region.Top, region.Right, region.Bottom);
+        // Nino: telefon açıkken telefona ait satırlar altyazı değildir (bkz. WithoutPhoneLines).
+        try { raw = WithoutPhoneLines(raw, area, phone, wantsPhone, phoneFound, croppedArea, frame); }
+        catch { }
         // Nino: dev yazılar (tabela, reklam panosu) altyazı değildir; çevrilmez, TV'de kocaman siyah kutu da çıkmaz.
         var sized = raw.WithoutOversizedLines(area);
         var droppedLines = sized.Lines.Count == raw.Lines.Count ? null
@@ -239,6 +347,8 @@ public sealed class SubtitlePipeline(ITextReader reader, ITextTranslator transla
         var reading = sized.WithoutButtonPrompts().WithoutNavigationHints().WithoutOcrNoise().WithoutClippedLines().JoiningRows().SubtitleBlock(area);
         // Normal boyda ama bir altyazı için fazla yüksek ya da fazla satırlı blok da altyazı değildir (afiş, not, belge).
         Reading? droppedBlock = null;
+        // Nino: harita ekranı açıkken (tuş listesi görüldü) okunan yazı altyazı değildir.
+        if (IsMenuScreen?.Invoke() == true) reading = Reading.Empty;
         if (reading.IsOversizedBlock(area))
         {
             droppedBlock = reading;

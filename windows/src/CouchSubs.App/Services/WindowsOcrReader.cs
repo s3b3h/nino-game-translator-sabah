@@ -34,8 +34,15 @@ public sealed class WindowsOcrReader : ITextReader
 
     public string Read(Frame image, bool deep) => string.Join(' ', ReadLines(image, deep).Lines.Select(line => line.Text));
 
+    /// <summary>
+    /// Nino: true ise kare olduğu gibi tek geçişte okunur (hazırlık, büyütme, seviye yok): telefon ekranı ve harita kartı
+    /// için (bkz. IAppServices.MakePlainReader).
+    /// </summary>
+    public bool SingleRead { get; set; }
+
     // Büyütülmüş yedek okumalarda (boş bölge) yalnız eski iki hazırlık denenir; işlemci yükü artmasın.
     public Reading ReadLines(Frame image, bool deep) =>
+        SingleRead ? RecognizeOnce(image) :
         deep ? ReadingFallback.FirstLines(image, frame => ReferenceEquals(frame, image) ? Recognize(frame) : Recognize(frame, allowChain: false))
              : Recognize(image);
 

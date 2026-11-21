@@ -7,7 +7,15 @@ import Sparkle
 #endif
 import SwiftUI
 
+/// Nino 4.0.5: uygulama `--ocr-helper` ile açıldıysa pencere açmaz, yedek okuyucu olarak çalışır (`OcrHelper`).
 @main
+enum NinoLauncher {
+    static func main() {
+        if CommandLine.arguments.contains(OcrHelper.argument) { OcrHelper.runAsHelper() }
+        CouchSubsApp.main()
+    }
+}
+
 struct CouchSubsApp: App {
     /// Nino: her şeyden önce (özellikler bildirim sırasıyla kurulur; bu ilkidir): CouchSubs'tan kalan veri ve günlük
     /// klasörleri, hiçbir dosya açılmadan `Nino` adına taşınır (bkz. `AppFolders`).

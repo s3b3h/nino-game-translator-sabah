@@ -20,6 +20,26 @@ public static class ScreenTranslation
     {
         /// <summary>Birden çok parça var: TV satır satır, sola yaslı gösterir.</summary>
         public bool Paragraphs => Translation.Contains('\n');
+        /// <summary>Nino: kutusuz, oyunun kendi yazısı gibi gölgeli sade yazı.</summary>
+        public bool Plain { get; init; }
+        /// <summary>Nino: eğik yazı (telefon araması).</summary>
+        public bool Italic { get; init; }
+        /// <summary>
+        /// Nino: oyunun kendi kutusunun rengi ("#e9e9ec"); verilmişse Türkçe o kutunun üstüne, aynı zeminle ve
+        /// <see cref="Ink"/> renginde yazılır (GTA 6 telefon mesaj balonları).
+        /// </summary>
+        public string? Fill { get; init; }
+        public string? Ink { get; init; }
+        /// <summary>Nino: yazının dönme açısı (derece, saat yönü artı): eğik tutulan telefonun balonları da eğiktir.</summary>
+        public double? Angle { get; init; }
+        /// <summary>Nino: zeminin saydamlığı (0–1; <see cref="Fill"/> ile).</summary>
+        public double? Alpha { get; init; }
+        /// <summary>Nino: oyunun kutusunun üstünde değil yanında duran balon (TV daha yuvarlak, gölgeli çizer).</summary>
+        public bool Side { get; init; }
+        /// <summary>Nino: yazısız zemin (telefonun yanındaki mesajlaşma paneli); balonlar onun üstünde durur.</summary>
+        public bool Backdrop { get; init; }
+        /// <summary>Nino: harita kartının Türkçesi; TV oyunun kartı gibi çizer.</summary>
+        public bool Card { get; init; }
     }
 
     /// <summary>Kalabalık ekranda TV'yi kutuyla doldurmamak ve çeviriyi uzatmamak için en çok bu kadar grup çevrilir.</summary>

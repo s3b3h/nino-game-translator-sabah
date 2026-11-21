@@ -2285,6 +2285,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         // Ek bölge okuyucusu da yeni dil ve motorla yeniden kurulur.
         regionWatcher?.Reset();
         regionWatcher = null;
+        // Nino: telefon ve harita kartı okuyucuları da yeni dil ve motorla yeniden kurulur.
+        ResetGameOverlays();
         // Eski hatta süren okuma beklenmez; yeni hat ilk karesini hemen alır.
         frameGate.Reset();
         ActiveSourceLanguage = settings.SourceLanguage;
@@ -2326,6 +2328,12 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         built.PackMissed += text => OfferToPool(built, text);
         built.Log = SubtitleLog.Write;
         built.PackName = () => services.GamePacks?.SearchScope;
+        // Nino: havuz öncelikli oyunda (GTA 6) telefonun ekranı aranır; içindeki yazılar altyazı sayılmaz. Harita açıkken
+        // okunan yazı da altyazı değildir (Mac: pipeline.phonePanels / phoneTexts / onPhoneUI / isMenuScreen).
+        built.PhonePanels = () => PhoneGameActive;
+        built.PhoneTexts = () => phoneWatcher?.RecentTexts ?? [];
+        built.PhoneUISeen = (boxes, frame) => phoneWatcher?.Adopt(boxes, frame);
+        built.IsMenuScreen = () => mapWatcher?.MapOpen == true;
         ConnectPacks(built);
         ApplyWaits(built);
         OnlineIssue = null;
@@ -2344,6 +2352,7 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
     /// </summary>
     private void UpdateRegionWatcher()
     {
+        UpdateGameOverlays();
         if (pipeline is null || subtitlesPaused || settings.WatchedAreas().Count == 0)
         {
             regionWatcher?.Reset();
@@ -2356,6 +2365,102 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
             regionWatcher = new RegionWatcher(reader, MakeTranslator(), server) { Log = SubtitleLog.Write };
         }
         regionWatcher.PackLookup = PacksActive ? services.FindInPacks : null;
+    }
+
+    // --- Nino: oyun telefonu ve harita kartı (GTA 6) ---
+
+    /// <summary>Telefondaki sohbetin Türkçesini telefonun yanına koyan okuyucu (bkz. <see cref="PhoneWatcher"/>).</summary>
+    private PhoneWatcher? phoneWatcher;
+    /// <summary>Haritada seçili görevin kartını çeviren okuyucu (bkz. <see cref="MapCardWatcher"/>).</summary>
+    private MapCardWatcher? mapWatcher;
+    private readonly object overlayGate = new();
+    private bool overlaysShown;
+    /// <summary>Kare iş parçacığı için: yan çeviriler gösteriliyor mu ve en son ne zaman gönderildi.</summary>
+    private int overlaysShownFlag;
+    private long overlaysSentAt;
+    /// <summary>Okuyucular kurulmak üzere arayüz iş parçacığına gönderildi (her karede yeniden gönderilmesin).</summary>
+    private int overlaysQueued;
+    /// <summary>Yazı tanıyıcı kurulamadı (OCR dili yok); hat yeniden kurulana kadar yeniden denenmez.</summary>
+    private bool overlaysUnavailable;
+
+    /// <summary>
+    /// Nino: oynanan oyunda telefon ve harita kartı aranır mı: kaynak İngilizce ve oyun havuz öncelikli (GTA 6; Mac'teki
+    /// phoneGame). Başka oyunlarda açık zemindeki koyu yazı süzgeci altyazıyı yutardı.
+    /// </summary>
+    private bool PhoneGameActive => !subtitlesPaused && PoolFirstActive;
+
+    /// <summary>
+    /// Telefon ve harita kartı okuyucuları gerekiyorsa kurulur. Kendi yazı tanıma motorları vardır (aynı motor iki okumayı
+    /// birden yapamaz) ve tek geçişte okurlar; altyazı okumasını bekletmezler.
+    /// </summary>
+    private void UpdateGameOverlays()
+    {
+        // Yalnız telefonlu oyunda kurulur (başka oyunda iki yazı tanıma motoru ve çevirmen boşuna açılmasın); oyun sonradan
+        // tanınırsa ilk karede kurulur (bkz. HandleFrame).
+        if (pipeline is null || !PhoneGameActive)
+        {
+            ResetGameOverlays();
+            return;
+        }
+        Func<string, string?> known = text => services.Translations?.Store.Match(text);
+        if (phoneWatcher is null && services.MakePlainReader(settings.SourceLanguage) is { } phoneReader)
+        {
+            phoneWatcher = new PhoneWatcher(phoneReader, MakeTranslator())
+            {
+                Log = SubtitleLog.Write,
+                Changed = _ => SendOverlays(),
+                Paused = () => mapWatcher?.RecentlyOpen(8000) == true,
+            };
+        }
+        if (mapWatcher is null && services.MakePlainReader(settings.SourceLanguage) is { } mapReader)
+            mapWatcher = new MapCardWatcher(mapReader, MakeTranslator()) { Log = SubtitleLog.Write, Changed = _ => SendOverlays() };
+        overlaysUnavailable = phoneWatcher is null || mapWatcher is null;
+        if (phoneWatcher is { } phone)
+        {
+            phone.Known = known;
+            phone.UseGlossary = settings.TargetLanguage == "tr";
+        }
+        if (mapWatcher is { } map)
+        {
+            map.Known = known;
+            map.TargetLanguage = settings.TargetLanguage;
+        }
+    }
+
+    private void ResetGameOverlays()
+    {
+        overlaysUnavailable = false;
+        if (phoneWatcher is null && mapWatcher is null && !overlaysShown) return;
+        var (phone, map) = (phoneWatcher, mapWatcher);
+        phoneWatcher = null;
+        mapWatcher = null;
+        phone?.Reset();
+        map?.Reset();
+        SendOverlays();
+    }
+
+    /// <summary>
+    /// Telefonun yanındaki ve harita kartının Türkçeleri TV'ye tek <c>screen</c> olayında gider (her olay öncekinin yerine
+    /// geçer); <c>overlay</c> işaretlidir, TV altyazıyı silmez.
+    /// </summary>
+    private void SendOverlays()
+    {
+        lock (overlayGate)
+        {
+            var all = (phoneWatcher?.Items ?? []).Concat(mapWatcher?.Items ?? []).ToList();
+            if (all.Count > 0)
+            {
+                server.SendScreen(all, 120_000, overlay: true);
+                overlaysShown = true;
+                Interlocked.Exchange(ref overlaysSentAt, Environment.TickCount64);
+            }
+            else if (overlaysShown)
+            {
+                server.ClearScreen();
+                overlaysShown = false;
+            }
+            Volatile.Write(ref overlaysShownFlag, overlaysShown ? 1 : 0);
+        }
     }
 
     // --- Geçmiş ---
@@ -2629,6 +2734,8 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
         {
             pipeline?.Reset();
             regionWatcher?.Reset();
+            phoneWatcher?.Reset();
+            mapWatcher?.Reset();
             server.Clear();
             dubber?.Stop();
         }
@@ -2656,6 +2763,21 @@ public sealed class AppController : INotifyPropertyChanged, IDisposable
             if (current is null) return;
             // Ek bölgeler ayrı ve seyrek okunur (saniyede bir, kendi okuyucusuyla); altyazı okumasını beklemez, onu bekletmez.
             regionWatcher?.Offer(frame, settings.WatchedAreas());
+            // Nino: telefon ve harita kartı da ayrı ve seyrek okunur (GTA 6).
+            if (PhoneGameActive)
+            {
+                if ((phoneWatcher is null || mapWatcher is null) && !overlaysUnavailable && Interlocked.Exchange(ref overlaysQueued, 1) == 0)
+                    post(() =>
+                    {
+                        Volatile.Write(ref overlaysQueued, 0);
+                        UpdateGameOverlays();
+                    });
+                mapWatcher?.Offer(frame);
+                phoneWatcher?.Offer(frame);
+                // TV yan çevirileri süresi (2 dk) dolunca kaldırır; uzun açık kalan sohbetin paneli kaybolmasın diye
+                // dakikada bir yeniden gönderilir (aynı yazılar TV'de yeniden çizilmez).
+                if (Volatile.Read(ref overlaysShownFlag) == 1 && Environment.TickCount64 - Interlocked.Read(ref overlaysSentAt) > 60_000) SendOverlays();
+            }
             var entry = frameGate.TryEnter(Environment.TickCount64);
             if (entry.Kind == FrameGate.EntryKind.Stuck)
             {

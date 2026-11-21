@@ -275,7 +275,11 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
     /// "Ekranı çevir" sonuçları: <c>screen</c> olayı her çeviriyi yazının yeri (<c>box</c>), tipik satır yüksekliği
     /// (<c>line</c>, ekrana oranla) ve çok parçalıysa <c>paragraphs</c> ile taşır. TV öncekinin yerine bunları koyar.
     /// </summary>
-    public void SendScreen(IReadOnlyList<ScreenTranslation.Item> items, int durationMs)
+    /// <param name="overlay">
+    /// Nino: oyun sürerken sürekli gelen yan çeviriler (telefonun yanındaki mesajlar, harita kartı); TV o an görünen
+    /// altyazıyı silmez. Bilgisayardaki altyazı penceresine gitmez (orada telefonun yanı yoktur, altyazının yerini kapatırdı).
+    /// </param>
+    public void SendScreen(IReadOnlyList<ScreenTranslation.Item> items, int durationMs, bool overlay = false)
     {
         var list = items.Select(item =>
         {
@@ -286,9 +290,22 @@ public sealed class SubtitleServer(int port = 8787, TimeSpan? pingInterval = nul
                 ["text"] = item.Translation,
             };
             if (item.Paragraphs) json["paragraphs"] = true;
+            // Mac ile aynı alanlar (TV sayfası bunları tanır).
+            if (item.Plain) json["plain"] = true;
+            if (item.Italic) json["italic"] = true;
+            if (item.Fill is { } fill) json["fill"] = fill;
+            if (item.Ink is { } ink) json["ink"] = ink;
+            if (item.Angle is { } angle && Math.Abs(angle) >= 0.3) json["angle"] = Math.Round(angle * 10, MidpointRounding.AwayFromZero) / 10;
+            if (item.Alpha is { } alpha) json["alpha"] = Math.Round(Math.Clamp(alpha, 0, 1) * 100, MidpointRounding.AwayFromZero) / 100;
+            if (item.Side) json["side"] = true;
+            if (item.Backdrop) json["backdrop"] = true;
+            if (item.Card) json["card"] = true;
             return json;
         }).ToList();
-        Broadcast(Frame("screen", new SortedDictionary<string, object> { ["duration"] = durationMs, ["items"] = list }), subtitle: true);
+        var payload = new SortedDictionary<string, object> { ["duration"] = durationMs, ["items"] = list };
+        if (overlay) payload["overlay"] = true;
+        Broadcast(Frame("screen", payload), subtitle: true);
+        if (overlay) return;
         // Altyazı yalnız bilgisayardaysa (TV yok) çeviriler başka hiçbir yere gitmiyordu: tuşa basınca yalnız
         // "Ekran çevriliyor…" görünüyordu.
         EventSent?.Invoke(new SubtitleEvent(SubtitleEventKind.Screen, string.Join('\n', items.Select(item => item.Translation)), durationMs,

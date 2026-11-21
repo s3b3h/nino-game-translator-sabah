@@ -28,6 +28,8 @@ public struct VisionReader: TextReader {
     /// Nino: okuma yalnız işlemcide yapılır (Neural Engine kullanılmaz). Telefon ekranı gibi sık okunan büyük ve net
     /// yazılar için: Neural Engine'deki istek sıklığı artınca Apple'ın yazı tanıması takılıp Nino'yu yeniden açtırıyordu.
     public var cpuOnly = false
+    /// Nino: hızlı düzey (Neural Engine modelini kullanmaz; yedek okuyucuda model derlenirken).
+    public var fastLevel = false
 
     public init(language: String = "en", edgeIcons: Bool = false, cpuOnly: Bool = false) {
         self.language = language
@@ -52,6 +54,13 @@ public struct VisionReader: TextReader {
         // sonraki okumalar sıraya girip birikiyordu (22 iş parçacığı) ve altyazı ancak Nino yeniden açılınca dönüyordu.
         // Artık kapı en çok `gateWait` beklenir; dolarsa takılan istek iptal edilir, yine açılmazsa kapı yenilenir (takılan
         // iş parçacığı bırakılır) ve bu kare atlanır. Sonraki kare yeni kapıdan okunur.
+        #if os(macOS)
+        // Nino 4.0.5: asıl okuma takılıyken okumalar yedek okuyucuya (ayrı süreç) gider; bu süreçteki Vision beklenmez.
+        if Self.watch.rescuing, let rescuer = Self.rescuer {
+            do { return try rescuer.read(image, language: language, deep: deep, edgeIcons: edgeIcons) }
+            catch OcrHelperReader.NotReady.warming { throw VisionBusy() }
+        }
+        #endif
         let gate = Self.watch.gate
         guard gate.lock(before: Date().addingTimeInterval(Self.gateWait)) else {
             // Nino: kapıyı tutan okuma kısa süredir sürüyorsa takılma yoktur, yalnız sıra kalabalıktır (telefon, altyazı,
@@ -61,6 +70,18 @@ public struct VisionReader: TextReader {
             // Takılma Neural Engine'de (TextRecognition bir semaforda sonsuza dek bekliyor; sonraki her istek aynı
             // dedektörün sırasına girip o da takılıyordu). Bundan sonraki okumalar işlemcide (CPU) yapılır: ayrı bir
             // dedektör açılır, altyazı Nino'yu kapatıp açmadan sürer.
+            #if os(macOS)
+            // Nino 4.0.5: Vision'ın kilidi süreç genelinde; takılan okumanın yanına bu süreçte yenisi verilmez. Okumalar
+            // yedek okuyucuya geçer; takılan okuma bitince (Watch.released) asıl okuyucuya dönülür. PS5 bağlantısı kopmaz.
+            if let rescuer = Self.rescuer, !rescuer.isExhausted {
+                Self.watch.cancelRunning()
+                if Self.watch.beginRescue() {
+                    Self.onLog?("Vision okuması \(Self.watch.holdingInfo) takıldı; okumalar yedek okuyucuya (ayrı süreç) geçti\(rescuer.isReady ? "" : " (yedek henüz ısınıyor)"), PS5 bağlantısı sürüyor")
+                }
+                do { return try rescuer.read(image, language: language, deep: deep, edgeIcons: edgeIcons) }
+                catch OcrHelperReader.NotReady.warming { throw VisionBusy() }
+            }
+            #endif
             Self.watch.switchToCPU()
             Self.watch.cancelRunning()
             guard gate.lock(before: Date().addingTimeInterval(1)) else {
@@ -78,7 +99,12 @@ public struct VisionReader: TextReader {
         }
         Self.watch.took(holderInfo(image))
         defer { Self.watch.released(); gate.unlock() }
-        return deep ? try Self.firstLines(of: image, using: recognize) : try recognize(image)
+        let reading = deep ? try Self.firstLines(of: image, using: recognize) : try recognize(image)
+        #if os(macOS)
+        // Nino 4.0.5: yedek okuyucu oturumun ilk başarılı okumasında bu kareyle ısıtılır (açıksa bir şey yapmaz).
+        if let rescuer = Self.rescuer, !reading.lines.isEmpty { rescuer.prepare(image, language: language) }
+        #endif
+        return reading
     }
 
     /// Kapı en çok bu kadar beklenir (saniye); normal bir okuma 0,1-0,5 sn sürer.
@@ -116,7 +142,30 @@ public struct VisionReader: TextReader {
 
         /// Kapıyı şu an tutan okuma ne zamandır sürüyor (kapı boşsa nil).
         var heldFor: TimeInterval? { lock.withLock { holderSince.map { Date().timeIntervalSince($0) } } }
-        func released() { lock.withLock { holderSince = nil } }
+        func released() {
+            let rescued: Date? = lock.withLock {
+                holderSince = nil
+                defer { rescueSince = nil }
+                return rescueSince
+            }
+            // Nino 4.0.5: takılan asıl okuma sonunda bitti; okumalar asıl okuyucuya döner, yedek kapanır.
+            if let rescued {
+                VisionReader.onLog?(String(format: "asıl okuyucu düzeldi (%.0f sn yedekte okundu)", Date().timeIntervalSince(rescued)))
+                #if os(macOS)
+                VisionReader.rescuer?.standDown()
+                #endif
+            }
+        }
+
+        /// Nino 4.0.5: okumalar yedekte mi (asıl okuma takılı).
+        private var rescueSince: Date?
+        var rescuing: Bool { lock.withLock { rescueSince != nil } }
+        /// Yedeğe geçer; zaten yedekteyse false.
+        func beginRescue() -> Bool { lock.withLock { guard rescueSince == nil else { return false }; rescueSince = Date(); return true } }
+        /// Kapıyı tutan okuma ve ne zamandır sürdüğü (günlük için).
+        var holdingInfo: String {
+            lock.withLock { "(" + holder + (holderSince.map { String(format: ", %.1f sn", Date().timeIntervalSince($0)) } ?? "") + ")" }
+        }
 
         /// Neural Engine takıldıysa okumalar işlemcide yapılır (bu oturum boyunca).
         var usesCPU: Bool { lock.withLock { cpu } }
@@ -157,6 +206,15 @@ public struct VisionReader: TextReader {
     }
 
     static let watch = Watch()
+
+    #if os(macOS)
+    /// Nino 4.0.5: takılmada okumaları devralan yedek okuyucu (Mac uygulaması kurar; yoksa eski davranış).
+    nonisolated(unsafe) public static var rescuer: OcrHelperReader?
+    #endif
+    /// Nino: okuyucu olayları için günlük (Mac uygulaması kurar).
+    nonisolated(unsafe) public static var onLog: (@Sendable (String) -> Void)?
+    /// Yedek okuyucu şu an kullanılıyor mu (asıl Vision takılı).
+    public static var isRescuing: Bool { watch.rescuing }
 
     /// Nino: takılma anında kapıyı tutan okuma (günlüğe yazılır; hangi okumanın takıldığı anlaşılsın).
     public static var stuckInfo: String { watch.stuckInfo }
@@ -246,7 +304,7 @@ public struct VisionReader: TextReader {
         // İstek açıkken iç içe istek açmak Vision'ın sınırlı iş kuyruğunu doldurup okumayı kilitliyordu.
         let raw: [RawLine] = try autoreleasepool {
             let request = VNRecognizeTextRequest()
-            request.recognitionLevel = .accurate
+            request.recognitionLevel = fastLevel ? .fast : .accurate
             request.recognitionLanguages = [language]
             request.usesLanguageCorrection = true
             if cpuOnly || Self.watch.usesCPU { Self.runOnCPU(request) }

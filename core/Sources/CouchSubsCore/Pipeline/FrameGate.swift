@@ -35,6 +35,9 @@ public struct FrameGate {
     /// Bir kare işleniyor mu.
     public var isBusy: Bool { current != nil }
 
+    /// Süren okuma kaç milisaniyedir sürüyor (boşsa nil).
+    public func heldMs(now: Int) -> Int? { current.map { now - $0.since } }
+
     /// `now`: milisaniye saati (`SubtitleStabilizer.uptimeMs`).
     public mutating func enter(now: Int) -> Entry {
         if let current {
