@@ -132,6 +132,17 @@ public struct VisionReader: TextReader {
             }
         }
 
+        /// Nino 4.0.4: takılan okuma bırakılır, kapı yenilenir ve takılma bayrağı silinir (Mac uygulamayı kapatmadan
+        /// okumayı yeniden kurar; PS5 bağlantısı kopmaz).
+        func recover() {
+            lock.withLock {
+                current = NSLock()
+                wasStuck = false
+                holderSince = nil
+                cpu = true
+            }
+        }
+
         /// Bir okuma takıldı ve kapı yenilendi (Nino: Mac bunu görünce kendini yeniden açar; aynı süreçte Vision düzelmiyor).
         private var wasStuck = false
         var stuck: Bool { lock.withLock { wasStuck } }
@@ -154,6 +165,13 @@ public struct VisionReader: TextReader {
         "\(image.width)×\(image.height)" + (cpuOnly ? " işlemci" : "") + (deepLabel)
     }
     private var deepLabel: String { edgeIcons ? " simgeli" : "" }
+
+    /// Nino 4.0.4: takılmadan sonra uygulamayı kapatmadan devam: süren istekler iptal edilir, takılan okuma bırakılır ve
+    /// bundan sonraki okumalar işlemcide (Neural Engine'siz) yapılır.
+    public static func recoverInProcess() {
+        watch.cancelRunning()
+        watch.recover()
+    }
 
     /// Vision bu süreçte takıldı mı (bkz. `Watch.replace`).
     public static var isStuck: Bool { watch.stuck }

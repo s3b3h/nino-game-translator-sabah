@@ -1663,6 +1663,27 @@ final class AppModel: ObservableObject {
         NSApplication.shared.terminate(nil)
     }
 
+    /// Son kez Nino kapanmadan okuma yeniden kurulduğu an.
+    private var lastReadRecovery: Date?
+
+    /// Nino 4.0.4: Okuma takılınca Nino artık kendini kapatıp açmaz (PS5 bağlantısı kopuyordu, 21 Kasım 2026: 25-60 dk
+    /// oyundan sonra). Önce aynı süreçte okuma hattı yeniden kurulur ve yazı tanıma işlemciye geçer; PS5 akışı sürer.
+    /// Yalnız 10 dk içinde yeniden takılırsa (aynı süreçte düzelmiyor demektir) son çare olarak yeniden açılır.
+    private func recoverStuckReading(_ why: String) {
+        guard isRunning else { return }
+        if let last = lastReadRecovery, Date().timeIntervalSince(last) < 600 {
+            SubtitleLog.write("\(why); 10 dk içinde ikinci takılma")
+            relaunchAfterStuckReading()
+            return
+        }
+        lastReadRecovery = Date()
+        SubtitleLog.write("\(why); Nino kapanmadan okuma yeniden kuruluyor (yazı tanıma işlemcide, PS5 bağlantısı sürüyor)")
+        VisionReader.recoverInProcess()
+        regionWatcher?.reset()
+        regionWatcher = nil
+        makePipeline()
+    }
+
     /// Takılma yüzünden yeniden açıldıysa (son 2 dk içinde) çeviri kendiliğinden başlar.
     func resumeIfRelaunched() async {
         let at = UserDefaults.standard.double(forKey: Self.resumeKey)
@@ -3664,8 +3685,7 @@ final class AppModel: ObservableObject {
         if isRunning { watchCorners(frame); identifyGameIfNeeded(frame); clearStaleMessage(); watchPhone(frame) }
         // Köşe okuması Vision'ın takıldığını 4-5 sn'de fark eder (kapı açılmaz); 15 sn beklemeden yeniden açılır.
         if isRunning, VisionReader.isStuck {
-            SubtitleLog.write("Vision okuması takıldı (köşe okuması fark etti; takılan okuma: \(VisionReader.stuckInfo))")
-            relaunchAfterStuckReading()
+            recoverStuckReading("Vision okuması takıldı (köşe okuması fark etti; takılan okuma: \(VisionReader.stuckInfo))")
             return
         }
         guard pipeline != nil else { return }
@@ -3674,17 +3694,11 @@ final class AppModel: ObservableObject {
         if regionWatcher == nil, !areas.isEmpty, let pipeline { regionWatcher = makeRegionWatcher(packLookup: regionPackLookup) }
         regionWatcher?.offer(frame, areas: areas)
         // Önceki kare hâlâ işleniyorsa bu kare atlanır; okuma kareleri biriktirmez.
-        var entry = frameGate.enter(now: SubtitleStabilizer.uptimeMs())
+        let entry = frameGate.enter(now: SubtitleStabilizer.uptimeMs())
         if case .stuck(let ms) = entry {
-            // Okuma bitmedi: önizleme canlıyken altyazı hiç gelmiyordu ve ancak uygulamayı kapatıp açmak düzeltiyordu.
-            SubtitleLog.write("okuma \(ms) ms'dir bitmedi; okuma hattı yeniden kuruldu")
-            // Apple'ın yazı tanıması takılınca (Neural Engine) aynı süreçte bir daha düzelmiyor; Nino'yu kapatıp açmak
-            // düzeltiyordu. 90 sn içinde iki kez takılırsa Nino kendini yeniden açar ve çeviriye kendiliğinden döner. (Arada
-            // hata verip biten kısa okumalar sayacı sıfırlamaz: takılı motor her okumayı birkaç saniyede reddediyordu.)
-            // Kullanıcı: takılınca 40 sn altyazı kaçıyordu. Artık ilk takılmada yeniden açılır.
-            relaunchAfterStuckReading()
+            // Okuma bitmedi (Apple'ın yazı tanıması takıldı): önce Nino kapanmadan okuma yeniden kurulur (bkz. recoverStuckReading).
+            recoverStuckReading("okuma \(ms) ms'dir bitmedi")
             return
-            entry = frameGate.enter(now: SubtitleStabilizer.uptimeMs())
         }
         guard case .enter(let token) = entry, let pipeline else { return }
         await pipeline.process(frame, region: readRegion, capturedAt: capturedAt)
