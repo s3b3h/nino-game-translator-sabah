@@ -17,23 +17,27 @@ public static class RightToLeft
     public static bool Interface => Localizer.Current.IsRightToLeft;
 
     /// <summary>Uygulama açılırken, ilk pencereden önce bir kez çağrılır: bütün pencereler arayüzün yönüyle açılır.</summary>
+    /// <remarks>
+    /// Nino 4.0.2: Eskiden <c>FlowDirectionProperty.OverrideMetadata(typeof(Window), …)</c> ile bütün pencerelerin
+    /// varsayılan yönü değiştiriliyordu. Arapça Windows'ta bu, WPF'in <c>Image</c> sınıfının ilk kullanımında
+    /// "The type initializer for 'System.Windows.Controls.Image' threw an exception" hatasıyla açılışta çöküyordu (Image'ın
+    /// kendi varsayılan stili de yönü ayarlar). Artık genel üst veriye dokunulmaz: her pencere yüklenirken, kendi yönü
+    /// verilmemişse sağdan sola yapılır.
+    /// </remarks>
     public static void ApplyInterfaceDirection()
     {
         if (!Interface) return;
-        try
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler((sender, _) =>
         {
-            FrameworkElement.FlowDirectionProperty.OverrideMetadata(typeof(Window),
-                new FrameworkPropertyMetadata(FlowDirection.RightToLeft, FrameworkPropertyMetadataOptions.Inherits | FrameworkPropertyMetadataOptions.AffectsParentArrange));
-        }
-        catch (ArgumentException)
-        {
-            // Üst veri zaten verilmişse pencereler açılırken tek tek sağdan sola yapılır.
-            EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler((sender, _) =>
-            {
-                if (sender is Window window && window.ReadLocalValue(FrameworkElement.FlowDirectionProperty) == DependencyProperty.UnsetValue)
-                    window.FlowDirection = FlowDirection.RightToLeft;
-            }));
-        }
+            if (sender is Window window) Apply(window);
+        }));
+    }
+
+    /// <summary>Arayüz sağdan solaysa pencereyi sağdan sola yapar (kendi yönü verilmişse dokunmaz).</summary>
+    public static void Apply(Window window)
+    {
+        if (Interface && window.ReadLocalValue(FrameworkElement.FlowDirectionProperty) == DependencyProperty.UnsetValue)
+            window.FlowDirection = FlowDirection.RightToLeft;
     }
 
     public static void KeepLeftToRight(FrameworkElement element) => element.FlowDirection = FlowDirection.LeftToRight;

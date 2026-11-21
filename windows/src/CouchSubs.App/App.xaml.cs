@@ -63,6 +63,8 @@ public partial class App : Application
         };
         var window = new ShellWindow(controller);
         MainWindow = window;
+        // Ana pencere ilk çizimden önce yönünü alır (öbürleri yüklenirken; bkz. RightToLeft).
+        RightToLeft.Apply(window);
         window.Show();
     }
 }
