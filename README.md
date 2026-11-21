@@ -58,6 +58,19 @@ Bir dahaki sefere yalnız 3. adım yeterlidir. Takılırsanız uygulamadaki **Ni
 
 ## ✨ V4.0'da yenilikler
 
+<p align="center">
+  <img src="docs/nino/v4/tanitim/01-nino-v4-kapak.jpg" width="170" alt="Nino Game Translator v4 yayında">&nbsp;
+  <img src="docs/nino/v4/tanitim/02-oyun-ici-mesajlar.jpg" width="170" alt="Oyundaki telefon artık Türkçe">&nbsp;
+  <img src="docs/nino/v4/tanitim/03-harita-gorevleri.jpg" width="170" alt="Harita görevleri Türkçe">&nbsp;
+  <img src="docs/nino/v4/tanitim/04-yeni-altyazi-stili.jpg" width="170" alt="Yeni altyazı stili">&nbsp;
+  <img src="docs/nino/v4/tanitim/05-ceviri-kalitesi.jpg" width="170" alt="Daha kaliteli çeviri"><br>
+  <img src="docs/nino/v4/tanitim/06-arac-cagirma.jpg" width="170" alt="Aracını Türkçe çağır">&nbsp;
+  <img src="docs/nino/v4/tanitim/07-banka-menusu.jpg" width="170" alt="Banka menüsü Türkçe">&nbsp;
+  <img src="docs/nino/v4/tanitim/08-antrenman-menusu.jpg" width="170" alt="Antrenman menüsü Türkçe">&nbsp;
+  <img src="docs/nino/v4/tanitim/09-oyun-ici-haberler.jpg" width="170" alt="Oyun içi haberler Türkçe">&nbsp;
+  <img src="docs/nino/v4/tanitim/10-cihaz-guncellemeleri.jpg" width="170" alt="Beş uygulama güncellendi">
+</p>
+
 - 📱 **Oyundaki telefon Türkçe (Mac):** Mesajlar gönderenin adıyla, sağda ve solda kendi balonlarında; haber, banka, taksi ve spor uygulamaları kendi renkleriyle. Karanlıkta, parlamada ve gün ışığında da okunur.
 - 🗺️ **Harita görev kartları (Mac):** Kartın tamamı, ikinci paragrafıyla birlikte okunur. Türkçesi kartın altına sığdırılır, İngilizcenin üstüne binmez. Kenarı Türk bayrağı kırmızı-beyazı.
 - 🧊 **Buzlu altyazı zemini:** Altyazının arkası oyunun kendi altyazısı gibi buzlu cam. Sahne aydınlıksa koyulaşır, karanlıksa açılır.
