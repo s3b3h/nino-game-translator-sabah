@@ -44,6 +44,18 @@ Bir dahaki sefere yalnız 3. adım yeterlidir. Takılırsanız uygulamadaki **Ni
 
 Başlığa tıklayın, rehber açılır. Sorunuzun cevabı büyük ihtimalle burada.
 
+**Resimli rehberler** (resme tıklayınca büyür):
+
+<p align="center">
+  <a href="docs/nino/v4/rehber/android-tv.jpg"><img src="docs/nino/v4/rehber/android-tv.jpg" width="210" alt="Android TV resimli rehber"></a>&nbsp;
+  <a href="docs/nino/v4/rehber/samsung.jpg"><img src="docs/nino/v4/rehber/samsung.jpg" width="210" alt="Samsung TV resimli rehber"></a>&nbsp;
+  <a href="docs/nino/v4/rehber/lg.jpg"><img src="docs/nino/v4/rehber/lg.jpg" width="210" alt="LG TV resimli rehber"></a>&nbsp;
+  <a href="docs/nino/v4/rehber/iphone.jpg"><img src="docs/nino/v4/rehber/iphone.jpg" width="210" alt="iPhone ve iPad resimli rehber"></a><br>
+  <sub>Android TV · Samsung · LG · iPhone/iPad</sub>
+</p>
+
+> 🤖 **Takıldınız mı?** Nino uygulamasında sağ alttaki **robota (Nino'ya Sor)** dokunun, TV'nizin markasını ve ne gördüğünüzü yazın. Ekran ekran anlatır; ekran görüntüsü de gönderebilirsiniz.
+
 <a name="rehber-mac"></a>
 <details>
 <summary><b>🍎 Mac'e kurulum</b></summary>
@@ -90,6 +102,9 @@ Daha önce kuruluysa yeni sürüm eskisinin üstüne kurulur, ayarlarınız kal�
 <details>
 <summary><b>📱 iPhone / iPad'e kurulum</b></summary>
 
+<p align="center"><img src="docs/nino/v4/rehber/iphone.jpg" width="880" alt="iPhone ve iPad kurulumu ekran ekran"></p>
+
+
 1. App Store'dan Apple'ın ücretsiz **TestFlight** uygulamasını kurun.
 2. Bu bağlantıyı iPhone'da açın: **[TestFlight ile Nino](https://testflight.apple.com/join/1K3Q1KXp)** ve **Yükle**'ye dokunun.
 3. Kurulum adımları Android ile aynı: dil → konsol → [ikinci PSN hesabı](#rehber-psn) → 8 haneli kod → Nino ekranındaki fişe dokunun (gerçek kabloya değil).
@@ -122,6 +137,9 @@ Bu bir kez yapılır. Sonra her seferinde yalnız oyunu açıp Nino ekranındaki
 <a name="rehber-androidtv"></a>
 <details>
 <summary><b>📺 Android TV / Google TV'ye kurulum (TCL, iFFALCON, Sony, Philips, Xiaomi, Hisense, Vestel, Arçelik, Beko, Grundig, Toshiba…) — adım adım</b></summary>
+
+<p align="center"><img src="docs/nino/v4/rehber/android-tv.jpg" width="880" alt="Android TV kurulumu ekran ekran"></p>
+
 
 **Ne yapacağız?** TV'ye **Nino TV** uygulamasını kuracağız. Altyazı, oyunun üstünde bu uygulamayla görünür. Kurulumu bilgisayardaki ya da telefondaki Nino **kendisi yapar**; sizin tek işiniz TV'de bir kez "geliştirici modu"nu açmak. Bu bir kez yapılır, yaklaşık 3 dakika sürer. TV'ye zarar vermez, garantiyi bozmaz.
 
@@ -174,6 +192,9 @@ Hâlâ olmuyorsa uygulamadaki **Nino'ya Sor** robotuna TV'nizin markasını yaz�
 <details>
 <summary><b>📺 Samsung TV ve Samsung akıllı monitör (2016 ve sonrası) (deneysel)</b></summary>
 
+<p align="center"><img src="docs/nino/v4/rehber/samsung.jpg" width="880" alt="Samsung TV kurulumu ekran ekran"></p>
+
+
 1. TV'de **Uygulamalar** ekranını açın. 2022 ve sonrası modellerde sayfanın **en altına** inip **Uygulama Ayarları**'nı seçin.
 2. Kumandayla **1 2 3 4 5** yazın (rakam tuşu yoksa **123** tuşuna basıp ekrandan seçin). **Geliştirici modu** penceresi açılır.
 3. **Developer mode**'u **On** yapın.
@@ -187,6 +208,9 @@ Pencere açılmıyorsa TV'yi tam yeniden başlatıp tekrar deneyin; bazı TV'ler
 <a name="rehber-lg"></a>
 <details>
 <summary><b>📺 LG TV (webOS) (deneysel)</b></summary>
+
+<p align="center"><img src="docs/nino/v4/rehber/lg.jpg" width="880" alt="LG TV kurulumu ekran ekran"></p>
+
 
 1. [webostv.developer.lge.com](https://webostv.developer.lge.com)'da ücretsiz **LG geliştirici hesabı** açın.
 2. TV'de LG Content Store'dan **Developer Mode** uygulamasını kurun ve hesabınızla girin.
