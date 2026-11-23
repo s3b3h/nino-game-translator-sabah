@@ -1,0 +1,58 @@
+name: build-my-apk
+
+on:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply my changes
+        run: |
+          cp nino-changes.patch /tmp/nino-changes.patch
+          git checkout f1620079d770be4df1ed2bf429ce113e8fec9243
+          git apply --ignore-whitespace --verbose /tmp/nino-changes.patch
+
+      - name: Install beside the old app
+        run: sed -i "s/applicationId 'com.ninotranslator.mobile'/applicationId 'com.ninotranslator.mobile.mod'/" couchsubs-android/app/build.gradle
+
+      - name: chiaki-ng submodules
+        run: |
+          git submodule update --init --depth 1 third-party/chiaki-ng
+          git -C third-party/chiaki-ng submodule update --init --depth 1 third-party/nanopb third-party/jerasure third-party/gf-complete third-party/curl
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.11.1
+
+      - name: Python and protoc
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq protobuf-compiler > /dev/null
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet protobuf grpcio-tools
+          echo "COUCHSUBS_PYTHON=$RUNNER_TEMP/venv/bin/python3" >> "$GITHUB_ENV"
+
+      - name: NDK and CMake
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;27.0.12077973" "cmake;3.22.1" > /dev/null
+
+      - name: Build APK
+        working-directory: couchsubs-android
+        run: |
+          gradle assembleDebug -Pcouchsubs.patchChiaki=true --no-daemon
+          mkdir -p ../dist
+          cp app/build/outputs/apk/debug/*.apk ../dist/Nino-Modified.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nino-Modified-APK
+          path: dist/Nino-Modified.apk
+          if-no-files-found: error
