@@ -1,0 +1,183 @@
+diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/TranslationService.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/TranslationService.kt
+index e4bb6d6..234d8d3 100644
+--- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/TranslationService.kt
++++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/TranslationService.kt
+@@ -772,7 +772,12 @@ class TranslationService : Service() {
+                 val reader = screenReader ?: SubtitleReader().also { screenReader = it }
+                 val reading = reader.read(pixels)
+                 // Yapay zekâda ekranın bütün yazıları tek istekte gider (bkz. AiTranslator.translateAll).
+-                val translator = TargetAwareTranslator(free.separate().let { line -> poolFirst(onlineTranslator(line) ?: line, line) }, target)
++                // Nino: çevrimiçi motor (DeepL, Gemini...) seçiliyse ekran çevirisi hazır oyun paketine (havuz) bakmadan doğrudan
++                // onunla yapılır; havuz oyun altyazıları içindir, menü ve görev yazılarında yanlış eşleşme veriyordu.
++                val translator = TargetAwareTranslator(free.separate().let { line ->
++                    val online = onlineTranslator(line)
++                    if (online != null) online else poolFirst(line, line)
++                }, target)
+                 val items = ScreenTranslation.translate(reading, translator, { screenGeneration.get() != generation }) { shown ->
+                     if (screenGeneration.get() != generation) return@translate
+                     val milliseconds = ScreenTranslation.displayMilliseconds(shown)
+diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/settings/AppSettings.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/settings/AppSettings.kt
+index d18faa8..43767fc 100644
+--- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/settings/AppSettings.kt
++++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/settings/AppSettings.kt
+@@ -480,6 +480,14 @@ class AppSettings(private val appContext: Context) : com.couchsubs.mobile.core.D
+         get() = prefs.getInt("subtitleScale", 100).coerceIn(MIN_SUBTITLE_SCALE, MAX_SUBTITLE_SCALE)
+         set(value) = prefs.edit().putInt("subtitleScale", value.coerceIn(MIN_SUBTITLE_SCALE, MAX_SUBTITLE_SCALE)).apply()
+ 
++    /**
++     * Telefon ekranında "Ekranı çevir" sonuçlarının yazı ölçeği, yüzde (70–250). Altyazı ölçeğinden bağımsızdır;
++     * altyazı ekranındaki A+ / A- düğmeleriyle değişir.
++     */
++    var screenTextScale: Int
++        get() = prefs.getInt("screenTextScale", 100).coerceIn(70, 250)
++        set(value) = prefs.edit().putInt("screenTextScale", value.coerceIn(70, 250)).apply()
++
+     /** Profil › Kullanım verisi: hata ve kullanım istatistikleri (Firebase, Meta olay adları). Varsayılan açık. */
+     var usageData: Boolean
+         get() = prefs.getBoolean("usageData", true)
+diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/translation/OnlineTranslators.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/translation/OnlineTranslators.kt
+index aac60d6..ab713df 100644
+--- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/translation/OnlineTranslators.kt
++++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/translation/OnlineTranslators.kt
+@@ -342,6 +342,10 @@ class DeepLTranslator(
+         /** Kalıcı önbellek dosyasındaki motor adı (iPhone ile aynı). */
+         const val ENGINE_ID = "deepl"
+ 
++        /** "Ekranı çevir"de bir istekte giden en çok parça (DeepL bir istekte en çok 50 metin kabul eder). */
++        const val SCREEN_BATCH = 40
++        const val SCREEN_TIMEOUT_MS = 15_000
++
+         /** Ücretsiz anahtarlar ":fx" ile biter ve ayrı adrese gider. */
+         fun baseUrl(key: String) = if (key.trim().endsWith(":fx")) "https://api-free.deepl.com/v2/" else "https://api.deepl.com/v2/"
+ 
+@@ -375,6 +379,47 @@ class DeepLTranslator(
+         context
+     }
+ 
++    // Nino: "Ekranı çevir" tek istekte çok parça gönderir; bu istek için bekleme süresi uzatılır (varsayılan 4 sn).
++    private var timeoutMs = 4000
++
++    override val translatesTogether: Boolean get() = true
++
++    /**
++     * Nino: "Ekranı çevir" için DeepL'e ekrandaki bütün parçalar tek istekte (en çok [SCREEN_BATCH]) gider. Önceden
++     * parça başına ayrı istek gidiyor, 4 sn'yi aşan ya da hata veren ilk istekte bir dakika boyunca DeepL bırakılıp
++     * ücretsiz yerel çeviriye düşülüyordu; kullanıcı DeepL anahtarının kullanılmadığını sanıyordu.
++     */
++    override fun translateAll(texts: List<String>): List<String> {
++        val results = texts.map { cache.get(cacheKey(it, null)) }.toMutableList()
++        val missing = texts.indices.filter { results[it] == null }
++        var stopped = paused()
++        for (chunk in missing.chunked(SCREEN_BATCH)) {
++            if (stopped) break
++            if (Thread.currentThread().isInterrupted) throw InterruptedException()
++            // BÜYÜK HARFLİ menü yazıları ("PRESS START") normal yazıya çevrilir; DeepL büyük harfi daha iyi çevirir.
++            val sentences = chunk.map { SubtitleSegmenter.normalizeCase(texts[it], extraNames) }
++            countRequest()
++            try {
++                timeoutMs = SCREEN_TIMEOUT_MS
++                val translated = request(sentences, "", null)
++                succeeded()
++                for ((index, translation) in chunk.zip(translated)) {
++                    results[index] = translation
++                    cache.store(cacheKey(texts[index], null), translation)
++                }
++            } catch (error: IOException) {
++                failed(error)
++                stopped = true
++            } catch (error: JSONException) {
++                failed(error)
++                stopped = true
++            } finally {
++                timeoutMs = 4000
++            }
++        }
++        return texts.indices.map { results[it] ?: localTranslation(texts[it]) }
++    }
++
+     override fun request(sentences: List<String>, context: String, game: String?): List<String> {
+         // Sözlükteki adlar etiketle korunur; etiket varsa istek XML olarak gider, diğer cümleler de kaçırılır.
+         val wrapped = sentences.map { DeepLMarkup.wrap(it, glossary) }
+@@ -382,7 +427,7 @@ class DeepLTranslator(
+         val sources = if (tagged) sentences.indices.map { wrapped[it] ?: DeepLMarkup.escape(sentences[it]) } else sentences
+         val (status, response) = http.send(
+             "POST", baseUrl(key) + "translate",
+-            mapOf("Authorization" to "DeepL-Auth-Key $key", "Content-Type" to "application/json"), body(sources, context, tagged, target), 4000,
++            mapOf("Authorization" to "DeepL-Auth-Key $key", "Content-Type" to "application/json"), body(sources, context, tagged, target), timeoutMs,
+         )
+         if (status !in 200..299) throw OnlineException(failure(status))
+         val list = JSONObject(response).optJSONArray("translations") ?: throw OnlineException(OnlineKeyState.UNREACHABLE)
+diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
+index 416c58f..9d1dc2f 100644
+--- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
++++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
+@@ -24,6 +24,9 @@ import androidx.compose.foundation.layout.offset
+ import androidx.compose.foundation.layout.widthIn
+ import androidx.compose.ui.unit.dp
+ import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Add
++import androidx.compose.material.icons.filled.Remove
++import androidx.compose.foundation.layout.absoluteOffset
+ import androidx.compose.material.icons.filled.Close
+ import androidx.compose.material.icons.filled.Delete
+ import androidx.compose.material.icons.filled.Search
+@@ -109,6 +112,7 @@ class PhoneSubtitleActivity : ComponentActivity() {
+         setContent {
+             CouchSubsTheme {
+                 val status by LiveState.status.collectAsState()
++                var screenScale by remember { androidx.compose.runtime.mutableIntStateOf(settings.screenTextScale) }
+                 LaunchedEffect(Unit) {
+                     delay(10_000)
+                     // Nino: yalnız kısılır; parlaklığı zaten düşük olanınki yükseltilmez.
+@@ -132,6 +136,11 @@ class PhoneSubtitleActivity : ComponentActivity() {
+                         }
+                         status.packInUse?.let { Pill(stringResource(R.string.running_pack, it), pro = true) }
+                         Spacer(Modifier.weight(1f))
++                        // Nino: "Ekranı çevir" yazısını küçült / büyüt (kalıcı; bir sonraki çeviride de geçerli).
++                        if (connected) {
++                            IconAction(Icons.Filled.Remove, "A-") { screenScale = (screenScale - 15).coerceAtLeast(70); settings.screenTextScale = screenScale }
++                            IconAction(Icons.Filled.Add, "A+") { screenScale = (screenScale + 15).coerceAtMost(250); settings.screenTextScale = screenScale }
++                        }
+                         if (connected) IconAction(
+                             if (status.screenState == LiveStatus.ScreenState.IDLE) Icons.Filled.Search else Icons.Filled.Delete,
+                             stringResource(if (status.screenState == LiveStatus.ScreenState.IDLE) R.string.screen_translate else R.string.screen_remove),
+@@ -166,14 +175,21 @@ class PhoneSubtitleActivity : ComponentActivity() {
+                     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+                         status.screen.forEach { item ->
+                             val box = item.box
+-                            val width = maxOf(60.dp, maxWidth * (box.right - box.left).toFloat())
+-                            val size = (maxHeight.value * item.lineHeight * 0.8).coerceIn(10.0, 28.0).toFloat()
+-                            Text(item.translation, style = Tokens.Type.caption.copy(fontSize = size.sp, lineHeight = (size * 1.2f).sp),
+-                                color = Tokens.Color.text, textAlign = TextAlign.Start,
++                            // Nino: yazı ölçeği kullanıcının A+ / A- düğmeleriyle (varsayılan %100) belirlenir.
++                            val size = ((maxHeight.value * item.lineHeight * 0.8).coerceIn(10.0, 28.0) * screenScale / 100f).toFloat()
++                            // Yazı büyüdükçe kutu da genişler; ekranın sağından taşmaz.
++                            val width = minOf(maxWidth, maxOf(60.dp, maxWidth * (box.right - box.left).toFloat() * (screenScale / 100f).coerceAtLeast(1f)))
++                            val left = minOf(maxWidth * box.left.toFloat(), maxWidth - width)
++                            // Nino: absoluteOffset sola/sağa göre ayna çevrilmez. offset() Arapça (sağdan sola) arayüzde x'i sağdan sayıp
++                            // çeviriyi ekranın öbür yanına koyuyordu; çeviri oyundaki İngilizce yazının yerinde kalmalı.
++                            // Y: yazının üst kenarı; büyütünce aşağı doğru uzar.
++                            Text(item.translation, style = Tokens.Type.caption.copy(fontSize = size.sp, lineHeight = (size * 1.3f).sp),
++                                // Nino: Tokens.Color.text koyu mavi (açık tema yazı rengi) siyah zeminde okunmuyordu; sabit beyaz.
++                                color = SUBTITLE_WHITE, textAlign = TextAlign.Start,
+                                 modifier = Modifier
+-                                    .offset(x = maxWidth * box.left.toFloat(), y = maxHeight * ((box.top + box.bottom) / 2).toFloat() - (size * 0.8f).dp)
++                                    .absoluteOffset(x = left, y = maxOf(0.dp, maxHeight * box.top.toFloat() - 2.dp))
+                                     .width(width)
+-                                    .background(Color.Black.copy(alpha = 0.85f), androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
++                                    .background(Color.Black.copy(alpha = 0.9f), androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                                     .padding(4.dp))
+                         }
+                     }
+@@ -181,9 +197,9 @@ class PhoneSubtitleActivity : ComponentActivity() {
+                     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+                         status.regions.forEach { region ->
+                             val box = region.box ?: com.couchsubs.mobile.core.TextBox(0.6, 0.05, 0.95, 0.2)
+-                            Text(region.text, style = Tokens.Type.caption, color = Tokens.Color.text,
++                            Text(region.text, style = Tokens.Type.caption, color = SUBTITLE_WHITE,
+                                 modifier = Modifier
+-                                    .offset(x = maxWidth * box.left.toFloat(), y = maxHeight * box.top.toFloat())
++                                    .absoluteOffset(x = maxWidth * box.left.toFloat(), y = maxHeight * box.top.toFloat())
+                                     .widthIn(min = 120.dp, max = maxOf(120.dp, maxWidth * (box.right - box.left).toFloat()))
+                                     .background(Color.Black.copy(alpha = 0.8f), androidx.compose.foundation.shape.RoundedCornerShape(6.dp))
+                                     .padding(6.dp))
