@@ -108,7 +108,7 @@ index aac60d6..ab713df 100644
          if (status !in 200..299) throw OnlineException(failure(status))
          val list = JSONObject(response).optJSONArray("translations") ?: throw OnlineException(OnlineKeyState.UNREACHABLE)
 diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
-index 416c58f..9d1dc2f 100644
+index 416c58f..617bc2d 100644
 --- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
 +++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
 @@ -24,6 +24,9 @@ import androidx.compose.foundation.layout.offset
@@ -121,27 +121,42 @@ index 416c58f..9d1dc2f 100644
  import androidx.compose.material.icons.filled.Close
  import androidx.compose.material.icons.filled.Delete
  import androidx.compose.material.icons.filled.Search
-@@ -109,6 +112,7 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -100,7 +103,6 @@ class PhoneSubtitleActivity : ComponentActivity() {
+         }
+         // Nino: zemin her zaman siyah; uygulamanın (açık temalı) yazı renkleri burada okunmaz, altyazı renkleri sabittir.
+         val color = if (settings.textColor == SubtitleTextColor.YELLOW) SUBTITLE_YELLOW else SUBTITLE_WHITE
+-        val scale = settings.subtitleScale / 100f
+         // "Hızlı konuşmada önceki satırları üstte tut" kapalıysa soluk önceki satır gösterilmez (TV ve Windows ile aynı).
+         val stackPrevious = settings.stackPrevious
+         // Ayarlar'daki yazı tipi (TV ile aynı); bu yazı tiplerinde olmayan harfler sistemin yazı tipinden gelir.
+@@ -109,6 +111,10 @@ class PhoneSubtitleActivity : ComponentActivity() {
          setContent {
              CouchSubsTheme {
                  val status by LiveState.status.collectAsState()
 +                var screenScale by remember { androidx.compose.runtime.mutableIntStateOf(settings.screenTextScale) }
++                // Nino: canlı altyazının yazı ölçeği (Ayarlar'daki "altyazı ölçeği" ile aynı değer) ekrandaki düğmelerle değişir.
++                var liveScale by remember { androidx.compose.runtime.mutableIntStateOf(settings.subtitleScale) }
++                val scale = liveScale / 100f
                  LaunchedEffect(Unit) {
                      delay(10_000)
                      // Nino: yalnız kısılır; parlaklığı zaten düşük olanınki yükseltilmez.
-@@ -132,6 +136,11 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -132,6 +138,15 @@ class PhoneSubtitleActivity : ComponentActivity() {
                          }
                          status.packInUse?.let { Pill(stringResource(R.string.running_pack, it), pro = true) }
                          Spacer(Modifier.weight(1f))
-+                        // Nino: "Ekranı çevir" yazısını küçült / büyüt (kalıcı; bir sonraki çeviride de geçerli).
++                        // Nino: iki ayrı yazı boyu düğmesi. Canlı: altta akan çeviri. Ekran: "Ekranı çevir" ile çıkan yazılar.
 +                        if (connected) {
++                            Text(stringResource(R.string.font_live), style = Tokens.Type.caption, color = Color.White.copy(alpha = 0.75f), maxLines = 1)
++                            IconAction(Icons.Filled.Remove, "A-") { liveScale = (liveScale - 10).coerceAtLeast(40); settings.subtitleScale = liveScale }
++                            IconAction(Icons.Filled.Add, "A+") { liveScale = (liveScale + 10).coerceAtMost(160); settings.subtitleScale = liveScale }
++                            Text(stringResource(R.string.font_screen), style = Tokens.Type.caption, color = Color.White.copy(alpha = 0.75f), maxLines = 1)
 +                            IconAction(Icons.Filled.Remove, "A-") { screenScale = (screenScale - 15).coerceAtLeast(70); settings.screenTextScale = screenScale }
 +                            IconAction(Icons.Filled.Add, "A+") { screenScale = (screenScale + 15).coerceAtMost(250); settings.screenTextScale = screenScale }
 +                        }
                          if (connected) IconAction(
                              if (status.screenState == LiveStatus.ScreenState.IDLE) Icons.Filled.Search else Icons.Filled.Delete,
                              stringResource(if (status.screenState == LiveStatus.ScreenState.IDLE) R.string.screen_translate else R.string.screen_remove),
-@@ -166,14 +175,21 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -166,14 +181,21 @@ class PhoneSubtitleActivity : ComponentActivity() {
                      androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
                          status.screen.forEach { item ->
                              val box = item.box
@@ -169,7 +184,7 @@ index 416c58f..9d1dc2f 100644
                                      .padding(4.dp))
                          }
                      }
-@@ -181,9 +197,9 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -181,9 +203,9 @@ class PhoneSubtitleActivity : ComponentActivity() {
                      androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
                          status.regions.forEach { region ->
                              val box = region.box ?: com.couchsubs.mobile.core.TextBox(0.6, 0.05, 0.95, 0.2)
@@ -181,3 +196,42 @@ index 416c58f..9d1dc2f 100644
                                      .widthIn(min = 120.dp, max = maxOf(120.dp, maxWidth * (box.right - box.left).toFloat()))
                                      .background(Color.Black.copy(alpha = 0.8f), androidx.compose.foundation.shape.RoundedCornerShape(6.dp))
                                      .padding(6.dp))
+diff --git a/couchsubs-android/app/src/main/res/values-ar/strings.xml b/couchsubs-android/app/src/main/res/values-ar/strings.xml
+index 34a5135..0bfc310 100644
+--- a/couchsubs-android/app/src/main/res/values-ar/strings.xml
++++ b/couchsubs-android/app/src/main/res/values-ar/strings.xml
+@@ -375,6 +375,8 @@
+     <string name="screen_translate">ترجمة الشاشة</string>
+     <string name="screen_working">جارٍ ترجمة الشاشة…</string>
+     <string name="screen_remove">إزالة ترجمات الشاشة</string>
++    <string name="font_live">المباشرة</string>
++    <string name="font_screen">الشاشة</string>
+     <string name="screen_translating">جارٍ ترجمة الشاشة…</string>
+     <string name="screen_none">لم يُعثر على نص على الشاشة.</string>
+     <string name="screen_no_picture">تعذّر التقاط الشاشة: لا توجد صورة من PS5 بعد.</string>
+diff --git a/couchsubs-android/app/src/main/res/values-en/strings.xml b/couchsubs-android/app/src/main/res/values-en/strings.xml
+index f522e09..306ec3f 100644
+--- a/couchsubs-android/app/src/main/res/values-en/strings.xml
++++ b/couchsubs-android/app/src/main/res/values-en/strings.xml
+@@ -40,6 +40,8 @@
+     <string name="screen_translate">Translate screen</string>
+     <string name="screen_working">Translating the screen…</string>
+     <string name="screen_remove">Remove screen translations</string>
++    <string name="font_live">Live</string>
++    <string name="font_screen">Screen</string>
+     <string name="screen_translating">Translating the screen…</string>
+     <string name="screen_none">No text found on the screen.</string>
+     <string name="screen_no_picture">Couldn\'t capture the screen: no picture from the PS5 yet.</string>
+diff --git a/couchsubs-android/app/src/main/res/values/strings.xml b/couchsubs-android/app/src/main/res/values/strings.xml
+index f8d6a21..5304413 100644
+--- a/couchsubs-android/app/src/main/res/values/strings.xml
++++ b/couchsubs-android/app/src/main/res/values/strings.xml
+@@ -40,6 +40,8 @@
+     <string name="screen_translate">Ekranı çevir</string>
+     <string name="screen_working">Ekran çevriliyor…</string>
+     <string name="screen_remove">Çevirileri kaldır</string>
++    <string name="font_live">Canlı</string>
++    <string name="font_screen">Ekran</string>
+     <string name="screen_translating">Ekran çevriliyor…</string>
+     <string name="screen_none">Ekranda yazı bulunamadı.</string>
+     <string name="screen_no_picture">Ekran alınamadı: PS5\'ten henüz görüntü gelmedi.</string>
