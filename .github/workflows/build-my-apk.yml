@@ -20,6 +20,11 @@ jobs:
           git checkout f1620079d770be4df1ed2bf429ce113e8fec9243
           git apply --unidiff-zero --ignore-whitespace --verbose /tmp/nino-changes.patch
 
+      - name: Fix live position
+        run: |
+          perl -0pi -e 's/(BoxWithConstraints\(Modifier\.fillMaxSize\(\))(\) \{\s*\n\s*val zoneWidth)/$1, contentAlignment = androidx.compose.ui.AbsoluteAlignment.TopLeft$2/' couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
+          grep -q AbsoluteAlignment couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
+
       - name: Install beside the old app
         run: sed -i "s/applicationId 'com.ninotranslator.mobile'/applicationId 'com.ninotranslator.mobile.mod'/" couchsubs-android/app/build.gradle
 
