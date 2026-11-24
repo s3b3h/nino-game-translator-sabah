@@ -1,3 +1,5 @@
+# يبني نسخة نينو المعدّلة (ملف APK) على خوادم GitHub مجانًا.
+# يشتغل يدويًا فقط: Actions ← build-my-apk ← Run workflow.
 name: build-my-apk
 
 on:
@@ -43,6 +45,21 @@ jobs:
 
       - name: NDK and CMake
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;27.0.12077973" "cmake;3.22.1" > /dev/null
+
+      - name: Fixed signing key
+        run: |
+          mkdir -p ~/.android
+          echo "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" | base64 -d > ~/.android/debug.keystore
+
+      - name: Arabic fonts
+        run: |
+          D=couchsubs-android/app/src/main/assets/fonts
+          mkdir -p $D
+          B=https://raw.githubusercontent.com/google/fonts/main/ofl
+          for f in tajawal/Tajawal-Regular tajawal/Tajawal-Bold almarai/Almarai-Regular almarai/Almarai-Bold ibmplexsansarabic/IBMPlexSansArabic-Regular ibmplexsansarabic/IBMPlexSansArabic-Bold amiri/Amiri-Regular amiri/Amiri-Bold scheherazadenew/ScheherazadeNew-Regular scheherazadenew/ScheherazadeNew-Bold; do
+            curl -fsSL --retry 3 -o "$D/$(basename $f).ttf" "$B/$f.ttf"
+          done
+          ls -l $D
 
       - name: Build APK
         working-directory: couchsubs-android
