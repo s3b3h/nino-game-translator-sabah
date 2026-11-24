@@ -1,37 +1,139 @@
+diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/ColorSpans.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/ColorSpans.kt
+new file mode 100644
+index 0000000..42c400a
+--- /dev/null
++++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/ColorSpans.kt
+@@ -0,0 +1,50 @@
++// SPDX-License-Identifier: AGPL-3.0-only
++package com.couchsubs.mobile.core
++
++/** Nino: çevirinin [start, end) aralığı [ink] renginde yazılır (null: varsayılan beyaz). */
++data class InkSpan(val start: Int, val end: Int, val ink: Int?)
++
++/**
++ * Nino: satırın yalnız bir sözcüğü renkliyse (pembe bir ad), çeviride de yalnız o sözcük renkli olsun. Renkli öbek ayrıca
++ * çevrilir (kısa, önbellekli) ve tam çevirinin içinde aranır; bulunamazsa o öbek renklenmez (satır asıl renginde kalır).
++ */
++object ColorSpans {
++    private const val TRIM = ".,!?:;…\"'()[]،؛؟«»"
++
++    /** Renkli öbeklerin çevirisi: öbek metni → çevirisi. Harfsiz öbekler atlanır. */
++    fun translate(runs: List<InkRun>, translator: TextTranslator): Map<String, String> {
++        val texts = runs.map { it.text.trim() }.filter { text -> text.any { it.isLetter() } }.distinct()
++        if (texts.isEmpty()) return emptyMap()
++        val translated = translator.translateAll(texts)
++        val result = HashMap<String, String>()
++        texts.forEachIndexed { index, text -> translated.getOrNull(index)?.let { result[text] = it } }
++        return result
++    }
++
++    /** [text] içinde [runs] öbeklerinin çevirisinin (bkz. [translate]) yerleri; üst üste binenler atılır. */
++    fun spans(text: String, runs: List<InkRun>, translations: Map<String, String>): List<InkSpan> {
++        if (runs.isEmpty() || translations.isEmpty()) return emptyList()
++        // Satır sonu boşlukla değişir (uzunluk aynı kalır): çeviri yazıyı satırlara bölmüş olabilir.
++        val flat = text.replace('\n', ' ')
++        val result = mutableListOf<InkSpan>()
++        for (run in runs) {
++            val translated = translations[run.text.trim()] ?: continue
++            val range = locate(flat, translated) ?: continue
++            if (result.any { range.first < it.end && range.last + 1 > it.start }) continue
++            result.add(InkSpan(range.first, range.last + 1, run.ink))
++        }
++        return result.sortedBy { it.start }
++    }
++
++    private fun locate(text: String, target: String): IntRange? {
++        val phrase = target.trim().trim { it in TRIM || it.isWhitespace() }
++        if (phrase.length < 2) return null
++        val at = text.indexOf(phrase, ignoreCase = true)
++        if (at >= 0) return at until at + phrase.length
++        // Cümle içinde biçimi değişmişse öbeğin en uzun sözcüğü (yalnız metinde bir kez geçiyorsa) renklenir.
++        val word = phrase.split(' ').map { it.trim { c -> c in TRIM } }.filter { it.length >= 4 }.maxByOrNull { it.length } ?: return null
++        val first = text.indexOf(word, ignoreCase = true)
++        if (first < 0 || text.indexOf(word, first + 1, ignoreCase = true) >= 0) return null
++        return first until first + word.length
++    }
++}
 diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/Reading.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/Reading.kt
-index 045cf2e..74e71ea 100644
+index 045cf2e..5a13992 100644
 --- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/Reading.kt
 +++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/Reading.kt
-@@ -35 +35,4 @@ data class CropRegion(val top: Double = 0.62, val bottom: Double = 0.97, val lef
+@@ -35 +35,18 @@ data class CropRegion(val top: Double = 0.62, val bottom: Double = 0.97, val lef
 -data class TextLine(val text: String, val box: TextBox? = null)
 +/**
 + * [ink]: Nino: yazının oyundaki rengi (ARGB); beyaz, gri ve siyah gibi renksiz yazıda null (bkz. [TextInk]).
 + */
-+data class TextLine(val text: String, val box: TextBox? = null, val ink: Int? = null)
++data class TextLine(
++    val text: String,
++    val box: TextBox? = null,
++    val ink: Int? = null,
++    /** Nino: satırdaki sözcükler ve yerleri (renk için). */
++    val words: List<TextWord> = emptyList(),
++    /** Nino: satırda birden çok renk varsa, yan yana aynı renkteki sözcük öbekleri ([ink] en çok harfi olan öbeğin rengidir). */
++    val runs: List<InkRun> = emptyList(),
++)
++
++/** Nino: satırdaki bir sözcük ve karedeki yeri. */
++data class TextWord(val text: String, val box: TextBox)
++
++/** Nino: aynı renkte yan yana sözcükler; [ink] null ise renksiz (beyaz/gri). */
++data class InkRun(val text: String, val ink: Int?)
 diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/ScreenTranslation.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/ScreenTranslation.kt
-index 2d3bf1f..ad11175 100644
+index 2d3bf1f..484e02f 100644
 --- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/ScreenTranslation.kt
 +++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/ScreenTranslation.kt
-@@ -17,0 +18,2 @@ object ScreenTranslation {
+@@ -17,0 +18,4 @@ object ScreenTranslation {
 +        /** Nino: grubun yazı rengi (ARGB); renksiz (beyaz/gri/siyah) yazıda null. */
 +        val ink: Int? = null,
-@@ -42,0 +45,2 @@ object ScreenTranslation {
++        /** Nino: satırlarında grubun renginden farklı renkli sözcük öbekleri (pembe bir ad gibi). */
++        val runs: List<InkRun> = emptyList(),
+@@ -42,0 +47,5 @@ object ScreenTranslation {
 +        /** Nino: oyundaki yazının rengi (ARGB); çeviri de bu renkte yazılır. Renksizse null. */
 +        val textColor: Int? = null,
-@@ -49 +53 @@ object ScreenTranslation {
++        /** Nino: kaynak yazıdaki farklı renkli öbekler ve bunların çevirideki yerleri (yalnız o sözcükler renkli çıkar). */
++        val runs: List<InkRun> = emptyList(),
++        val spans: List<InkSpan> = emptyList(),
+@@ -49 +58 @@ object ScreenTranslation {
 -    const val MAX_GROUPS = 30
 +    const val MAX_GROUPS = 80
-@@ -103 +107 @@ object ScreenTranslation {
+@@ -90,2 +99,18 @@ object ScreenTranslation {
+-        if (items.isNotEmpty()) progress(items.toList())
+-        return items
++        // Nino: yalnız renkli sözcükler çeviride de renkli olsun (renkli öbekler kısa bir ek istekle çevrilir).
++        val colored = withColorSpans(items, translator)
++        if (cancelled()) return emptyList()
++        if (colored.isNotEmpty()) progress(colored.toList())
++        return colored
++    }
++
++    private fun withColorSpans(items: List<Item>, translator: TextTranslator): List<Item> {
++        val runs = items.flatMap { it.runs }
++        if (runs.isEmpty()) return items
++        val translations = try {
++            ColorSpans.translate(runs, translator)
++        } catch (error: InterruptedException) {
++            throw error
++        } catch (error: Exception) {
++            return items
++        }
++        return items.map { item -> if (item.runs.isEmpty()) item else item.copy(spans = ColorSpans.spans(item.translation, item.runs, translations)) }
+@@ -103 +128 @@ object ScreenTranslation {
 -        return Item(group.paragraphs.joinToString("\n"), texts.joinToString("\n"), group.box, group.lineHeight)
-+        return Item(group.paragraphs.joinToString("\n"), texts.joinToString("\n"), group.box, group.lineHeight, textColor = group.ink)
-@@ -117 +121,2 @@ object ScreenTranslation {
++        return Item(group.paragraphs.joinToString("\n"), texts.joinToString("\n"), group.box, group.lineHeight, textColor = group.ink, runs = group.runs)
+@@ -117 +142,2 @@ object ScreenTranslation {
 -            var index = groups.indexOfLast { belongs(line.box!!, it.last().box!!) }
 +            // Nino: rengi farklı satırlar (sarı başlık, beyaz açıklama) ayrı gruba girer; çeviri kendi renginde çıksın.
 +            var index = groups.indexOfLast { belongs(line.box!!, it.last().box!!) && TextInk.same(it.last().ink, line.ink) }
-@@ -125 +130,2 @@ object ScreenTranslation {
+@@ -125 +151,8 @@ object ScreenTranslation {
 -            Group(ScreenText.paragraphs(group), box, heights[heights.size / 2])
 +            // Grubun rengi en uzun satırınınki (asıl yazı).
-+            Group(ScreenText.paragraphs(group), box, heights[heights.size / 2], group.maxByOrNull { it.text.length }?.ink)
++            val ink = group.maxByOrNull { it.text.length }?.ink
++            // Nino: grubun renginden farklı sözcük öbekleri (ya da rengi tamamen farklı satırlar) ayrıca işaretlenir.
++            val runs = group.flatMap { line ->
++                if (line.runs.isNotEmpty()) line.runs.filter { !TextInk.same(it.ink, ink) }
++                else if (!TextInk.same(line.ink, ink)) listOf(InkRun(line.text, line.ink)) else emptyList()
++            }
++            Group(ScreenText.paragraphs(group), box, heights[heights.size / 2], ink, runs)
 diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/TextInk.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/core/TextInk.kt
 new file mode 100644
 index 0000000..4e1c293
@@ -142,22 +244,24 @@ index 0000000..4e1c293
 +    }
 +}
 diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ocr/SubtitleReader.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ocr/SubtitleReader.kt
-index 46de81d..bdaf52b 100644
+index 46de81d..d58658a 100644
 --- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ocr/SubtitleReader.kt
 +++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ocr/SubtitleReader.kt
-@@ -6,0 +7 @@ import com.couchsubs.mobile.core.TextBox
+@@ -6,0 +7,3 @@ import com.couchsubs.mobile.core.TextBox
++import com.couchsubs.mobile.core.InkRun
 +import com.couchsubs.mobile.core.TextInk
-@@ -16 +17,5 @@ import java.util.concurrent.TimeUnit
++import com.couchsubs.mobile.core.TextWord
+@@ -16 +19,5 @@ import java.util.concurrent.TimeUnit
 -class RegionPixels(val nv21: ByteArray, val width: Int, val height: Int, val signature: Long)
 +class RegionPixels(
 +    val nv21: ByteArray, val width: Int, val height: Int, val signature: Long,
 +    /** Nino: bölgenin gerçek renk düzlemleri (yarım çözünürlük, width/2 × height/2); yazı rengini bulmak için. Okuma bunları kullanmaz. */
 +    val chromaU: ByteArray? = null, val chromaV: ByteArray? = null,
 +)
-@@ -27 +32 @@ class SubtitleReader : AutoCloseable {
+@@ -27 +34 @@ class SubtitleReader : AutoCloseable {
 -        fun copyRegion(frame: VideoFrame, region: CropRegion): RegionPixels? {
 +        fun copyRegion(frame: VideoFrame, region: CropRegion, withChroma: Boolean = false): RegionPixels? {
-@@ -50 +55,27 @@ class SubtitleReader : AutoCloseable {
+@@ -50 +57,27 @@ class SubtitleReader : AutoCloseable {
 -            return RegionPixels(out, width, height, signature)
 +            // Nino: yazı rengi için gerçek renk düzlemleri ayrıca kopyalanır (okumaya giden düzlem nötr kalır).
 +            var chromaU: ByteArray? = null
@@ -186,18 +290,26 @@ index 46de81d..bdaf52b 100644
 +                }
 +            }
 +            return RegionPixels(out, width, height, signature, chromaU, chromaV)
-@@ -54,4 +85 @@ class SubtitleReader : AutoCloseable {
+@@ -54,4 +87 @@ class SubtitleReader : AutoCloseable {
 -    /** Bölgeyi okur (bloklar; okuma iş parçacığında çağrılır). Satır kutuları bölgeye oranladır. */
 -    fun read(pixels: RegionPixels): Reading {
 -        val input = InputImage.fromByteArray(pixels.nv21, pixels.width, pixels.height, 0, InputImage.IMAGE_FORMAT_NV21)
 -        val text = Tasks.await(recognizer.process(input), 5, TimeUnit.SECONDS)
 +    private fun linesOf(text: com.google.mlkit.vision.text.Text, width: Int, height: Int): List<TextLine> {
-@@ -63,2 +91,2 @@ class SubtitleReader : AutoCloseable {
+@@ -63,2 +93,2 @@ class SubtitleReader : AutoCloseable {
 -                        it.left.toDouble() / pixels.width, it.top.toDouble() / pixels.height,
 -                        it.right.toDouble() / pixels.width, it.bottom.toDouble() / pixels.height,
 +                        it.left.toDouble() / width, it.top.toDouble() / height,
 +                        it.right.toDouble() / width, it.bottom.toDouble() / height,
-@@ -69,0 +98,7 @@ class SubtitleReader : AutoCloseable {
+@@ -67 +97,6 @@ class SubtitleReader : AutoCloseable {
+-                lines.add(TextLine(line.text, box))
++                val words = line.elements.mapNotNull { element ->
++                    val b = element.boundingBox ?: return@mapNotNull null
++                    TextWord(element.text, TextBox(
++                        b.left.toDouble() / width, b.top.toDouble() / height, b.right.toDouble() / width, b.bottom.toDouble() / height))
++                }
++                lines.add(TextLine(line.text, box, words = words))
+@@ -69,0 +105,7 @@ class SubtitleReader : AutoCloseable {
 +        return lines
 +    }
 +
@@ -205,7 +317,7 @@ index 46de81d..bdaf52b 100644
 +    fun read(pixels: RegionPixels): Reading {
 +        val input = InputImage.fromByteArray(pixels.nv21, pixels.width, pixels.height, 0, InputImage.IMAGE_FORMAT_NV21)
 +        val text = Tasks.await(recognizer.process(input), 5, TimeUnit.SECONDS)
-@@ -71 +106,108 @@ class SubtitleReader : AutoCloseable {
+@@ -71 +113,132 @@ class SubtitleReader : AutoCloseable {
 -        return Reading(lines.sortedBy { it.box?.top ?: 0.0 })
 +        return Reading(linesOf(text, pixels.width, pixels.height).sortedBy { it.box?.top ?: 0.0 })
 +    }
@@ -216,8 +328,32 @@ index 46de81d..bdaf52b 100644
 +        val v = pixels.chromaV ?: return reading
 +        return Reading(reading.lines.map { line ->
 +            val box = line.box ?: return@map line
-+            line.copy(ink = TextInk.sample(pixels.nv21, pixels.width, pixels.height, u, v, box))
++            val whole = TextInk.sample(pixels.nv21, pixels.width, pixels.height, u, v, box)
++            val runs = inkRuns(line, pixels, u, v)
++            // Birden çok renk varsa satırın asıl rengi en çok harfi olan öbeğinki; öbekler ayrıca saklanır.
++            if (runs.isEmpty()) line.copy(ink = whole, words = emptyList())
++            else line.copy(ink = runs.maxByOrNull { run -> run.text.count { it.isLetterOrDigit() } }?.ink, runs = runs, words = emptyList())
 +        })
++    }
++
++    /** Nino: satırın sözcük sözcük rengi; yan yana aynı renkli sözcükler öbek olur. Tek renkliyse boş liste. */
++    private fun inkRuns(line: TextLine, pixels: RegionPixels, u: ByteArray, v: ByteArray): List<InkRun> {
++        val words = line.words
++        if (words.size < 2) return emptyList()
++        val inks = words.map { TextInk.sample(pixels.nv21, pixels.width, pixels.height, u, v, it.box) }.toMutableList()
++        // Çok kısa sözcüklerin ("a", "I", noktalama) rengi güvenilmez: yanındakinin rengini alır.
++        val original = inks.toList()
++        for (index in words.indices) {
++            if (words[index].text.count { it.isLetterOrDigit() } > 2) continue
++            inks[index] = if (index > 0) inks[index - 1] else original.getOrNull(1)
++        }
++        val runs = mutableListOf<InkRun>()
++        for (index in words.indices) {
++            val last = runs.lastOrNull()
++            if (last != null && TextInk.same(last.ink, inks[index])) runs[runs.size - 1] = last.copy(text = last.text + " " + words[index].text)
++            else runs.add(InkRun(words[index].text, inks[index]))
++        }
++        return if (runs.size < 2) emptyList() else runs
 +    }
 +
 +    /**
@@ -257,7 +393,7 @@ index 46de81d..bdaf52b 100644
 +            else runCatching { Tasks.await(task, 10, TimeUnit.SECONDS) }.getOrNull()
 +            if (text != null) linesOf(text, pass.width, pass.height).forEach { line ->
 +                val box = line.box ?: return@forEach
-+                found.add(line.copy(box = box.placedIn(pass.area)))
++                found.add(line.copy(box = box.placedIn(pass.area), words = line.words.map { it.copy(box = it.box.placedIn(pass.area)) }))
 +            }
 +        }
 +        val merged = mutableListOf<TextLine>()
@@ -316,23 +452,31 @@ index 46de81d..bdaf52b 100644
 +        java.util.Arrays.fill(out, outWidth * outHeight, out.size, 128.toByte())
 +        return RegionPixels(out, outWidth, outHeight, 0L)
 diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/LiveState.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/LiveState.kt
-index 3631782..fbb8eb1 100644
+index 3631782..40ea211 100644
 --- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/LiveState.kt
 +++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/LiveState.kt
-@@ -22,0 +23,2 @@ data class LiveStatus(
+@@ -22,0 +23,4 @@ data class LiveStatus(
 +    /** Nino: şu anki altyazının oyundaki rengi (ARGB); renksizse null. */
 +    val currentInk: Int? = null,
-@@ -105,2 +107,2 @@ data class LiveStatus(
++    /** Nino: altyazıda asıl renkten farklı renkli sözcük öbekleri (yalnız o sözcükler renkli çıkar). */
++    val currentRuns: List<com.couchsubs.mobile.core.InkRun> = emptyList(),
+@@ -105,2 +109,2 @@ data class LiveStatus(
 -            copy(current = event.text, previous = if (event.replaces || current.isEmpty()) previous else current)
 -        com.couchsubs.mobile.core.SubtitleEvent.Cleared -> copy(current = "", previous = "")
-+            copy(current = event.text, currentInk = LiveState.liveInk, previous = if (event.replaces || current.isEmpty()) previous else current)
-+        com.couchsubs.mobile.core.SubtitleEvent.Cleared -> copy(current = "", currentInk = null, previous = "")
-@@ -122,0 +125,3 @@ object LiveState {
++            copy(current = event.text, currentInk = LiveState.liveInk, currentRuns = LiveState.liveRuns, previous = if (event.replaces || current.isEmpty()) previous else current)
++        com.couchsubs.mobile.core.SubtitleEvent.Cleared -> copy(current = "", currentInk = null, currentRuns = emptyList(), previous = "")
+@@ -122,0 +127,9 @@ object LiveState {
 +    /** Nino: son okunan altyazının rengi (okuma iş parçacığı yazar, altyazı gösterilirken [LiveStatus.currentInk]e kopyalanır). */
 +    @Volatile var liveInk: Int? = null
 +
++    /** Nino: son okunan altyazıdaki farklı renkli öbekler (bkz. [LiveStatus.currentRuns]). */
++    @Volatile var liveRuns: List<com.couchsubs.mobile.core.InkRun> = emptyList()
++
++    /** Nino: renkli öbekleri çevirmek için (ekran açıkken servis kurar); yoksa renkli sözcükler işaretlenmez. */
++    @Volatile var runTranslator: com.couchsubs.mobile.core.TextTranslator? = null
++
 diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/TranslationService.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/TranslationService.kt
-index e4bb6d6..bc85855 100644
+index e4bb6d6..91c874c 100644
 --- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/TranslationService.kt
 +++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/service/TranslationService.kt
 @@ -542 +542 @@ class TranslationService : Service() {
@@ -353,12 +497,28 @@ index e4bb6d6..bc85855 100644
 +                    val online = onlineTranslator(line)
 +                    if (online != null) online else poolFirst(line, line)
 +                }, target)
-@@ -814 +820,4 @@ class TranslationService : Service() {
+@@ -814 +820,17 @@ class TranslationService : Service() {
 -            val result = if (reused) lastReading else reader?.read(pixels) ?: return
 +            val result = if (reused) lastReading else reader?.read(pixels)?.let { reader?.withInk(it, pixels) ?: it } ?: return
 +            // Nino: altyazının oyundaki rengi (en uzun satırınki); satır yoksa önceki renk kalır.
-+            if (settings.matchTextColors) result.lines.filter { it.box != null }.maxByOrNull { it.text.length }?.let { LiveState.liveInk = it.ink }
-+            else LiveState.liveInk = null
++            if (settings.matchTextColors) {
++                val located = result.lines.filter { it.box != null }
++                located.maxByOrNull { it.text.length }?.let { longest ->
++                    LiveState.liveInk = longest.ink
++                    // Asıl renkten farklı sözcük öbekleri (ya da rengi tamamen farklı satırlar, ör. pembe konuşan adı).
++                    LiveState.liveRuns = located.flatMap { line ->
++                        if (line.runs.isNotEmpty()) line.runs.filter { !com.couchsubs.mobile.core.TextInk.same(it.ink, longest.ink) }
++                        else if (!com.couchsubs.mobile.core.TextInk.same(line.ink, longest.ink)) listOf(com.couchsubs.mobile.core.InkRun(line.text, line.ink))
++                        else emptyList()
++                    }
++                }
++            } else {
++                LiveState.liveInk = null
++                LiveState.liveRuns = emptyList()
++            }
+@@ -922,0 +945,2 @@ class TranslationService : Service() {
++        // Nino: canlı çeviride renkli sözcük öbeklerini çevirmek için.
++        LiveState.runTranslator = device
 diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/settings/AppSettings.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/settings/AppSettings.kt
 index d18faa8..941bbe5 100644
 --- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/settings/AppSettings.kt
@@ -447,7 +607,7 @@ index aac60d6..ab713df 100644
 -            mapOf("Authorization" to "DeepL-Auth-Key $key", "Content-Type" to "application/json"), body(sources, context, tagged, target), 4000,
 +            mapOf("Authorization" to "DeepL-Auth-Key $key", "Content-Type" to "application/json"), body(sources, context, tagged, target), timeoutMs,
 diff --git a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
-index 416c58f..2c1b83b 100644
+index 416c58f..a5f5307 100644
 --- a/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
 +++ b/couchsubs-android/app/src/main/java/com/couchsubs/mobile/ui/PhoneSubtitleActivity.kt
 @@ -6,0 +7,3 @@ import com.couchsubs.mobile.core.SubtitleWrap
@@ -482,54 +642,61 @@ index 416c58f..2c1b83b 100644
 @@ -35,2 +42,0 @@ import androidx.compose.material3.Text
 -import androidx.compose.foundation.layout.BoxWithConstraints
 -import androidx.compose.foundation.layout.heightIn
-@@ -37,0 +44 @@ import androidx.compose.runtime.Composable
+@@ -37,0 +44,8 @@ import androidx.compose.runtime.Composable
 +import androidx.compose.runtime.CompositionLocalProvider
-@@ -38,0 +46,5 @@ import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.ui.text.AnnotatedString
++import androidx.compose.ui.text.SpanStyle
++import androidx.compose.ui.text.buildAnnotatedString
++import com.couchsubs.mobile.core.ColorSpans
++import com.couchsubs.mobile.core.InkSpan
++import kotlinx.coroutines.Dispatchers
++import kotlinx.coroutines.withContext
+@@ -38,0 +53,5 @@ import androidx.compose.runtime.LaunchedEffect
 +import androidx.compose.ui.draw.clipToBounds
 +import androidx.compose.ui.platform.LocalLayoutDirection
 +import androidx.compose.ui.unit.LayoutDirection
 +import androidx.compose.runtime.collectAsState
 +import androidx.compose.runtime.getValue
-@@ -39,0 +52,3 @@ import androidx.compose.runtime.mutableFloatStateOf
+@@ -39,0 +59,3 @@ import androidx.compose.runtime.mutableFloatStateOf
 +import androidx.compose.runtime.mutableIntStateOf
 +import androidx.compose.runtime.mutableLongStateOf
 +import androidx.compose.runtime.mutableStateOf
-@@ -42,4 +56,0 @@ import androidx.compose.runtime.setValue
+@@ -42,4 +63,0 @@ import androidx.compose.runtime.setValue
 -import androidx.compose.ui.text.TextStyle
 -import androidx.compose.ui.text.style.TextOverflow
 -import androidx.compose.runtime.collectAsState
 -import androidx.compose.runtime.getValue
-@@ -47,0 +59 @@ import androidx.compose.ui.Modifier
+@@ -47,0 +66 @@ import androidx.compose.ui.Modifier
 +import androidx.compose.ui.draw.clip
-@@ -48,0 +61,5 @@ import androidx.compose.ui.graphics.Color
+@@ -48,0 +68,5 @@ import androidx.compose.ui.graphics.Color
 +import androidx.compose.ui.graphics.vector.ImageVector
 +import androidx.compose.ui.input.pointer.PointerEventPass
 +import androidx.compose.ui.input.pointer.changedToDown
 +import androidx.compose.ui.input.pointer.pointerInput
 +import androidx.compose.ui.layout.Layout
-@@ -49,0 +67,5 @@ import androidx.compose.ui.res.stringResource
+@@ -49,0 +74,5 @@ import androidx.compose.ui.res.stringResource
 +import androidx.compose.ui.semantics.contentDescription
 +import androidx.compose.ui.semantics.semantics
 +import androidx.compose.ui.text.TextStyle
 +import androidx.compose.ui.text.font.FontFamily
 +import androidx.compose.ui.text.font.FontWeight
-@@ -50,0 +73,4 @@ import androidx.compose.ui.text.style.TextAlign
+@@ -50,0 +80,4 @@ import androidx.compose.ui.text.style.TextAlign
 +import androidx.compose.ui.text.style.TextOverflow
 +import androidx.compose.ui.unit.Constraints
 +import androidx.compose.ui.unit.dp
 +import androidx.compose.ui.unit.sp
-@@ -54,0 +81,2 @@ import com.couchsubs.mobile.service.LiveState
+@@ -54,0 +88,2 @@ import com.couchsubs.mobile.service.LiveState
 +import com.couchsubs.mobile.service.LiveStatus
 +import com.couchsubs.mobile.service.TranslationService
-@@ -55,0 +84 @@ import kotlinx.coroutines.delay
+@@ -55,0 +91 @@ import kotlinx.coroutines.delay
 +import kotlin.math.abs
-@@ -58,2 +87,3 @@ import kotlinx.coroutines.delay
+@@ -58,2 +94,3 @@ import kotlinx.coroutines.delay
 - * Altyazı bu telefonun ekranında (tuval Telefon-Altyazi): yatay, siyah zeminde büyük yazı; üstte durum hapı ve kapat.
 - * Ekran açık kalır; bir süre sonra parlaklık kısılır (oyun çoğunlukla karanlık odada oynanır).
 + * Altyazı bu telefonun ekranında (tuval Telefon-Altyazi): yatay, siyah zeminde büyük yazı; üstte durum hapı ve düğmeler.
 + * Ekran açık kalır; bir süre sonra parlaklık kısılır (oyun çoğunlukla karanlık odada oynanır). Düğmeler de bir süre
 + * dokunulmayınca kaybolur, ekrana dokunulunca geri gelir.
-@@ -64,0 +95,9 @@ private val SUBTITLE_YELLOW = Color(0xFFFFD54A) // iPhone ile aynı
+@@ -64,0 +102,9 @@ private val SUBTITLE_YELLOW = Color(0xFFFFD54A) // iPhone ile aynı
 +/** Düğmeler, son dokunuştan bu kadar sonra (ms) kaybolur. */
 +private const val HIDE_CONTROLS_MS = 5000L
 +
@@ -539,7 +706,19 @@ index 416c58f..2c1b83b 100644
 + */
 +private val LIVE_ZONE = TextBox(0.276, 0.319, 0.776, 0.665)
 +
-@@ -75,0 +115,142 @@ private fun FittingText(text: String, style: TextStyle, color: Color, modifier:
+@@ -67 +113 @@ private val SUBTITLE_YELLOW = Color(0xFFFFD54A) // iPhone ile aynı
+-private fun FittingText(text: String, style: TextStyle, color: Color, modifier: Modifier) {
++private fun FittingText(text: AnnotatedString, style: TextStyle, color: Color, modifier: Modifier) {
+@@ -75,0 +122,152 @@ private fun FittingText(text: String, style: TextStyle, color: Color, modifier:
++/** Nino: [text]in yalnız [spans] aralıkları kendi renginde (renksizse beyaz), gerisi varsayılan renkte. */
++private fun coloredText(text: String, spans: List<InkSpan>): AnnotatedString = buildAnnotatedString {
++    append(text)
++    for (span in spans) {
++        if (span.start < 0 || span.end > text.length || span.start >= span.end) continue
++        addStyle(SpanStyle(color = span.ink?.let { Color(it) } ?: SUBTITLE_WHITE), span.start, span.end)
++    }
++}
++
 +/** Küçük yuvarlak düğme (30 dp): yazılı ("A+", "B") ya da simgeli; [active] açık durumdur. */
 +@Composable
 +private fun SmallButton(label: String, description: String, active: Boolean = false, icon: ImageVector? = null, onClick: () -> Unit) {
@@ -618,7 +797,8 @@ index 416c58f..2c1b83b 100644
 +                items.forEach { item ->
 +                    val size = ((screenHeight.value * item.lineHeight * 0.8).coerceIn(10.0, 28.0) * factor).toFloat()
 +                    val ink = if (matchColors) item.textColor else null
-+                    Text(item.translation, color = ink?.let { Color(it) } ?: SUBTITLE_WHITE, fontFamily = family,
++                    Text(coloredText(item.translation, if (matchColors) item.spans else emptyList()),
++                        color = ink?.let { Color(it) } ?: SUBTITLE_WHITE, fontFamily = family,
 +                        fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
 +                        fontSize = size.sp, lineHeight = (size * 1.3f).sp,
 +                        textAlign = when (anchorOf(item.box)) { Anchor.LEFT -> TextAlign.Left; Anchor.RIGHT -> TextAlign.Right; Anchor.CENTER -> TextAlign.Center },
@@ -682,13 +862,13 @@ index 416c58f..2c1b83b 100644
 +    }
 +}
 +
-@@ -103 +283,0 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -103 +300,0 @@ class PhoneSubtitleActivity : ComponentActivity() {
 -        val scale = settings.subtitleScale / 100f
-@@ -107,0 +288,3 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -107,0 +305,3 @@ class PhoneSubtitleActivity : ComponentActivity() {
 +        // Nino: telefondaki çeviri için ayrıca seçilen Arapça yazı tipi ("otomatik" ise yukarıdaki).
 +        val phoneFont = PhoneFont.from(settings.phoneFont)
 +        val matchColors = settings.matchTextColors
-@@ -111,0 +295,10 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -111,0 +312,10 @@ class PhoneSubtitleActivity : ComponentActivity() {
 +                // Nino: iki ayrı yazı boyu ve iki ayrı kalınlık: canlı çeviri (altta akan) ve "Ekranı çevir" yazıları.
 +                var screenScale by remember { mutableIntStateOf(settings.screenTextScale) }
 +                var liveScale by remember { mutableIntStateOf(settings.subtitleScale) }
@@ -699,7 +879,7 @@ index 416c58f..2c1b83b 100644
 +                // Nino: düğmeler son dokunuştan 5 sn sonra kaybolur; ekrana dokunulunca geri gelir.
 +                var lastTouch by remember { mutableLongStateOf(0L) }
 +                var controlsVisible by remember { mutableStateOf(true) }
-@@ -117,15 +310,15 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -117,15 +327,13 @@ class PhoneSubtitleActivity : ComponentActivity() {
 -                Box(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding().padding(Tokens.Space.screen)) {
 -                    Row(Modifier.fillMaxWidth().align(Alignment.TopCenter), verticalAlignment = Alignment.CenterVertically,
 -                        horizontalArrangement = Arrangement.spacedBy(Tokens.Space.gap)) {
@@ -720,17 +900,15 @@ index 416c58f..2c1b83b 100644
 +                    delay(HIDE_CONTROLS_MS)
 +                    controlsVisible = false
 +                }
-+                val connected = status.running && status.phase == streaming
-+                // Bağlı değilken (hata, bekleme) üst çubuk hep görünür; neden yazılıdır.
-+                val showBar = !connected || controlsVisible
-+                Box(Modifier.fillMaxSize().background(Color.Black).pointerInput(Unit) {
-+                    // Dokunuşu tüketmez (Initial geçişi): yalnız düğmeleri geri getirir. Gizliyken düğme yerinde yoktur,
-+                    // yani ilk dokunuş yanlışlıkla bir düğmeye basmaz.
-+                    awaitPointerEventScope {
-+                        while (true) {
-+                            val event = awaitPointerEvent(PointerEventPass.Initial)
-+                            if (event.changes.any { it.changedToDown() }) lastTouch = System.nanoTime()
-@@ -133,7 +325,0 @@ class PhoneSubtitleActivity : ComponentActivity() {
++                // Nino: altyazıda yalnız bir sözcük renkliyse (pembe ad gibi) onun çevirisi arka planda bulunur; o ana kadar asıl renk.
++                var runTranslations by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
++                LaunchedEffect(status.current, status.currentRuns) {
++                    runTranslations = emptyMap()
++                    val translator = LiveState.runTranslator
++                    if (matchColors && status.currentRuns.isNotEmpty() && status.current.isNotEmpty() && translator != null) {
++                        runTranslations = withContext(Dispatchers.IO) {
++                            try { ColorSpans.translate(status.currentRuns, translator) } catch (_: Exception) { emptyMap() }
+@@ -133,7 +340,0 @@ class PhoneSubtitleActivity : ComponentActivity() {
 -                        status.packInUse?.let { Pill(stringResource(R.string.running_pack, it), pro = true) }
 -                        Spacer(Modifier.weight(1f))
 -                        if (connected) IconAction(
@@ -738,7 +916,7 @@ index 416c58f..2c1b83b 100644
 -                            stringResource(if (status.screenState == LiveStatus.ScreenState.IDLE) R.string.screen_translate else R.string.screen_remove),
 -                        ) { TranslationService.translateScreen() }
 -                        IconAction(Icons.Filled.Close, stringResource(R.string.close)) { finish() }
-@@ -141,15 +327,28 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -141,20 +342,11 @@ class PhoneSubtitleActivity : ComponentActivity() {
 -                    BoxWithConstraints(Modifier.fillMaxSize().padding(vertical = Tokens.Space.screen * 2)) {
 -                        val room = maxHeight
 -                        Column(Modifier.align(Alignment.Center).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally,
@@ -754,6 +932,38 @@ index 416c58f..2c1b83b 100644
 -                                    style = style.copy(fontSize = style.fontSize * scale * 0.8f * wrapped.scale, lineHeight = style.lineHeight * scale * 0.8f * wrapped.scale),
 -                                    color = color.copy(alpha = 0.4f), textAlign = TextAlign.Center, maxLines = 2,
 -                                    overflow = TextOverflow.Ellipsis)
+-                            }
+-                            val wrapped = SubtitleWrap.fit(current)
+-                            FittingText(TargetLanguage.displayText(wrapped.text),
+-                                style.copy(fontSize = style.fontSize * scale * wrapped.scale, lineHeight = style.lineHeight * scale * wrapped.scale),
+-                                color, Modifier.fillMaxWidth().heightIn(max = room))
++                }
++                val connected = status.running && status.phase == streaming
++                // Bağlı değilken (hata, bekleme) üst çubuk hep görünür; neden yazılıdır.
++                val showBar = !connected || controlsVisible
++                Box(Modifier.fillMaxSize().background(Color.Black).pointerInput(Unit) {
++                    // Dokunuşu tüketmez (Initial geçişi): yalnız düğmeleri geri getirir. Gizliyken düğme yerinde yoktur,
++                    // yani ilk dokunuş yanlışlıkla bir düğmeye basmaz.
++                    awaitPointerEventScope {
++                        while (true) {
++                            val event = awaitPointerEvent(PointerEventPass.Initial)
++                            if (event.changes.any { it.changedToDown() }) lastTouch = System.nanoTime()
+@@ -163,15 +355,31 @@ class PhoneSubtitleActivity : ComponentActivity() {
+-                    Text(stringResource(R.string.subtitle_screen_note), style = Tokens.Type.caption, color = Color.White.copy(alpha = 0.45f),
+-                        modifier = Modifier.align(Alignment.BottomCenter))
+-                    // "Ekranı çevir" sonuçları: her çeviri kendi yazısının yerinde ve aynı boyda (TV'deki gibi).
+-                    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+-                        status.screen.forEach { item ->
+-                            val box = item.box
+-                            val width = maxOf(60.dp, maxWidth * (box.right - box.left).toFloat())
+-                            val size = (maxHeight.value * item.lineHeight * 0.8).coerceIn(10.0, 28.0).toFloat()
+-                            Text(item.translation, style = Tokens.Type.caption.copy(fontSize = size.sp, lineHeight = (size * 1.2f).sp),
+-                                color = Tokens.Color.text, textAlign = TextAlign.Start,
+-                                modifier = Modifier
+-                                    .offset(x = maxWidth * box.left.toFloat(), y = maxHeight * ((box.top + box.bottom) / 2).toFloat() - (size * 0.8f).dp)
+-                                    .width(width)
+-                                    .background(Color.Black.copy(alpha = 0.85f), androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+-                                    .padding(4.dp))
 +                }) {
 +                    // Canlı çeviri: işaretlenen alanın içinde, ortada; sığmazsa yazı küçülür.
 +                    BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -779,39 +989,20 @@ index 416c58f..2c1b83b 100644
 +                                        overflow = TextOverflow.Ellipsis)
 +                                }
 +                                val wrapped = SubtitleWrap.fit(current)
-+                                FittingText(TargetLanguage.displayText(wrapped.text),
++                                val shownText = TargetLanguage.displayText(wrapped.text)
++                                val liveSpans = if (matchColors) ColorSpans.spans(shownText, status.currentRuns, runTranslations) else emptyList()
++                                FittingText(coloredText(shownText, liveSpans),
 +                                    style.copy(fontSize = style.fontSize * scale * wrapped.scale, lineHeight = style.lineHeight * scale * wrapped.scale),
 +                                    liveColor, Modifier.fillMaxWidth().heightIn(max = zoneHeight))
-@@ -157,21 +355,0 @@ class PhoneSubtitleActivity : ComponentActivity() {
--                            val wrapped = SubtitleWrap.fit(current)
--                            FittingText(TargetLanguage.displayText(wrapped.text),
--                                style.copy(fontSize = style.fontSize * scale * wrapped.scale, lineHeight = style.lineHeight * scale * wrapped.scale),
--                                color, Modifier.fillMaxWidth().heightIn(max = room))
--                        }
--                    }
--                    Text(stringResource(R.string.subtitle_screen_note), style = Tokens.Type.caption, color = Color.White.copy(alpha = 0.45f),
--                        modifier = Modifier.align(Alignment.BottomCenter))
--                    // "Ekranı çevir" sonuçları: her çeviri kendi yazısının yerinde ve aynı boyda (TV'deki gibi).
--                    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
--                        status.screen.forEach { item ->
--                            val box = item.box
--                            val width = maxOf(60.dp, maxWidth * (box.right - box.left).toFloat())
--                            val size = (maxHeight.value * item.lineHeight * 0.8).coerceIn(10.0, 28.0).toFloat()
--                            Text(item.translation, style = Tokens.Type.caption.copy(fontSize = size.sp, lineHeight = (size * 1.2f).sp),
--                                color = Tokens.Color.text, textAlign = TextAlign.Start,
--                                modifier = Modifier
--                                    .offset(x = maxWidth * box.left.toFloat(), y = maxHeight * ((box.top + box.bottom) / 2).toFloat() - (size * 0.8f).dp)
--                                    .width(width)
--                                    .background(Color.Black.copy(alpha = 0.85f), androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
--                                    .padding(4.dp))
-@@ -179,0 +358,2 @@ class PhoneSubtitleActivity : ComponentActivity() {
++                            }
+@@ -179,0 +388,2 @@ class PhoneSubtitleActivity : ComponentActivity() {
 +                    // "Ekranı çevir" sonuçları: her çeviri kendi yazısının yerinde, üst üste binmeden (TV'deki gibi).
 +                    ScreenOverlay(status.screen, screenScale, screenBold, family, matchColors, LIVE_ZONE)
-@@ -181 +361,2 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -181 +391,2 @@ class PhoneSubtitleActivity : ComponentActivity() {
 -                    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
 +                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
 +                    BoxWithConstraints(Modifier.fillMaxSize().clipToBounds()) {
-@@ -183,2 +364,6 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -183,2 +394,6 @@ class PhoneSubtitleActivity : ComponentActivity() {
 -                            val box = region.box ?: com.couchsubs.mobile.core.TextBox(0.6, 0.05, 0.95, 0.2)
 -                            Text(region.text, style = Tokens.Type.caption, color = Tokens.Color.text,
 +                            val box = region.box ?: TextBox(0.6, 0.05, 0.95, 0.2)
@@ -820,14 +1011,14 @@ index 416c58f..2c1b83b 100644
 +                            val x = (maxWidth * box.left.coerceIn(0.0, 1.0).toFloat()).coerceAtMost(maxWidth - boxWidth).coerceAtLeast(0.dp)
 +                            val y = (maxHeight * box.top.coerceIn(0.0, 1.0).toFloat()).coerceAtMost(maxHeight - 40.dp).coerceAtLeast(0.dp)
 +                            Text(region.text, style = Tokens.Type.caption, color = SUBTITLE_WHITE,
-@@ -186,3 +371,3 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -186,3 +401,3 @@ class PhoneSubtitleActivity : ComponentActivity() {
 -                                    .offset(x = maxWidth * box.left.toFloat(), y = maxHeight * box.top.toFloat())
 -                                    .widthIn(min = 120.dp, max = maxOf(120.dp, maxWidth * (box.right - box.left).toFloat()))
 -                                    .background(Color.Black.copy(alpha = 0.8f), androidx.compose.foundation.shape.RoundedCornerShape(6.dp))
 +                                    .absoluteOffset(x = x, y = y)
 +                                    .widthIn(min = minOf(120.dp, boxWidth), max = boxWidth)
 +                                    .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(6.dp))
-@@ -191,0 +377,44 @@ class PhoneSubtitleActivity : ComponentActivity() {
+@@ -191,0 +407,46 @@ class PhoneSubtitleActivity : ComponentActivity() {
 +                    }
 +                    Box(Modifier.fillMaxSize().safeDrawingPadding().padding(Tokens.Space.screen)) {
 +                        AnimatedVisibility(visible = showBar, modifier = Modifier.align(Alignment.TopCenter), enter = fadeIn(), exit = fadeOut()) {
@@ -847,6 +1038,8 @@ index 416c58f..2c1b83b 100644
 +                                        overflow = TextOverflow.Ellipsis)
 +                                }
 +                                status.packInUse?.let { Pill(stringResource(R.string.running_pack, it), pro = true) }
++                                // Nino: hangi sürümün çalıştığı bilinsin (Actions'ta kaçıncı derleme).
++                                Text(com.couchsubs.mobile.BuildConfig.VERSION_NAME, fontSize = 10.sp, color = Color.White.copy(alpha = 0.4f), maxLines = 1)
 +                                Spacer(Modifier.weight(1f))
 +                                if (connected) {
 +                                    // Canlı çeviri: A- / A+ boyu, B kalın / ince.
